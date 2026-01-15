@@ -44,8 +44,13 @@ cp .env.node_env.example .env.production.local
 Start the local Supabase Docker instance using dotenvx to load multiple environment files:
 
 ```bash
-npx dotenvx run --env-file=.env.local --env-file=.env.development --env-file=.env.development.local -- supabase start
+pnpm supabase:start
 ```
+Do not run directly the supabase command 
+```bash
+supabase start
+```
+as it will not load the appropriate environment variables.
 
 **Note:** The local Supabase anon key is already configured in `.env.development` and is the same for all local development instances.
 
@@ -70,6 +75,40 @@ The following MCP servers are configured and automatically available:
 - **filesystem** - File system operations
 - **next-devtools** - Next.js development tools and debugging
 - **supabase** - Database, storage, functions, and development tools
+
+## Database Security Guidelines
+
+### Creating New Tables
+
+When creating new tables in the database, you **MUST** follow these security practices:
+
+#### 1. Enable Row Level Security (RLS)
+
+Every table must have RLS enabled. In your Drizzle schema, RLS is automatically enabled for tables with `pgPolicy` definitions.
+
+#### 2. Define RLS Policies
+Define appropriate RLS policies for your table operations. See `src/schema/user.ts` for an example:
+
+#### 3. Grant Explicit Permissions
+After creating a table, you **MUST** explicitly grant permissions to the appropriate roles. Modify the generated migration file (if you have not yet pushed it to the remote database) or create a new one with grants:
+
+```sql
+-- Grant table access to the exact roles you want
+-- In this case below, we grant to anon (public), authenticated and service_role (admin)
+grant select, insert, update, delete on table public.my_table to anon, authenticated, service_role;
+```
+
+See `supabase/migrations/0002_magenta_multiple_man.sql` for a complete example of the security model.
+
+**Important:** Without explicit grants, users won't be able to access the table even with RLS policies in place.
+
+### Security Model
+
+This project uses a **zero-trust security model**:
+1. All privileges are revoked by default
+2. Schema usage is granted to specific roles
+3. Table permissions are granted explicitly per table
+4. RLS policies control row-level access
 
 ## Claude Plugins
 

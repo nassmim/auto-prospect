@@ -15,6 +15,13 @@
       "when": 1768482470193,
       "tag": "0001_lean_patch",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1768484858561,
+      "tag": "0002_magenta_multiple_man",
+      "breakpoints": true
     }
   ]
 }
