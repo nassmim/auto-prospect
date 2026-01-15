@@ -54,7 +54,34 @@ as it will not load the appropriate environment variables.
 
 **Note:** The local Supabase anon key is already configured in `.env.development` and is the same for all local development instances.
 
-### 4. Run the Development Server
+### 4. Managing Local Database State
+
+#### Stopping Supabase (with data preservation)
+
+To preserve your local database data when stopping Supabase:
+
+```bash
+supabase stop --backup
+```
+
+This creates a backup of your local data. **Without `--backup`, all local data will be lost.**
+
+#### Sharing Database Seed Data
+
+If you've created test data that should be shared with the team:
+
+```bash
+pnpm db:dump
+```
+
+**⚠️ Important:** Only run this command when:
+- You're confident the seed data should be shared with the entire team
+- You won't override seed data from other teammates
+- You've coordinated with your team to avoid conflicts
+
+This command dumps the current database state to `supabase/seed.sql`, which can be committed to the repository.
+
+### 5. Run the Development Server
 
 ```bash
 pnpm dev
@@ -76,7 +103,35 @@ The following MCP servers are configured and automatically available:
 - **next-devtools** - Next.js development tools and debugging
 - **supabase** - Database, storage, functions, and development tools
 
-## Database Security Guidelines
+## Database Development Guidelines
+
+### ⚠️ CRITICAL: Single Source of Truth - Drizzle Only
+
+**ALL database changes MUST be made through Drizzle schema definitions and migrations. No exceptions.**
+
+#### ❌ FORBIDDEN Actions:
+
+1. **Never use `drizzle-kit push`** - This bypasses migrations and causes sync issues
+2. **Never use `supabase db push`** - This bypasses Drizzle's migration system
+3. **Never modify the database through the Supabase UI** - Changes won't be tracked in migrations
+4. **Never pull schema changes** - The schema should only exist in your Drizzle files
+5. **Never make manual SQL changes** outside of migrations
+
+#### ✅ CORRECT Workflow:
+
+1. **Modify your schema** in TypeScript files (`src/schema/*.ts`)
+2. **Generate migration**: `pnpm db:generate`
+3. **Review the generated SQL** in `supabase/migrations/`
+4. **Apply migration**: `pnpm db:migrate-only`
+5. **Commit both** schema changes and migration files to git
+
+**Why this matters:**
+- UI changes and push commands bypass migration tracking
+- This causes sync issues between team members
+- Migration history becomes incomplete
+- Database state becomes unpredictable
+
+**Single source of truth = Drizzle schema files + migration files**
 
 ### Creating New Tables
 
@@ -114,6 +169,18 @@ This project uses a **zero-trust security model**:
 
 The following Claude Code plugins are enabled:
 
+### Automatic Plugins
+
 - **code-simplifier** - Simplifies and refines code for clarity
+  - Runs automatically on all code changes
+  - No need to invoke explicitly
+
+### Manual Plugins (Invoke Explicitly)
+
+To use these plugins, ask Claude explicitly to use them in your request:
+
 - **frontend-design** - Creates production-grade frontend interfaces
+  - Usage: "Use /frontend-design to create a landing page"
+
 - **feature-dev** - Guided feature development with architecture focus
+  - Usage: "Use /feature-dev to implement user authentication"
