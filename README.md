@@ -47,12 +47,7 @@ Start the local Supabase Docker instance using dotenvx to load multiple environm
 npx dotenvx run --env-file=.env.local --env-file=.env.development --env-file=.env.development.local -- supabase start
 ```
 
-**Important:** After Supabase starts, it will display credentials including an `anon key`. Copy this key and paste it into your `.env.development` file:
-
-```bash
-# .env.development
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
-```
+**Note:** The local Supabase anon key is already configured in `.env.development` and is the same for all local development instances.
 
 ### 4. Run the Development Server
 
@@ -83,4 +78,3 @@ The following Claude Code plugins are enabled:
 - **code-simplifier** - Simplifies and refines code for clarity
 - **frontend-design** - Creates production-grade frontend interfaces
 - **feature-dev** - Guided feature development with architecture focus
-- **code-review** - Code review for pull requests
