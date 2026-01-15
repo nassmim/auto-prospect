@@ -3,24 +3,38 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "dotenvx run -- sh -c 'next dev --port ${NEXT_PUBLIC_PORT:-3000}'",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate-only": "dotenvx run --env-file=.env.development.local -- tsx scripts/migrate.ts",
+    "db:migrate": "drizzle-kit generate && dotenvx run --env-file=.env.development.local -- tsx scripts/migrate.ts",
+    "supabase:start": "npx dotenvx run --env-file=.env.local --env-file=.env.development --env-file=.env.development.local -- supabase start",
+    "db:dump": "docker exec -it supabase_db_auto-prospect pg_dump -U postgres -d postgres --data-only --schema=auth --schema=public > supabase/seed.sql"
   },
   "dependencies": {
+    "@next/env": "^16.1.1",
+    "@supabase/ssr": "^0.8.0",
+    "@supabase/supabase-js": "^2.90.1",
+    "drizzle-orm": "^0.45.1",
+    "jwt-decode": "^4.0.0",
     "next": "16.1.1",
+    "postgres": "^3.4.8",
     "react": "19.2.3",
     "react-dom": "19.2.3"
   },
   "devDependencies": {
+    "@dotenvx/dotenvx": "^1.51.4",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "drizzle-kit": "^0.31.8",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }
