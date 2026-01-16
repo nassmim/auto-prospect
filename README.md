@@ -95,6 +95,61 @@ To run on a different port:
 pnpm dev --port 4000
 ```
 
+## Git Branching Workflow
+
+This project follows a structured branching strategy for team collaboration.
+
+### Branch Structure
+
+- **`main`** - Production-ready code. All features must be merged here via Pull Request.
+
+### Branch Naming Convention
+
+Use the following prefixes for all feature branches:
+
+- **`feat/`** - New features or functionality
+  - Example: `feat/user-authentication`, `feat/export-reports`
+
+- **`fix/`** - Bug fixes
+  - Example: `fix/login-redirect`, `fix/email-validation`
+
+- **`ui/`** - UI-only changes (styling, layout, components)
+  - Example: `ui/dashboard-redesign`, `ui/mobile-navbar`
+
+- **`clean/`** - Code refactoring, cleanup, simplification
+  - Example: `clean/remove-unused-imports`, `clean/extract-services`
+
+### Workflow
+
+1. **Create your feature branch** from `main`:
+   ```bash
+   git checkout main
+   git pull origin main
+   git checkout -b feat/your-feature-name
+   ```
+
+2. **Work on your changes** and commit regularly
+
+3. **Before pushing**, rebase with `main` to stay up-to-date:
+   ```bash
+   git fetch origin
+   git rebase origin/main
+   ```
+
+4. **If conflicts occur during rebase**:
+   - **⚠️ DO NOT resolve conflicts immediately**
+   - **Coordinate with your teammates** to understand their changes
+   - Discuss the conflict resolution approach before proceeding
+   - This prevents accidentally overwriting someone else's work
+
+5. **Push your branch**:
+   ```bash
+   git push origin feat/your-feature-name
+   ```
+6. **Create a Pull Request** to merge into `main`
+- Never push directly to `main`
+- Always rebase with `main` before pushing your branch
+
 ## MCP Servers
 
 The following MCP servers are configured and automatically available:
