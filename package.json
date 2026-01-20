@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "dotenvx run -- sh -c 'next dev --port ${NEXT_PUBLIC_PORT:-3000}'",
+    "dev": "dotenvx run -- next dev --port 3000",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
