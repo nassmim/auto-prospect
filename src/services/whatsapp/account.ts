@@ -48,3 +48,19 @@ export async function upsertWhatsappAccount(userId: string, phoneNumber: string)
 
   return createWhatsappAccount(userId, phoneNumber);
 }
+
+export async function updateWhatsappAccountStatus(
+  userId: string,
+  status: "pending" | "connecting" | "connected" | "disconnected"
+) {
+  const result = await defaultDBClient
+    .update(whatsappAccounts)
+    .set({
+      status,
+      updatedAt: new Date(),
+    })
+    .where(eq(whatsappAccounts.accountId, userId))
+    .returning();
+
+  return result[0];
+}
