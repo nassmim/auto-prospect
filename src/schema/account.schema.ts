@@ -35,6 +35,7 @@ export const accounts = pgTable(
       using: sql`${authUid} = id`,
       withCheck: sql`${authUid} = id`,
     }),
+    // we don't do on self data because organisation can read the team members accounts
     pgPolicy("enable read for authenticated users", {
       as: "permissive",
       for: "select",
