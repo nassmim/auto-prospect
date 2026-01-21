@@ -24,3 +24,72 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Phone Input Styles */
+.phone-input-wrapper .react-tel-input .form-control {
+  width: 100%;
+  height: 48px;
+  font-size: 16px;
+  background-color: transparent;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  color: var(--foreground);
+}
+
+.phone-input-wrapper .react-tel-input .flag-dropdown {
+  background-color: transparent;
+  border: 1px solid #d1d5db;
+  border-radius: 8px 0 0 8px;
+}
+
+.phone-input-wrapper .react-tel-input .selected-flag:hover,
+.phone-input-wrapper .react-tel-input .selected-flag:focus,
+.phone-input-wrapper .react-tel-input .flag-dropdown.open .selected-flag {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.phone-input-wrapper .react-tel-input .country-list {
+  background-color: #fff;
+  color: #171717;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.phone-input-wrapper .react-tel-input .country-list .country:hover {
+  background-color: #f3f4f6;
+}
+
+.phone-input-wrapper.error .react-tel-input .form-control,
+.phone-input-wrapper.error .react-tel-input .flag-dropdown {
+  border-color: #ef4444;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .phone-input-wrapper .react-tel-input .form-control {
+    border-color: #374151;
+  }
+
+  .phone-input-wrapper .react-tel-input .flag-dropdown {
+    border-color: #374151;
+  }
+
+  .phone-input-wrapper .react-tel-input .selected-flag:hover,
+  .phone-input-wrapper .react-tel-input .selected-flag:focus,
+  .phone-input-wrapper .react-tel-input .flag-dropdown.open .selected-flag {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .phone-input-wrapper .react-tel-input .country-list {
+    background-color: #1e293b;
+    color: #ededed;
+  }
+
+  .phone-input-wrapper .react-tel-input .country-list .country:hover {
+    background-color: #334155;
+  }
+
+  .phone-input-wrapper .react-tel-input .country-list .country.highlight {
+    background-color: #334155;
+  }
+}
