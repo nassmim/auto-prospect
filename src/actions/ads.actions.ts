@@ -1,6 +1,12 @@
+"use server";
+
 import { DB_COLUMS_TO_UPDATE } from "@/constants/ads.constants";
 import { EPlatformValue } from "@/constants/enums";
-import { createDrizzleSupabaseClient, ModelType } from "@/lib/drizzle/dbClient";
+import {
+  createDrizzleSupabaseClient,
+  TDBClient,
+  TDBModel,
+} from "@/lib/drizzle/dbClient";
 import {
   adSubTypes,
   adTypes,
@@ -31,11 +37,11 @@ export const getDataId = async ({
   defaultValue = null,
   dbClient,
 }: {
-  modelName: ModelType;
+  modelName: TDBModel;
   platformValue: string | undefined | null;
   field: string;
   defaultValue?: number | null;
-  dbClient?: Awaited<ReturnType<typeof createDrizzleSupabaseClient>>;
+  dbClient?: TDBClient;
 }): Promise<number | null> => {
   if (!platformValue) return defaultValue;
 
@@ -60,7 +66,7 @@ export const getDataId = async ({
  * Enables to then do a lookup and know which value from our db must be associated to the ad
  */
 export const fetchAllReferenceData = async (
-  dbClient: Awaited<ReturnType<typeof createDrizzleSupabaseClient>>,
+  dbClient: TDBClient,
   platformField: EPlatformValue,
 ): Promise<TAdReferenceData> => {
   const [

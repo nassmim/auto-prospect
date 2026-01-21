@@ -1,7 +1,10 @@
+"use server";
+
 import {
   fetchAllReferenceData,
   setAdUpdateOnConflict,
 } from "@/actions/ads.actions";
+import { sendAlertToAdmin } from "@/actions/general.actions";
 import { EPlatformValue } from "@/constants/enums";
 import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
 import { ads as adsTable } from "@/schema";
@@ -10,10 +13,24 @@ import { customParseInt } from "@/utils/general.utils";
 import parsePhoneNumber from "libphonenumber-js";
 
 /**
+ * Handles Lobstr webhook processing
+ * This webhook sends us the results (ads) from a run
+ */
+export const handleLobstrWebhook = async (runId: string): Promise<void> => {
+  try {
+    await saveAdsFromLobstr(runId);
+  } catch (error) {
+    await sendAlertToAdmin(
+      `Error while fetching ads from Lobstr run, id: ${runId}, error: ${error}`,
+    ).catch(() => {});
+  }
+};
+
+/**
  * Gets the ads from the lobstr API and saves them in the db
  * runId is the id sent by lobstr
  */
-export const saveAdsFromLobstr = async (runId: string) => {
+const saveAdsFromLobstr = async (runId: string): Promise<void> => {
   const dbClient = await createDrizzleSupabaseClient();
 
   const fetchedResults = await getResultsFromRun(runId);
@@ -56,7 +73,7 @@ export const saveAdsFromLobstr = async (runId: string) => {
 };
 
 // Gets the results from lobstr run using their API
-const getResultsFromRun = async (runId: string) => {
+const getResultsFromRun = async (runId: string): Promise<Response> => {
   const fetchedResults = await fetch(
     `https://api.lobstr.io/v1/results?cluster=${process.env.LOBSTR_CLUSTER}&run=${runId}&page=1&page_size=10000`,
     {

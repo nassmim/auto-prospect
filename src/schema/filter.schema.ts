@@ -1,63 +1,47 @@
 import { accounts } from "@/schema/account.schema";
-import {
-  adSubTypes,
-  adTypes,
-  brands,
-  fuels,
-  zipcodes
-} from "@/schema/ad.schema";
+import { adSubTypes, adTypes, brands, zipcodes } from "@/schema/ad.schema";
 import { relations, sql } from "drizzle-orm";
-import { boolean, foreignKey, pgPolicy, pgTable, real, smallint, uuid } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  foreignKey,
+  pgPolicy,
+  pgTable,
+  real,
+  smallint,
+  uuid,
+} from "drizzle-orm/pg-core";
 import { authenticatedRole } from "drizzle-orm/supabase";
 
-export const baseFilters = pgTable('base_filters', {
-  id: uuid().defaultRandom().primaryKey(),
-  accountId: uuid("account_id").references(() => accounts.id).notNull(),
-  zipcodeId: uuid("zipcode_id").references(() => zipcodes.id).notNull(),
-  latCenter: smallint("lat_center"),
-  lngCenter: smallint("lng_center"),
-      priceMin: real("price_min").default(0),
-      mileageMin: real("mileage_min").default(0),
-      mileageMax: real("mileage_max"),
-      modelYearMin: real("model_year_min").default(2010),
-      modelYearMax: real("model_year_max"),
-      hasBeenReposted: boolean("has_been_reposted").default(false),
-      priceHasDropped: boolean("price_has_dropped").default(false),
-      isUrgent: boolean("is_urgent").default(false),
-      hasBeenBoosted: boolean("has_been_boosted").default(false),
-      isLowPrice: boolean("is_low_price").default(false),
-      priceMax: real("price_max"),
-      isActive: boolean("is_active").default(true),
-    }, 
-() => [
-  pgPolicy("enable all crud for authenticated users", {
-    as: "permissive",
-    for: "all",
-    to: authenticatedRole,
-    using: sql`true`,
-    withCheck: sql`true`,
-  }),
-]
-)
-
-export const adTypesFilters = pgTable(
-  "ad_types_filter",
+export const baseFilters = pgTable(
+  "base_filters",
   {
     id: uuid().defaultRandom().primaryKey(),
-    baseFilterId: uuid("base_filter_id").notNull(),
-    adTypeId: smallint("ad_type_id").notNull(),
+    accountId: uuid("account_id")
+      .references(() => accounts.id)
+      .notNull(),
+    adTypeId: uuid("ad_type_id")
+      .references(() => adTypes.id)
+      .notNull(),
+    zipcodeId: uuid("zipcode_id")
+      .references(() => zipcodes.id)
+      .notNull(),
+    latCenter: smallint("lat_center").notNull(),
+    lngCenter: smallint("lng_center").notNull(),
+    radius: smallint().default(0).notNull(),
+    priceMin: real("price_min").default(0),
+    mileageMin: real("mileage_min").default(0),
+    mileageMax: real("mileage_max"),
+    modelYearMin: real("model_year_min").default(2010),
+    modelYearMax: real("model_year_max"),
+    hasBeenReposted: boolean("has_been_reposted").default(false),
+    priceHasDropped: boolean("price_has_dropped").default(false),
+    isUrgent: boolean("is_urgent").default(false),
+    hasBeenBoosted: boolean("has_been_boosted").default(false),
+    isLowPrice: boolean("is_low_price").default(false),
+    priceMax: real("price_max"),
+    isActive: boolean("is_active").default(true),
   },
-  (table) => [
-    foreignKey({
-      columns: [table.baseFilterId],
-      foreignColumns: [baseFilters.id],
-      name: "base_filters_id_fk",
-    }).onDelete("cascade"),
-    foreignKey({
-      columns: [table.adTypeId],
-      foreignColumns: [adTypes.id],
-      name: "ad_types_id_fk",
-    }).onDelete("no action"),
+  () => [
     pgPolicy("enable all crud for authenticated users", {
       as: "permissive",
       for: "all",
@@ -73,7 +57,7 @@ export const adSubTypesFilters = pgTable(
   {
     id: uuid().defaultRandom().primaryKey(),
     baseFilterId: uuid("base_filter_id").notNull(),
-    adSubTypeId: smallint("ad_sub_type_id").notNull(),
+    subTypeId: smallint("sub_type_id").notNull(),
   },
   (table) => [
     foreignKey({
@@ -82,7 +66,7 @@ export const adSubTypesFilters = pgTable(
       name: "base_filters_id_fk",
     }).onDelete("cascade"),
     foreignKey({
-      columns: [table.adSubTypeId],
+      columns: [table.subTypeId],
       foreignColumns: [adSubTypes.id],
       name: "ad_sub_types_id_fk",
     }).onDelete("no action"),
@@ -124,33 +108,33 @@ export const brandsFilters = pgTable(
   ],
 );
 
-export const fuelsFilters = pgTable(
-  "fuels_filter",
-  {
-    id: uuid().defaultRandom().primaryKey(),
-    baseFilterId: uuid("base_filter_id").notNull(),
-    fuelId: smallint("fuel_id").notNull(),
-  },
-  (table) => [
-    foreignKey({
-      columns: [table.baseFilterId],
-      foreignColumns: [baseFilters.id],
-      name: "base_filters_id_fk",
-    }).onDelete("cascade"),
-    foreignKey({
-      columns: [table.fuelId],
-      foreignColumns: [fuels.id],
-      name: "fuels_id_fk",
-    }).onDelete("no action"),
-    pgPolicy("enable all crud for authenticated users", {
-      as: "permissive",
-      for: "all",
-      to: authenticatedRole,
-      using: sql`true`,
-      withCheck: sql`true`,
-    }),
-  ],
-);
+// export const fuelsFilters = pgTable(
+//   "fuels_filter",
+//   {
+//     id: uuid().defaultRandom().primaryKey(),
+//     baseFilterId: uuid("base_filter_id").notNull(),
+//     fuelId: smallint("fuel_id").notNull(),
+//   },
+//   (table) => [
+//     foreignKey({
+//       columns: [table.baseFilterId],
+//       foreignColumns: [baseFilters.id],
+//       name: "base_filters_id_fk",
+//     }).onDelete("cascade"),
+//     foreignKey({
+//       columns: [table.fuelId],
+//       foreignColumns: [fuels.id],
+//       name: "fuels_id_fk",
+//     }).onDelete("no action"),
+//     pgPolicy("enable all crud for authenticated users", {
+//       as: "permissive",
+//       for: "all",
+//       to: authenticatedRole,
+//       using: sql`true`,
+//       withCheck: sql`true`,
+//     }),
+//   ],
+// );
 
 // export const drivingLicencesFilters = pgTable(
 //   "driving_licences_filter",
@@ -273,52 +257,35 @@ export const baseFiltersRelations = relations(baseFilters, ({ one, many }) => ({
     fields: [baseFilters.zipcodeId],
     references: [zipcodes.id],
   }),
-  adTypesFilters: many(adTypesFilters),
-  adSubTypesFilters: many(adSubTypesFilters),
-  brandsFilters: many(brandsFilters),
-  fuelsFilters: many(fuelsFilters),
-}));
-
-export const adTypesFiltersRelations = relations(adTypesFilters, ({ one }) => ({
-  baseFilter: one(baseFilters, {
-    fields: [adTypesFilters.baseFilterId],
-    references: [baseFilters.id],
-  }),
-  adType: one(adTypes, {
-    fields: [adTypesFilters.adTypeId],
+  type: one(adTypes, {
+    fields: [baseFilters.adTypeId],
     references: [adTypes.id],
   }),
+  subTypes: many(adSubTypesFilters),
+  brands: many(brandsFilters),
 }));
 
-export const adSubTypesFiltersRelations = relations(adSubTypesFilters, ({ one }) => ({
-  baseFilter: one(baseFilters, {
-    fields: [adSubTypesFilters.baseFilterId],
-    references: [baseFilters.id],
+export const adSubTypesFiltersRelations = relations(
+  adSubTypesFilters,
+  ({ one }) => ({
+    base: one(baseFilters, {
+      fields: [adSubTypesFilters.baseFilterId],
+      references: [baseFilters.id],
+    }),
+    subType: one(adSubTypes, {
+      fields: [adSubTypesFilters.subTypeId],
+      references: [adSubTypes.id],
+    }),
   }),
-  adSubType: one(adSubTypes, {
-    fields: [adSubTypesFilters.adSubTypeId],
-    references: [adSubTypes.id],
-  }),
-}));
+);
 
 export const brandsFiltersRelations = relations(brandsFilters, ({ one }) => ({
-  baseFilter: one(baseFilters, {
+  base: one(baseFilters, {
     fields: [brandsFilters.baseFilterId],
     references: [baseFilters.id],
   }),
   brand: one(brands, {
     fields: [brandsFilters.brandId],
     references: [brands.id],
-  }),
-}));
-
-export const fuelsFiltersRelations = relations(fuelsFilters, ({ one }) => ({
-  baseFilter: one(baseFilters, {
-    fields: [fuelsFilters.baseFilterId],
-    references: [baseFilters.id],
-  }),
-  fuel: one(fuels, {
-    fields: [fuelsFilters.fuelId],
-    references: [fuels.id],
   }),
 }));
