@@ -18,10 +18,6 @@
 			],
 			"env": {}
 		},
-		"supabase": {
-			"type": "stdio",
-			"url": "https://mcp.supabase.com/mcp?project_ref=wrognygfjzirjtxefwam&features=docs%2Cdatabase%2Cdebugging%2Cdevelopment%2Cfunctions%2Cbranching"
-		},
 		"task-master-ai": {
 			"type": "stdio",
 			"command": "sh",

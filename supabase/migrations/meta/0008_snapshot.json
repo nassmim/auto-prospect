@@ -1,6 +1,6 @@
 {
-  "id": "1d9e99dd-af1c-4cfb-82a1-99ea1fc5e203",
-  "prevId": "8908b35a-6424-42d2-a1cb-143d6290c01f",
+  "id": "b4cb542d-444d-4933-87d5-44224999878e",
+  "prevId": "873a7d45-95af-4ef2-a9ab-16330178e9c0",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -42,12 +42,6 @@
         "phone_number": {
           "name": "phone_number",
           "type": "varchar(14)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "whatsapp_phone_number": {
-          "name": "whatsapp_phone_number",
-          "type": "varchar(20)",
           "primaryKey": false,
           "notNull": false
         }
@@ -183,8 +177,8 @@
         }
       },
       "policies": {
-        "enable read for authenticated users": {
-          "name": "enable read for authenticated users",
+        "enable read for all users": {
+          "name": "enable read for all users",
           "as": "PERMISSIVE",
           "for": "SELECT",
           "to": [
@@ -238,8 +232,8 @@
         }
       },
       "policies": {
-        "enable read for authenticated users": {
-          "name": "enable read for authenticated users",
+        "enable read for all users": {
+          "name": "enable read for all users",
           "as": "PERMISSIVE",
           "for": "SELECT",
           "to": [
@@ -298,8 +292,8 @@
           "primaryKey": false,
           "notNull": false
         },
-        "location_id": {
-          "name": "location_id",
+        "zipcode_id": {
+          "name": "zipcode_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
@@ -350,7 +344,7 @@
           "name": "price",
           "type": "double precision",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "has_been_reposted": {
           "name": "has_been_reposted",
@@ -454,7 +448,7 @@
           "name": "owner_name",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "entry_year": {
           "name": "entry_year",
@@ -497,8 +491,20 @@
           "name": "accept_salesmen",
           "type": "boolean",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "default": true
+        },
+        "lat": {
+          "name": "lat",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lng": {
+          "name": "lng",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -518,7 +524,7 @@
               "nulls": "last"
             },
             {
-              "expression": "location_id",
+              "expression": "zipcode_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -738,12 +744,12 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "ads_location_id_locations_id_fk": {
-          "name": "ads_location_id_locations_id_fk",
+        "ads_zipcode_id_zipcodes_id_fk": {
+          "name": "ads_zipcode_id_zipcodes_id_fk",
           "tableFrom": "ads",
-          "tableTo": "locations",
+          "tableTo": "zipcodes",
           "columnsFrom": [
-            "location_id"
+            "zipcode_id"
           ],
           "columnsTo": [
             "id"
@@ -844,128 +850,14 @@
         }
       },
       "policies": {
-        "enable read for authenticated users": {
-          "name": "enable read for authenticated users",
+        "enable read for all users": {
+          "name": "enable read for all users",
           "as": "PERMISSIVE",
           "for": "SELECT",
           "to": [
             "authenticated"
           ],
           "using": "true"
-        }
-      },
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.contacted_ads": {
-      "name": "contacted_ads",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "ad_id": {
-          "name": "ad_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "account_id": {
-          "name": "account_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "message_type_id": {
-          "name": "message_type_id",
-          "type": "smallint",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "date",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "contacted_ads_ad_id_ads_id_fk": {
-          "name": "contacted_ads_ad_id_ads_id_fk",
-          "tableFrom": "contacted_ads",
-          "tableTo": "ads",
-          "columnsFrom": [
-            "ad_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "contacted_ads_account_id_accounts_id_fk": {
-          "name": "contacted_ads_account_id_accounts_id_fk",
-          "tableFrom": "contacted_ads",
-          "tableTo": "accounts",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "contacted_ads_message_type_id_message_types_id_fk": {
-          "name": "contacted_ads_message_type_id_message_types_id_fk",
-          "tableFrom": "contacted_ads",
-          "tableTo": "message_types",
-          "columnsFrom": [
-            "message_type_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {
-        "enable read for authenticated users": {
-          "name": "enable read for authenticated users",
-          "as": "PERMISSIVE",
-          "for": "SELECT",
-          "to": [
-            "authenticated"
-          ],
-          "using": "true"
-        },
-        "enable update for authenticated users": {
-          "name": "enable update for authenticated users",
-          "as": "PERMISSIVE",
-          "for": "SELECT",
-          "to": [
-            "authenticated"
-          ],
-          "using": "true",
-          "withCheck": "true"
-        },
-        "enable insert for authenticated users": {
-          "name": "enable insert for authenticated users",
-          "as": "PERMISSIVE",
-          "for": "SELECT",
-          "to": [
-            "authenticated"
-          ],
-          "withCheck": "true"
         }
       },
       "checkConstraints": {},
@@ -1013,8 +905,8 @@
         }
       },
       "policies": {
-        "enable read for authenticated users": {
-          "name": "enable read for authenticated users",
+        "enable read for all users": {
+          "name": "enable read for all users",
           "as": "PERMISSIVE",
           "for": "SELECT",
           "to": [
@@ -1068,8 +960,8 @@
         }
       },
       "policies": {
-        "enable read for authenticated users": {
-          "name": "enable read for authenticated users",
+        "enable read for all users": {
+          "name": "enable read for all users",
           "as": "PERMISSIVE",
           "for": "SELECT",
           "to": [
@@ -1123,86 +1015,8 @@
         }
       },
       "policies": {
-        "enable read for authenticated users": {
-          "name": "enable read for authenticated users",
-          "as": "PERMISSIVE",
-          "for": "SELECT",
-          "to": [
-            "authenticated"
-          ],
-          "using": "true"
-        }
-      },
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.locations": {
-      "name": "locations",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "zipcode": {
-          "name": "zipcode",
-          "type": "varchar(5)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "lat": {
-          "name": "lat",
-          "type": "real",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "lng": {
-          "name": "lng",
-          "type": "real",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {
-        "locations_geo_idx": {
-          "name": "locations_geo_idx",
-          "columns": [
-            {
-              "expression": "ST_MakePoint(\"lng\", \"lat\")::geography",
-              "asc": true,
-              "isExpression": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "gist",
-          "with": {}
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "zipcode_name_unique": {
-          "name": "zipcode_name_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "name",
-            "zipcode"
-          ]
-        }
-      },
-      "policies": {
-        "enable read for authenticated users": {
-          "name": "enable read for authenticated users",
+        "enable read for all users": {
+          "name": "enable read for all users",
           "as": "PERMISSIVE",
           "for": "SELECT",
           "to": [
@@ -1256,8 +1070,8 @@
         }
       },
       "policies": {
-        "enable read for authenticated users": {
-          "name": "enable read for authenticated users",
+        "enable read for all users": {
+          "name": "enable read for all users",
           "as": "PERMISSIVE",
           "for": "SELECT",
           "to": [
@@ -1311,8 +1125,70 @@
         }
       },
       "policies": {
-        "enable read for authenticated users": {
-          "name": "enable read for authenticated users",
+        "enable read for all users": {
+          "name": "enable read for all users",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "authenticated"
+          ],
+          "using": "true"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.zipcodes": {
+      "name": "zipcodes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "zipcode": {
+          "name": "zipcode",
+          "type": "varchar(5)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lbc_value": {
+          "name": "lbc_value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lobstr_value": {
+          "name": "lobstr_value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "zipcode_name_unique": {
+          "name": "zipcode_name_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "name",
+            "zipcode"
+          ]
+        }
+      },
+      "policies": {
+        "enable read for all users": {
+          "name": "enable read for all users",
           "as": "PERMISSIVE",
           "for": "SELECT",
           "to": [
@@ -1341,8 +1217,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "sub_type_id": {
-          "name": "sub_type_id",
+        "ad_sub_type_id": {
+          "name": "ad_sub_type_id",
           "type": "smallint",
           "primaryKey": false,
           "notNull": true
@@ -1368,7 +1244,77 @@
           "tableFrom": "ad_sub_types_filter",
           "tableTo": "sub_types",
           "columnsFrom": [
-            "sub_type_id"
+            "ad_sub_type_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "enable all crud for authenticated users": {
+          "name": "enable all crud for authenticated users",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "authenticated"
+          ],
+          "using": "true",
+          "withCheck": "true"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.ad_types_filter": {
+      "name": "ad_types_filter",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "base_filter_id": {
+          "name": "base_filter_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ad_type_id": {
+          "name": "ad_type_id",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "base_filters_id_fk": {
+          "name": "base_filters_id_fk",
+          "tableFrom": "ad_types_filter",
+          "tableTo": "base_filters",
+          "columnsFrom": [
+            "base_filter_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "ad_types_id_fk": {
+          "name": "ad_types_id_fk",
+          "tableFrom": "ad_types_filter",
+          "tableTo": "ad_types",
+          "columnsFrom": [
+            "ad_type_id"
           ],
           "columnsTo": [
             "id"
@@ -1411,37 +1357,36 @@
           "primaryKey": false,
           "notNull": true
         },
-        "ad_type_id": {
-          "name": "ad_type_id",
-          "type": "smallint",
+        "zipcode_id": {
+          "name": "zipcode_id",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
-        "location_id": {
-          "name": "location_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "radiusInKm": {
-          "name": "radiusInKm",
+        "lat_center": {
+          "name": "lat_center",
           "type": "smallint",
           "primaryKey": false,
-          "notNull": true,
-          "default": 0
+          "notNull": false
+        },
+        "lng_center": {
+          "name": "lng_center",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
         },
         "price_min": {
           "name": "price_min",
           "type": "real",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "default": 0
         },
         "mileage_min": {
           "name": "mileage_min",
           "type": "real",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "default": 0
         },
         "mileage_max": {
@@ -1454,7 +1399,7 @@
           "name": "model_year_min",
           "type": "real",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "default": 2010
         },
         "model_year_max": {
@@ -1467,35 +1412,35 @@
           "name": "has_been_reposted",
           "type": "boolean",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "default": false
         },
         "price_has_dropped": {
           "name": "price_has_dropped",
           "type": "boolean",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "default": false
         },
         "is_urgent": {
           "name": "is_urgent",
           "type": "boolean",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "default": false
         },
         "has_been_boosted": {
           "name": "has_been_boosted",
           "type": "boolean",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "default": false
         },
         "is_low_price": {
           "name": "is_low_price",
           "type": "boolean",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "default": false
         },
         "price_max": {
@@ -1508,7 +1453,7 @@
           "name": "is_active",
           "type": "boolean",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "default": true
         }
       },
@@ -1527,25 +1472,12 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "base_filters_ad_type_id_ad_types_id_fk": {
-          "name": "base_filters_ad_type_id_ad_types_id_fk",
+        "base_filters_zipcode_id_zipcodes_id_fk": {
+          "name": "base_filters_zipcode_id_zipcodes_id_fk",
           "tableFrom": "base_filters",
-          "tableTo": "ad_types",
+          "tableTo": "zipcodes",
           "columnsFrom": [
-            "ad_type_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "base_filters_location_id_locations_id_fk": {
-          "name": "base_filters_location_id_locations_id_fk",
-          "tableFrom": "base_filters",
-          "tableTo": "locations",
-          "columnsFrom": [
-            "location_id"
+            "zipcode_id"
           ],
           "columnsTo": [
             "id"
@@ -1641,82 +1573,203 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.app_settings": {
-      "name": "app_settings",
+    "public.fuels_filter": {
+      "name": "fuels_filter",
       "schema": "",
       "columns": {
         "id": {
           "name": "id",
-          "type": "smallserial",
+          "type": "uuid",
           "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "base_filter_id": {
+          "name": "base_filter_id",
+          "type": "uuid",
+          "primaryKey": false,
           "notNull": true
         },
-        "sms_alerts": {
-          "name": "sms_alerts",
-          "type": "boolean",
+        "fuel_id": {
+          "name": "fuel_id",
+          "type": "smallint",
           "primaryKey": false,
-          "notNull": false,
-          "default": false
-        },
-        "slack_alerts": {
-          "name": "slack_alerts",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": true
+          "notNull": true
         }
       },
       "indexes": {},
-      "foreignKeys": {},
+      "foreignKeys": {
+        "base_filters_id_fk": {
+          "name": "base_filters_id_fk",
+          "tableFrom": "fuels_filter",
+          "tableTo": "base_filters",
+          "columnsFrom": [
+            "base_filter_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "fuels_id_fk": {
+          "name": "fuels_id_fk",
+          "tableFrom": "fuels_filter",
+          "tableTo": "fuels",
+          "columnsFrom": [
+            "fuel_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {
-        "enable read for admin users": {
-          "name": "enable read for admin users",
+        "enable all crud for authenticated users": {
+          "name": "enable all crud for authenticated users",
           "as": "PERMISSIVE",
-          "for": "SELECT",
+          "for": "ALL",
           "to": [
-            "service_role"
+            "authenticated"
           ],
-          "using": "true"
+          "using": "true",
+          "withCheck": "true"
         }
       },
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.message_types": {
-      "name": "message_types",
+    "public.organization_invitations": {
+      "name": "organization_invitations",
       "schema": "",
       "columns": {
         "id": {
           "name": "id",
-          "type": "smallserial",
+          "type": "uuid",
           "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
           "notNull": true
         },
-        "name": {
-          "name": "name",
-          "type": "message_type",
-          "typeSchema": "public",
+        "email": {
+          "name": "email",
+          "type": "varchar(320)",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'user'"
+        },
+        "token": {
+          "name": "token",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
         }
       },
-      "indexes": {},
-      "foreignKeys": {},
+      "indexes": {
+        "organization_invitations_organization_id_idx": {
+          "name": "organization_invitations_organization_id_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "organization_invitations_token_idx": {
+          "name": "organization_invitations_token_idx",
+          "columns": [
+            {
+              "expression": "token",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "organization_invitations_organization_id_fk": {
+          "name": "organization_invitations_organization_id_fk",
+          "tableFrom": "organization_invitations",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "message_types_name_unique": {
-          "name": "message_types_name_unique",
+        "organization_invitations_token_unique": {
+          "name": "organization_invitations_token_unique",
           "nullsNotDistinct": false,
           "columns": [
-            "name"
+            "token"
+          ]
+        },
+        "organization_invitations_token_key": {
+          "name": "organization_invitations_token_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "token"
           ]
         }
       },
       "policies": {
-        "enable read for authenticated users": {
-          "name": "enable read for authenticated users",
+        "enable all for organization admins": {
+          "name": "enable all for organization admins",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "authenticated"
+          ],
+          "using": "exists (\n        select 1 from organization_members om\n        where om.organization_id = \"organization_invitations\".\"organization_id\"\n        and om.account_id = (select auth.uid())\n        and om.role in ('owner', 'admin')\n        and om.joined_at is not null\n      )",
+          "withCheck": "exists (\n        select 1 from organization_members om\n        where om.organization_id = \"organization_invitations\".\"organization_id\"\n        and om.account_id = (select auth.uid())\n        and om.role in ('owner', 'admin')\n        and om.joined_at is not null\n      )"
+        },
+        "enable read by token": {
+          "name": "enable read by token",
           "as": "PERMISSIVE",
           "for": "SELECT",
           "to": [
@@ -1728,8 +1781,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.whatsapp_sessions": {
-      "name": "whatsapp_sessions",
+    "public.organization_members": {
+      "name": "organization_members",
       "schema": "",
       "columns": {
         "id": {
@@ -1739,51 +1792,88 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
         "account_id": {
           "name": "account_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
-        "credentials": {
-          "name": "credentials",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "is_connected": {
-          "name": "is_connected",
-          "type": "boolean",
+        "role": {
+          "name": "role",
+          "type": "varchar(20)",
           "primaryKey": false,
           "notNull": true,
-          "default": false
+          "default": "'user'"
         },
-        "last_connected_at": {
-          "name": "last_connected_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
+        "invited_at": {
+          "name": "invited_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
         },
-        "updated_at": {
-          "name": "updated_at",
+        "joined_at": {
+          "name": "joined_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
+          "notNull": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "organization_members_organization_id_idx": {
+          "name": "organization_members_organization_id_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "organization_members_account_id_idx": {
+          "name": "organization_members_account_id_idx",
+          "columns": [
+            {
+              "expression": "account_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
-        "whatsapp_sessions_account_id_accounts_id_fk": {
-          "name": "whatsapp_sessions_account_id_accounts_id_fk",
-          "tableFrom": "whatsapp_sessions",
+        "organization_members_organization_id_fk": {
+          "name": "organization_members_organization_id_fk",
+          "tableFrom": "organization_members",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "organization_members_account_id_fk": {
+          "name": "organization_members_account_id_fk",
+          "tableFrom": "organization_members",
           "tableTo": "accounts",
           "columnsFrom": [
             "account_id"
@@ -1797,68 +1887,147 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "whatsapp_sessions_account_id_unique": {
-          "name": "whatsapp_sessions_account_id_unique",
+        "organization_members_org_account_key": {
+          "name": "organization_members_org_account_key",
           "nullsNotDistinct": false,
           "columns": [
+            "organization_id",
             "account_id"
           ]
         }
       },
       "policies": {
-        "enable select for own session": {
-          "name": "enable select for own session",
+        "enable read for organization members": {
+          "name": "enable read for organization members",
           "as": "PERMISSIVE",
           "for": "SELECT",
           "to": [
             "authenticated"
           ],
-          "using": "(select auth.uid()) = \"whatsapp_sessions\".\"account_id\""
+          "using": "exists (\n        select 1 from organization_members om\n        where om.organization_id = \"organization_members\".\"organization_id\"\n        and om.account_id = (select auth.uid())\n        and om.joined_at is not null\n      )"
         },
-        "enable insert for own session": {
-          "name": "enable insert for own session",
+        "enable write for organization admins": {
+          "name": "enable write for organization admins",
           "as": "PERMISSIVE",
-          "for": "INSERT",
+          "for": "ALL",
           "to": [
             "authenticated"
           ],
-          "withCheck": "(select auth.uid()) = \"whatsapp_sessions\".\"account_id\""
+          "using": "exists (\n        select 1 from organization_members om\n        where om.organization_id = \"organization_members\".\"organization_id\"\n        and om.account_id = (select auth.uid())\n        and om.role in ('owner', 'admin')\n        and om.joined_at is not null\n      )",
+          "withCheck": "exists (\n        select 1 from organization_members om\n        where om.organization_id = \"organization_members\".\"organization_id\"\n        and om.account_id = (select auth.uid())\n        and om.role in ('owner', 'admin')\n        and om.joined_at is not null\n      )"
         },
-        "enable update for own session": {
-          "name": "enable update for own session",
+        "enable update for accepting invitation": {
+          "name": "enable update for accepting invitation",
           "as": "PERMISSIVE",
           "for": "UPDATE",
           "to": [
             "authenticated"
           ],
-          "using": "(select auth.uid()) = \"whatsapp_sessions\".\"account_id\"",
-          "withCheck": "(select auth.uid()) = \"whatsapp_sessions\".\"account_id\""
+          "using": "(select auth.uid()) = account_id and joined_at is null",
+          "withCheck": "(select auth.uid()) = account_id"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.organizations": {
+      "name": "organizations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
-        "enable delete for own session": {
-          "name": "enable delete for own session",
+        "name": {
+          "name": "name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "owner_id": {
+          "name": "owner_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "settings": {
+          "name": "settings",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'{}'::jsonb"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "organizations_owner_id_idx": {
+          "name": "organizations_owner_id_idx",
+          "columns": [
+            {
+              "expression": "owner_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "organizations_owner_id_fk": {
+          "name": "organizations_owner_id_fk",
+          "tableFrom": "organizations",
+          "tableTo": "accounts",
+          "columnsFrom": [
+            "owner_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "enable all for organization owner": {
+          "name": "enable all for organization owner",
           "as": "PERMISSIVE",
-          "for": "DELETE",
+          "for": "ALL",
           "to": [
             "authenticated"
           ],
-          "using": "(select auth.uid()) = \"whatsapp_sessions\".\"account_id\""
+          "using": "(select auth.uid()) = owner_id",
+          "withCheck": "(select auth.uid()) = owner_id"
+        },
+        "enable read for organization members": {
+          "name": "enable read for organization members",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "authenticated"
+          ],
+          "using": "exists (\n        select 1 from organization_members\n        where organization_members.organization_id = \"organizations\".\"id\"\n        and organization_members.account_id = (select auth.uid())\n        and organization_members.joined_at is not null\n      )"
         }
       },
       "checkConstraints": {},
       "isRLSEnabled": false
     }
   },
-  "enums": {
-    "public.message_type": {
-      "name": "message_type",
-      "schema": "public",
-      "values": [
-        "whatsappText",
-        "sms",
-        "ringlessVoice"
-      ]
-    }
-  },
+  "enums": {},
   "schemas": {},
   "sequences": {},
   "roles": {},
