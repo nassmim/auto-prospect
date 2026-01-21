@@ -1,0 +1,216 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Create Organization and Team Schema with RLS",
+        "description": "Define Drizzle schemas for organizations, memberships, and team roles to support multi-tenant team management. This builds on the existing accounts table by adding organization-level grouping.",
+        "details": "Create schemas in `src/schema/organization.schema.ts`:\n\n1. **organizations table:**\n   - `id`: uuid, primary key, default random\n   - `name`: varchar(255), required\n   - `ownerId`: uuid, FK to accounts.id, on delete cascade\n   - `settings`: jsonb (store toggles: allowReassignment, restrictVisibility, dailyReset, ignorePhonesVisible)\n   - `createdAt`: timestamp, default now\n   - RLS policies: owner can update/delete, members can read\n\n2. **organization_members table:**\n   - `id`: uuid, primary key\n   - `organizationId`: uuid, FK to organizations.id\n   - `accountId`: uuid, FK to accounts.id\n   - `role`: varchar enum ('owner', 'admin', 'user')\n   - `invitedAt`: timestamp\n   - `joinedAt`: timestamp nullable\n   - Unique constraint on (organizationId, accountId)\n   - RLS: org members can read, owner/admin can write\n\n3. **organization_invitations table:**\n   - `id`: uuid, primary key\n   - `organizationId`: uuid, FK\n   - `email`: varchar(320)\n   - `role`: varchar\n   - `token`: varchar(64) unique\n   - `expiresAt`: timestamp\n   - RLS: org admins can manage\n\nRemember to add explicit grants in migration SQL for authenticated and service_role as per project patterns in 0002_magenta_multiple_man.sql.",
+        "testStrategy": "1. Generate migration with `pnpm db:generate` and verify SQL output contains RLS policies and grants. 2. After migration applied (by human), write integration tests that verify: owner can CRUD organization, member can only read, non-member cannot access. 3. Test invitation flow creates valid token.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "Create Hunt Schema for Saved Searches",
+        "description": "Define the Hunt entity that represents a saved search configuration for automated scraping. Hunts store search criteria (URL or filters) and outreach settings.",
+        "details": "Create `src/schema/hunt.schema.ts`:\n\n1. **hunts table:**\n   - `id`: uuid, primary key, default random\n   - `organizationId`: uuid, FK to organizations.id, required\n   - `name`: varchar(255), required\n   - `status`: varchar enum ('active', 'paused'), default 'active'\n   - `searchType`: varchar enum ('url', 'builder')\n   - `searchUrl`: text nullable (for URL paste mode)\n   - `searchFilters`: jsonb nullable (for builder mode: { platform, priceMin, priceMax, mileageMin, mileageMax, brands[], location, radius })\n   - `autoRefresh`: boolean, default true\n   - `outreachSettings`: jsonb ({ leboncoin: boolean, whatsapp: boolean, sms: boolean })\n   - `templateIds`: jsonb ({ leboncoin: uuid|null, whatsapp: uuid|null, sms: uuid|null })\n   - `lastScanAt`: timestamp nullable\n   - `createdAt`: timestamp, default now\n   - `createdById`: uuid, FK to accounts.id\n   - Index on (organizationId, status) for active hunt queries\n   - RLS: org members can CRUD\n\n2. Add FK constraints with proper cascade behavior\n3. Add explicit grants for authenticated, service_role",
+        "testStrategy": "1. Verify migration generates correct SQL with indexes and RLS. 2. Test that creating a hunt with URL type stores URL correctly. 3. Test builder filters serialization/deserialization. 4. Verify org member isolation via RLS.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Extend Ads Schema into Leads with Pipeline Stages",
+        "description": "Extend the existing ads table with lead-specific fields (stage, assignment, source hunt) or create a separate leads table that references ads. This enables the Kanban pipeline functionality.",
+        "details": "Create `src/schema/lead.schema.ts` (separate from raw ads for clean separation):\n\n1. **leads table:**\n   - `id`: uuid, primary key, default random\n   - `organizationId`: uuid, FK to organizations.id\n   - `huntId`: uuid, FK to hunts.id (source hunt)\n   - `adId`: uuid, FK to ads.id (the scraped listing data)\n   - `stage`: varchar enum ('nouveau', 'contacte', 'relance', 'negociation', 'gagne', 'perdu'), default 'nouveau'\n   - `assignedToId`: uuid, FK to accounts.id, nullable\n   - `position`: integer (for ordering within stage)\n   - `createdAt`: timestamp, default now\n   - `updatedAt`: timestamp, default now\n   - Unique constraint on (organizationId, adId) - prevent duplicate leads\n   - Index on (organizationId, stage) for Kanban queries\n   - Index on (organizationId, assignedToId) for user filtering\n   - RLS: org members can access, with visibility restriction option\n\n2. **lead_notes table:**\n   - `id`: uuid, primary key\n   - `leadId`: uuid, FK to leads.id, on delete cascade\n   - `content`: text\n   - `createdById`: uuid, FK to accounts.id\n   - `createdAt`: timestamp\n   - RLS: org members can CRUD\n\n3. **lead_reminders table:**\n   - `id`: uuid, primary key\n   - `leadId`: uuid, FK to leads.id, on delete cascade\n   - `dueAt`: timestamp\n   - `note`: text nullable\n   - `completed`: boolean, default false\n   - `createdById`: uuid, FK to accounts.id\n   - RLS: org members can CRUD",
+        "testStrategy": "1. Create lead from existing ad, verify FK relationship. 2. Test stage transitions update `updatedAt`. 3. Test duplicate prevention (same ad + org). 4. Verify Kanban query performance with explain analyze on stage index.",
+        "priority": "high",
+        "dependencies": [
+          1,
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Create Message Templates Schema",
+        "description": "Define schemas for text and voice message templates with support for dynamic variables. Templates are organization-scoped and can be used for WhatsApp, SMS, and platform messaging.",
+        "details": "Create `src/schema/message-template.schema.ts`:\n\n1. **message_templates table:**\n   - `id`: uuid, primary key, default random\n   - `organizationId`: uuid, FK to organizations.id\n   - `name`: varchar(255), required\n   - `type`: varchar enum ('text', 'voice')\n   - `channel`: varchar enum ('whatsapp', 'sms', 'leboncoin') nullable (null for voice)\n   - `content`: text (for text templates, with variable placeholders like {titre_annonce})\n   - `audioUrl`: text nullable (Supabase Storage URL for voice)\n   - `audioDuration`: integer nullable (in seconds, validated 15-55)\n   - `isDefault`: boolean, default false\n   - `createdAt`: timestamp, default now\n   - `updatedAt`: timestamp, default now\n   - `createdById`: uuid, FK to accounts.id\n   - RLS: org members can CRUD\n\n2. **template_variables table (static reference):**\n   - `id`: smallserial, primary key\n   - `key`: varchar(50) unique (e.g., 'titre_annonce', 'ia_titre_annonce')\n   - `label`: varchar(100) (display name in French)\n   - `description`: text\n   - Public read access\n\n3. Seed template_variables with values from PRD:\n   - {titre_annonce} -> Original listing title\n   - {ia_titre_annonce} -> AI-cleaned title\n   - {ia_type_de_bien} -> AI-detected type\n   - {lieu_annonce} -> City/location\n   - {prix_annonce} -> Price",
+        "testStrategy": "1. Create text template with variables, verify storage. 2. Test voice template duration validation (reject <15s or >55s). 3. Verify variable substitution logic works with sample lead data. 4. Test org isolation.",
+        "priority": "medium",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Create Messages and Activity Log Schema",
+        "description": "Define schemas for tracking sent messages and lead activity history. This supports message history view and activity logging in lead detail.",
+        "details": "Create `src/schema/message.schema.ts`:\n\n1. **messages table:**\n   - `id`: uuid, primary key, default random\n   - `leadId`: uuid, FK to leads.id, on delete cascade\n   - `templateId`: uuid, FK to message_templates.id, nullable\n   - `channel`: varchar enum ('whatsapp', 'sms', 'voice', 'leboncoin')\n   - `content`: text (rendered message with variables replaced)\n   - `status`: varchar enum ('pending', 'sent', 'delivered', 'failed', 'read')\n   - `externalId`: varchar nullable (provider message ID for tracking)\n   - `sentAt`: timestamp nullable\n   - `createdAt`: timestamp, default now\n   - `sentById`: uuid, FK to accounts.id\n   - Index on (leadId, createdAt) for message history queries\n   - RLS: org members can CRUD\n\n2. **lead_activities table:**\n   - `id`: uuid, primary key, default random\n   - `leadId`: uuid, FK to leads.id, on delete cascade\n   - `type`: varchar enum ('stage_change', 'message_sent', 'assignment_change', 'note_added', 'reminder_set', 'created')\n   - `metadata`: jsonb (type-specific data: { fromStage, toStage } or { channel, status })\n   - `createdAt`: timestamp, default now\n   - `createdById`: uuid, FK to accounts.id\n   - Index on (leadId, createdAt) for timeline queries\n   - RLS: org members can read\n\n3. Create DB trigger function to auto-log activities on stage changes (optional, can be app-level)",
+        "testStrategy": "1. Send message to lead, verify message record created with correct lead association. 2. Change lead stage, verify activity logged. 3. Query message history for lead, verify chronological ordering. 4. Test status transitions.",
+        "priority": "medium",
+        "dependencies": [
+          3,
+          4
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Create Credits and Transactions Schema",
+        "description": "Define schemas for SMS and voice credit balances with transaction audit logging. Supports the credits purchase and usage tracking system.",
+        "details": "Create `src/schema/credits.schema.ts`:\n\n1. **credit_balances table:**\n   - `id`: uuid, primary key, default random\n   - `organizationId`: uuid, FK to organizations.id, unique\n   - `smsCredits`: integer, default 0\n   - `voiceCredits`: integer, default 0\n   - `updatedAt`: timestamp, default now\n   - RLS: org members can read, service_role can update\n\n2. **credit_transactions table:**\n   - `id`: uuid, primary key, default random\n   - `organizationId`: uuid, FK to organizations.id\n   - `type`: varchar enum ('purchase', 'usage', 'refund', 'adjustment')\n   - `creditType`: varchar enum ('sms', 'voice')\n   - `amount`: integer (positive for purchase, negative for usage)\n   - `balanceAfter`: integer\n   - `referenceId`: uuid nullable (message_id for usage, stripe payment_id for purchase)\n   - `metadata`: jsonb nullable (pack details, pricing info)\n   - `createdAt`: timestamp, default now\n   - `createdById`: uuid, FK to accounts.id nullable (null for system)\n   - Index on (organizationId, createdAt) for transaction history\n   - RLS: org members can read, service_role can insert\n\n3. Define credit packs as constants (from PRD):\n   ```typescript\n   export const SMS_PACKS = [\n     { credits: 100, priceEur: 15 },\n     { credits: 500, priceEur: 70 },\n     { credits: 1000, priceEur: 100 },\n     { credits: 5000, priceEur: 400 },\n   ];\n   export const VOICE_PACKS = [\n     { credits: 100, priceEur: 40 },\n     { credits: 500, priceEur: 175 },\n     { credits: 1000, priceEur: 300 },\n     { credits: 5000, priceEur: 1250 },\n   ];\n   ```",
+        "testStrategy": "1. Initialize balance for new org, verify defaults to 0. 2. Add credits via purchase transaction, verify balance updated and transaction logged. 3. Deduct credits via usage, verify atomic balance update with transaction. 4. Test insufficient balance handling.",
+        "priority": "low",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "Build App Shell Layout with Dark Theme and Navigation",
+        "description": "Create the main application layout with sidebar navigation, dark theme styling, and responsive design following the Altoscan-inspired aesthetic. This provides the shell for all authenticated pages.",
+        "details": "Create layout components in `src/app/(app)/layout.tsx`:\n\n1. **App Layout Structure:**\n   - Protected route group `(app)` with auth middleware check\n   - Sidebar navigation (collapsible on mobile)\n   - Main content area with max-width constraint\n   - Top header with user menu, org switcher\n\n2. **Sidebar Navigation Items:**\n   - Dashboard (Home icon)\n   - Hunts/Recherches (Search icon)\n   - Leads/Pipeline (Kanban icon)\n   - Templates (Message icon)\n   - Settings (Cog icon)\n   - Credits (Coins icon)\n\n3. **Styling (Tailwind CSS 4):**\n   - Dark theme as default (bg-zinc-950, text-zinc-100)\n   - Amber accent color for CTAs (amber-500/600)\n   - Card-based layout with subtle borders (border-zinc-800)\n   - Geist font already configured in root layout\n   - Consistent spacing (p-4, gap-4 patterns)\n\n4. **Files to create:**\n   - `src/app/(app)/layout.tsx` - Main layout\n   - `src/components/layout/sidebar.tsx` - Navigation sidebar\n   - `src/components/layout/header.tsx` - Top header\n   - `src/components/layout/user-menu.tsx` - User dropdown\n   - Update `globals.css` with dark theme CSS variables\n\n5. **Auth Guard:** Check Supabase session in layout, redirect to /login if not authenticated",
+        "testStrategy": "1. Verify dark theme renders correctly with Tailwind 4. 2. Test responsive behavior - sidebar collapses on mobile. 3. Verify auth redirect for unauthenticated users. 4. Navigate between all sections, verify active state styling.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "Build Dashboard Page with Stats and Hunt List",
+        "description": "Implement the dashboard homepage showing stats cards (new leads today, messages sent), active hunts list, and quick actions. Reference: 01-dashboard-stats-projects.png",
+        "details": "Create dashboard in `src/app/(app)/dashboard/page.tsx`:\n\n1. **Stats Cards Row (Server Component queries):**\n   - New leads today: COUNT from leads WHERE createdAt >= today AND organizationId = current\n   - Leads contacted: COUNT from leads WHERE stage = 'contacte'\n   - Messages sent (by channel): COUNT from messages grouped by channel\n   - Cards with icon, value, label, optional trend indicator\n\n2. **Active Hunts List:**\n   - Query hunts WHERE status = 'active' AND organizationId = current\n   - Each row shows: name, platform badge, lead count, contacted count, last scan time\n   - Status indicator (green dot for active)\n   - Quick actions: pause/resume button, edit link\n   - Empty state with CTA to create first hunt\n\n3. **Quick Actions:**\n   - Primary CTA button: \"Nouvelle Recherche\" (create hunt)\n   - Trial/subscription status banner (if applicable)\n\n4. **Components:**\n   - `src/components/dashboard/stat-card.tsx`\n   - `src/components/dashboard/hunt-list-item.tsx`\n   - Use Server Components for data fetching, Client Components only for interactivity\n\n5. **Data Fetching Pattern:**\n   ```typescript\n   const db = await createDrizzleSupabaseClient();\n   const stats = await db.rls((tx) => \n     tx.select({ count: sql<number>`count(*)` })\n       .from(leads)\n       .where(eq(leads.organizationId, orgId))\n   );\n   ```",
+        "testStrategy": "1. Verify stats queries return correct counts. 2. Test empty state renders when no hunts exist. 3. Verify hunt list updates after pause/resume action. 4. Test loading states and error handling.",
+        "priority": "high",
+        "dependencies": [
+          2,
+          3,
+          7
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 9,
+        "title": "Build Leads Pipeline with Kanban and List Views",
+        "description": "Implement the leads CRM view with draggable Kanban board (Nouveau/Contacté/Relance/Négociation/Gagné/Perdu) and table list view. Reference: 02-crm-kanban-view.png",
+        "details": "Create pipeline in `src/app/(app)/leads/page.tsx`:\n\n1. **View Toggle (Client Component):**\n   - Tab buttons: Kanban | Liste\n   - Persist preference in localStorage or URL param\n\n2. **Filter Bar:**\n   - Hunt dropdown (filter by source hunt)\n   - Assigned user dropdown (filter by assignee)\n   - Date range picker (createdAt filter)\n   - Search input (search vehicle title/description)\n   - Filters update URL search params for shareable views\n\n3. **Kanban View:**\n   - 6 columns matching stages: nouveau, contacte, relance, negociation, gagne, perdu\n   - Drag-and-drop between columns (use @dnd-kit or react-beautiful-dnd)\n   - Lead cards show: thumbnail, title, price, location, phone badge, platform badge\n   - On drop: update lead stage via Server Action, log activity\n   - Optimistic UI update for smooth DX\n\n4. **List View:**\n   - Table with sortable columns: vehicle, price, location, stage (dropdown), assigned, date\n   - Checkbox for bulk selection\n   - Bulk actions: change stage, assign to user\n   - Pagination with page size options\n\n5. **Lead Card Component:**\n   - `src/components/leads/lead-card.tsx`\n   - Click opens Lead Detail Drawer (Task 10)\n   - Show WhatsApp/phone icon if has phone number\n\n6. **Server Actions:**\n   - `updateLeadStage(leadId, newStage)` - updates stage, logs activity\n   - `bulkUpdateLeads(leadIds, updates)` - batch operations",
+        "testStrategy": "1. Drag lead between stages, verify DB update and optimistic UI. 2. Apply filters, verify correct leads shown. 3. Sort table by price, verify ordering. 4. Bulk select and update, verify all records changed.",
+        "priority": "high",
+        "dependencies": [
+          3,
+          7
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 10,
+        "title": "Build Lead Detail Drawer and Full Page Views",
+        "description": "Implement the lead detail drawer (quick access from pipeline) and full page view with complete vehicle specs, seller info, message history, and action buttons. Reference: 17-18-19-20 screenshots.",
+        "details": "Create lead detail components:\n\n1. **Lead Drawer (`src/components/leads/lead-drawer.tsx`):**\n   - Slide-in panel from right (use Headless UI Dialog or custom)\n   - Image gallery with thumbnails (ad.picture + parse pictures array)\n   - Price, location, post date display\n   - Stage selector dropdown (inline change)\n   - Assigned user selector dropdown\n   - Quick action buttons row:\n     - WhatsApp: generate wa.me/{phone}?text={template} link, open in new tab\n     - SMS: trigger send SMS modal (requires credits)\n     - Voice: trigger send voice modal (requires credits)\n     - Platform: link to open original listing URL\n   - Reminders section: date picker + add reminder button\n   - Notes section: textarea with save button, list existing notes\n   - \"Voir détails complets\" button to open full page\n\n2. **Full Page View (`src/app/(app)/leads/[id]/page.tsx`):**\n   - All drawer content plus:\n   - Complete vehicle specs grid: brand, model, year, mileage, fuel, gearbox, color, Crit'Air, seats, etc. (from ads table relations)\n   - Seller info section: name, phone, type badge (private/pro based on acceptSalesmen)\n   - Full listing description (ad.description)\n   - Message history timeline (query messages for this lead)\n   - Activity log timeline (query lead_activities)\n\n3. **Data Fetching:**\n   - Query lead with all ad relations (brand, fuel, gearbox, etc.)\n   - Parallel queries for notes, reminders, messages, activities\n\n4. **Server Actions:**\n   - `addLeadNote(leadId, content)` - creates note, logs activity\n   - `addLeadReminder(leadId, dueAt, note)` - creates reminder\n   - `sendWhatsAppMessage(leadId, templateId)` - logs message attempt (MVP: just opens link)",
+        "testStrategy": "1. Open drawer from Kanban, verify data loads correctly. 2. Change stage in drawer, verify pipeline updates. 3. Add note and reminder, verify persistence. 4. Click WhatsApp button, verify wa.me link opens with correct phone. 5. Navigate to full page, verify all specs displayed.",
+        "priority": "high",
+        "dependencies": [
+          3,
+          5,
+          9
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 11,
+        "title": "Build Hunt Creation and Edit Interface",
+        "description": "Implement hunt creation/edit form with URL paste tab and search builder tab, plus outreach settings. Reference: 14-15-16 screenshots.",
+        "details": "Create hunt forms in `src/app/(app)/hunts/`:\n\n1. **Hunt List Page (`page.tsx`):**\n   - Grid/list of all organization hunts\n   - Each card shows: name, status badge, stats (leads, contacted), platform, last scan\n   - Actions: Edit, Pause/Resume toggle, Delete with confirmation\n   - \"Nouvelle Recherche\" primary CTA button\n\n2. **Hunt Create/Edit Page (`new/page.tsx` and `[id]/edit/page.tsx`):**\n   - Name input field\n   - Tabs for search definition:\n     - **URL Paste Tab:** Text input for Leboncoin search URL, parse and validate URL format\n     - **Search Builder Tab (Phase 2, stub for MVP):** Platform select, price range inputs, mileage range, brand multi-select, location + radius\n   - Auto-refresh toggle\n   \n3. **Outreach Settings Section:**\n   - Toggle switches for each channel: Leboncoin, WhatsApp, SMS\n   - When toggle enabled, show template selector dropdown (query message_templates for org)\n   - Hint text explaining what each channel does\n\n4. **Form Handling:**\n   - Use react-hook-form or Next.js Server Actions with useFormState\n   - Validation: name required, URL or builder filters required\n   - On submit: create/update hunt record, redirect to hunts list\n\n5. **Components:**\n   - `src/components/hunts/hunt-form.tsx` - main form component\n   - `src/components/hunts/url-paste-tab.tsx`\n   - `src/components/hunts/search-builder-tab.tsx` (placeholder for Phase 2)\n   - `src/components/hunts/outreach-settings.tsx`",
+        "testStrategy": "1. Create hunt with URL, verify saved correctly. 2. Edit hunt, change name and template, verify updates. 3. Toggle pause/resume, verify status changes. 4. Test validation - submit without name shows error. 5. Delete hunt with confirmation.",
+        "priority": "medium",
+        "dependencies": [
+          2,
+          4,
+          7
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 12,
+        "title": "Build Message Templates Management Interface",
+        "description": "Implement templates list, creation form for text templates with variable insertion, and voice recording UI with duration validation. Reference: 09-12 screenshots.",
+        "details": "Create templates interface in `src/app/(app)/templates/`:\n\n1. **Templates List Page (`page.tsx`):**\n   - Tabs or filter: Text | Voice (or show all with type badge)\n   - Grid of template cards showing: name, type icon, channel badge, preview snippet\n   - Edit/Delete actions per template\n   - \"Nouveau Template\" CTA button\n\n2. **Text Template Form (`new/page.tsx` with type param):**\n   - Name input field\n   - Channel select: WhatsApp | SMS | Leboncoin\n   - Message content textarea\n   - Variable insertion toolbar: buttons for each variable ({titre_annonce}, etc.)\n   - Click variable button inserts at cursor position\n   - \"Suggérer par IA\" button (stub for Phase 2 - just shows toast \"Bientôt disponible\")\n   - Live preview panel showing rendered message with sample data\n\n3. **Voice Template Form:**\n   - Name input field\n   - Recording UI:\n     - Start/Stop recording button (use MediaRecorder API)\n     - Duration timer display during recording\n     - Validation: must be 15-55 seconds (show error if outside range)\n   - OR file upload input for pre-recorded audio\n   - Playback preview with audio player\n   - On save: upload to Supabase Storage, store URL in template\n\n4. **Components:**\n   - `src/components/templates/text-template-form.tsx`\n   - `src/components/templates/voice-template-form.tsx`\n   - `src/components/templates/variable-toolbar.tsx`\n   - `src/components/templates/audio-recorder.tsx` (Client Component)\n\n5. **Server Actions:**\n   - `createTemplate(data)` - handles text creation\n   - `uploadVoiceTemplate(formData)` - uploads audio to Storage, creates template",
+        "testStrategy": "1. Create text template with variables, verify stored. 2. Insert variable via toolbar, verify inserted at cursor. 3. Record voice <15s, verify error shown. 4. Record valid 30s voice, verify upload and save. 5. Play back saved voice template.",
+        "priority": "medium",
+        "dependencies": [
+          4,
+          7
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 13,
+        "title": "Build Settings Page with Connected Accounts and Team Management",
+        "description": "Implement settings interface with tabs for connected accounts (Leboncoin, WhatsApp QR, SMS API), filters, messages settings, and team/organization management. Reference: 03-08 screenshots.",
+        "details": "Create settings in `src/app/(app)/settings/page.tsx`:\n\n1. **Tab Navigation:** Connected Accounts | Filters | Messages | Team\n\n2. **Connected Accounts Tab:**\n   - Leboncoin: Connection status badge, \"Connecter\" button (links to Chrome extension install - MVP: just info text)\n   - WhatsApp: QR code placeholder (Phase 2 - show \"Bientôt disponible\" for direct integration)\n   - SMS Mobile API: API key input field with mask, save button\n   - Store API keys in organization settings (encrypted if possible)\n\n3. **Filters Tab:**\n   - \"Refus des professionnels\" toggle with description\n   - Examples list: \"pas d'agence\", \"particulier seulement\"\n   - Save updates organization settings\n\n4. **Messages Tab:**\n   - \"Réinitialisation quotidienne\" toggle - resets message counters at midnight\n   - \"Ignorer les annonces avec téléphone\" toggle - skip auto-messaging for phone-visible listings\n   - Save updates organization settings\n\n5. **Team Tab:**\n   - Organization name input field (editable by owner)\n   - \"Autoriser la réassignation\" toggle\n   - \"Restreindre la visibilité\" toggle\n   - Members list table: name, email, role badge, remove button (owner can't remove self)\n   - Invite form: email input, role dropdown (Utilisateur/Admin), send button\n   - Pending invitations list with resend/cancel actions\n\n6. **Server Actions:**\n   - `updateOrganizationSettings(settings)` - partial update\n   - `inviteTeamMember(email, role)` - creates invitation, sends email (stub email for MVP)\n   - `removeTeamMember(memberId)` - removes membership\n   - `cancelInvitation(invitationId)` - deletes invitation",
+        "testStrategy": "1. Change org name, verify persisted. 2. Toggle filter setting, verify saved. 3. Invite member, verify invitation created. 4. Remove member (non-owner), verify removed. 5. Try remove owner, verify blocked.",
+        "priority": "medium",
+        "dependencies": [
+          1,
+          7
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 14,
+        "title": "Integrate Hunt Scraping with Lobstr Webhook",
+        "description": "Extend existing Lobstr webhook integration to create leads from scraped ads. When a hunt triggers a scrape via Lobstr, incoming ads should be matched to the hunt and created as leads with duplicate detection.",
+        "details": "Extend `src/app/api/webhooks/lobstr/get-phones/route.ts`:\n\n1. **Webhook Enhancement:**\n   - Accept huntId in webhook payload or derive from Lobstr run metadata\n   - Current flow: saveAdsFromLobstr creates/updates ads\n   - New flow: After ads saved, create corresponding leads\n\n2. **Lead Creation Logic (`src/actions/leads.actions.ts`):**\n   ```typescript\n   export async function createLeadsFromAds(huntId: string, adIds: string[]) {\n     const db = await createDrizzleSupabaseClient();\n     const hunt = await db.admin.query.hunts.findFirst({ where: eq(hunts.id, huntId) });\n     \n     // For each ad, check if lead already exists for this org\n     const existingLeads = await db.admin.select()\n       .from(leads)\n       .where(and(\n         eq(leads.organizationId, hunt.organizationId),\n         inArray(leads.adId, adIds)\n       ));\n     \n     const existingAdIds = new Set(existingLeads.map(l => l.adId));\n     const newAdIds = adIds.filter(id => !existingAdIds.has(id));\n     \n     // Create leads for new ads only\n     if (newAdIds.length > 0) {\n       await db.admin.insert(leads).values(\n         newAdIds.map(adId => ({\n           organizationId: hunt.organizationId,\n           huntId: huntId,\n           adId: adId,\n           stage: 'nouveau',\n           position: 0\n         }))\n       );\n     }\n     \n     // Update hunt lastScanAt\n     await db.admin.update(hunts)\n       .set({ lastScanAt: new Date() })\n       .where(eq(hunts.id, huntId));\n   }\n   ```\n\n3. **Duplicate Detection:** Same ad (by adId) for same organization = skip lead creation\n\n4. **Update saveAdsFromLobstr:** Return inserted/updated ad IDs to pass to createLeadsFromAds\n\n5. **Auto-message Trigger (Stub for Phase 2):** After leads created, check hunt outreach settings and queue messages if enabled",
+        "testStrategy": "1. Trigger Lobstr webhook with sample data, verify ads AND leads created. 2. Trigger again with same ads, verify no duplicate leads. 3. Trigger with mix of new and existing, verify only new leads created. 4. Verify hunt lastScanAt updated.",
+        "priority": "high",
+        "dependencies": [
+          2,
+          3
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 15,
+        "title": "Implement WhatsApp wa.me Link Messaging (MVP)",
+        "description": "Implement MVP WhatsApp messaging by generating wa.me links with pre-filled template messages. When user clicks WhatsApp button on a lead, open the link with the phone number and rendered message template.",
+        "details": "Create WhatsApp service in `src/services/whatsapp.services.ts`:\n\n1. **Template Rendering Function:**\n   ```typescript\n   export function renderTemplate(template: string, lead: LeadWithAd): string {\n     const variables = {\n       '{titre_annonce}': lead.ad.title,\n       '{ia_titre_annonce}': cleanTitle(lead.ad.title), // remove VENDS, À VENDRE, etc.\n       '{ia_type_de_bien}': lead.ad.type?.name || 'Véhicule',\n       '{lieu_annonce}': lead.ad.zipcode?.name || '',\n       '{prix_annonce}': formatPrice(lead.ad.price),\n     };\n     \n     return Object.entries(variables).reduce(\n       (text, [key, value]) => text.replaceAll(key, value),\n       template\n     );\n   }\n   ```\n\n2. **wa.me Link Generation:**\n   ```typescript\n   export function generateWhatsAppLink(phone: string, message: string): string {\n     // Ensure phone is in international format without +\n     const cleanPhone = phone.replace(/\\D/g, '');\n     const encodedMessage = encodeURIComponent(message);\n     return `https://wa.me/${cleanPhone}?text=${encodedMessage}`;\n   }\n   ```\n\n3. **Client Component Integration:**\n   - In lead-drawer.tsx, WhatsApp button onClick:\n     - Fetch default WhatsApp template for org (or show template picker)\n     - Render template with lead data\n     - Generate wa.me link\n     - window.open(link, '_blank')\n     - Log message attempt via Server Action\n\n4. **Message Logging Server Action:**\n   ```typescript\n   'use server'\n   export async function logWhatsAppAttempt(leadId: string, templateId: string, renderedContent: string) {\n     const db = await createDrizzleSupabaseClient();\n     await db.rls((tx) => tx.insert(messages).values({\n       leadId,\n       templateId,\n       channel: 'whatsapp',\n       content: renderedContent,\n       status: 'sent', // MVP: assume sent since we opened the link\n       sentAt: new Date(),\n       sentById: getCurrentUserId(),\n     }));\n     // Also log activity\n     await logLeadActivity(leadId, 'message_sent', { channel: 'whatsapp' });\n   }\n   ```\n\n5. **UI Feedback:** Show toast \"Message WhatsApp ouvert\" after clicking",
+        "testStrategy": "1. Click WhatsApp on lead with phone, verify link opens with correct phone and message. 2. Verify template variables replaced correctly. 3. Check message logged in database. 4. Test with lead missing phone - button should be disabled or show warning.",
+        "priority": "medium",
+        "dependencies": [
+          4,
+          5,
+          10
+        ],
+        "status": "pending",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2026-01-21T02:19:33.110Z",
+      "updated": "2026-01-21T02:19:33.110Z",
+      "description": "Tasks for master context"
+    }
+  }
+}

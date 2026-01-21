@@ -140,3 +140,7 @@ as Drizzle can't be invoked from client side unless it is within a server action
 3. **Type safety**: Full TypeScript, Drizzle type-safe queries
 4. **Team sync**: Migrations in git, seed data exportable
 5. **Environment separation**: Dev/prod configs isolated with dotenvx
+
+## Task Master AI Instructions
+**Import Task Master's development workflow commands and guidelines, treat as if import is in the main CLAUDE.md file.**
+@./.taskmaster/CLAUDE.md
