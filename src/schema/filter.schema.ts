@@ -351,8 +351,12 @@ export const brandsFilters = pgTable(
 // );
 // Relations
 export const baseFiltersRelations = relations(baseFilters, ({ one, many }) => ({
-  account: one(accounts, {
-    fields: [baseFilters.accountId],
+  organization: one(organizations, {
+    fields: [baseFilters.organizationId],
+    references: [organizations.id],
+  }),
+  createdBy: one(accounts, {
+    fields: [baseFilters.createdById],
     references: [accounts.id],
   }),
   location: one(locations, {

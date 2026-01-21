@@ -1,6 +1,12 @@
 -- Extend base_filters table to support hunt (saved search) functionality
--- Add organization-level fields and hunt metadata
+-- Organization-first pattern: All hunts belong to organizations
+-- Solo users will have auto-created personal organizations (1 member)
+-- This eliminates the need for accountId FK - organization owns the data
 
+-- Drop the old accountId column (was redundant with organizationId)
+ALTER TABLE "base_filters" DROP COLUMN IF EXISTS "account_id";
+
+-- Add organization-level fields and hunt metadata
 ALTER TABLE "base_filters" ADD COLUMN "organization_id" uuid NOT NULL DEFAULT gen_random_uuid();
 ALTER TABLE "base_filters" ADD COLUMN "name" varchar(255) NOT NULL DEFAULT 'Unnamed Hunt';
 ALTER TABLE "base_filters" ADD COLUMN "status" varchar(20) NOT NULL DEFAULT 'active';

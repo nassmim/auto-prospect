@@ -12,6 +12,10 @@ import { authenticatedRole, authUid, authUsers } from "drizzle-orm/supabase";
 import { contactedAds } from "@/schema/ad.schema";
 import { whatsappSessions } from "@/schema/whatsapp-session.schema";
 
+// Accounts represent individual users (1:1 with Supabase auth.users)
+// Organization-first pattern: Every account MUST belong to at least one organization
+// Solo users get an auto-created personal organization during onboarding
+// isPersonalAccount flag helps identify which org is their "default" personal one
 export const accounts = pgTable(
   "accounts",
   {
