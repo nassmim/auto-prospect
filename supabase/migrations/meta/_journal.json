@@ -36,6 +36,20 @@
       "when": 1768999353913,
       "tag": "0004_square_vivisector",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1769004514928,
+      "tag": "0005_tricky_drax",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1769004600041,
+      "tag": "0006_legal_malcolm_colcord",
+      "breakpoints": true
     }
   ]
 }
