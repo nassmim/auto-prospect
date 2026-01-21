@@ -14,12 +14,15 @@
     "db:dump": "docker exec -it supabase_db_auto-prospect pg_dump -U postgres -d postgres --data-only --schema=auth --schema=public > supabase/seed.sql"
   },
   "dependencies": {
+    "@hapi/boom": "^10.0.1",
     "@next/env": "^16.1.1",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.90.1",
+    "@whiskeysockets/baileys": "7.0.0-rc.9",
     "drizzle-orm": "^0.45.1",
     "jwt-decode": "^4.0.0",
     "next": "16.1.1",
+    "pino": "^10.2.1",
     "postgres": "^3.4.8",
     "react": "19.2.3",
     "react-dom": "19.2.3"
