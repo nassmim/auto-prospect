@@ -1,20 +1,123 @@
 import { accounts } from "@/schema/account.schema";
-import { adSubTypes, adTypes, brands, locations } from "@/schema/ad.schema";
+import { adSubTypes, adTypes, brands, zipcodes } from "@/schema/ad.schema";
+import { organizations } from "@/schema/organization.schema";
 import { relations, sql } from "drizzle-orm";
 import {
   boolean,
   foreignKey,
-  integer,
+  index,
+  jsonb,
   pgPolicy,
   pgTable,
   real,
   smallint,
+  timestamp,
   uuid,
+  varchar,
 } from "drizzle-orm/pg-core";
-import { authenticatedRole } from "drizzle-orm/supabase";
+import { authenticatedRole, authUid } from "drizzle-orm/supabase";
 
+// Hunt status enum
+export const huntStatuses = ["active", "paused"] as const;
+export type HuntStatus = (typeof huntStatuses)[number];
+
+// Outreach settings type for JSONB field
+export type OutreachSettings = {
+  leboncoin?: boolean;
+  whatsapp?: boolean;
+  sms?: boolean;
+};
+
+// Template IDs type for JSONB field
+export type TemplateIds = {
+  leboncoin?: string | null;
+  whatsapp?: string | null;
+  sms?: string | null;
+};
+
+// Extended baseFilters to serve as "hunts" - saved search configurations
 export const baseFilters = pgTable(
   "base_filters",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    // Hunt metadata
+    organizationId: uuid("organization_id").notNull(),
+    name: varchar({ length: 255 }).notNull(),
+    status: varchar({ length: 20 }).notNull().default("active"),
+    autoRefresh: boolean("auto_refresh").notNull().default(true),
+    outreachSettings: jsonb("outreach_settings")
+      .$type<OutreachSettings>()
+      .default(sql`'{}'::jsonb`),
+    templateIds: jsonb("template_ids")
+      .$type<TemplateIds>()
+      .default(sql`'{}'::jsonb`),
+    lastScanAt: timestamp("last_scan_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .default(sql`now()`),
+    createdById: uuid("created_by_id").notNull(),
+    // Legacy fields
+    accountId: uuid("account_id")
+      .references(() => accounts.id)
+      .notNull(),
+    zipcodeId: uuid("zipcode_id")
+      .references(() => zipcodes.id)
+      .notNull(),
+    latCenter: smallint("lat_center"),
+    lngCenter: smallint("lng_center"),
+    priceMin: real("price_min").default(0),
+    mileageMin: real("mileage_min").default(0),
+    mileageMax: real("mileage_max"),
+    modelYearMin: real("model_year_min").default(2010),
+    modelYearMax: real("model_year_max"),
+    hasBeenReposted: boolean("has_been_reposted").default(false),
+    priceHasDropped: boolean("price_has_dropped").default(false),
+    isUrgent: boolean("is_urgent").default(false),
+    hasBeenBoosted: boolean("has_been_boosted").default(false),
+    isLowPrice: boolean("is_low_price").default(false),
+    priceMax: real("price_max"),
+    isActive: boolean("is_active").default(true),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.organizationId],
+      foreignColumns: [organizations.id],
+      name: "base_filters_organization_id_fk",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.createdById],
+      foreignColumns: [accounts.id],
+      name: "base_filters_created_by_id_fk",
+    }).onDelete("cascade"),
+    index("base_filters_organization_id_status_idx").on(
+      table.organizationId,
+      table.status,
+    ),
+    index("base_filters_organization_id_idx").on(table.organizationId),
+    index("base_filters_created_by_id_idx").on(table.createdById),
+    // RLS: Organization members can perform all operations on hunts in their org
+    pgPolicy("enable all for organization members", {
+      as: "permissive",
+      for: "all",
+      to: authenticatedRole,
+      using: sql`exists (
+      select 1 from organization_members om
+      where om.organization_id = ${table.organizationId}
+      and om.account_id = ${authUid}
+      and om.joined_at is not null
+    )`,
+      withCheck: sql`exists (
+      select 1 from organization_members om
+      where om.organization_id = ${table.organizationId}
+      and om.account_id = ${authUid}
+      and om.joined_at is not null
+    )`,
+    }),
+  ],
+);
+
+export const adTypesFilters = pgTable(
+  "ad_types_filter",
   {
     id: uuid().defaultRandom().primaryKey(),
     accountId: uuid("account_id")

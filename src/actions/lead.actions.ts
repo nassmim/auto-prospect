@@ -1,0 +1,195 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { db } from "@/lib/drizzle/dbClient";
+import { leads, leadNotes, type LeadStage } from "@/schema/lead.schema";
+import { eq, and, inArray } from "drizzle-orm";
+import { createClient } from "@/lib/supabase/server";
+
+/**
+ * Updates a lead's stage and logs the activity
+ * Used when dragging leads between Kanban columns
+ */
+export async function updateLeadStage(leadId: string, newStage: LeadStage) {
+  const supabase = await createClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session) {
+    throw new Error("Unauthorized");
+  }
+
+  try {
+    // Update lead stage and updatedAt timestamp
+    await db
+      .update(leads)
+      .set({
+        stage: newStage,
+        updatedAt: new Date(),
+      })
+      .where(eq(leads.id, leadId));
+
+    // Log activity as a note
+    await db.insert(leadNotes).values({
+      leadId,
+      content: `Stage changé vers: ${newStage}`,
+      createdById: session.user.id,
+    });
+
+    revalidatePath("/leads");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating lead stage:", error);
+    throw new Error("Failed to update lead stage");
+  }
+}
+
+/**
+ * Updates the position of a lead within its stage (for drag reordering)
+ */
+export async function updateLeadPosition(
+  leadId: string,
+  newPosition: number,
+  newStage?: LeadStage,
+) {
+  const supabase = await createClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session) {
+    throw new Error("Unauthorized");
+  }
+
+  try {
+    const updateData: { position: number; updatedAt: Date; stage?: string } = {
+      position: newPosition,
+      updatedAt: new Date(),
+    };
+
+    if (newStage) {
+      updateData.stage = newStage;
+    }
+
+    await db.update(leads).set(updateData).where(eq(leads.id, leadId));
+
+    revalidatePath("/leads");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating lead position:", error);
+    throw new Error("Failed to update lead position");
+  }
+}
+
+/**
+ * Bulk update multiple leads (stage, assignment, etc.)
+ * Used for bulk actions in list view
+ */
+export async function bulkUpdateLeads(
+  leadIds: string[],
+  updates: {
+    stage?: LeadStage;
+    assignedToId?: string | null;
+  },
+) {
+  const supabase = await createClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session) {
+    throw new Error("Unauthorized");
+  }
+
+  if (leadIds.length === 0) {
+    return { success: true, count: 0 };
+  }
+
+  try {
+    // Update all leads
+    const updateData: {
+      updatedAt: Date;
+      stage?: string;
+      assignedToId?: string | null;
+    } = {
+      updatedAt: new Date(),
+    };
+
+    if (updates.stage !== undefined) {
+      updateData.stage = updates.stage;
+    }
+    if (updates.assignedToId !== undefined) {
+      updateData.assignedToId = updates.assignedToId;
+    }
+
+    await db.update(leads).set(updateData).where(inArray(leads.id, leadIds));
+
+    // Log bulk action as notes for each lead
+    const noteContent = [];
+    if (updates.stage) noteContent.push(`Stage: ${updates.stage}`);
+    if (updates.assignedToId !== undefined)
+      noteContent.push(
+        `Assigné à: ${updates.assignedToId || "Non assigné"}`,
+      );
+
+    if (noteContent.length > 0) {
+      await db.insert(leadNotes).values(
+        leadIds.map((leadId) => ({
+          leadId,
+          content: `Action groupée - ${noteContent.join(", ")}`,
+          createdById: session.user.id,
+        })),
+      );
+    }
+
+    revalidatePath("/leads");
+
+    return { success: true, count: leadIds.length };
+  } catch (error) {
+    console.error("Error bulk updating leads:", error);
+    throw new Error("Failed to bulk update leads");
+  }
+}
+
+/**
+ * Assign a lead to a user
+ */
+export async function assignLead(leadId: string, userId: string | null) {
+  const supabase = await createClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session) {
+    throw new Error("Unauthorized");
+  }
+
+  try {
+    await db
+      .update(leads)
+      .set({
+        assignedToId: userId,
+        updatedAt: new Date(),
+      })
+      .where(eq(leads.id, leadId));
+
+    // Log assignment
+    await db.insert(leadNotes).values({
+      leadId,
+      content: userId
+        ? `Lead assigné à un utilisateur`
+        : `Lead non assigné`,
+      createdById: session.user.id,
+    });
+
+    revalidatePath("/leads");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error assigning lead:", error);
+    throw new Error("Failed to assign lead");
+  }
+}
