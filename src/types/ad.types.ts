@@ -410,5 +410,6 @@ export type {
   TAdWithRelations,
   TextVariableType,
   TSubscription,
-  ZipcodeType,
+  ZipcodeType
 };
+
