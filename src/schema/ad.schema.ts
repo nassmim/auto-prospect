@@ -16,7 +16,7 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
-import { anonRole, authenticatedRole } from "drizzle-orm/supabase";
+import { authenticatedRole } from "drizzle-orm/supabase";
 
 export const ads = pgTable(
   "ads",
@@ -60,8 +60,8 @@ export const ads = pgTable(
     priceMin: real("price_min"),
     priceMax: real("price_max"),
     isLowPrice: boolean("is_low_price").default(false).notNull(),
-    cylynder: smallint(),
     phoneNumber: text("phone_number"),
+    isWhatsappPhone: boolean('is_whatsapp_phone').default(false),
     ownerName: text("owner_name"),
     entryYear: smallint("entry_year"),
     hasPhone: boolean("has_phone").default(false).notNull(),
@@ -122,7 +122,7 @@ export const adTypes = pgTable(
     pgPolicy("enable read for all users", {
       as: "permissive",
       for: "select",
-      to: anonRole,
+      to: authenticatedRole,
       using: sql`true`,
     }),
   ],
@@ -144,7 +144,7 @@ export const adSubTypes = pgTable(
     pgPolicy("enable read for all users", {
       as: "permissive",
       for: "select",
-      to: anonRole,
+      to: authenticatedRole,
       using: sql`true`,
     }),
   ],
@@ -163,7 +163,7 @@ export const drivingLicences = pgTable(
     pgPolicy("enable read for all users", {
       as: "permissive",
       for: "select",
-      to: anonRole,
+      to: authenticatedRole,
       using: sql`true`,
     }),
   ],
@@ -182,7 +182,7 @@ export const gearBoxes = pgTable(
     pgPolicy("enable read for all users", {
       as: "permissive",
       for: "select",
-      to: anonRole,
+      to: authenticatedRole,
       using: sql`true`,
     }),
   ],
@@ -201,7 +201,7 @@ export const vehicleSeats = pgTable(
     pgPolicy("enable read for all users", {
       as: "permissive",
       for: "select",
-      to: anonRole,
+      to: authenticatedRole,
       using: sql`true`,
     }),
   ],
@@ -220,7 +220,7 @@ export const vehicleStates = pgTable(
     pgPolicy("enable read for all users", {
       as: "permissive",
       for: "select",
-      to: anonRole,
+      to: authenticatedRole,
       using: sql`true`,
     }),
   ],
@@ -240,7 +240,7 @@ export const zipcodes = pgTable(
     pgPolicy("enable read for all users", {
       as: "permissive",
       for: "select",
-      to: anonRole,
+      to: authenticatedRole,
       using: sql`true`,
     }),
   ],
@@ -259,7 +259,7 @@ export const brands = pgTable(
     pgPolicy("enable read for all users", {
       as: "permissive",
       for: "select",
-      to: anonRole,
+      to: authenticatedRole,
       using: sql`true`,
     }),
   ],
@@ -278,7 +278,7 @@ export const fuels = pgTable(
     pgPolicy("enable read for all users", {
       as: "permissive",
       for: "select",
-      to: anonRole,
+      to: authenticatedRole,
       using: sql`true`,
     }),
   ],
