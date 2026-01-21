@@ -80,21 +80,6 @@ import { adminDb } from '@/lib/drizzle/dbClient'
 const data = await adminDb.select().from(accounts)
 ```
 
-**Services + Server Actions pattern:**
-```typescript
-// Service: Pure query logic (accepts tx)
-export async function findProfile(tx: DrizzleClient, id: string) {
-  return await tx.query.Profile.findFirst({ where: eq(table.id, id) })
-}
-
-// Server Action: RLS wrapper
-'use server'
-export async function getProfile(id: string) {
-  const db = await createDrizzleSupabaseClient()
-  return await db.rls((tx) => findProfile(tx, id))
-}
-```
-
 ## MCP Servers
 - `filesystem` → File operations
 - `next-devtools` → Next.js debugging
@@ -118,9 +103,9 @@ supabase stop --backup # Stop DB (preserve data)
 
 ### Architecture
 - **Server Components by default**: Use `'use client'` only for: events, browser APIs, state, client libraries
-- **Services pattern**: `/src/services/` for reusable logic (DB ops, business logic)
+- **Services pattern**: `/src/services/` for reusable logic using external tools or running on server but that don't necessarily need to be server actions
+- **Utils pattern**: `/src/utils/` for reusable logic that run client side
 - **Preference order**: Services → Server Actions → API Routes (last resort)
-- **Server Actions**: Thin wrappers calling service functions (form submissions, mutations)
 
 ### Code Style
 - **Functional over classes**: Prefer functions, avoid OOP patterns

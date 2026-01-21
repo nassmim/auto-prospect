@@ -28,27 +28,30 @@ export const accounts = pgTable(
       name: "accounts_id_fk",
     }).onDelete("cascade"),    
     unique("accounts_email_key").on(table.email),
-    pgPolicy("accounts_self_update", {
+    pgPolicy("enable update for data owners", {
       as: "permissive",
       for: "update",
       to: authenticatedRole,
       using: sql`${authUid} = id`,
       withCheck: sql`${authUid} = id`,
     }),
-    pgPolicy("accounts_read", {
+    pgPolicy("enable read for authenticated users", {
       as: "permissive",
       for: "select",
       to: authenticatedRole,
+      using: sql`true`,
     }),
-    pgPolicy("create_org_account", {
+    pgPolicy("enable insert for authenticated users", {
       as: "permissive",
       for: "insert",
       to: authenticatedRole,
+      using: sql`true`,
     }),
-    pgPolicy("delete_team_account", {
+    pgPolicy("enable delete for authenticated users", {
       as: "permissive",
       for: "delete",
       to: authenticatedRole,
+      using: sql`true`,
     })
   ],
 );
