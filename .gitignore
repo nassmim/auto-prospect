@@ -62,4 +62,8 @@ node_modules/
 
 # Task files
 # tasks.json
-# tasks/ 
+# tasks/
+
+# Auto-work opt-in flag (per-branch decision)
+.claude/.auto-work-enabled
+

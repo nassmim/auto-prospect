@@ -30,7 +30,7 @@
 				"source .env.local 2>/dev/null || true && npx -y task-master-ai"
 			],
 			"env": {
-				"TASK_MASTER_TOOLS": "core"
+				"TASK_MASTER_TOOLS": "standard"
 			}
 		}
 	}

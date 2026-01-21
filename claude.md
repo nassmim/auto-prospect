@@ -118,6 +118,11 @@ as Drizzle can't be invoked from client side unless it is within a server action
 - **Comment complex logic**: Explain non-obvious business rules and edge cases (present tense, no history)
 - **TypeScript strict**: No `any`, prefer type inference, interfaces over types
 
+### Comments & Insights (Explanatory Output Style)
+- **Only comment non-obvious logic**: Skip comments for self-explanatory code (e.g., `users.map(user => user.id)`)
+- **Insight triggers**: Complex algorithms, non-standard patterns, business rules, security considerations, performance trade-offs
+- **Skip insights for**: Standard operations (map/filter/reduce), CRUD operations, simple conditionals, obvious type definitions
+
 ### Naming Conventions
 - **PascalCase**: Components, Types, Interfaces
 - **kebab-case**: Files (`user-profile.tsx`), directories (`auth-wizard/`)
