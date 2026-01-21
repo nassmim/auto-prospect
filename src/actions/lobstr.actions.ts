@@ -1,105 +1,153 @@
-export const collectAdsFromLobstr = async (req: Request, res: Response) => {
-  const runId = req.body.id as string;
+import {
+  fetchAllReferenceData,
+  setAdUpdateOnConflict,
+} from "@/actions/ads.actions";
+import { EPlatformValue } from "@/constants/enums";
+import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
+import { ads as adsTable } from "@/schema";
+import { TAdFromLobstr, TAdInsert, TAdReferenceData } from "@/types/ad.types";
+import { customParseInt } from "@/utils/general.utils";
+import parsePhoneNumber from "libphonenumber-js";
 
-  const { success, addedAds } = await saveResultsFromRun(runId);
-  if (!success) {
-    res.status(500).json({
-      message: "webhook received but ads not added",
-    });
-    return;
+/**
+ * Gets the ads from the lobstr API and saves them in the db
+ * runId is the id sent by lobstr
+ */
+export const saveAdsFromLobstr = async (runId: string) => {
+  const dbClient = await createDrizzleSupabaseClient();
+
+  const fetchedResults = await getResultsFromRun(runId);
+
+  const results = await fetchedResults.json();
+  const ads: TAdFromLobstr[] = results.data;
+
+  // Fetch all reference data so that we know which fields to use given
+  // that the ads are coming from Lobstr
+  const referenceData = await fetchAllReferenceData(
+    dbClient,
+    EPlatformValue.LOBSTR,
+  );
+
+  // for each ad, we map the platform values with the appropriate values that our db accepts
+  const getAdsData = ads.map((ad) => getAdData(ad, referenceData));
+  const adsToPersistPromise = await Promise.allSettled(getAdsData);
+
+  // This step to ensure we insert only valid objects to the db query
+  const adsToPersist = adsToPersistPromise.reduce<TAdInsert[]>(
+    (listOfAds, adPromise) => {
+      if (adPromise.status === "fulfilled" && !!adPromise.value?.typeId) {
+        listOfAds = listOfAds.concat(adPromise.value);
+      }
+      return listOfAds;
+    },
+    [],
+  );
+
+  // Insertion with update - if the id of the ad and the url
+  // (we use the url as well as a provider could have same id for different categories)
+  await dbClient.admin
+    .insert(adsTable)
+    .values(adsToPersist)
+    .onConflictDoUpdate({
+      target: [adsTable.originalAdId, adsTable.url],
+      set: setAdUpdateOnConflict,
+    })
+    .returning();
+};
+
+// Gets the results from lobstr run using their API
+const getResultsFromRun = async (runId: string) => {
+  const fetchedResults = await fetch(
+    `https://api.lobstr.io/v1/results?cluster=${process.env.LOBSTR_CLUSTER}&run=${runId}&page=1&page_size=10000`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Token ${process.env.LOBSTR_API_KEY}`,
+        "Content-Type": "application/json;charset=UTF-8",
+      },
+    },
+  );
+
+  return fetchedResults;
+};
+
+/**
+ * Gets from the ad the data that will be persisted in the db
+ */
+const getAdData = async (
+  ad: TAdFromLobstr,
+  referenceData: TAdReferenceData,
+): Promise<TAdInsert> => {
+  const { details: adDetails, more_details: adMoreDetails } = ad;
+
+  let isLowPrice = false;
+  const priceMax = customParseInt(adMoreDetails.car_price_max);
+  const priceMin = customParseInt(adMoreDetails.car_price_min);
+  if (priceMax && priceMin) {
+    const priceAmplitude = priceMax - priceMin;
+    const thirdOfPriceAmplitude = priceAmplitude / 3;
+    isLowPrice = priceMin + thirdOfPriceAmplitude > ad.price;
   }
 
-  // We get the squid as each client has its own squid
-  // and we need to get the auto sender preferences for this specific squid
-  const squidId = await getSquidFromRun(runId);
+  const adData: Partial<TAdInsert> = {
+    originalAdId: ad.annonce_id,
+    title: ad.title,
+    description: ad.description,
+    price: ad.price,
+    url: ad.url,
+    hasPhone: ad.phone ? true : false,
+    phoneNumber: parsePhoneNumber(ad.phone || "", "FR")?.number || null,
+    picture: ad.picture,
+    initialPublicationDate: new Date(ad.first_publication_date).toDateString(),
+    lastPublicationDate: new Date(ad.last_publication_date).toDateString(),
+    ownerName: ad.owner_name,
+    hasBeenBoosted: ad.is_boosted,
+    isUrgent: ad.urgent,
+    modelYear: customParseInt(adDetails["Année modèle"]),
+    entryYear: customParseInt(
+      adDetails["Date de première mise en circulation"].slice(-4),
+    ),
+    hasBeenReposted: ad.last_publication_date
+      ? ad.first_publication_date !== ad.last_publication_date
+      : false,
+    mileage: customParseInt(adDetails["Kilométrage"]),
+    priceHasDropped: adMoreDetails.old_price
+      ? ad.price < parseInt(adMoreDetails.old_price)
+      : false,
+    priceMin,
+    priceMax,
+    isLowPrice,
+    equipments: adMoreDetails.vehicle_interior_specs || null,
+    otherSpecifications: adMoreDetails.vehicle_specifications,
+    technicalInspectionYear: customParseInt(
+      adDetails["Date de fin de validité du contrôle technique"],
+    ),
+    acceptSalesmen: !ad.no_salesmen,
+    lat: customParseInt(ad.lat),
+    lng: customParseInt(ad.lng),
+  };
 
-  const autoSender: AutoSenderPreferencesTypeWithoutRelations | undefined =
-    await db.query.autoSenderPreferences.findFirst({
-      where: (table, { eq, and }) =>
-        and(eq(table.squidId, squidId), eq(table.isActive, true)),
-    });
-  if (!autoSender) {
-    res.status(404).json({
-      message: "No auto sender preferences found for this run",
-    });
-    return;
-  }
+  // lookups to get the record id in our db associated to this lobstr value
+  adData.typeId = referenceData.adTypes.get(ad.category_name) || 1;
+  adData.brandId = referenceData.brands.get(adDetails["Marque"]) || null;
+  adData.zipcodeId = referenceData.zipcodes.get(ad.postal_code) || 1;
+  adData.gearBoxId =
+    referenceData.gearBoxes.get(adDetails["Boîte de vitesse"]) || null;
+  adData.drivingLicenceId = adDetails["Permis"]
+    ? referenceData.drivingLicences.get(adDetails["Permis"]) || 1
+    : 1;
+  adData.fuelId = adDetails["Carburant"]
+    ? referenceData.fuels.get(adDetails["Carburant"]) || null
+    : null;
+  adData.vehicleSeatsId = adDetails["Nombre de place(s)"]
+    ? referenceData.vehicleSeats.get(adDetails["Nombre de place(s)"]) || null
+    : null;
+  adData.vehicleStateId = adDetails["État du véhicule"]
+    ? referenceData.vehicleStates.get(adDetails["État du véhicule"]) || 2
+    : 2;
+  adData.subtypeId = adDetails["Type de véhicule"]
+    ? referenceData.adSubTypes.get(adDetails["Type de véhicule"]) || null
+    : null;
 
-  const accountId = autoSender.accountId;
-
-  const plan = await getUserPlan(accountId);
-  if (!plan) {
-    res.status(404).json({
-      message: "No active plan found for this user.",
-    });
-    return;
-  }
-
-  let numberOfMessagesSent = 0,
-    adsToSendMessageTo: AdDataType[] = [];
-  const adsWithPhone = addedAds!.filter((ad) => ad.phoneNumber);
-
-  const matchingAds = getMatchingAds(adsWithPhone, autoSender);
-
-  // We filter the ads to only keeps the ones that have not yet received a message from the user
-  if (matchingAds.length)
-    adsToSendMessageTo = await getAdsToSendMessageTo(accountId, matchingAds);
-
-  if (
-    !adsToSendMessageTo?.length ||
-    adsToSendMessageTo.length < plan.maxAutomaticMessages
-  ) {
-    // This case can happen if the scraper did not get many new ads,
-    // in this case, we look at the database to see if some ads were not
-    // yet contacted so that we send as many messages as the user's plan allows
-    const autoSenderWithAllPreferences =
-      (await db.query.autoSenderPreferences.findFirst({
-        where: (table, { eq }) => eq(table.id, autoSender.id),
-        with: {
-          autoSenderPreferencesDepartments: true,
-          autoSenderPreferencesBrands: true,
-          autoSenderPreferencesDrivingLicences: true,
-          autoSenderPreferencesFuels: true,
-          autoSenderPreferencesVehicleSubtypes: true,
-          autoSenderPreferencesVehicleTypes: true,
-          autoSenderPreferencesZipcodes: true,
-        },
-      })) as AutoSenderPreferencesType;
-
-    const messagedAds = (await getAdsContactedByUser(
-      accountId,
-    )) as MessagedAdType[];
-
-    /* When getting the ads matching the user criteria, there was an issue due to alias naming 
-    So we first get the zipcodes from the departments selected by the user
-    */
-    const departmentsZipcodes = await getDepartmentsZipcodes(
-      autoSenderWithAllPreferences,
-    );
-
-    const previousAdsToSendMessageTo = await getMatchingAdsWithAllPreferences({
-      autoSender: autoSenderWithAllPreferences,
-      departmentsZipcodes,
-      messagedAds,
-      adsAlreadyMatched: adsToSendMessageTo,
-      limit: plan.maxAutomaticMessages - adsToSendMessageTo.length,
-    }).catch(() => []);
-    adsToSendMessageTo = [...adsToSendMessageTo, ...previousAdsToSendMessageTo];
-  }
-
-  if (adsToSendMessageTo.length) {
-    const { phoneNumberToDisplay, textVariables } =
-      await getSendingMessagesParams(accountId);
-
-    numberOfMessagesSent = await sendMessages(
-      autoSender,
-      adsToSendMessageTo,
-      phoneNumberToDisplay,
-      textVariables,
-    );
-  }
-
-  res.status(200).json({
-    message: `webhook received, ${addedAds?.length || 0} ads added and ${numberOfMessagesSent} messages sent`,
-  });
+  return adData as TAdInsert;
 };

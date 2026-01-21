@@ -1,21 +1,47 @@
 import { sql } from "drizzle-orm";
-import { boolean, date, doublePrecision, index, integer, pgPolicy, pgTable, real, serial, smallint, smallserial, text, unique, uuid, varchar } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  date,
+  doublePrecision,
+  index,
+  integer,
+  pgPolicy,
+  pgTable,
+  real,
+  serial,
+  smallint,
+  smallserial,
+  text,
+  unique,
+  uuid,
+  varchar,
+} from "drizzle-orm/pg-core";
 import { anonRole, authenticatedRole } from "drizzle-orm/supabase";
 
 export const ads = pgTable(
   "ads",
   {
     id: uuid().defaultRandom().primaryKey().notNull(),
-    typeId: smallint('type_id').references(() => adTypes.id).notNull(),
-    subtypeId: smallint("subtype_id").references(() => adSubTypes.id).notNull(),
-    drivingLicenceId: smallint("driving_licence_id").references(() => drivingLicences.id).notNull(),
-    gearBoxId: smallint("gear_box_id").references(() => gearBoxes.id).notNull(),
-    vehicleSeatsId: smallint("vehicle_seats_id").references(() => vehicleSeats.id).notNull(),
-    vehicleStateId: smallint("vehicle_state_id").references(() => vehicleStates.id).notNull(),
-    zipcodeId: integer("zipcode_id").references(() => zipcodes.id).notNull(),  
-    brandId: integer("brand_id").references(() => brands.id).notNull(),
-    fuelId: smallint("fuel_id").references(() => fuels.id).notNull(),
-    originalAdId: text("original_ad_id").notNull(),  
+    typeId: smallint("type_id")
+      .references(() => adTypes.id)
+      .notNull(),
+    subtypeId: smallint("subtype_id").references(() => adSubTypes.id),
+    drivingLicenceId: smallint("driving_licence_id").references(
+      () => drivingLicences.id,
+    ),
+    gearBoxId: smallint("gear_box_id").references(() => gearBoxes.id),
+    vehicleSeatsId: smallint("vehicle_seats_id").references(
+      () => vehicleSeats.id,
+    ),
+    vehicleStateId: smallint("vehicle_state_id").references(
+      () => vehicleStates.id,
+    ),
+    zipcodeId: integer("zipcode_id")
+      .references(() => zipcodes.id)
+      .notNull(),
+    brandId: integer("brand_id").references(() => brands.id),
+    fuelId: smallint("fuel_id").references(() => fuels.id),
+    originalAdId: text("original_ad_id").notNull(),
     url: text().notNull(),
     title: text().notNull(),
     description: text(),
@@ -40,12 +66,12 @@ export const ads = pgTable(
     entryYear: smallint("entry_year"),
     hasPhone: boolean("has_phone").default(false).notNull(),
     equipments: text(),
-    otherSpecifications: text('other_specifications'),
-    technicalInspectionYear: smallint('technical_inspection_year'),
+    otherSpecifications: text("other_specifications"),
+    technicalInspectionYear: smallint("technical_inspection_year"),
     model: text(),
-    acceptSalesmen: boolean('accept_salesmen').default(true),
+    acceptSalesmen: boolean("accept_salesmen").default(true),
     lat: smallint(),
-    lng: smallint()
+    lng: smallint(),
   },
   (table) => [
     index("ads_created_at_location_state_flags_idx").on(
@@ -83,156 +109,177 @@ export const ads = pgTable(
   ],
 );
 
-export const adTypes = pgTable('ad_types', {
-  id: smallserial().primaryKey(),
-  name: text().notNull()
-}, 
-  table => [
-    unique('type_name').on(table.name),
+export const adTypes = pgTable(
+  "ad_types",
+  {
+    id: smallserial().primaryKey(),
+    name: text().notNull(),
+    lbcValue: text("lbc_value"),
+    lobstrValue: text("lobstr_value"),
+  },
+  (table) => [
+    unique("type_name").on(table.name),
     pgPolicy("enable read for all users", {
       as: "permissive",
       for: "select",
       to: anonRole,
       using: sql`true`,
     }),
-  ]
-)
+  ],
+);
 
-export const adSubTypes = pgTable('sub_types', {
-  id: smallserial().primaryKey(),
-  adTypeId: smallint("ad_type_id").references(() => adTypes.id).notNull(),
-  name: text().notNull(),
-  lbcValue: text("lbc_value"),
-  lobstrValue: text("lobstr_value"),
-},
-  table => [
-    unique('sub_type_name').on(table.name),
+export const adSubTypes = pgTable(
+  "sub_types",
+  {
+    id: smallserial().primaryKey(),
+    adTypeId: smallint("ad_type_id")
+      .references(() => adTypes.id)
+      .notNull(),
+    name: text().notNull(),
+    lbcValue: text("lbc_value"),
+    lobstrValue: text("lobstr_value"),
+  },
+  (table) => [
+    unique("sub_type_name").on(table.name),
     pgPolicy("enable read for all users", {
       as: "permissive",
       for: "select",
       to: anonRole,
       using: sql`true`,
     }),
-  ]
-)
+  ],
+);
 
-export const drivingLicences = pgTable('driving_licences', {
-  id: smallserial().primaryKey(),
-  name: text().notNull(),
-  lbcValue: text("lbc_value"),
-  lobstrValue: text("lobstr_value"),
-},
-  table => [
-    unique('driving_licence_name').on(table.name),
+export const drivingLicences = pgTable(
+  "driving_licences",
+  {
+    id: smallserial().primaryKey(),
+    name: text().notNull(),
+    lbcValue: text("lbc_value"),
+    lobstrValue: text("lobstr_value"),
+  },
+  (table) => [
+    unique("driving_licence_name").on(table.name),
     pgPolicy("enable read for all users", {
       as: "permissive",
       for: "select",
       to: anonRole,
       using: sql`true`,
     }),
-  ]
-)
+  ],
+);
 
-export const gearBoxes = pgTable('gear_boxes', {
-  id: smallserial().primaryKey(),
-  name: text().notNull(),
-  lbcValue: text("lbc_value"),
-  lobstrValue: text("lobstr_value"),
-},
-  table => [
-    unique('gear_box_name').on(table.name),
+export const gearBoxes = pgTable(
+  "gear_boxes",
+  {
+    id: smallserial().primaryKey(),
+    name: text().notNull(),
+    lbcValue: text("lbc_value"),
+    lobstrValue: text("lobstr_value"),
+  },
+  (table) => [
+    unique("gear_box_name").on(table.name),
     pgPolicy("enable read for all users", {
       as: "permissive",
       for: "select",
       to: anonRole,
       using: sql`true`,
     }),
-  ]
-)
+  ],
+);
 
-export const vehicleSeats = pgTable('vehicle_seats', {
-  id: smallserial().primaryKey(),
-  name: text().notNull(),
-  lbcValue: text("lbc_value"),
-  lobstrValue: text("lobstr_value"),
-},
-  table => [
-    unique('vehicle_seats_name').on(table.name),
+export const vehicleSeats = pgTable(
+  "vehicle_seats",
+  {
+    id: smallserial().primaryKey(),
+    name: text().notNull(),
+    lbcValue: text("lbc_value"),
+    lobstrValue: text("lobstr_value"),
+  },
+  (table) => [
+    unique("vehicle_seats_name").on(table.name),
     pgPolicy("enable read for all users", {
       as: "permissive",
       for: "select",
       to: anonRole,
       using: sql`true`,
     }),
-  ]
-)
+  ],
+);
 
-export const vehicleStates = pgTable('vehicle_states', {
-  id: smallserial().primaryKey(),
-  name: text().notNull(),
-  lbcValue: text("lbc_value"),
-  lobstrValue: text("lobstr_value"),
-},
-  table => [
-    unique('vehicle_state_name').on(table.name),
+export const vehicleStates = pgTable(
+  "vehicle_states",
+  {
+    id: smallserial().primaryKey(),
+    name: text().notNull(),
+    lbcValue: text("lbc_value"),
+    lobstrValue: text("lobstr_value"),
+  },
+  (table) => [
+    unique("vehicle_state_name").on(table.name),
     pgPolicy("enable read for all users", {
       as: "permissive",
       for: "select",
       to: anonRole,
       using: sql`true`,
     }),
-  ]
-)
+  ],
+);
 
-export const zipcodes = pgTable('zipcodes', {
-  id: serial().primaryKey(),
-  zipcode: varchar({ length: 5 }).notNull(),
-  name: text().notNull(),
-  lbcValue: text("lbc_value"),
-  lobstrValue: text("lobstr_value"),
-},
-  table => [
-    unique('zipcode_name_unique').on(table.name, table.zipcode),
+export const zipcodes = pgTable(
+  "zipcodes",
+  {
+    id: serial().primaryKey(),
+    zipcode: varchar({ length: 5 }).notNull(),
+    name: text().notNull(),
+    lbcValue: text("lbc_value"),
+    lobstrValue: text("lobstr_value"),
+  },
+  (table) => [
+    unique("zipcode_name_unique").on(table.name, table.zipcode),
     pgPolicy("enable read for all users", {
       as: "permissive",
       for: "select",
       to: anonRole,
       using: sql`true`,
     }),
-  ]
-)
+  ],
+);
 
-export const brands = pgTable('brands', {
-  id: smallserial().primaryKey(),
-  name: text().notNull(),
-  lbcValue: text("lbc_value"),
-  lobstrValue: text("lobstr_value"),
-},
-  table => [
-    unique('brand_name').on(table.name),
+export const brands = pgTable(
+  "brands",
+  {
+    id: smallserial().primaryKey(),
+    name: text().notNull(),
+    lbcValue: text("lbc_value"),
+    lobstrValue: text("lobstr_value"),
+  },
+  (table) => [
+    unique("brand_name").on(table.name),
     pgPolicy("enable read for all users", {
       as: "permissive",
       for: "select",
       to: anonRole,
       using: sql`true`,
     }),
-  ]
-)
+  ],
+);
 
-export const fuels = pgTable('fuels', {
-  id: smallserial().primaryKey(),
-  name: text().notNull(),
-  lbcValue: text("lbc_value"),
-  lobstrValue: text("lobstr_value"),
-},
-  table => [
-    unique('fuel_name').on(table.name),
+export const fuels = pgTable(
+  "fuels",
+  {
+    id: smallserial().primaryKey(),
+    name: text().notNull(),
+    lbcValue: text("lbc_value"),
+    lobstrValue: text("lobstr_value"),
+  },
+  (table) => [
+    unique("fuel_name").on(table.name),
     pgPolicy("enable read for all users", {
       as: "permissive",
       for: "select",
       to: anonRole,
       using: sql`true`,
     }),
-  ]
-)
-
+  ],
+);

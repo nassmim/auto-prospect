@@ -19,6 +19,7 @@ const postgresClient = postgres(databaseUrl, { prepare: false })
 const config = {
   casing: "snake_case",
   schema,
+  logger: process.env.NODE_ENV === 'development' 
 } satisfies DrizzleConfig<typeof schema>;
 
 const defaultDBClient = drizzle({
@@ -36,5 +37,7 @@ async function createDrizzleSupabaseClient() {
   return createDrizzle(decode(session?.access_token ?? ""), { admin: defaultDBClient, client: defaultDBClient });
 }
 
-export { createDrizzleSupabaseClient, defaultDBClient, postgresClient };
+type ModelType = keyof typeof defaultDBClient.query;
+
+export { createDrizzleSupabaseClient, defaultDBClient, postgresClient, type ModelType };
 

@@ -136,126 +136,95 @@ type TAdFromLobstr = {
   user_id: string;
 };
 
-type AdDataToSaveType = {
+type TAdBase = {
   id: string;
-  annonce_id: string;
-  booster: boolean;
-  category_name: string;
-  description: string;
-  details: {
-    Marque: string;
-    Permis: string;
-    Couleur: string;
-    Modèle: string;
-    Carburant: string;
-    Kilométrage: string;
-    Équipements: string;
-    "Puissance DIN": string;
-    "Année modèle": string;
-    "Nombre de portes": string;
-    "Boîte de vitesse": string;
-    Caractéristiques: string;
-    "Puissance fiscale": string;
-    "Type de véhicule": string;
-    "Nombre de place(s)": string;
-    "Date de première mise en circulation": string;
-    "État du véhicule": string;
-    Cylindrée: string;
-    Type: string;
-  };
-  first_publication_date: string;
-  is_boosted: boolean;
-  last_publication_date: string;
-  more_details: {
-    old_price: string;
-    car_price_max: string;
-    car_price_min: string;
-  };
-  owner_name: string;
-  phone: string;
-  picture: string;
-  postal_code: string;
-  price: number;
-  title: string;
-  urgent: boolean;
+  originalAdId: string;
   url: string;
-};
-
-type TAd = {
-  id: string;
-  brandId: number | null;
-  priceMin: number | null;
-  hasBeenReposted: boolean;
-  priceHasDropped: boolean;
-  isUrgent: boolean;
-  hasBeenBoosted: boolean;
-  isLowPrice: boolean;
-  isOld: boolean;
-  priceMax: number | null;
-  createdAt: string | null;
-  phoneNumber: string | null;
-  drivingLicenceId: number | null;
-  fuelId: number | null;
-  vehicleStateId: number | null;
-  vehicleSubtypeId: number | null;
-  vehicleTypeId: number | null;
-  zipcodeId: number | null;
+  title: string;
   description: string | null;
-  url: string;
-  title: string;
   picture: string | null;
-  model: string | null;
   price: number | null;
+  hasBeenReposted: boolean;
+  hasBeenBoosted: boolean;
+  isUrgent: boolean;
   modelYear: number | null;
   initialPublicationDate: string;
   lastPublicationDate: string;
   mileage: number | null;
-  gearBoxId: number | null;
+  createdAt: string | null;
+  priceHasDropped: boolean;
   favourite: boolean;
-  vehicleSeatsId: number | null;
-  cylynder: number | null;
-  originalAdId: string;
+  priceMin: number | null;
+  priceMax: number | null;
+  isLowPrice: boolean;
+  phoneNumber: string | null;
   ownerName: string | null;
   entryYear: number | null;
   hasPhone: boolean;
   equipments: string | null;
-  additionalCaracteristics: string | null;
-  brand?: {
+  otherSpecifications: string | null;
+  technicalInspectionYear: number | null;
+  model: string | null;
+  acceptSalesmen: boolean;
+  lat: number | null;
+  lng: number | null;
+  cylynder: number | null;
+};
+
+type TAdWithRelations = TAdBase & {
+  type?: {
     id: number;
     name: string;
-    lobstrValue: string | null;
-    lbcValue: string | null;
   } | null;
-  fuel?: {
+  subtype?: {
     id: number;
+    adTypeId: number;
     name: string;
-    lobstrValue: string | null;
     lbcValue: string | null;
+    lobstrValue: string | null;
   } | null;
-  vehicleState?: {
+  drivingLicence?: {
     id: number;
     name: string;
-    lobstrValue: string | null;
     lbcValue: string | null;
-  } | null;
-  vehicleSubtype?: {
-    id: number;
-    name: string;
     lobstrValue: string | null;
-    lbcValue: string | null;
-    vehicleTypeId: number;
-  } | null;
-  vehicleType?: {
-    id: number;
-    name: string;
-    lobstrValue: string | null;
-    lbcValue: string | null;
   } | null;
   gearBox?: {
     id: number;
     name: string;
-    lobstrValue: string | null;
     lbcValue: string | null;
+    lobstrValue: string | null;
+  } | null;
+  vehicleSeats?: {
+    id: number;
+    name: string;
+    lbcValue: string | null;
+    lobstrValue: string | null;
+  } | null;
+  vehicleState?: {
+    id: number;
+    name: string;
+    lbcValue: string | null;
+    lobstrValue: string | null;
+  } | null;
+  zipcode?: {
+    id: number;
+    zipcode: string;
+    name: string;
+    lbcValue: string | null;
+    lobstrValue: string | null;
+  } | null;
+  brand?: {
+    id: number;
+    name: string;
+    lbcValue: string | null;
+    lobstrValue: string | null;
+  } | null;
+  fuel?: {
+    id: number;
+    name: string;
+    lbcValue: string | null;
+    lobstrValue: string | null;
   } | null;
   adMessages?: {
     baseAdId: string;
@@ -269,13 +238,28 @@ type TAd = {
   }[];
 };
 
+type TAdInsert = Omit<TAdBase, "id" | "createdAt"> & {
+  typeId: number;
+  subtypeId: number | null;
+  drivingLicenceId: number | null;
+  gearBoxId: number | null;
+  vehicleSeatsId: number | null;
+  vehicleStateId: number | null;
+  zipcodeId: number;
+  brandId: number | null;
+  fuelId: number | null;
+};
+
 type MessagedAdType = {
   id: string;
   accountId: string;
   createdAt: string;
   baseAdId: string;
   messagesNumber: number;
-  baseAd: TAd;
+  baseAd: TAdInsert & {
+    id: string;
+    createdAt: string;
+  };
 };
 
 type AutoSenderPreferencesType = {
@@ -402,11 +386,29 @@ type TSubscription =
     }
   | undefined;
 
-export type {
-  AdDataToSaveType, AutoSenderPreferencesType,
-  AutoSenderPreferencesTypeWithoutRelations,
-  GeneralParametersType,
-  MessagedAdType, TAd, TAdFromLobstr, TextVariableType, TSubscription,
-  ZipcodeType
+type TAdReferenceData = {
+  adTypes: Map<string, number>;
+  adSubTypes: Map<string, number>;
+  brands: Map<string, number>;
+  zipcodes: Map<string, number>;
+  gearBoxes: Map<string, number>;
+  drivingLicences: Map<string, number>;
+  fuels: Map<string, number>;
+  vehicleSeats: Map<string, number>;
+  vehicleStates: Map<string, number>;
 };
 
+export type {
+  AutoSenderPreferencesType,
+  AutoSenderPreferencesTypeWithoutRelations,
+  GeneralParametersType,
+  MessagedAdType,
+  TAdBase,
+  TAdFromLobstr,
+  TAdInsert,
+  TAdReferenceData,
+  TAdWithRelations,
+  TextVariableType,
+  TSubscription,
+  ZipcodeType,
+};

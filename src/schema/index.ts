@@ -1,3 +1,3 @@
 export * from "@/schema/account.schema";
-export * from "@/schema/ad.schema.ts";
+export * from "@/schema/ad.schema";
 
