@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { sql, relations } from "drizzle-orm";
 import {
   boolean,
   date,
@@ -283,3 +283,84 @@ export const fuels = pgTable(
     }),
   ],
 );
+
+// Relations
+export const adsRelations = relations(ads, ({ one }) => ({
+  type: one(adTypes, {
+    fields: [ads.typeId],
+    references: [adTypes.id],
+  }),
+  subtype: one(adSubTypes, {
+    fields: [ads.subtypeId],
+    references: [adSubTypes.id],
+  }),
+  drivingLicence: one(drivingLicences, {
+    fields: [ads.drivingLicenceId],
+    references: [drivingLicences.id],
+  }),
+  gearBox: one(gearBoxes, {
+    fields: [ads.gearBoxId],
+    references: [gearBoxes.id],
+  }),
+  vehicleSeats: one(vehicleSeats, {
+    fields: [ads.vehicleSeatsId],
+    references: [vehicleSeats.id],
+  }),
+  vehicleState: one(vehicleStates, {
+    fields: [ads.vehicleStateId],
+    references: [vehicleStates.id],
+  }),
+  zipcode: one(zipcodes, {
+    fields: [ads.zipcodeId],
+    references: [zipcodes.id],
+  }),
+  brand: one(brands, {
+    fields: [ads.brandId],
+    references: [brands.id],
+  }),
+  fuel: one(fuels, {
+    fields: [ads.fuelId],
+    references: [fuels.id],
+  }),
+}));
+
+export const adTypesRelations = relations(adTypes, ({ many }) => ({
+  ads: many(ads),
+  subTypes: many(adSubTypes),
+}));
+
+export const adSubTypesRelations = relations(adSubTypes, ({ one, many }) => ({
+  adType: one(adTypes, {
+    fields: [adSubTypes.adTypeId],
+    references: [adTypes.id],
+  }),
+  ads: many(ads),
+}));
+
+export const drivingLicencesRelations = relations(drivingLicences, ({ many }) => ({
+  ads: many(ads),
+}));
+
+export const gearBoxesRelations = relations(gearBoxes, ({ many }) => ({
+  ads: many(ads),
+}));
+
+export const vehicleSeatsRelations = relations(vehicleSeats, ({ many }) => ({
+  ads: many(ads),
+}));
+
+export const vehicleStatesRelations = relations(vehicleStates, ({ many }) => ({
+  ads: many(ads),
+}));
+
+export const zipcodesRelations = relations(zipcodes, ({ many }) => ({
+  ads: many(ads),
+}));
+
+export const brandsRelations = relations(brands, ({ many }) => ({
+  ads: many(ads),
+}));
+
+export const fuelsRelations = relations(fuels, ({ many }) => ({
+  ads: many(ads),
+}));
