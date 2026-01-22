@@ -210,3 +210,81 @@ export async function assignLead(leadId: string, userId: string | null) {
     throw new Error("Failed to assign lead");
   }
 }
+
+/**
+ * Fetch complete lead details with all relations
+ * Used by lead drawer and full page view
+ */
+export async function getLeadDetails(leadId: string) {
+  const supabase = await createClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session) {
+    throw new Error("Unauthorized");
+  }
+
+  const dbClient = await createDrizzleSupabaseClient();
+
+  try {
+    // Fetch lead with all ad relations
+    const leadData = await dbClient.rls(async (tx) => {
+      return tx.query.leads.findFirst({
+        where: eq(leads.id, leadId),
+        with: {
+          ad: {
+            with: {
+              brand: true,
+              fuel: true,
+              gearBox: true,
+              location: true,
+              type: true,
+              subtype: true,
+              vehicleState: true,
+              vehicleSeats: true,
+              drivingLicence: true,
+            },
+          },
+          assignedTo: {
+            columns: {
+              id: true,
+              name: true,
+            },
+          },
+          notes: {
+            with: {
+              createdBy: {
+                columns: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+            orderBy: (notes, { desc }) => [desc(notes.createdAt)],
+          },
+          reminders: {
+            with: {
+              createdBy: {
+                columns: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+            orderBy: (reminders, { asc }) => [asc(reminders.dueAt)],
+          },
+        },
+      });
+    });
+
+    if (!leadData) {
+      throw new Error("Lead not found");
+    }
+
+    return leadData;
+  } catch (error) {
+    console.error("Error fetching lead details:", error);
+    throw new Error("Failed to fetch lead details");
+  }
+}

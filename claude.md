@@ -112,6 +112,10 @@ const dbClient = await createDrizzleSupabaseClient()
 - Local dev: `pnpm supabase:start` (uses dotenvx to load all files)
 - Dev server: `pnpm dev` (port 3000 default)
 
+## Environment Setup
+When committing, be concise in the description. No need to indicate who is the 
+co-author like "Co-Authored-By:"
+
 ## Key Patterns
 
 ### Auth Flow
