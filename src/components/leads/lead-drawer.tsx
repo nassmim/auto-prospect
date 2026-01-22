@@ -9,8 +9,11 @@ import {
   getOrganizationMembers,
   getDefaultWhatsAppTemplate,
   logWhatsAppMessage,
+  addLeadNote,
+  addLeadReminder,
+  deleteLeadReminder,
 } from "@/actions/lead.actions";
-import { formatDistance } from "date-fns";
+import { formatDistance, format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { leadStages, type LeadStage } from "@/schema/lead.schema";
 import { Dropdown } from "@/components/ui/dropdown";
@@ -54,6 +57,17 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isSendingWhatsApp, setIsSendingWhatsApp] = useState(false);
   const [isPending, startTransition] = useTransition();
+
+  // Notes form state
+  const [noteContent, setNoteContent] = useState("");
+  const [isSavingNote, setIsSavingNote] = useState(false);
+  const [noteError, setNoteError] = useState<string | null>(null);
+
+  // Reminders form state
+  const [reminderDueAt, setReminderDueAt] = useState("");
+  const [reminderNote, setReminderNote] = useState("");
+  const [isSavingReminder, setIsSavingReminder] = useState(false);
+  const [reminderError, setReminderError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!leadId) {
@@ -152,6 +166,82 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
       alert("Erreur lors de l'envoi du message WhatsApp");
     } finally {
       setIsSendingWhatsApp(false);
+    }
+  };
+
+  const handleAddNote = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!lead || !noteContent.trim() || isSavingNote) return;
+
+    setIsSavingNote(true);
+    setNoteError(null);
+
+    try {
+      await addLeadNote(lead.id, noteContent);
+
+      // Reload lead details to get updated notes
+      const updatedLead = await getLeadDetails(lead.id);
+      setLead(updatedLead);
+
+      // Clear form
+      setNoteContent("");
+    } catch (err) {
+      setNoteError(err instanceof Error ? err.message : "Failed to add note");
+    } finally {
+      setIsSavingNote(false);
+    }
+  };
+
+  const handleAddReminder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!lead || !reminderDueAt || isSavingReminder) return;
+
+    setIsSavingReminder(true);
+    setReminderError(null);
+
+    try {
+      const dueAt = new Date(reminderDueAt);
+
+      if (dueAt <= new Date()) {
+        setReminderError("La date doit être dans le futur");
+        setIsSavingReminder(false);
+        return;
+      }
+
+      await addLeadReminder(lead.id, dueAt, reminderNote);
+
+      // Reload lead details to get updated reminders
+      const updatedLead = await getLeadDetails(lead.id);
+      setLead(updatedLead);
+
+      // Clear form
+      setReminderDueAt("");
+      setReminderNote("");
+    } catch (err) {
+      setReminderError(
+        err instanceof Error ? err.message : "Failed to add reminder",
+      );
+    } finally {
+      setIsSavingReminder(false);
+    }
+  };
+
+  const handleDeleteReminder = async (reminderId: string) => {
+    if (!lead) return;
+
+    try {
+      await deleteLeadReminder(reminderId);
+
+      // Optimistic update - remove from UI
+      setLead({
+        ...lead,
+        reminders: lead.reminders.filter((r) => r.id !== reminderId),
+      });
+    } catch (err) {
+      console.error("Failed to delete reminder:", err);
+      // Reload on error
+      const updatedLead = await getLeadDetails(lead.id);
+      setLead(updatedLead);
     }
   };
 
@@ -556,11 +646,34 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
               </section>
 
               {/* Notes Section */}
-              {lead.notes && lead.notes.length > 0 && (
-                <section className="space-y-3">
-                  <h4 className="text-sm font-semibold uppercase tracking-wider text-zinc-500">
-                    Notes ({lead.notes.length})
-                  </h4>
+              <section className="space-y-3">
+                <h4 className="text-sm font-semibold uppercase tracking-wider text-zinc-500">
+                  Notes
+                </h4>
+
+                {/* Add Note Form */}
+                <form onSubmit={handleAddNote} className="space-y-2">
+                  <textarea
+                    value={noteContent}
+                    onChange={(e) => setNoteContent(e.target.value)}
+                    placeholder="Ajouter une note..."
+                    rows={3}
+                    className="w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-200 placeholder-zinc-500 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                  />
+                  {noteError && (
+                    <p className="text-xs text-red-400">{noteError}</p>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={!noteContent.trim() || isSavingNote}
+                    className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isSavingNote ? "Enregistrement..." : "Sauvegarder"}
+                  </button>
+                </form>
+
+                {/* Notes List */}
+                {lead.notes && lead.notes.length > 0 && (
                   <div className="space-y-2">
                     {lead.notes.map((note) => (
                       <div
@@ -582,8 +695,129 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
                       </div>
                     ))}
                   </div>
-                </section>
-              )}
+                )}
+              </section>
+
+              {/* Reminders Section */}
+              <section className="space-y-3">
+                <h4 className="text-sm font-semibold uppercase tracking-wider text-zinc-500">
+                  Rappels
+                </h4>
+
+                {/* Add Reminder Form */}
+                <form onSubmit={handleAddReminder} className="space-y-2">
+                  <div>
+                    <label
+                      htmlFor="reminderDueAt"
+                      className="mb-1 block text-xs text-zinc-400"
+                    >
+                      Date et heure
+                    </label>
+                    <input
+                      id="reminderDueAt"
+                      type="datetime-local"
+                      value={reminderDueAt}
+                      onChange={(e) => setReminderDueAt(e.target.value)}
+                      className="w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-200 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="reminderNote"
+                      className="mb-1 block text-xs text-zinc-400"
+                    >
+                      Note (optionnel)
+                    </label>
+                    <textarea
+                      id="reminderNote"
+                      value={reminderNote}
+                      onChange={(e) => setReminderNote(e.target.value)}
+                      placeholder="Note pour le rappel..."
+                      rows={2}
+                      className="w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-200 placeholder-zinc-500 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    />
+                  </div>
+                  {reminderError && (
+                    <p className="text-xs text-red-400">{reminderError}</p>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={!reminderDueAt || isSavingReminder}
+                    className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isSavingReminder ? "Ajout..." : "Ajouter"}
+                  </button>
+                </form>
+
+                {/* Reminders List */}
+                {lead.reminders && lead.reminders.length > 0 && (
+                  <div className="space-y-2">
+                    {lead.reminders.map((reminder) => (
+                      <div
+                        key={reminder.id}
+                        className="flex items-start justify-between rounded-lg border border-zinc-800/50 bg-zinc-900/50 p-3"
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 text-sm font-medium text-zinc-200">
+                            <svg
+                              className="h-4 w-4 text-amber-500"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                              />
+                            </svg>
+                            <span>
+                              {format(
+                                new Date(reminder.dueAt),
+                                "dd MMM yyyy, HH:mm",
+                                { locale: fr },
+                              )}
+                            </span>
+                          </div>
+                          {reminder.note && (
+                            <p className="mt-1 text-sm text-zinc-400">
+                              {reminder.note}
+                            </p>
+                          )}
+                          <p className="mt-1 text-xs text-zinc-500">
+                            {formatDistance(
+                              new Date(reminder.dueAt),
+                              new Date(),
+                              { addSuffix: true, locale: fr },
+                            )}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteReminder(reminder.id)}
+                          className="ml-2 rounded p-1 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-red-400"
+                          aria-label="Supprimer le rappel"
+                        >
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
 
               {/* View Full Details Button */}
               <a

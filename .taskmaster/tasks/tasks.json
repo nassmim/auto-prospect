@@ -315,9 +315,10 @@
               1
             ],
             "details": "Create notes section with textarea input (placeholder: 'Ajouter une note...'), 'Sauvegarder' button, and list of existing notes sorted by createdAt DESC. Each note displays content, author name + avatar, and timestamp (relative format like '2 hours ago'). Implement server action `addLeadNote(leadId, content)` that inserts into lead_notes table with organizationId, leadId, createdById (current user), content, and logs activity in lead_activities. Create reminders section with date-time picker component (use react-day-picker or similar), optional note textarea, and 'Ajouter' button. Display list of upcoming reminders sorted by dueAt ASC, each showing due date/time, note, and delete icon. Implement server action `addLeadReminder(leadId, dueAt, note)` that inserts into lead_reminders table and creates notification. Add validation: notes require non-empty content, reminders require future dueAt. Include optimistic UI updates for instant feedback.",
-            "status": "pending",
+            "status": "in-progress",
             "testStrategy": "1. Add note with content, verify it appears in list immediately and persists after refresh. 2. Verify note shows correct author name and timestamp. 3. Create reminder with date picker, verify it saves and displays in list. 4. Test validation - submit empty note shows error, past date for reminder shows error. 5. Delete reminder, verify it removes from database and UI. 6. Check lead_activities table contains entries for note and reminder creation.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-01-22T16:58:29.863Z"
           },
           {
             "id": 5,
@@ -335,7 +336,7 @@
             "parentId": "undefined"
           }
         ],
-        "updatedAt": "2026-01-22T16:27:49.148Z"
+        "updatedAt": "2026-01-22T16:58:29.863Z"
       },
       {
         "id": "11",
@@ -414,7 +415,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-22T16:27:49.149Z",
+      "lastModified": "2026-01-22T16:58:29.864Z",
       "taskCount": 15,
       "completedCount": 11,
       "tags": [

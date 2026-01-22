@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
-import { leads, leadNotes, type LeadStage } from "@/schema/lead.schema";
+import { leads, leadNotes, leadReminders, type LeadStage } from "@/schema/lead.schema";
 import { organizationMembers } from "@/schema/organization.schema";
 import { accounts } from "@/schema/account.schema";
 import { messages, type MessageChannel } from "@/schema/message.schema";
@@ -446,5 +446,123 @@ export async function logWhatsAppMessage(
   } catch (error) {
     console.error("Error logging WhatsApp message:", error);
     throw new Error("Failed to log WhatsApp message");
+  }
+}
+
+/**
+ * Add a note to a lead
+ */
+export async function addLeadNote(leadId: string, content: string) {
+  const supabase = await createClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session) {
+    throw new Error("Unauthorized");
+  }
+
+  if (!content.trim()) {
+    throw new Error("Note content cannot be empty");
+  }
+
+  const dbClient = await createDrizzleSupabaseClient();
+
+  try {
+    const note = await dbClient.rls(async (tx) => {
+      const [newNote] = await tx
+        .insert(leadNotes)
+        .values({
+          leadId,
+          content: content.trim(),
+          createdById: session.user.id,
+        })
+        .returning();
+
+      return newNote;
+    });
+
+    revalidatePath(`/leads/${leadId}`);
+
+    return { success: true, note };
+  } catch (error) {
+    console.error("Error adding lead note:", error);
+    throw new Error("Failed to add note");
+  }
+}
+
+/**
+ * Add a reminder for a lead
+ */
+export async function addLeadReminder(
+  leadId: string,
+  dueAt: Date,
+  note?: string,
+) {
+  const supabase = await createClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session) {
+    throw new Error("Unauthorized");
+  }
+
+  if (dueAt <= new Date()) {
+    throw new Error("Reminder must be scheduled for a future date");
+  }
+
+  const dbClient = await createDrizzleSupabaseClient();
+
+  try {
+    const reminder = await dbClient.rls(async (tx) => {
+      const [newReminder] = await tx
+        .insert(leadReminders)
+        .values({
+          leadId,
+          dueAt,
+          note: note?.trim() || null,
+          createdById: session.user.id,
+        })
+        .returning();
+
+      return newReminder;
+    });
+
+    revalidatePath(`/leads/${leadId}`);
+
+    return { success: true, reminder };
+  } catch (error) {
+    console.error("Error adding lead reminder:", error);
+    throw new Error("Failed to add reminder");
+  }
+}
+
+/**
+ * Delete a reminder
+ */
+export async function deleteLeadReminder(reminderId: string) {
+  const supabase = await createClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session) {
+    throw new Error("Unauthorized");
+  }
+
+  const dbClient = await createDrizzleSupabaseClient();
+
+  try {
+    await dbClient.rls(async (tx) => {
+      await tx.delete(leadReminders).where(eq(leadReminders.id, reminderId));
+    });
+
+    revalidatePath("/leads");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting reminder:", error);
+    throw new Error("Failed to delete reminder");
   }
 }

@@ -16,6 +16,23 @@
 - Resist the urge to add "helpful" extras unless explicitly requested
 - Complete the specific task, then stop and wait for next instruction
 
+## ⚡ AUTO-WORK MODE: Context Management
+
+**WHEN IN AUTO-WORK MODE ONLY:**
+
+**MANDATORY: Start EVERY task/subtask with:**
+```
+"🤖 AUTO-WORK MODE: Working on [task/subtask description]"
+"Context: [current]% used - will compact at 70%+"
+```
+
+**Context Window Rules:**
+- **Monitor context usage at the start of each task/subtask**
+- **At 70%+ context usage**: IMMEDIATELY run `/compact` before continuing
+- **Never** let context exceed 80% without compacting
+- **Always** compact between major task transitions
+- This applies ONLY in auto-work mode, not regular interactive sessions
+
 ## Tech Stack
 - **Next.js 16.1.1** (App Router) + React 19 + TypeScript
 - **Database**: Supabase (PostgreSQL) + Drizzle ORM
