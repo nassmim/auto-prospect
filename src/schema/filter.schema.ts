@@ -362,7 +362,7 @@ export const baseFiltersRelations = relations(baseFilters, ({ one, many }) => ({
     references: [locations.id],
   }),
   type: one(adTypes, {
-    fields: [baseFilters.],
+    fields: [baseFilters.adTypeId],
     references: [adTypes.id],
   }),
   subTypes: many(adSubTypesFilters),

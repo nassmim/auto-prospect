@@ -1,6 +1,6 @@
 {
-  "id": "eb4434a5-e9b3-49ef-bfdb-d82cf5c809c7",
-  "prevId": "1d9e99dd-af1c-4cfb-82a1-99ea1fc5e203",
+  "id": "98c0cc76-1f8a-455b-8beb-f894a597b217",
+  "prevId": "b4cb542d-444d-4933-87d5-44224999878e",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -44,6 +44,7 @@
           "type": "varchar(14)",
           "primaryKey": false,
           "notNull": false
+<<<<<<< HEAD
         },
         "whatsapp_phone_number": {
           "name": "whatsapp_phone_number",
@@ -56,6 +57,8 @@
           "type": "varchar(500)",
           "primaryKey": false,
           "notNull": false
+=======
+>>>>>>> 69ace8a (adding grants to tables)
         }
       },
       "indexes": {},
@@ -63,6 +66,7 @@
         "accounts_id_fk": {
           "name": "accounts_id_fk",
           "tableFrom": "accounts",
+<<<<<<< HEAD
           "tableTo": "users",
           "schemaTo": "auth",
           "columnsFrom": [
@@ -73,16 +77,35 @@
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
+=======
+          "columnsFrom": [
+            "id"
+          ],
+          "tableTo": "users",
+          "schemaTo": "auth",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+>>>>>>> 69ace8a (adding grants to tables)
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "accounts_email_key": {
           "name": "accounts_email_key",
+<<<<<<< HEAD
           "nullsNotDistinct": false,
           "columns": [
             "email"
           ]
+=======
+          "columns": [
+            "email"
+          ],
+          "nullsNotDistinct": false
+>>>>>>> 69ace8a (adding grants to tables)
         }
       },
       "policies": {
@@ -167,6 +190,7 @@
         "sub_types_ad_type_id_ad_types_id_fk": {
           "name": "sub_types_ad_type_id_ad_types_id_fk",
           "tableFrom": "sub_types",
+<<<<<<< HEAD
           "tableTo": "ad_types",
           "columnsFrom": [
             "ad_type_id"
@@ -176,12 +200,24 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+=======
+          "columnsFrom": [
+            "ad_type_id"
+          ],
+          "tableTo": "ad_types",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+>>>>>>> 69ace8a (adding grants to tables)
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "ad_sub_type_name_unique": {
           "name": "ad_sub_type_name_unique",
+<<<<<<< HEAD
           "nullsNotDistinct": false,
           "columns": [
             "name"
@@ -191,6 +227,17 @@
       "policies": {
         "enable read for authenticated users": {
           "name": "enable read for authenticated users",
+=======
+          "columns": [
+            "name"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {
+        "enable read for all users": {
+          "name": "enable read for all users",
+>>>>>>> 69ace8a (adding grants to tables)
           "as": "PERMISSIVE",
           "for": "SELECT",
           "to": [
@@ -237,6 +284,7 @@
       "uniqueConstraints": {
         "ad_type_name_unique": {
           "name": "ad_type_name_unique",
+<<<<<<< HEAD
           "nullsNotDistinct": false,
           "columns": [
             "name"
@@ -246,6 +294,17 @@
       "policies": {
         "enable read for authenticated users": {
           "name": "enable read for authenticated users",
+=======
+          "columns": [
+            "name"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {
+        "enable read for all users": {
+          "name": "enable read for all users",
+>>>>>>> 69ace8a (adding grants to tables)
           "as": "PERMISSIVE",
           "for": "SELECT",
           "to": [
@@ -304,8 +363,13 @@
           "primaryKey": false,
           "notNull": false
         },
+<<<<<<< HEAD
         "location_id": {
           "name": "location_id",
+=======
+        "zipcode_id": {
+          "name": "zipcode_id",
+>>>>>>> 69ace8a (adding grants to tables)
           "type": "integer",
           "primaryKey": false,
           "notNull": true
@@ -356,7 +420,11 @@
           "name": "price",
           "type": "double precision",
           "primaryKey": false,
+<<<<<<< HEAD
           "notNull": true
+=======
+          "notNull": false
+>>>>>>> 69ace8a (adding grants to tables)
         },
         "has_been_reposted": {
           "name": "has_been_reposted",
@@ -460,7 +528,11 @@
           "name": "owner_name",
           "type": "text",
           "primaryKey": false,
+<<<<<<< HEAD
           "notNull": true
+=======
+          "notNull": false
+>>>>>>> 69ace8a (adding grants to tables)
         },
         "entry_year": {
           "name": "entry_year",
@@ -503,8 +575,25 @@
           "name": "accept_salesmen",
           "type": "boolean",
           "primaryKey": false,
+<<<<<<< HEAD
           "notNull": true,
           "default": true
+=======
+          "notNull": false,
+          "default": true
+        },
+        "lat": {
+          "name": "lat",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lng": {
+          "name": "lng",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+>>>>>>> 69ace8a (adding grants to tables)
         }
       },
       "indexes": {
@@ -524,7 +613,11 @@
               "nulls": "last"
             },
             {
+<<<<<<< HEAD
               "expression": "location_id",
+=======
+              "expression": "zipcode_id",
+>>>>>>> 69ace8a (adding grants to tables)
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -645,9 +738,15 @@
             }
           ],
           "isUnique": false,
+<<<<<<< HEAD
           "concurrently": false,
           "method": "btree",
           "with": {}
+=======
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+>>>>>>> 69ace8a (adding grants to tables)
         },
         "ads_title_search_idx": {
           "name": "ads_title_search_idx",
@@ -660,15 +759,22 @@
             }
           ],
           "isUnique": false,
+<<<<<<< HEAD
           "concurrently": false,
           "method": "btree",
           "with": {}
+=======
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+>>>>>>> 69ace8a (adding grants to tables)
         }
       },
       "foreignKeys": {
         "ads_type_id_ad_types_id_fk": {
           "name": "ads_type_id_ad_types_id_fk",
           "tableFrom": "ads",
+<<<<<<< HEAD
           "tableTo": "ad_types",
           "columnsFrom": [
             "type_id"
@@ -678,10 +784,22 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+=======
+          "columnsFrom": [
+            "type_id"
+          ],
+          "tableTo": "ad_types",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+>>>>>>> 69ace8a (adding grants to tables)
         },
         "ads_subtype_id_sub_types_id_fk": {
           "name": "ads_subtype_id_sub_types_id_fk",
           "tableFrom": "ads",
+<<<<<<< HEAD
           "tableTo": "sub_types",
           "columnsFrom": [
             "subtype_id"
@@ -691,10 +809,22 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+=======
+          "columnsFrom": [
+            "subtype_id"
+          ],
+          "tableTo": "sub_types",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+>>>>>>> 69ace8a (adding grants to tables)
         },
         "ads_driving_licence_id_driving_licences_id_fk": {
           "name": "ads_driving_licence_id_driving_licences_id_fk",
           "tableFrom": "ads",
+<<<<<<< HEAD
           "tableTo": "driving_licences",
           "columnsFrom": [
             "driving_licence_id"
@@ -704,10 +834,22 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+=======
+          "columnsFrom": [
+            "driving_licence_id"
+          ],
+          "tableTo": "driving_licences",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+>>>>>>> 69ace8a (adding grants to tables)
         },
         "ads_gear_box_id_gear_boxes_id_fk": {
           "name": "ads_gear_box_id_gear_boxes_id_fk",
           "tableFrom": "ads",
+<<<<<<< HEAD
           "tableTo": "gear_boxes",
           "columnsFrom": [
             "gear_box_id"
@@ -717,10 +859,22 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+=======
+          "columnsFrom": [
+            "gear_box_id"
+          ],
+          "tableTo": "gear_boxes",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+>>>>>>> 69ace8a (adding grants to tables)
         },
         "ads_vehicle_seats_id_vehicle_seats_id_fk": {
           "name": "ads_vehicle_seats_id_vehicle_seats_id_fk",
           "tableFrom": "ads",
+<<<<<<< HEAD
           "tableTo": "vehicle_seats",
           "columnsFrom": [
             "vehicle_seats_id"
@@ -730,10 +884,22 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+=======
+          "columnsFrom": [
+            "vehicle_seats_id"
+          ],
+          "tableTo": "vehicle_seats",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+>>>>>>> 69ace8a (adding grants to tables)
         },
         "ads_vehicle_state_id_vehicle_states_id_fk": {
           "name": "ads_vehicle_state_id_vehicle_states_id_fk",
           "tableFrom": "ads",
+<<<<<<< HEAD
           "tableTo": "vehicle_states",
           "columnsFrom": [
             "vehicle_state_id"
@@ -756,10 +922,35 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+=======
+          "columnsFrom": [
+            "vehicle_state_id"
+          ],
+          "tableTo": "vehicle_states",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "ads_zipcode_id_zipcodes_id_fk": {
+          "name": "ads_zipcode_id_zipcodes_id_fk",
+          "tableFrom": "ads",
+          "columnsFrom": [
+            "zipcode_id"
+          ],
+          "tableTo": "zipcodes",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+>>>>>>> 69ace8a (adding grants to tables)
         },
         "ads_brand_id_brands_id_fk": {
           "name": "ads_brand_id_brands_id_fk",
           "tableFrom": "ads",
+<<<<<<< HEAD
           "tableTo": "brands",
           "columnsFrom": [
             "brand_id"
@@ -769,10 +960,22 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+=======
+          "columnsFrom": [
+            "brand_id"
+          ],
+          "tableTo": "brands",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+>>>>>>> 69ace8a (adding grants to tables)
         },
         "ads_fuel_id_fuels_id_fk": {
           "name": "ads_fuel_id_fuels_id_fk",
           "tableFrom": "ads",
+<<<<<<< HEAD
           "tableTo": "fuels",
           "columnsFrom": [
             "fuel_id"
@@ -782,16 +985,34 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+=======
+          "columnsFrom": [
+            "fuel_id"
+          ],
+          "tableTo": "fuels",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+>>>>>>> 69ace8a (adding grants to tables)
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "ads_original_ad_id_unique": {
           "name": "ads_original_ad_id_unique",
+<<<<<<< HEAD
           "nullsNotDistinct": false,
           "columns": [
             "original_ad_id"
           ]
+=======
+          "columns": [
+            "original_ad_id"
+          ],
+          "nullsNotDistinct": false
+>>>>>>> 69ace8a (adding grants to tables)
         }
       },
       "policies": {
@@ -843,6 +1064,7 @@
       "uniqueConstraints": {
         "brand_name_unique": {
           "name": "brand_name_unique",
+<<<<<<< HEAD
           "nullsNotDistinct": false,
           "columns": [
             "name"
@@ -852,6 +1074,17 @@
       "policies": {
         "enable read for authenticated users": {
           "name": "enable read for authenticated users",
+=======
+          "columns": [
+            "name"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {
+        "enable read for all users": {
+          "name": "enable read for all users",
+>>>>>>> 69ace8a (adding grants to tables)
           "as": "PERMISSIVE",
           "for": "SELECT",
           "to": [
@@ -863,6 +1096,7 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+<<<<<<< HEAD
     "public.contacted_ads": {
       "name": "contacted_ads",
       "schema": "",
@@ -977,6 +1211,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+=======
+>>>>>>> 69ace8a (adding grants to tables)
     "public.driving_licences": {
       "name": "driving_licences",
       "schema": "",
@@ -1012,6 +1248,7 @@
       "uniqueConstraints": {
         "driving_licence_name_unique": {
           "name": "driving_licence_name_unique",
+<<<<<<< HEAD
           "nullsNotDistinct": false,
           "columns": [
             "name"
@@ -1021,6 +1258,17 @@
       "policies": {
         "enable read for authenticated users": {
           "name": "enable read for authenticated users",
+=======
+          "columns": [
+            "name"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {
+        "enable read for all users": {
+          "name": "enable read for all users",
+>>>>>>> 69ace8a (adding grants to tables)
           "as": "PERMISSIVE",
           "for": "SELECT",
           "to": [
@@ -1067,6 +1315,7 @@
       "uniqueConstraints": {
         "fuel_name_unique": {
           "name": "fuel_name_unique",
+<<<<<<< HEAD
           "nullsNotDistinct": false,
           "columns": [
             "name"
@@ -1076,6 +1325,17 @@
       "policies": {
         "enable read for authenticated users": {
           "name": "enable read for authenticated users",
+=======
+          "columns": [
+            "name"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {
+        "enable read for all users": {
+          "name": "enable read for all users",
+>>>>>>> 69ace8a (adding grants to tables)
           "as": "PERMISSIVE",
           "for": "SELECT",
           "to": [
@@ -1122,6 +1382,7 @@
       "uniqueConstraints": {
         "gear_box_name_unique": {
           "name": "gear_box_name_unique",
+<<<<<<< HEAD
           "nullsNotDistinct": false,
           "columns": [
             "name"
@@ -1209,6 +1470,17 @@
       "policies": {
         "enable read for authenticated users": {
           "name": "enable read for authenticated users",
+=======
+          "columns": [
+            "name"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {
+        "enable read for all users": {
+          "name": "enable read for all users",
+>>>>>>> 69ace8a (adding grants to tables)
           "as": "PERMISSIVE",
           "for": "SELECT",
           "to": [
@@ -1255,6 +1527,7 @@
       "uniqueConstraints": {
         "vehicle_seats_name_unique": {
           "name": "vehicle_seats_name_unique",
+<<<<<<< HEAD
           "nullsNotDistinct": false,
           "columns": [
             "name"
@@ -1264,6 +1537,17 @@
       "policies": {
         "enable read for authenticated users": {
           "name": "enable read for authenticated users",
+=======
+          "columns": [
+            "name"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {
+        "enable read for all users": {
+          "name": "enable read for all users",
+>>>>>>> 69ace8a (adding grants to tables)
           "as": "PERMISSIVE",
           "for": "SELECT",
           "to": [
@@ -1310,6 +1594,7 @@
       "uniqueConstraints": {
         "vehicle_state_name_unique": {
           "name": "vehicle_state_name_unique",
+<<<<<<< HEAD
           "nullsNotDistinct": false,
           "columns": [
             "name"
@@ -1319,6 +1604,79 @@
       "policies": {
         "enable read for authenticated users": {
           "name": "enable read for authenticated users",
+=======
+          "columns": [
+            "name"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {
+        "enable read for all users": {
+          "name": "enable read for all users",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "authenticated"
+          ],
+          "using": "true"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.zipcodes": {
+      "name": "zipcodes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "zipcode": {
+          "name": "zipcode",
+          "type": "varchar(5)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lbc_value": {
+          "name": "lbc_value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lobstr_value": {
+          "name": "lobstr_value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "zipcode_name_unique": {
+          "name": "zipcode_name_unique",
+          "columns": [
+            "name",
+            "zipcode"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {
+        "enable read for all users": {
+          "name": "enable read for all users",
+>>>>>>> 69ace8a (adding grants to tables)
           "as": "PERMISSIVE",
           "for": "SELECT",
           "to": [
@@ -1347,8 +1705,13 @@
           "primaryKey": false,
           "notNull": true
         },
+<<<<<<< HEAD
         "sub_type_id": {
           "name": "sub_type_id",
+=======
+        "ad_sub_type_id": {
+          "name": "ad_sub_type_id",
+>>>>>>> 69ace8a (adding grants to tables)
           "type": "smallint",
           "primaryKey": false,
           "notNull": true
@@ -1359,6 +1722,7 @@
         "base_filters_id_fk": {
           "name": "base_filters_id_fk",
           "tableFrom": "ad_sub_types_filter",
+<<<<<<< HEAD
           "tableTo": "base_filters",
           "columnsFrom": [
             "base_filter_id"
@@ -1368,10 +1732,22 @@
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
+=======
+          "columnsFrom": [
+            "base_filter_id"
+          ],
+          "tableTo": "base_filters",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+>>>>>>> 69ace8a (adding grants to tables)
         },
         "ad_sub_types_id_fk": {
           "name": "ad_sub_types_id_fk",
           "tableFrom": "ad_sub_types_filter",
+<<<<<<< HEAD
           "tableTo": "sub_types",
           "columnsFrom": [
             "sub_type_id"
@@ -1381,6 +1757,87 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+=======
+          "columnsFrom": [
+            "ad_sub_type_id"
+          ],
+          "tableTo": "sub_types",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "enable all crud for authenticated users": {
+          "name": "enable all crud for authenticated users",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "authenticated"
+          ],
+          "using": "true",
+          "withCheck": "true"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.ad_types_filter": {
+      "name": "ad_types_filter",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "base_filter_id": {
+          "name": "base_filter_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ad_type_id": {
+          "name": "ad_type_id",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "base_filters_id_fk": {
+          "name": "base_filters_id_fk",
+          "tableFrom": "ad_types_filter",
+          "columnsFrom": [
+            "base_filter_id"
+          ],
+          "tableTo": "base_filters",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "ad_types_id_fk": {
+          "name": "ad_types_id_fk",
+          "tableFrom": "ad_types_filter",
+          "columnsFrom": [
+            "ad_type_id"
+          ],
+          "tableTo": "ad_types",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+>>>>>>> 69ace8a (adding grants to tables)
         }
       },
       "compositePrimaryKeys": {},
@@ -1417,6 +1874,7 @@
           "primaryKey": false,
           "notNull": true
         },
+<<<<<<< HEAD
         "ad_type_id": {
           "name": "ad_type_id",
           "type": "smallint",
@@ -1435,19 +1893,46 @@
           "primaryKey": false,
           "notNull": true,
           "default": 0
+=======
+        "zipcode_id": {
+          "name": "zipcode_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lat_center": {
+          "name": "lat_center",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lng_center": {
+          "name": "lng_center",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+>>>>>>> 69ace8a (adding grants to tables)
         },
         "price_min": {
           "name": "price_min",
           "type": "real",
           "primaryKey": false,
+<<<<<<< HEAD
           "notNull": true,
+=======
+          "notNull": false,
+>>>>>>> 69ace8a (adding grants to tables)
           "default": 0
         },
         "mileage_min": {
           "name": "mileage_min",
           "type": "real",
           "primaryKey": false,
+<<<<<<< HEAD
           "notNull": true,
+=======
+          "notNull": false,
+>>>>>>> 69ace8a (adding grants to tables)
           "default": 0
         },
         "mileage_max": {
@@ -1460,7 +1945,11 @@
           "name": "model_year_min",
           "type": "real",
           "primaryKey": false,
+<<<<<<< HEAD
           "notNull": true,
+=======
+          "notNull": false,
+>>>>>>> 69ace8a (adding grants to tables)
           "default": 2010
         },
         "model_year_max": {
@@ -1473,35 +1962,55 @@
           "name": "has_been_reposted",
           "type": "boolean",
           "primaryKey": false,
+<<<<<<< HEAD
           "notNull": true,
+=======
+          "notNull": false,
+>>>>>>> 69ace8a (adding grants to tables)
           "default": false
         },
         "price_has_dropped": {
           "name": "price_has_dropped",
           "type": "boolean",
           "primaryKey": false,
+<<<<<<< HEAD
           "notNull": true,
+=======
+          "notNull": false,
+>>>>>>> 69ace8a (adding grants to tables)
           "default": false
         },
         "is_urgent": {
           "name": "is_urgent",
           "type": "boolean",
           "primaryKey": false,
+<<<<<<< HEAD
           "notNull": true,
+=======
+          "notNull": false,
+>>>>>>> 69ace8a (adding grants to tables)
           "default": false
         },
         "has_been_boosted": {
           "name": "has_been_boosted",
           "type": "boolean",
           "primaryKey": false,
+<<<<<<< HEAD
           "notNull": true,
+=======
+          "notNull": false,
+>>>>>>> 69ace8a (adding grants to tables)
           "default": false
         },
         "is_low_price": {
           "name": "is_low_price",
           "type": "boolean",
           "primaryKey": false,
+<<<<<<< HEAD
           "notNull": true,
+=======
+          "notNull": false,
+>>>>>>> 69ace8a (adding grants to tables)
           "default": false
         },
         "price_max": {
@@ -1514,7 +2023,11 @@
           "name": "is_active",
           "type": "boolean",
           "primaryKey": false,
+<<<<<<< HEAD
           "notNull": true,
+=======
+          "notNull": false,
+>>>>>>> 69ace8a (adding grants to tables)
           "default": true
         }
       },
@@ -1523,6 +2036,7 @@
         "base_filters_account_id_accounts_id_fk": {
           "name": "base_filters_account_id_accounts_id_fk",
           "tableFrom": "base_filters",
+<<<<<<< HEAD
           "tableTo": "accounts",
           "columnsFrom": [
             "account_id"
@@ -1558,6 +2072,30 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+=======
+          "columnsFrom": [
+            "account_id"
+          ],
+          "tableTo": "accounts",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "base_filters_zipcode_id_zipcodes_id_fk": {
+          "name": "base_filters_zipcode_id_zipcodes_id_fk",
+          "tableFrom": "base_filters",
+          "columnsFrom": [
+            "zipcode_id"
+          ],
+          "tableTo": "zipcodes",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+>>>>>>> 69ace8a (adding grants to tables)
         }
       },
       "compositePrimaryKeys": {},
@@ -1606,6 +2144,7 @@
         "base_filters_id_fk": {
           "name": "base_filters_id_fk",
           "tableFrom": "brands_filter",
+<<<<<<< HEAD
           "tableTo": "base_filters",
           "columnsFrom": [
             "base_filter_id"
@@ -1615,10 +2154,22 @@
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
+=======
+          "columnsFrom": [
+            "base_filter_id"
+          ],
+          "tableTo": "base_filters",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+>>>>>>> 69ace8a (adding grants to tables)
         },
         "brands_id_fk": {
           "name": "brands_id_fk",
           "tableFrom": "brands_filter",
+<<<<<<< HEAD
           "tableTo": "brands",
           "columnsFrom": [
             "brand_id"
@@ -1628,6 +2179,17 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+=======
+          "columnsFrom": [
+            "brand_id"
+          ],
+          "tableTo": "brands",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+>>>>>>> 69ace8a (adding grants to tables)
         }
       },
       "compositePrimaryKeys": {},
@@ -1647,6 +2209,7 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+<<<<<<< HEAD
     "public.app_settings": {
       "name": "app_settings",
       "schema": "",
@@ -1736,6 +2299,10 @@
     },
     "public.whatsapp_sessions": {
       "name": "whatsapp_sessions",
+=======
+    "public.fuels_filter": {
+      "name": "fuels_filter",
+>>>>>>> 69ace8a (adding grants to tables)
       "schema": "",
       "columns": {
         "id": {
@@ -1745,12 +2312,18 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
+<<<<<<< HEAD
         "account_id": {
           "name": "account_id",
+=======
+        "base_filter_id": {
+          "name": "base_filter_id",
+>>>>>>> 69ace8a (adding grants to tables)
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
+<<<<<<< HEAD
         "credentials": {
           "name": "credentials",
           "type": "text",
@@ -1769,6 +2342,102 @@
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
+=======
+        "fuel_id": {
+          "name": "fuel_id",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "base_filters_id_fk": {
+          "name": "base_filters_id_fk",
+          "tableFrom": "fuels_filter",
+          "columnsFrom": [
+            "base_filter_id"
+          ],
+          "tableTo": "base_filters",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "fuels_id_fk": {
+          "name": "fuels_id_fk",
+          "tableFrom": "fuels_filter",
+          "columnsFrom": [
+            "fuel_id"
+          ],
+          "tableTo": "fuels",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "enable all crud for authenticated users": {
+          "name": "enable all crud for authenticated users",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "authenticated"
+          ],
+          "using": "true",
+          "withCheck": "true"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.organization_invitations": {
+      "name": "organization_invitations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "varchar(320)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'user'"
+        },
+        "token": {
+          "name": "token",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+>>>>>>> 69ace8a (adding grants to tables)
         },
         "created_at": {
           "name": "created_at",
@@ -1776,15 +2445,290 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+<<<<<<< HEAD
         },
         "updated_at": {
           "name": "updated_at",
+=======
+        }
+      },
+      "indexes": {
+        "organization_invitations_organization_id_idx": {
+          "name": "organization_invitations_organization_id_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "organization_invitations_token_idx": {
+          "name": "organization_invitations_token_idx",
+          "columns": [
+            {
+              "expression": "token",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "organization_invitations_organization_id_fk": {
+          "name": "organization_invitations_organization_id_fk",
+          "tableFrom": "organization_invitations",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "tableTo": "organizations",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "organization_invitations_token_unique": {
+          "name": "organization_invitations_token_unique",
+          "columns": [
+            "token"
+          ],
+          "nullsNotDistinct": false
+        },
+        "organization_invitations_token_key": {
+          "name": "organization_invitations_token_key",
+          "columns": [
+            "token"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {
+        "enable all for organization admins": {
+          "name": "enable all for organization admins",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "authenticated"
+          ],
+          "using": "exists (\n        select 1 from organization_members om\n        where om.organization_id = \"organization_invitations\".\"organization_id\"\n        and om.account_id = (select auth.uid())\n        and om.role in ('owner', 'admin')\n        and om.joined_at is not null\n      )",
+          "withCheck": "exists (\n        select 1 from organization_members om\n        where om.organization_id = \"organization_invitations\".\"organization_id\"\n        and om.account_id = (select auth.uid())\n        and om.role in ('owner', 'admin')\n        and om.joined_at is not null\n      )"
+        },
+        "enable read by token": {
+          "name": "enable read by token",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "authenticated"
+          ],
+          "using": "true"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.organization_members": {
+      "name": "organization_members",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "account_id": {
+          "name": "account_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'user'"
+        },
+        "invited_at": {
+          "name": "invited_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "joined_at": {
+          "name": "joined_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "organization_members_organization_id_idx": {
+          "name": "organization_members_organization_id_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "organization_members_account_id_idx": {
+          "name": "organization_members_account_id_idx",
+          "columns": [
+            {
+              "expression": "account_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "organization_members_organization_id_fk": {
+          "name": "organization_members_organization_id_fk",
+          "tableFrom": "organization_members",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "tableTo": "organizations",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "organization_members_account_id_fk": {
+          "name": "organization_members_account_id_fk",
+          "tableFrom": "organization_members",
+          "columnsFrom": [
+            "account_id"
+          ],
+          "tableTo": "accounts",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "organization_members_org_account_key": {
+          "name": "organization_members_org_account_key",
+          "columns": [
+            "organization_id",
+            "account_id"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {
+        "enable read for organization members": {
+          "name": "enable read for organization members",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "authenticated"
+          ],
+          "using": "exists (\n        select 1 from organization_members om\n        where om.organization_id = \"organization_members\".\"organization_id\"\n        and om.account_id = (select auth.uid())\n        and om.joined_at is not null\n      )"
+        },
+        "enable write for organization admins": {
+          "name": "enable write for organization admins",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "authenticated"
+          ],
+          "using": "exists (\n        select 1 from organization_members om\n        where om.organization_id = \"organization_members\".\"organization_id\"\n        and om.account_id = (select auth.uid())\n        and om.role in ('owner', 'admin')\n        and om.joined_at is not null\n      )",
+          "withCheck": "exists (\n        select 1 from organization_members om\n        where om.organization_id = \"organization_members\".\"organization_id\"\n        and om.account_id = (select auth.uid())\n        and om.role in ('owner', 'admin')\n        and om.joined_at is not null\n      )"
+        },
+        "enable update for accepting invitation": {
+          "name": "enable update for accepting invitation",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "authenticated"
+          ],
+          "using": "(select auth.uid()) = account_id and joined_at is null",
+          "withCheck": "(select auth.uid()) = account_id"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.organizations": {
+      "name": "organizations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "owner_id": {
+          "name": "owner_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "settings": {
+          "name": "settings",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'{}'::jsonb"
+        },
+        "created_at": {
+          "name": "created_at",
+>>>>>>> 69ace8a (adding grants to tables)
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
         }
       },
+<<<<<<< HEAD
       "indexes": {},
       "foreignKeys": {
         "whatsapp_sessions_account_id_accounts_id_fk": {
@@ -1814,11 +2758,61 @@
       "policies": {
         "enable select for own session": {
           "name": "enable select for own session",
+=======
+      "indexes": {
+        "organizations_owner_id_idx": {
+          "name": "organizations_owner_id_idx",
+          "columns": [
+            {
+              "expression": "owner_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "organizations_owner_id_fk": {
+          "name": "organizations_owner_id_fk",
+          "tableFrom": "organizations",
+          "columnsFrom": [
+            "owner_id"
+          ],
+          "tableTo": "accounts",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "enable all for organization owner": {
+          "name": "enable all for organization owner",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "authenticated"
+          ],
+          "using": "(select auth.uid()) = owner_id",
+          "withCheck": "(select auth.uid()) = owner_id"
+        },
+        "enable read for organization members": {
+          "name": "enable read for organization members",
+>>>>>>> 69ace8a (adding grants to tables)
           "as": "PERMISSIVE",
           "for": "SELECT",
           "to": [
             "authenticated"
           ],
+<<<<<<< HEAD
           "using": "(select auth.uid()) = \"whatsapp_sessions\".\"account_id\""
         },
         "enable insert for own session": {
@@ -1848,12 +2842,16 @@
             "authenticated"
           ],
           "using": "(select auth.uid()) = \"whatsapp_sessions\".\"account_id\""
+=======
+          "using": "exists (\n        select 1 from organization_members\n        where organization_members.organization_id = \"organizations\".\"id\"\n        and organization_members.account_id = (select auth.uid())\n        and organization_members.joined_at is not null\n      )"
+>>>>>>> 69ace8a (adding grants to tables)
         }
       },
       "checkConstraints": {},
       "isRLSEnabled": false
     }
   },
+<<<<<<< HEAD
   "enums": {
     "public.message_type": {
       "name": "message_type",
@@ -1870,6 +2868,14 @@
   "roles": {},
   "policies": {},
   "views": {},
+=======
+  "enums": {},
+  "schemas": {},
+  "views": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+>>>>>>> 69ace8a (adding grants to tables)
   "_meta": {
     "columns": {},
     "schemas": {},
