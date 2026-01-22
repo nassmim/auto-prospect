@@ -2,9 +2,16 @@
 
 import { useEffect, useState, useTransition } from "react";
 import Image from "next/image";
-import { getLeadDetails } from "@/actions/lead.actions";
+import {
+  getLeadDetails,
+  updateLeadStage,
+  assignLead,
+  getOrganizationMembers,
+} from "@/actions/lead.actions";
 import { formatDistance } from "date-fns";
 import { fr } from "date-fns/locale";
+import { leadStages, type LeadStage } from "@/schema/lead.schema";
+import { Dropdown } from "@/components/ui/dropdown";
 
 type LeadDrawerProps = {
   leadId: string | null;
@@ -12,9 +19,29 @@ type LeadDrawerProps = {
 };
 
 type LeadDetails = Awaited<ReturnType<typeof getLeadDetails>>;
+type OrgMember = Awaited<ReturnType<typeof getOrganizationMembers>>[number];
+
+const STAGE_LABELS: Record<LeadStage, string> = {
+  nouveau: "Nouveau",
+  contacte: "Contacté",
+  relance: "Relance",
+  negociation: "Négociation",
+  gagne: "Gagné",
+  perdu: "Perdu",
+};
+
+const STAGE_COLORS: Record<LeadStage, string> = {
+  nouveau: "#3b82f6", // blue
+  contacte: "#8b5cf6", // purple
+  relance: "#f59e0b", // amber
+  negociation: "#10b981", // green
+  gagne: "#22c55e", // bright green
+  perdu: "#ef4444", // red
+};
 
 export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
   const [lead, setLead] = useState<LeadDetails | null>(null);
+  const [orgMembers, setOrgMembers] = useState<OrgMember[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -31,8 +58,12 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
 
     startTransition(async () => {
       try {
-        const data = await getLeadDetails(leadId);
+        const [data, members] = await Promise.all([
+          getLeadDetails(leadId),
+          getOrganizationMembers(leadId),
+        ]);
         setLead(data);
+        setOrgMembers(members);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load lead");
       } finally {
@@ -40,6 +71,44 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
       }
     });
   }, [leadId]);
+
+  const handleStageChange = async (newStage: string | null) => {
+    if (!lead || !newStage) return;
+
+    const previousStage = lead.stage;
+    // Optimistic update
+    setLead({ ...lead, stage: newStage });
+
+    try {
+      await updateLeadStage(lead.id, newStage as LeadStage);
+    } catch (err) {
+      // Revert on error
+      setLead({ ...lead, stage: previousStage });
+      console.error("Failed to update stage:", err);
+    }
+  };
+
+  const handleAssignmentChange = async (userId: string | null) => {
+    if (!lead) return;
+
+    const previousAssignee = lead.assignedTo;
+    // Optimistic update
+    const newAssignee = userId
+      ? orgMembers.find((m) => m.id === userId)
+      : null;
+    setLead({
+      ...lead,
+      assignedTo: newAssignee ? { id: newAssignee.id, name: newAssignee.name } : null,
+    });
+
+    try {
+      await assignLead(lead.id, userId);
+    } catch (err) {
+      // Revert on error
+      setLead({ ...lead, assignedTo: previousAssignee });
+      console.error("Failed to update assignment:", err);
+    }
+  };
 
   if (!leadId) return null;
 
@@ -218,6 +287,34 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
                     </span>
                   </div>
                 </div>
+              </section>
+
+              {/* Stage and Assignment Selectors */}
+              <section className="grid grid-cols-2 gap-4">
+                <Dropdown
+                  label="Statut"
+                  value={lead.stage}
+                  onChange={handleStageChange}
+                  options={leadStages.map((stage) => ({
+                    value: stage,
+                    label: STAGE_LABELS[stage],
+                    color: STAGE_COLORS[stage],
+                  }))}
+                  placeholder="Sélectionner un statut"
+                />
+
+                <Dropdown
+                  label="Assigné à"
+                  value={lead.assignedTo?.id || null}
+                  onChange={handleAssignmentChange}
+                  options={orgMembers.map((member) => ({
+                    value: member.id,
+                    label: member.name,
+                  }))}
+                  placeholder="Non assigné"
+                  allowNull
+                  nullLabel="Non assigné"
+                />
               </section>
 
               {/* Quick Actions */}

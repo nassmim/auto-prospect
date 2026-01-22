@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   foreignKey,
   index,
@@ -234,4 +234,20 @@ export const organizationInvitations = pgTable(
       using: sql`true`,
     }),
   ],
+);
+
+
+// Relations for type-safe joins
+export const organizationMembersRelations = relations(
+  organizationMembers,
+  ({ one }) => ({
+    organization: one(organizations, {
+      fields: [organizationMembers.organizationId],
+      references: [organizations.id],
+    }),
+    account: one(accounts, {
+      fields: [organizationMembers.accountId],
+      references: [accounts.id],
+    }),
+  }),
 );

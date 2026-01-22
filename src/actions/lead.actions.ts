@@ -3,7 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
 import { leads, leadNotes, type LeadStage } from "@/schema/lead.schema";
-import { eq, and, inArray } from "drizzle-orm";
+import { organizationMembers } from "@/schema/organization.schema";
+import { accounts } from "@/schema/account.schema";
+import { eq, and, inArray, isNotNull } from "drizzle-orm";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -286,5 +288,62 @@ export async function getLeadDetails(leadId: string) {
   } catch (error) {
     console.error("Error fetching lead details:", error);
     throw new Error("Failed to fetch lead details");
+  }
+}
+
+/**
+ * Fetch all members of the lead's organization for assignment dropdown
+ */
+export async function getOrganizationMembers(leadId: string) {
+  const supabase = await createClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session) {
+    throw new Error("Unauthorized");
+  }
+
+  const dbClient = await createDrizzleSupabaseClient();
+
+  try {
+    // First, get the lead's organization
+    const lead = await dbClient.rls(async (tx) => {
+      return tx.query.leads.findFirst({
+        where: eq(leads.id, leadId),
+        columns: {
+          organizationId: true,
+        },
+      });
+    });
+
+    if (!lead) {
+      throw new Error("Lead not found");
+    }
+
+    // Fetch all members of this organization
+    const members = await dbClient.rls(async (tx) => {
+      return tx.query.organizationMembers.findMany({
+        where: and(
+          eq(organizationMembers.organizationId, lead.organizationId),
+          isNotNull(organizationMembers.joinedAt),
+        ),
+        with: {
+          account: {
+            columns: {
+              id: true,
+              name: true,
+              email: true,
+              pictureUrl: true,
+            },
+          },
+        },
+      });
+    });
+
+    return members.map((m) => m.account);
+  } catch (error) {
+    console.error("Error fetching organization members:", error);
+    throw new Error("Failed to fetch organization members");
   }
 }

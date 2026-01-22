@@ -289,9 +289,10 @@
               1
             ],
             "details": "Add stage selector dropdown component (use Headless UI Listbox) that displays current lead stage with colored badge. Include all 6 stages: Nouveau, Contacté, Relance, Négociation, Gagné, Perdu with appropriate colors matching the Kanban view. Create server action `updateLeadStage(leadId, newStage)` that updates the leads table, sets updatedAt, and logs activity in lead_activities. Add assigned user selector dropdown that shows current assignee (account name + avatar) or 'Non assigné' placeholder. Populate dropdown with all organization members (query accounts by organizationId). Create server action `updateLeadAssignment(leadId, assignedToId)` that updates assignedToId field and logs activity. Implement optimistic UI updates for both selectors to provide instant feedback. Add permission check - only organization members can update assignments.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. Change lead stage in drawer, verify database updates immediately and Kanban view reflects change. 2. Assign lead to different user, verify assignment updates and activity log created. 3. Test optimistic UI - verify dropdown shows new value before server response. 4. Verify only organization members appear in assignee dropdown. 5. Test error handling - simulate network failure and verify error message displayed.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-01-22T16:24:37.159Z"
           },
           {
             "id": 3,
@@ -333,7 +334,7 @@
             "parentId": "undefined"
           }
         ],
-        "updatedAt": "2026-01-22T16:21:11.840Z"
+        "updatedAt": "2026-01-22T16:24:37.159Z"
       },
       {
         "id": "11",
@@ -412,7 +413,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-22T16:21:11.841Z",
+      "lastModified": "2026-01-22T16:24:37.160Z",
       "taskCount": 15,
       "completedCount": 11,
       "tags": [
