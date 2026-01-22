@@ -54,13 +54,22 @@ export function HuntForm({ hunt }: HuntFormProps) {
   const [searchUrl, setSearchUrl] = useState("");
 
   // Search builder tab state (stub for Phase 2)
-  const [searchFilters, setSearchFilters] = useState({
+  const [searchFilters, setSearchFilters] = useState<{
+    platform: string;
+    priceMin: number;
+    priceMax: number | null;
+    mileageMin: number;
+    mileageMax: number | null;
+    brands: string[];
+    location: string;
+    radius: number;
+  }>({
     platform: "leboncoin",
     priceMin: 0,
     priceMax: null,
     mileageMin: 0,
     mileageMax: null,
-    brands: [] as string[],
+    brands: [],
     location: "",
     radius: 0,
   });

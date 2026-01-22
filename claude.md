@@ -37,8 +37,42 @@
 - **Next.js 16.1.1** (App Router) + React 19 + TypeScript
 - **Database**: Supabase (PostgreSQL) + Drizzle ORM
 - **Auth**: Supabase Auth (JWT, RLS)
-- **Styling**: Tailwind CSS 4
+- **Styling**: Tailwind CSS 4 + shadcn/ui components
+- **Forms**: react-hook-form + Zod validation
 - **Env**: dotenvx (multi-file), **pnpm** (not npm)
+
+## UI/UX Principles
+
+### Component Library
+- **shadcn/ui**: Use shadcn components for all UI elements
+- Components located in `src/components/ui/`
+- Follow shadcn styling patterns and conventions
+- Maintain consistent design system across the app
+
+### Form Validation (MANDATORY)
+- **ALWAYS use react-hook-form + Zod** for ALL forms
+- **Client-side validation**: Zod schema with react-hook-form
+- **Server-side validation**: Reuse same Zod schema in server actions
+- Never skip validation on either side
+- Pattern:
+  ```typescript
+  // schemas/validation.ts
+  export const huntFormSchema = z.object({
+    name: z.string().min(1, "Name is required"),
+    // ...
+  });
+
+  // Component
+  const form = useForm<z.infer<typeof huntFormSchema>>({
+    resolver: zodResolver(huntFormSchema),
+  });
+
+  // Server action
+  export async function createHunt(data: unknown) {
+    const validated = huntFormSchema.parse(data); // Throws if invalid
+    // ...
+  }
+  ```
 
 ## Critical Paths
 ```
