@@ -1,5 +1,12 @@
 import Link from "next/link";
 import { HuntForm } from "@/components/hunts/hunt-form";
+import { getSEOTags } from "@/lib/seo";
+
+export const metadata = getSEOTags({
+  title: "Créer une recherche",
+  description: "Définissez les critères pour trouver automatiquement des véhicules à contacter",
+  canonical: "/hunts/new",
+});
 
 export default function NewHuntPage() {
   return (

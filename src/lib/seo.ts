@@ -29,13 +29,16 @@ export const siteConfig = {
  * Options for generating SEO metadata
  *
  * All fields except title are optional and will use siteConfig defaults
+ *
+ * NOTE: For SaaS applications, noIndex defaults to TRUE (most pages are private).
+ * Explicitly set noIndex: false for public marketing pages that should be indexed.
  */
 export interface SEOTagsOptions {
   title: string; // Page title (will be suffixed with site name)
   description?: string; // Meta description (max 160 chars recommended)
   keywords?: string[]; // Array of keywords (will be joined with commas)
   canonical?: string; // Canonical URL path (e.g., "/about")
-  noIndex?: boolean; // Prevent search engine indexing (for private pages)
+  noIndex?: boolean; // Prevent search engine indexing (defaults to TRUE for SaaS apps)
   noFollow?: boolean; // Prevent search engines from following links
   openGraph?: {
     type?: "website" | "article"; // OpenGraph type (Next.js only supports these two)
@@ -79,11 +82,22 @@ function buildRobotsDirective(noIndex: boolean, noFollow: boolean) {
  * This is the main function you'll use in your pages. It combines all metadata
  * (title, description, OG tags, Twitter cards) into a single Metadata object.
  *
- * Usage:
+ * IMPORTANT: For SaaS apps, noIndex defaults to TRUE. For public marketing pages,
+ * explicitly set noIndex: false to allow search engine indexing.
+ *
+ * Usage (private page - default):
  * export const metadata = getSEOTags({
- *   title: "My Page",
- *   description: "Page description",
- *   canonical: "/my-page",
+ *   title: "Dashboard",
+ *   description: "User dashboard",
+ *   canonical: "/dashboard",
+ * }); // noIndex: true by default
+ *
+ * Usage (public page):
+ * export const metadata = getSEOTags({
+ *   title: "About Us",
+ *   description: "Learn about our company",
+ *   canonical: "/about",
+ *   noIndex: false, // Explicitly allow indexing for public pages
  * });
  *
  * @param options - SEO configuration options
@@ -95,7 +109,7 @@ export function getSEOTags(options: SEOTagsOptions): Metadata {
     description = siteConfig.description, // Use site default if not provided
     keywords,
     canonical,
-    noIndex = false,
+    noIndex = true, // Default to noIndex for SaaS (most pages are private/authenticated)
     noFollow = false,
     openGraph,
     twitter,

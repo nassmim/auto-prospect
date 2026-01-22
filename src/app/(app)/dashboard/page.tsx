@@ -2,6 +2,13 @@ import { getDashboardStats, getActiveHunts } from "@/actions/dashboard.actions";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { HuntListItem } from "@/components/dashboard/hunt-list-item";
 import Link from "next/link";
+import { getSEOTags } from "@/lib/seo";
+
+export const metadata = getSEOTags({
+  title: "Dashboard",
+  description: "Vue d'ensemble de votre activité de prospection : leads, messages et recherches actives",
+  canonical: "/dashboard",
+});
 
 export default async function DashboardPage() {
   // Fetch data in parallel for better performance

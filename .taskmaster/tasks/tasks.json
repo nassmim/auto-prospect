@@ -719,13 +719,81 @@
         "description": "Audit all page.tsx files in src/app/ and refactor them to follow the thin-page architecture pattern: keep only data fetching and component composition in page.tsx, moving all UI logic into dedicated view components.",
         "details": "## Overview\n\nThe project's CLAUDE.md specifies a thin-page architecture where `page.tsx` files should only handle data fetching, routing, and server-side concerns, while UI logic moves to separate view components. Currently, several pages violate this pattern by embedding extensive UI code directly.\n\n## Pages Requiring Refactoring\n\n### 1. Dashboard Page (HIGH PRIORITY - 184 lines)\n**File:** `src/app/(app)/dashboard/page.tsx`\n**Issues:** Contains extensive inline SVG icons, stat cards rendering, empty state UI\n**Refactor to:**\n```typescript\n// page.tsx (thin)\nexport default async function DashboardPage() {\n  const [stats, hunts] = await Promise.all([\n    getDashboardStats(),\n    getActiveHunts(),\n  ]);\n  return <DashboardView stats={stats} hunts={hunts} />;\n}\n```\n**Create:** `src/components/dashboard/dashboard-view.tsx` - Move all JSX, header, stats grid, hunts section, empty state\n\n### 2. Lead Detail Page (HIGH PRIORITY - 562 lines)\n**File:** `src/app/(app)/leads/[id]/page.tsx`\n**Issues:** Largest page file, contains constants (STAGE_LABELS, CHANNEL_ICONS), complex multi-column layout, message history, activity timeline\n**Refactor to:**\n```typescript\n// page.tsx (thin)\nexport default async function LeadDetailPage({ params }: PageProps) {\n  const { id } = await params;\n  const [lead, messages, activities] = await Promise.all([\n    getLeadDetails(id),\n    getLeadMessages(id),\n    getLeadActivities(id),\n  ]);\n  if (!lead) notFound();\n  return <LeadDetailView lead={lead} messages={messages} activities={activities} />;\n}\n```\n**Create:** `src/components/leads/lead-detail-view.tsx` - Move all UI including constants, breadcrumb, hero section, vehicle specs, message history, sidebar\n\n### 3. Hunts Page (MEDIUM PRIORITY - 94 lines)\n**File:** `src/app/(app)/hunts/page.tsx`\n**Issues:** Contains header with inline SVG, empty state, grid layout\n**Refactor to:**\n```typescript\n// page.tsx (thin)\nexport default async function HuntsPage() {\n  const hunts = await getOrganizationHunts();\n  return <HuntsView hunts={hunts} />;\n}\n```\n**Create:** `src/components/hunts/hunts-view.tsx` - Move header, empty state, grid\n\n### 4. Templates Page (MEDIUM PRIORITY - 110 lines)\n**File:** `src/app/(app)/templates/page.tsx`\n**Issues:** Contains header, section organization, empty states for both text and voice templates\n**Refactor to:**\n```typescript\n// page.tsx (thin)\nexport default async function TemplatesPage() {\n  const templates = await getOrganizationTemplates();\n  return <TemplatesView templates={templates} />;\n}\n```\n**Create:** `src/components/templates/templates-view.tsx` - Move filtering logic, sections, empty states\n\n### 5. New Hunt Page (LOW PRIORITY - 47 lines)\n**File:** `src/app/(app)/hunts/new/page.tsx`\n**Issues:** Contains breadcrumb navigation, header with description\n**Refactor to:**\n```typescript\n// page.tsx (thin)\nexport default function NewHuntPage() {\n  return <NewHuntView />;\n}\n```\n**Create:** `src/components/hunts/new-hunt-view.tsx` - Move breadcrumb, header, HuntForm composition\n\n### 6. New Template Page (LOW PRIORITY - 117 lines)\n**File:** `src/app/(app)/templates/new/page.tsx`\n**Issues:** Contains breadcrumb, type tabs with inline SVGs, conditional rendering\n**Refactor to:**\n```typescript\n// page.tsx (thin)\nexport default async function NewTemplatePage({ searchParams }: PageProps) {\n  const { type = \"text\" } = await searchParams;\n  return <NewTemplateView type={type} />;\n}\n```\n**Create:** `src/components/templates/new-template-view.tsx` - Move breadcrumb, tabs, form composition\n\n## Implementation Guidelines\n\n1. **View Component Naming:** Use `*-view.tsx` suffix (e.g., `hunts-view.tsx`, `dashboard-view.tsx`)\n2. **Props Interface:** Define explicit TypeScript interfaces for view props\n3. **Server vs Client:** View components can be Server Components unless they need interactivity (useState, event handlers)\n4. **Data Types:** Import types from schema files or define prop types based on action return types\n5. **Colocation:** Place view components in the same directory as related components (e.g., `src/components/dashboard/`)\n\n## Files to Skip\n\n- `src/app/page.tsx` - Root landing page, not part of app functionality\n- `src/app/(app)/leads/page.tsx` - Already follows pattern with `LeadsPageClient`\n- `src/app/(app)/settings/page.tsx` - Already follows pattern with `SettingsPageClient`\n\n## Pattern Reference\n\n**Good examples already in codebase:**\n- `src/app/(app)/settings/page.tsx` → `settings-page-client.tsx`\n- `src/app/(app)/leads/page.tsx` → `leads-page-client.tsx`",
         "testStrategy": "## Verification Steps\n\n### 1. Visual Regression Testing\n- Navigate to each refactored page and verify UI renders identically to before\n- Check responsive layouts at mobile, tablet, and desktop breakpoints\n- Verify all interactive elements (buttons, links) function correctly\n- Confirm empty states display correctly when no data exists\n\n### 2. Functionality Testing\nFor each refactored page:\n- **Dashboard:** Verify stats cards show correct data, hunt list renders, \"Create Hunt\" links work\n- **Hunts:** Verify hunt cards render, empty state shows when no hunts, \"New Hunt\" button works\n- **Templates:** Verify text/voice sections render, empty states work, \"New Template\" links function\n- **Lead Detail:** Verify all sections render (hero, specs, messages, activities), external links work\n- **New Hunt/Template:** Verify forms submit correctly, breadcrumb navigation works\n\n### 3. TypeScript Compilation\n```bash\npnpm tsc --noEmit\n```\n- Ensure no type errors in new view components\n- Verify prop interfaces match data structures from actions\n\n### 4. Code Structure Verification\nFor each refactored page.tsx:\n- [ ] Page file is under 30 lines\n- [ ] Only contains: imports, data fetching, component composition\n- [ ] No inline SVGs or complex JSX\n- [ ] No UI state management (useState, useEffect)\n- [ ] View component exists in appropriate components directory\n- [ ] View component has proper TypeScript props interface\n\n### 5. Development Server Testing\n```bash\npnpm dev\n```\n- Visit each route and verify:\n  - `/dashboard` - Stats and hunts render\n  - `/hunts` - Hunt list or empty state\n  - `/hunts/new` - Form renders correctly\n  - `/templates` - Both sections render\n  - `/templates/new` - Tabs and form work\n  - `/leads/[id]` - Full detail page renders\n\n### 6. Metadata Verification\n- Verify `generateMetadata` functions still work for pages that have them\n- Check page titles and descriptions in browser tab",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "27",
           "29"
         ],
         "priority": "medium",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Integrate SEO tags for Dashboard page",
+            "description": "Add generateMetadata function to dashboard page using the reusable SEO utility",
+            "details": "Import and use the generateSeoMetadata utility from src/lib/seo.ts to add proper SEO tags (title, description, Open Graph, Twitter) to the dashboard page",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 30,
+            "updatedAt": "2026-01-22T22:29:53.381Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Integrate SEO tags for Hunts page",
+            "description": "Add generateMetadata function to hunts page using the reusable SEO utility",
+            "details": "Import and use the generateSeoMetadata utility from src/lib/seo.ts to add proper SEO tags to the hunts list page",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 30,
+            "parentId": "undefined",
+            "updatedAt": "2026-01-22T22:30:08.137Z"
+          },
+          {
+            "id": 3,
+            "title": "Integrate SEO tags for Templates page",
+            "description": "Add generateMetadata function to templates page using the reusable SEO utility",
+            "details": "Import and use the generateSeoMetadata utility from src/lib/seo.ts to add proper SEO tags to the templates page",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 30,
+            "parentId": "undefined",
+            "updatedAt": "2026-01-22T22:30:23.972Z"
+          },
+          {
+            "id": 4,
+            "title": "Integrate SEO tags for Lead Detail page",
+            "description": "Add generateMetadata function to lead detail page using the reusable SEO utility with dynamic lead data",
+            "details": "Import and use the generateSeoMetadata utility from src/lib/seo.ts to add dynamic SEO tags based on lead information (vehicle details, status) for the lead detail page",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 30,
+            "parentId": "undefined",
+            "updatedAt": "2026-01-22T22:30:54.696Z"
+          },
+          {
+            "id": 5,
+            "title": "Integrate SEO tags for New Hunt page",
+            "description": "Add generateMetadata function to new hunt page using the reusable SEO utility",
+            "details": "Import and use the generateSeoMetadata utility from src/lib/seo.ts to add proper SEO tags to the new hunt creation page",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 30,
+            "parentId": "undefined",
+            "updatedAt": "2026-01-22T22:31:11.159Z"
+          },
+          {
+            "id": 6,
+            "title": "Integrate SEO tags for New Template page",
+            "description": "Add generateMetadata function to new template page using the reusable SEO utility",
+            "details": "Import and use the generateSeoMetadata utility from src/lib/seo.ts to add proper SEO tags to the new template creation page",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 30,
+            "parentId": "undefined",
+            "updatedAt": "2026-01-22T22:31:29.229Z"
+          }
+        ],
+        "updatedAt": "2026-01-22T22:31:29.229Z"
       },
       {
         "id": "31",
@@ -806,9 +874,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-22T21:38:39.619Z",
+      "lastModified": "2026-01-22T22:31:29.229Z",
       "taskCount": 31,
-      "completedCount": 30,
+      "completedCount": 31,
       "tags": [
         "master"
       ]

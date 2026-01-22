@@ -1,6 +1,13 @@
 import Link from "next/link";
 import { getOrganizationTemplates } from "@/actions/template.actions";
 import { TemplateCard } from "@/components/templates/template-card";
+import { getSEOTags } from "@/lib/seo";
+
+export const metadata = getSEOTags({
+  title: "Templates de messages",
+  description: "Créez et gérez vos templates pour WhatsApp, SMS et appels vocaux",
+  canonical: "/templates",
+});
 
 export default async function TemplatesPage() {
   const templates = await getOrganizationTemplates();

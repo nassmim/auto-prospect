@@ -1,6 +1,13 @@
 import Link from "next/link";
 import { getOrganizationHunts } from "@/actions/hunt-crud.actions";
 import { HuntCard } from "@/components/hunts/hunt-card";
+import { getSEOTags } from "@/lib/seo";
+
+export const metadata = getSEOTags({
+  title: "Recherches",
+  description: "Gérez vos recherches automatiques de véhicules et suivez la prospection en temps réel",
+  canonical: "/hunts",
+});
 
 export default async function HuntsPage() {
   const hunts = await getOrganizationHunts();
