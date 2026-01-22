@@ -9,6 +9,20 @@ import {
 } from "@/schema/message-template.schema";
 import { eq } from "drizzle-orm";
 import { createClient } from "@/lib/supabase/server";
+import {
+  textTemplateSchema,
+  voiceTemplateSchema,
+} from "@/schemas/validation";
+import { type z } from "zod";
+
+/**
+ * Helper function to format Zod validation errors
+ */
+function formatZodError(error: z.ZodError): string {
+  const fieldErrors = error.flatten().fieldErrors;
+  const firstError = Object.values(fieldErrors).flat()[0];
+  return firstError || "Données de formulaire invalides";
+}
 
 /**
  * Fetch all templates for the user's organization
@@ -20,7 +34,7 @@ export async function getOrganizationTemplates() {
   } = await supabase.auth.getSession();
 
   if (!session) {
-    throw new Error("Unauthorized");
+    throw new Error("Non autorisé");
   }
 
   const dbClient = await createDrizzleSupabaseClient();
@@ -42,7 +56,7 @@ export async function getOrganizationTemplates() {
     });
 
     if (!member) {
-      throw new Error("No organization found");
+      throw new Error("Aucune organisation trouvée");
     }
 
     // Fetch all templates for this organization
@@ -71,24 +85,23 @@ export async function getOrganizationTemplates() {
 /**
  * Create a new text template
  */
-export async function createTextTemplate(data: {
-  name: string;
-  channel: MessageChannel;
-  content: string;
-  isDefault?: boolean;
-}) {
+export async function createTextTemplate(data: unknown) {
   const supabase = await createClient();
   const {
     data: { session },
   } = await supabase.auth.getSession();
 
   if (!session) {
-    throw new Error("Unauthorized");
+    throw new Error("Non autorisé");
   }
 
-  if (!data.name.trim() || !data.content.trim()) {
-    throw new Error("Name and content are required");
+  // Validate with Zod
+  const parseResult = textTemplateSchema.safeParse(data);
+  if (!parseResult.success) {
+    throw new Error(formatZodError(parseResult.error));
   }
+
+  const validatedData = parseResult.data;
 
   const dbClient = await createDrizzleSupabaseClient();
 
@@ -109,11 +122,11 @@ export async function createTextTemplate(data: {
     });
 
     if (!member) {
-      throw new Error("No organization found");
+      throw new Error("Aucune organisation trouvée");
     }
 
     // If setting as default, unset other defaults for this channel
-    if (data.isDefault) {
+    if (validatedData.isDefault) {
       await dbClient.rls(async (tx) => {
         await tx
           .update(messageTemplates)
@@ -122,7 +135,7 @@ export async function createTextTemplate(data: {
             (table, { and, eq }) =>
               and(
                 eq(table.organizationId, member.organization.id),
-                eq(table.channel, data.channel),
+                eq(table.channel, validatedData.channel),
                 eq(table.type, "text"),
               ),
           );
@@ -135,11 +148,11 @@ export async function createTextTemplate(data: {
         .insert(messageTemplates)
         .values({
           organizationId: member.organization.id,
-          name: data.name.trim(),
+          name: validatedData.name,
           type: "text",
-          channel: data.channel,
-          content: data.content.trim(),
-          isDefault: data.isDefault || false,
+          channel: validatedData.channel,
+          content: validatedData.content,
+          isDefault: validatedData.isDefault || false,
           createdById: session.user.id,
         })
         .returning();
@@ -157,28 +170,23 @@ export async function createTextTemplate(data: {
 /**
  * Create a new voice template
  */
-export async function createVoiceTemplate(data: {
-  name: string;
-  audioUrl: string;
-  audioDuration: number;
-  isDefault?: boolean;
-}) {
+export async function createVoiceTemplate(data: unknown) {
   const supabase = await createClient();
   const {
     data: { session },
   } = await supabase.auth.getSession();
 
   if (!session) {
-    throw new Error("Unauthorized");
+    throw new Error("Non autorisé");
   }
 
-  if (!data.name.trim() || !data.audioUrl) {
-    throw new Error("Name and audio file are required");
+  // Validate with Zod
+  const parseResult = voiceTemplateSchema.safeParse(data);
+  if (!parseResult.success) {
+    throw new Error(formatZodError(parseResult.error));
   }
 
-  if (data.audioDuration < 15 || data.audioDuration > 55) {
-    throw new Error("Audio duration must be between 15 and 55 seconds");
-  }
+  const validatedData = parseResult.data;
 
   const dbClient = await createDrizzleSupabaseClient();
 
@@ -199,11 +207,11 @@ export async function createVoiceTemplate(data: {
     });
 
     if (!member) {
-      throw new Error("No organization found");
+      throw new Error("Aucune organisation trouvée");
     }
 
     // If setting as default, unset other voice defaults
-    if (data.isDefault) {
+    if (validatedData.isDefault) {
       await dbClient.rls(async (tx) => {
         await tx
           .update(messageTemplates)
@@ -224,12 +232,12 @@ export async function createVoiceTemplate(data: {
         .insert(messageTemplates)
         .values({
           organizationId: member.organization.id,
-          name: data.name.trim(),
+          name: validatedData.name,
           type: "voice",
           channel: null,
-          audioUrl: data.audioUrl,
-          audioDuration: data.audioDuration,
-          isDefault: data.isDefault || false,
+          audioUrl: validatedData.audioUrl,
+          audioDuration: validatedData.audioDuration,
+          isDefault: validatedData.isDefault || false,
           createdById: session.user.id,
         })
         .returning();
@@ -254,7 +262,7 @@ export async function deleteTemplate(templateId: string) {
   } = await supabase.auth.getSession();
 
   if (!session) {
-    throw new Error("Unauthorized");
+    throw new Error("Non autorisé");
   }
 
   const dbClient = await createDrizzleSupabaseClient();
@@ -290,7 +298,7 @@ export async function updateTemplate(
   } = await supabase.auth.getSession();
 
   if (!session) {
-    throw new Error("Unauthorized");
+    throw new Error("Non autorisé");
   }
 
   const dbClient = await createDrizzleSupabaseClient();
