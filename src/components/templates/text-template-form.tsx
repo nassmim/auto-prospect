@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createTextTemplate } from "@/actions/template.actions";
-import { textTemplateSchema, type TextTemplateFormData } from "@/schemas/validation/template.validation";
+import { textTemplateSchema, type TextTemplateFormData } from "@/schemas/validation";
 import {
   Form,
   FormField,

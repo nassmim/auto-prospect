@@ -7,7 +7,7 @@ export const teamInvitationSchema = z.object({
     .email("Adresse email invalide")
     .min(1, "L'email est requis"),
   role: z.enum(["admin", "user"], {
-    required_error: "Le rôle est requis",
+    message: "Le rôle est requis",
   }),
 });
 

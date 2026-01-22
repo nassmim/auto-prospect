@@ -13,16 +13,7 @@ import {
   textTemplateSchema,
   voiceTemplateSchema,
 } from "@/schemas/validation";
-import { type z } from "zod";
-
-/**
- * Helper function to format Zod validation errors
- */
-function formatZodError(error: z.ZodError): string {
-  const fieldErrors = error.flatten().fieldErrors;
-  const firstError = Object.values(fieldErrors).flat()[0];
-  return firstError || "Données de formulaire invalides";
-}
+import { formatZodError } from "@/lib/validation";
 
 /**
  * Fetch all templates for the user's organization

@@ -10,17 +10,8 @@ import { messageTemplates } from "@/schema/message-template.schema";
 import { eq, and, inArray, isNotNull, desc } from "drizzle-orm";
 import { createClient } from "@/lib/supabase/server";
 import { renderTemplate, extractLeadVariables } from "@/services/message.service";
-import { leadNoteSchema, leadReminderSchema } from "@/schemas/validation/lead.validation";
-import { type z } from "zod";
-
-/**
- * Helper function to format Zod validation errors
- */
-function formatZodError(error: z.ZodError): string {
-  const fieldErrors = error.flatten().fieldErrors;
-  const firstError = Object.values(fieldErrors).flat()[0];
-  return firstError || "Données de formulaire invalides";
-}
+import { leadNoteSchema, leadReminderSchema } from "@/schemas/validation";
+import { formatZodError } from "@/lib/validation";
 
 /**
  * Updates a lead's stage and logs the activity

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createHunt } from "@/actions/hunt-crud.actions";
-import { huntFormSchema, type HuntFormData } from "@/schemas/validation/hunt.validation";
+import { huntFormSchema, type HuntFormData } from "@/schemas/validation";
 import {
   Form,
   FormField,

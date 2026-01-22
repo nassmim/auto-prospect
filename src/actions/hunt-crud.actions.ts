@@ -5,16 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { baseFilters, type HuntStatus, type OutreachSettings, type TemplateIds } from "@/schema/filter.schema";
 import { eq } from "drizzle-orm";
 import { createHuntSchema, updateHuntSchema } from "@/schemas/validation";
-import { type z } from "zod";
-
-/**
- * Helper function to format Zod validation errors
- */
-function formatZodError(error: z.ZodError): string {
-  const fieldErrors = error.flatten().fieldErrors;
-  const firstError = Object.values(fieldErrors).flat()[0];
-  return firstError || "Données de formulaire invalides";
-}
+import { formatZodError } from "@/lib/validation";
 
 /**
  * Fetches all hunts for the current user's organization

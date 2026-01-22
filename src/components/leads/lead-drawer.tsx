@@ -29,7 +29,7 @@ import {
   leadReminderSchema,
   type LeadNoteFormData,
   type LeadReminderFormData,
-} from "@/schemas/validation/lead.validation";
+} from "@/schemas/validation";
 import {
   Form,
   FormField,

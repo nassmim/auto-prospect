@@ -7,8 +7,7 @@ export const textTemplateSchema = z.object({
     .min(1, "Le nom est requis")
     .max(100, "Le nom ne peut pas dépasser 100 caractères"),
   channel: z.enum(["whatsapp", "sms", "leboncoin"] as const, {
-    required_error: "Le canal est requis",
-    invalid_type_error: "Canal invalide",
+    message: "Canal invalide",
   }),
   content: z
     .string()
