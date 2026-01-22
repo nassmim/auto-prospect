@@ -1,3 +1,9 @@
 export enum EPlatformValue {
-  LOBSTR = "lobstrValue"
+  LOBSTR = "lobstrValue",
+}
+
+export enum EMessageType {
+  WHATSAPP_TEXT = "whatsappText",
+  SMS = "sms",
+  RINGLESS_VOICE = "ringlessVoice",
 }

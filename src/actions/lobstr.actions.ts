@@ -3,7 +3,7 @@
 import {
   fetchAllReferenceData,
   setAdUpdateOnConflict,
-} from "@/actions/ads.actions";
+} from "@/actions/ad.actions";
 import { sendAlertToAdmin } from "@/actions/general.actions";
 import { EPlatformValue } from "@/constants/enums";
 import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
@@ -140,8 +140,8 @@ const getAdData = async (
       adDetails["Date de fin de validité du contrôle technique"],
     ),
     acceptSalesmen: !ad.no_salesmen,
-    lat: customParseInt(ad.lat),
-    lng: customParseInt(ad.lng),
+    lat: parseFloat(ad.lat),
+    lng: parseFloat(ad.lng),
   };
 
   // lookups to get the record id in our db associated to this lobstr value

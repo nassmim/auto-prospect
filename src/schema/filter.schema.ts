@@ -1,9 +1,10 @@
 import { accounts } from "@/schema/account.schema";
-import { adSubTypes, adTypes, brands, zipcodes } from "@/schema/ad.schema";
+import { adSubTypes, adTypes, brands, locations } from "@/schema/ad.schema";
 import { relations, sql } from "drizzle-orm";
 import {
   boolean,
   foreignKey,
+  integer,
   pgPolicy,
   pgTable,
   real,
@@ -19,27 +20,25 @@ export const baseFilters = pgTable(
     accountId: uuid("account_id")
       .references(() => accounts.id)
       .notNull(),
-    adTypeId: uuid("ad_type_id")
+    adTypeId: smallint("ad_type_id")
       .references(() => adTypes.id)
       .notNull(),
-    zipcodeId: uuid("zipcode_id")
-      .references(() => zipcodes.id)
+    locationId: integer("location_id")
+      .references(() => locations.id)
       .notNull(),
-    latCenter: smallint("lat_center").notNull(),
-    lngCenter: smallint("lng_center").notNull(),
-    radius: smallint().default(0).notNull(),
-    priceMin: real("price_min").default(0),
-    mileageMin: real("mileage_min").default(0),
+    radiusInKm: smallint().default(0).notNull(),
+    priceMin: real("price_min").default(0).notNull(),
+    mileageMin: real("mileage_min").default(0).notNull(),
     mileageMax: real("mileage_max"),
-    modelYearMin: real("model_year_min").default(2010),
+    modelYearMin: real("model_year_min").default(2010).notNull(),
     modelYearMax: real("model_year_max"),
-    hasBeenReposted: boolean("has_been_reposted").default(false),
-    priceHasDropped: boolean("price_has_dropped").default(false),
-    isUrgent: boolean("is_urgent").default(false),
-    hasBeenBoosted: boolean("has_been_boosted").default(false),
-    isLowPrice: boolean("is_low_price").default(false),
+    hasBeenReposted: boolean("has_been_reposted").default(false).notNull(),
+    priceHasDropped: boolean("price_has_dropped").default(false).notNull(),
+    isUrgent: boolean("is_urgent").default(false).notNull(),
+    hasBeenBoosted: boolean("has_been_boosted").default(false).notNull(),
+    isLowPrice: boolean("is_low_price").default(false).notNull(),
     priceMax: real("price_max"),
-    isActive: boolean("is_active").default(true),
+    isActive: boolean("is_active").default(true).notNull(),
   },
   () => [
     pgPolicy("enable all crud for authenticated users", {
@@ -253,9 +252,9 @@ export const baseFiltersRelations = relations(baseFilters, ({ one, many }) => ({
     fields: [baseFilters.accountId],
     references: [accounts.id],
   }),
-  zipcode: one(zipcodes, {
-    fields: [baseFilters.zipcodeId],
-    references: [zipcodes.id],
+  location: one(locations, {
+    fields: [baseFilters.locationId],
+    references: [locations.id],
   }),
   type: one(adTypes, {
     fields: [baseFilters.adTypeId],

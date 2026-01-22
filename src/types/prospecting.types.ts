@@ -1,25 +1,34 @@
-type TBaseFilters = {
+import { TLocation } from "@/types/ad.types";
+
+type TFilters = {
   id: string;
   accountId: string;
-  adTypeId: string;
-  zipcodeId: string;
-  latCenter: number;
-  lngCenter: number;
-  radius: number;
-  priceMin: number | null;
+  adTypeId: number;
+  locationId: number;
+  radiusInKm: number;
+  priceMin: number;
   priceMax: number | null;
-  isLowPrice: boolean | null;
-  hasBeenReposted: boolean | null;
-  hasBeenBoosted: boolean | null;
-  isUrgent: boolean | null;
-  modelYearMin: number | null;
-  priceHasDropped: boolean | null;
+  isLowPrice: boolean;
+  hasBeenReposted: boolean;
+  hasBeenBoosted: boolean;
+  isUrgent: boolean;
+  modelYearMin: number;
+  priceHasDropped: boolean;
   modelYearMax: number | null;
-  mileageMin: number | null;
+  mileageMin: number;
   mileageMax: number | null;
 };
 
-type TBaseFiltersWithRelations = TBaseFilters & {
+type TFiltersWithRelations = Omit<
+  TFilters,
+  "typeId" | "subtypeId" | "locationId" | "brandId"
+> & {
+  type?: {
+    id: string;
+    adTypeId: number;
+    baseFilterId: string;
+  };
+  location: TLocation;
   brands: {
     id: string;
     brandId: number;
@@ -32,17 +41,4 @@ type TBaseFiltersWithRelations = TBaseFilters & {
   }[];
 };
 
-type TFilters = TBaseFiltersWithRelations & {
-  type: {
-    id: string;
-    adTypeId: number;
-    baseFilterId: string;
-  };
-  zipcode: {
-    id: string;
-    zipcodeId: number;
-    baseFilterId: string;
-  };
-};
-
-export type { TBaseFilters, TBaseFiltersWithRelations, TFilters };
+export type { TFilters, TFiltersWithRelations };

@@ -1,11 +1,12 @@
 import * as schema from "@/schema";
-import { DrizzleConfig } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/postgres-js";
+import { DrizzleConfig, ExtractTablesWithRelations } from "drizzle-orm";
+import { drizzle, PostgresJsQueryResultHKT } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 
 import { createDrizzle } from "@/lib/drizzle/rls/client-wrapper";
 import { decode } from "@/lib/drizzle/rls/jwt";
 import { createClient } from "@/lib/supabase/server";
+import { PgTransaction } from "drizzle-orm/pg-core";
 
 const databaseUrl = process.env.SUPABASE_DATABASE_URL;
 
@@ -41,6 +42,13 @@ async function createDrizzleSupabaseClient() {
 
 type TDBModel = keyof typeof defaultDBClient.query;
 type TDBClient = Awaited<ReturnType<typeof createDrizzleSupabaseClient>>;
+type TDBQuery =
+  | PgTransaction<
+      PostgresJsQueryResultHKT,
+      typeof schema,
+      ExtractTablesWithRelations<typeof schema>
+    >
+  | typeof defaultDBClient;
 
 export {
   createDrizzleSupabaseClient,
@@ -48,4 +56,5 @@ export {
   postgresClient,
   type TDBClient,
   type TDBModel,
+  type TDBQuery,
 };
