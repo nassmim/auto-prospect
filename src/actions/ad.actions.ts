@@ -129,7 +129,7 @@ export const fetchAllReferenceData = async (
  * Gets ads that already received a message from a specific user
  */
 export const getAdsContactedByUser = async (
-  accountId: string,
+  organizationId: string,
   {
     dbClient,
     bypassRLS = false,
@@ -142,7 +142,7 @@ export const getAdsContactedByUser = async (
 
   const query = (tx: TDBQuery) =>
     tx.query.contactedAds.findMany({
-      where: (table, { eq }) => eq(table.accountId, accountId),
+      where: (table, { eq }) => eq(table.organizationId, organizationId),
       columns: { adId: true },
     });
 

@@ -286,7 +286,7 @@ export const contactedAds = pgTable(
     adId: uuid("ad_id")
       .references(() => ads.id, { onDelete: "cascade" })
       .notNull(),
-    accountId: uuid("account_id")
+    organizationId: uuid("organization_id")
       .references(() => accounts.id, { onDelete: "cascade" })
       .notNull(),
     messageTypeId: smallint("message_type_id")
@@ -407,7 +407,7 @@ export const contactedAdsRelations = relations(contactedAds, ({ one }) => ({
     references: [ads.id],
   }),
   account: one(accounts, {
-    fields: [contactedAds.accountId],
+    fields: [contactedAds.organizationId],
     references: [accounts.id],
   }),
 }));

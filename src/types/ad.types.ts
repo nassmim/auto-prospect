@@ -248,7 +248,7 @@ type TAdWithRelations = Omit<
   contactedAds?: {
     id: string;
     adId: string;
-    accountId: string;
+    organizationId: string;
     messageTypeId: number;
     createdAt: string;
   }[];
@@ -259,14 +259,14 @@ type TAdInsert = Omit<TAd, "id" | "createdAt">;
 type TContactedAd = {
   id: string;
   adId: string;
-  accountId: string;
+  organizationId: string;
   messageTypeId: string;
   createdAt: string;
 };
 
 type AutoSenderPreferencesType = {
   id: string;
-  accountId: string;
+  organizationId: string;
   firstMessage: string;
   secondMessage: string;
   priceMin: number | null;
@@ -358,7 +358,7 @@ type TSubscription =
   | {
       active: boolean;
       id: string;
-      accountId: string | null;
+      organizationId: string | null;
       updatedAt: string;
       createdAt: string;
       billingProvider: "stripe" | "lemon-squeezy" | "paddle";

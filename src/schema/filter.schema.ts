@@ -64,18 +64,18 @@ export const baseFilters = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .default(sql`now()`),
-    priceMin: real("price_min").default(0),
-    mileageMin: real("mileage_min").default(0),
+    priceMin: real("price_min").default(0).notNull(),
+    mileageMin: real("mileage_min").default(0).notNull(),
     mileageMax: real("mileage_max"),
-    modelYearMin: real("model_year_min").default(2010),
+    modelYearMin: real("model_year_min").default(2010).notNull(),
     modelYearMax: real("model_year_max"),
-    hasBeenReposted: boolean("has_been_reposted").default(false),
-    priceHasDropped: boolean("price_has_dropped").default(false),
-    isUrgent: boolean("is_urgent").default(false),
-    hasBeenBoosted: boolean("has_been_boosted").default(false),
-    isLowPrice: boolean("is_low_price").default(false),
+    hasBeenReposted: boolean("has_been_reposted").default(false).notNull(),
+    priceHasDropped: boolean("price_has_dropped").default(false).notNull(),
+    isUrgent: boolean("is_urgent").default(false).notNull(),
+    hasBeenBoosted: boolean("has_been_boosted").default(false).notNull(),
+    isLowPrice: boolean("is_low_price").default(false).notNull(),
     priceMax: real("price_max"),
-    isActive: boolean("is_active").default(true),
+    isActive: boolean("is_active").default(true).notNull(),
   },
   (table) => [
     foreignKey({

@@ -140,14 +140,12 @@ const getAdData = async (
       adDetails["Date de fin de validité du contrôle technique"],
     ),
     acceptSalesmen: !ad.no_salesmen,
-    lat: parseFloat(ad.lat),
-    lng: parseFloat(ad.lng),
   };
 
   // lookups to get the record id in our db associated to this lobstr value
   adData.typeId = referenceData.adTypes.get(ad.category_name) || 1;
   adData.brandId = referenceData.brands.get(adDetails["Marque"]) || null;
-  adData.zipcodeId = referenceData.zipcodes.get(ad.postal_code) || 1;
+  adData.locationId = referenceData.zipcodes.get(ad.postal_code) || 1;
   adData.gearBoxId =
     referenceData.gearBoxes.get(adDetails["Boîte de vitesse"]) || null;
   adData.drivingLicenceId = adDetails["Permis"]

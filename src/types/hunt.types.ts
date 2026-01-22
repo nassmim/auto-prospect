@@ -2,7 +2,7 @@ import { TLocation } from "@/types/ad.types";
 
 type TFilters = {
   id: string;
-  accountId: string;
+  organizationId: string;
   adTypeId: number;
   locationId: number;
   radiusInKm: number;
@@ -19,7 +19,7 @@ type TFilters = {
   mileageMax: number | null;
 };
 
-type TFiltersWithRelations = Omit<
+type THuntWithRelations = Omit<
   TFilters,
   "typeId" | "subtypeId" | "locationId" | "brandId"
 > & {
@@ -41,4 +41,4 @@ type TFiltersWithRelations = Omit<
   }[];
 };
 
-export type { TFilters, TFiltersWithRelations };
+export type { TFilters, THuntWithRelations };

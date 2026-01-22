@@ -1,8 +1,9 @@
 import { sendAlertToAdmin } from "@/actions/general.actions";
+import { runDailyHunts } from "@/actions/hunt.actions";
 
 export async function POST(): Promise<Response> {
   try {
-    await runAutoSender();
+    await runDailyHunts();
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
@@ -10,7 +11,7 @@ export async function POST(): Promise<Response> {
   } catch (error) {
     const today = new Date();
     await sendAlertToAdmin(
-      `Error while sending the messages: ${today.toDateString()}, error: ${error}`,
+      `Error while running daily hunts: ${today.toDateString()}, error: ${error}`,
     ).catch(() => {});
     return new Response(
       JSON.stringify({
