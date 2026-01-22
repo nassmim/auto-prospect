@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   boolean,
   foreignKey,
@@ -9,6 +9,7 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { authenticatedRole, authUid, authUsers } from "drizzle-orm/supabase";
+import { contactedAds } from "@/schema/ad.schema";
 
 export const accounts = pgTable(
   "accounts",
@@ -56,3 +57,7 @@ export const accounts = pgTable(
     })
   ],
 );
+
+export const accountsRelations = relations(accounts, ({ many }) => ({
+  contactedAds: many(contactedAds),
+}));

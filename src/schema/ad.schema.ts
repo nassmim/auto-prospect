@@ -1,3 +1,5 @@
+import { accounts } from "@/schema/account.schema";
+import { messageTypes } from "@/schema/general.schema";
 import { relations, sql } from "drizzle-orm";
 import {
   boolean,
@@ -23,8 +25,8 @@ export const ads = pgTable(
   {
     id: uuid().defaultRandom().primaryKey().notNull(),
     typeId: smallint("type_id")
-    .references(() => adTypes.id)
-    .notNull(),
+      .references(() => adTypes.id)
+      .notNull(),
     subtypeId: smallint("subtype_id").references(() => adSubTypes.id),
     drivingLicenceId: smallint("driving_licence_id").references(
       () => drivingLicences.id,
@@ -36,9 +38,9 @@ export const ads = pgTable(
     vehicleStateId: smallint("vehicle_state_id").references(
       () => vehicleStates.id,
     ),
-    zipcodeId: integer("zipcode_id")
-    .references(() => zipcodes.id)
-    .notNull(),
+    locationId: integer("location_id")
+      .references(() => locations.id)
+      .notNull(),
     brandId: integer("brand_id").references(() => brands.id),
     fuelId: smallint("fuel_id").references(() => fuels.id),
     url: text().notNull(),
@@ -46,7 +48,7 @@ export const ads = pgTable(
     title: text().notNull(),
     description: text(),
     picture: text(),
-    price: doublePrecision(),
+    price: doublePrecision().notNull(),
     hasBeenReposted: boolean("has_been_reposted").default(false).notNull(),
     hasBeenBoosted: boolean("has_been_boosted").default(false).notNull(),
     isUrgent: boolean("is_urgent").default(false).notNull(),
@@ -61,23 +63,21 @@ export const ads = pgTable(
     priceMax: real("price_max"),
     isLowPrice: boolean("is_low_price").default(false).notNull(),
     phoneNumber: text("phone_number"),
-    isWhatsappPhone: boolean('is_whatsapp_phone').default(false),
-    ownerName: text("owner_name"),
+    isWhatsappPhone: boolean("is_whatsapp_phone").default(false),
+    ownerName: text("owner_name").notNull(),
     entryYear: smallint("entry_year"),
     hasPhone: boolean("has_phone").default(false).notNull(),
     equipments: text(),
     otherSpecifications: text("other_specifications"),
     technicalInspectionYear: smallint("technical_inspection_year"),
     model: text(),
-    acceptSalesmen: boolean("accept_salesmen").default(true),
-    lat: smallint(),
-    lng: smallint(),
+    acceptSalesmen: boolean("accept_salesmen").default(true).notNull(),
   },
   (table) => [
     index("ads_created_at_location_state_flags_idx").on(
       table.createdAt,
       table.typeId,
-      table.zipcodeId,
+      table.locationId,
       table.acceptSalesmen,
       table.hasPhone,
       table.ownerName,
@@ -117,7 +117,7 @@ export const adTypes = pgTable(
     lobstrValue: text("lobstr_value"),
   },
   () => [
-    pgPolicy("enable read for all users", {
+    pgPolicy("enable read for authenticated users", {
       as: "permissive",
       for: "select",
       to: authenticatedRole,
@@ -138,7 +138,7 @@ export const adSubTypes = pgTable(
     lobstrValue: text("lobstr_value"),
   },
   () => [
-    pgPolicy("enable read for all users", {
+    pgPolicy("enable read for authenticated users", {
       as: "permissive",
       for: "select",
       to: authenticatedRole,
@@ -156,7 +156,7 @@ export const drivingLicences = pgTable(
     lobstrValue: text("lobstr_value"),
   },
   () => [
-    pgPolicy("enable read for all users", {
+    pgPolicy("enable read for authenticated users", {
       as: "permissive",
       for: "select",
       to: authenticatedRole,
@@ -174,7 +174,7 @@ export const gearBoxes = pgTable(
     lobstrValue: text("lobstr_value"),
   },
   () => [
-    pgPolicy("enable read for all users", {
+    pgPolicy("enable read for authenticated users", {
       as: "permissive",
       for: "select",
       to: authenticatedRole,
@@ -192,7 +192,7 @@ export const vehicleSeats = pgTable(
     lobstrValue: text("lobstr_value"),
   },
   () => [
-    pgPolicy("enable read for all users", {
+    pgPolicy("enable read for authenticated users", {
       as: "permissive",
       for: "select",
       to: authenticatedRole,
@@ -210,7 +210,7 @@ export const vehicleStates = pgTable(
     lobstrValue: text("lobstr_value"),
   },
   () => [
-    pgPolicy("enable read for all users", {
+    pgPolicy("enable read for authenticated users", {
       as: "permissive",
       for: "select",
       to: authenticatedRole,
@@ -219,18 +219,22 @@ export const vehicleStates = pgTable(
   ],
 );
 
-export const zipcodes = pgTable(
-  "zipcodes",
+export const locations = pgTable(
+  "locations",
   {
     id: serial().primaryKey(),
     zipcode: varchar({ length: 5 }).notNull(),
     name: text().notNull(),
-    lbcValue: text("lbc_value"),
-    lobstrValue: text("lobstr_value"),
+    lat: real().notNull(),
+    lng: real().notNull(),
   },
   (table) => [
     unique("zipcode_name_unique").on(table.name, table.zipcode),
-    pgPolicy("enable read for all users", {
+    index("locations_geo_idx").using(
+      "gist",
+      sql`ST_MakePoint(${table.lng}, ${table.lat})::geography`,
+    ),
+    pgPolicy("enable read for authenticated users", {
       as: "permissive",
       for: "select",
       to: authenticatedRole,
@@ -248,7 +252,7 @@ export const brands = pgTable(
     lobstrValue: text("lobstr_value"),
   },
   () => [
-    pgPolicy("enable read for all users", {
+    pgPolicy("enable read for authenticated users", {
       as: "permissive",
       for: "select",
       to: authenticatedRole,
@@ -266,7 +270,7 @@ export const fuels = pgTable(
     lobstrValue: text("lobstr_value"),
   },
   () => [
-    pgPolicy("enable read for all users", {
+    pgPolicy("enable read for authenticated users", {
       as: "permissive",
       for: "select",
       to: authenticatedRole,
@@ -275,7 +279,45 @@ export const fuels = pgTable(
   ],
 );
 
-export const adsRelations = relations(ads, ({ one }) => ({
+export const contactedAds = pgTable(
+  "contacted_ads",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    adId: uuid("ad_id")
+      .references(() => ads.id, { onDelete: "cascade" })
+      .notNull(),
+    accountId: uuid("account_id")
+      .references(() => accounts.id, { onDelete: "cascade" })
+      .notNull(),
+    messageTypeId: smallint("message_type_id")
+      .references(() => messageTypes.id)
+      .notNull(),
+    createdAt: date("created_at").defaultNow().notNull(),
+  },
+  () => [
+    pgPolicy("enable read for authenticated users", {
+      as: "permissive",
+      for: "select",
+      to: authenticatedRole,
+      using: sql`true`,
+    }),
+    pgPolicy("enable update for authenticated users", {
+      as: "permissive",
+      for: "select",
+      to: authenticatedRole,
+      using: sql`true`,
+      withCheck: sql`true`,
+    }),
+    pgPolicy("enable insert for authenticated users", {
+      as: "permissive",
+      for: "select",
+      to: authenticatedRole,
+      withCheck: sql`true`,
+    }),
+  ],
+);
+
+export const adsRelations = relations(ads, ({ one, many }) => ({
   type: one(adTypes, {
     fields: [ads.typeId],
     references: [adTypes.id],
@@ -300,9 +342,9 @@ export const adsRelations = relations(ads, ({ one }) => ({
     fields: [ads.vehicleStateId],
     references: [vehicleStates.id],
   }),
-  zipcode: one(zipcodes, {
-    fields: [ads.zipcodeId],
-    references: [zipcodes.id],
+  location: one(locations, {
+    fields: [ads.locationId],
+    references: [locations.id],
   }),
   brand: one(brands, {
     fields: [ads.brandId],
@@ -312,6 +354,7 @@ export const adsRelations = relations(ads, ({ one }) => ({
     fields: [ads.fuelId],
     references: [fuels.id],
   }),
+  contactedAds: many(contactedAds),
 }));
 
 export const adTypesRelations = relations(adTypes, ({ many }) => ({
@@ -327,9 +370,12 @@ export const adSubTypesRelations = relations(adSubTypes, ({ one, many }) => ({
   ads: many(ads),
 }));
 
-export const drivingLicencesRelations = relations(drivingLicences, ({ many }) => ({
-  ads: many(ads),
-}));
+export const drivingLicencesRelations = relations(
+  drivingLicences,
+  ({ many }) => ({
+    ads: many(ads),
+  }),
+);
 
 export const gearBoxesRelations = relations(gearBoxes, ({ many }) => ({
   ads: many(ads),
@@ -343,7 +389,7 @@ export const vehicleStatesRelations = relations(vehicleStates, ({ many }) => ({
   ads: many(ads),
 }));
 
-export const zipcodesRelations = relations(zipcodes, ({ many }) => ({
+export const locationsRelations = relations(locations, ({ many }) => ({
   ads: many(ads),
 }));
 
@@ -353,4 +399,15 @@ export const brandsRelations = relations(brands, ({ many }) => ({
 
 export const fuelsRelations = relations(fuels, ({ many }) => ({
   ads: many(ads),
+}));
+
+export const contactedAdsRelations = relations(contactedAds, ({ one }) => ({
+  ad: one(ads, {
+    fields: [contactedAds.adId],
+    references: [ads.id],
+  }),
+  account: one(accounts, {
+    fields: [contactedAds.accountId],
+    references: [accounts.id],
+  }),
 }));
