@@ -44,12 +44,13 @@ export const baseFilters = pgTable(
     organizationId: uuid("organization_id").notNull(),
     createdById: uuid("created_by_id").notNull(), // Who created it (for audit trail)
     adTypeId: smallint("ad_type_id")
-    .references(() => adTypes.id)
-    .notNull(),
+      .references(() => adTypes.id)
+      .notNull(),
     // Search filter fields
-    locationId: uuid("location_id")
+    locationId: integer("location_id")
       .references(() => locations.id)
-      .notNull(),    
+      .notNull(),
+    radiusInKm: smallint().default(0).notNull(),
     name: varchar({ length: 255 }).notNull(),
     status: varchar({ length: 20 }).notNull().default("active"),
     autoRefresh: boolean("auto_refresh").notNull().default(true),
@@ -110,44 +111,6 @@ export const baseFilters = pgTable(
       and om.account_id = ${authUid}
       and om.joined_at is not null
     )`,
-    }),
-  ],
-);
-
-export const adTypesFilters = pgTable(
-  "ad_types_filter",
-  {
-    id: uuid().defaultRandom().primaryKey(),
-    accountId: uuid("account_id")
-      .references(() => accounts.id)
-      .notNull(),
-    adTypeId: smallint("ad_type_id")
-      .references(() => adTypes.id)
-      .notNull(),
-    locationId: integer("location_id")
-      .references(() => locations.id)
-      .notNull(),
-    radiusInKm: smallint().default(0).notNull(),
-    priceMin: real("price_min").default(0).notNull(),
-    mileageMin: real("mileage_min").default(0).notNull(),
-    mileageMax: real("mileage_max"),
-    modelYearMin: real("model_year_min").default(2010).notNull(),
-    modelYearMax: real("model_year_max"),
-    hasBeenReposted: boolean("has_been_reposted").default(false).notNull(),
-    priceHasDropped: boolean("price_has_dropped").default(false).notNull(),
-    isUrgent: boolean("is_urgent").default(false).notNull(),
-    hasBeenBoosted: boolean("has_been_boosted").default(false).notNull(),
-    isLowPrice: boolean("is_low_price").default(false).notNull(),
-    priceMax: real("price_max"),
-    isActive: boolean("is_active").default(true).notNull(),
-  },
-  () => [
-    pgPolicy("enable all crud for authenticated users", {
-      as: "permissive",
-      for: "all",
-      to: authenticatedRole,
-      using: sql`true`,
-      withCheck: sql`true`,
     }),
   ],
 );

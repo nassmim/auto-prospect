@@ -59,13 +59,19 @@ src/proxy.ts          → Auth middleware
 - Manual SQL outside migrations
 
 ### New Table Checklist
+
+**CRITICAL: Every new table MUST have explicit grants, even if RLS is enabled!**
+
 1. ✅ Define RLS policies in schema (see `src/schema/user.ts`)
-2. ✅ Add explicit grants in migration:
+2. ✅ **ALWAYS add explicit grants in migration** (see example in `0009_create_leads_tables.sql`):
    ```sql
-   grant select, insert, update, delete on table public.my_table
-   to anon, authenticated, service_role;
+   -- Explicit grants for all new tables
+   grant select, insert, update, delete on table public.my_table to authenticated, service_role;
    ```
+   **Why:** Supabase requires explicit grants even with RLS enabled. Without grants, authenticated users cannot access the table even if RLS policies allow it.
+
 3. ✅ Foreign keys to `auth.users` on cascade delete (if user-owned)
+4. ✅ Verify no duplicate migration numbers (check `ls supabase/migrations/`)
 
 ## Environment Setup
 - **5 files**: `.env.local`, `.env.development`, `.env.development.local`, `.env.production`, `.env.production.local`
