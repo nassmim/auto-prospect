@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useTransition } from "react";
 import Image from "next/image";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   getLeadDetails,
   updateLeadStage,
@@ -22,6 +24,20 @@ import {
   extractLeadVariables,
   generateWhatsAppLink,
 } from "@/services/message.service";
+import {
+  leadNoteSchema,
+  leadReminderSchema,
+  type LeadNoteFormData,
+  type LeadReminderFormData,
+} from "@/schemas/validation/lead.validation";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
 
 type LeadDrawerProps = {
   leadId: string | null;
@@ -56,18 +72,24 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
   const [error, setError] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isSendingWhatsApp, setIsSendingWhatsApp] = useState(false);
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
 
-  // Notes form state
-  const [noteContent, setNoteContent] = useState("");
-  const [isSavingNote, setIsSavingNote] = useState(false);
-  const [noteError, setNoteError] = useState<string | null>(null);
+  // Notes form
+  const noteForm = useForm<LeadNoteFormData>({
+    resolver: zodResolver(leadNoteSchema),
+    defaultValues: {
+      content: "",
+    },
+  });
 
-  // Reminders form state
-  const [reminderDueAt, setReminderDueAt] = useState("");
-  const [reminderNote, setReminderNote] = useState("");
-  const [isSavingReminder, setIsSavingReminder] = useState(false);
-  const [reminderError, setReminderError] = useState<string | null>(null);
+  // Reminders form
+  const reminderForm = useForm<LeadReminderFormData>({
+    resolver: zodResolver(leadReminderSchema),
+    defaultValues: {
+      dueAt: new Date(),
+      note: "",
+    },
+  });
 
   useEffect(() => {
     if (!leadId) {
@@ -169,60 +191,41 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
     }
   };
 
-  const handleAddNote = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!lead || !noteContent.trim() || isSavingNote) return;
-
-    setIsSavingNote(true);
-    setNoteError(null);
+  const handleAddNote = async (data: LeadNoteFormData) => {
+    if (!lead) return;
 
     try {
-      await addLeadNote(lead.id, noteContent);
+      await addLeadNote(lead.id, data.content);
 
       // Reload lead details to get updated notes
       const updatedLead = await getLeadDetails(lead.id);
       setLead(updatedLead);
 
-      // Clear form
-      setNoteContent("");
+      // Reset form
+      noteForm.reset();
     } catch (err) {
-      setNoteError(err instanceof Error ? err.message : "Failed to add note");
-    } finally {
-      setIsSavingNote(false);
+      noteForm.setError("root", {
+        message: err instanceof Error ? err.message : "Failed to add note",
+      });
     }
   };
 
-  const handleAddReminder = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!lead || !reminderDueAt || isSavingReminder) return;
-
-    setIsSavingReminder(true);
-    setReminderError(null);
+  const handleAddReminder = async (data: LeadReminderFormData) => {
+    if (!lead) return;
 
     try {
-      const dueAt = new Date(reminderDueAt);
-
-      if (dueAt <= new Date()) {
-        setReminderError("La date doit être dans le futur");
-        setIsSavingReminder(false);
-        return;
-      }
-
-      await addLeadReminder(lead.id, dueAt, reminderNote);
+      await addLeadReminder(lead.id, data.dueAt, data.note);
 
       // Reload lead details to get updated reminders
       const updatedLead = await getLeadDetails(lead.id);
       setLead(updatedLead);
 
-      // Clear form
-      setReminderDueAt("");
-      setReminderNote("");
+      // Reset form
+      reminderForm.reset();
     } catch (err) {
-      setReminderError(
-        err instanceof Error ? err.message : "Failed to add reminder",
-      );
-    } finally {
-      setIsSavingReminder(false);
+      reminderForm.setError("root", {
+        message: err instanceof Error ? err.message : "Failed to add reminder",
+      });
     }
   };
 
@@ -652,25 +655,44 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
                 </h4>
 
                 {/* Add Note Form */}
-                <form onSubmit={handleAddNote} className="space-y-2">
-                  <textarea
-                    value={noteContent}
-                    onChange={(e) => setNoteContent(e.target.value)}
-                    placeholder="Ajouter une note..."
-                    rows={3}
-                    className="w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-200 placeholder-zinc-500 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                  />
-                  {noteError && (
-                    <p className="text-xs text-red-400">{noteError}</p>
-                  )}
-                  <button
-                    type="submit"
-                    disabled={!noteContent.trim() || isSavingNote}
-                    className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
+                <Form {...noteForm}>
+                  <form
+                    onSubmit={noteForm.handleSubmit(handleAddNote)}
+                    className="space-y-2"
                   >
-                    {isSavingNote ? "Enregistrement..." : "Sauvegarder"}
-                  </button>
-                </form>
+                    <FormField
+                      control={noteForm.control}
+                      name="content"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <textarea
+                              {...field}
+                              placeholder="Ajouter une note..."
+                              rows={3}
+                              className="w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-200 placeholder-zinc-500 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    {noteForm.formState.errors.root && (
+                      <p className="text-xs text-red-400">
+                        {noteForm.formState.errors.root.message}
+                      </p>
+                    )}
+                    <button
+                      type="submit"
+                      disabled={noteForm.formState.isSubmitting}
+                      className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {noteForm.formState.isSubmitting
+                        ? "Enregistrement..."
+                        : "Sauvegarder"}
+                    </button>
+                  </form>
+                </Form>
 
                 {/* Notes List */}
                 {lead.notes && lead.notes.length > 0 && (
@@ -705,49 +727,73 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
                 </h4>
 
                 {/* Add Reminder Form */}
-                <form onSubmit={handleAddReminder} className="space-y-2">
-                  <div>
-                    <label
-                      htmlFor="reminderDueAt"
-                      className="mb-1 block text-xs text-zinc-400"
-                    >
-                      Date et heure
-                    </label>
-                    <input
-                      id="reminderDueAt"
-                      type="datetime-local"
-                      value={reminderDueAt}
-                      onChange={(e) => setReminderDueAt(e.target.value)}
-                      className="w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-200 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                    />
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="reminderNote"
-                      className="mb-1 block text-xs text-zinc-400"
-                    >
-                      Note (optionnel)
-                    </label>
-                    <textarea
-                      id="reminderNote"
-                      value={reminderNote}
-                      onChange={(e) => setReminderNote(e.target.value)}
-                      placeholder="Note pour le rappel..."
-                      rows={2}
-                      className="w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-200 placeholder-zinc-500 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                    />
-                  </div>
-                  {reminderError && (
-                    <p className="text-xs text-red-400">{reminderError}</p>
-                  )}
-                  <button
-                    type="submit"
-                    disabled={!reminderDueAt || isSavingReminder}
-                    className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
+                <Form {...reminderForm}>
+                  <form
+                    onSubmit={reminderForm.handleSubmit(handleAddReminder)}
+                    className="space-y-2"
                   >
-                    {isSavingReminder ? "Ajout..." : "Ajouter"}
-                  </button>
-                </form>
+                    <FormField
+                      control={reminderForm.control}
+                      name="dueAt"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs text-zinc-400">
+                            Date et heure
+                          </FormLabel>
+                          <FormControl>
+                            <input
+                              type="datetime-local"
+                              value={
+                                field.value instanceof Date
+                                  ? field.value.toISOString().slice(0, 16)
+                                  : ""
+                              }
+                              onChange={(e) =>
+                                field.onChange(new Date(e.target.value))
+                              }
+                              className="w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-200 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={reminderForm.control}
+                      name="note"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs text-zinc-400">
+                            Note (optionnel)
+                          </FormLabel>
+                          <FormControl>
+                            <textarea
+                              {...field}
+                              placeholder="Note pour le rappel..."
+                              rows={2}
+                              className="w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-200 placeholder-zinc-500 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    {reminderForm.formState.errors.root && (
+                      <p className="text-xs text-red-400">
+                        {reminderForm.formState.errors.root.message}
+                      </p>
+                    )}
+                    <button
+                      type="submit"
+                      disabled={reminderForm.formState.isSubmitting}
+                      className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {reminderForm.formState.isSubmitting
+                        ? "Ajout..."
+                        : "Ajouter"}
+                    </button>
+                  </form>
+                </Form>
 
                 {/* Reminders List */}
                 {lead.reminders && lead.reminders.length > 0 && (
