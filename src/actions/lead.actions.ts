@@ -10,6 +10,17 @@ import { messageTemplates } from "@/schema/message-template.schema";
 import { eq, and, inArray, isNotNull, desc } from "drizzle-orm";
 import { createClient } from "@/lib/supabase/server";
 import { renderTemplate, extractLeadVariables } from "@/services/message.service";
+import { leadNoteSchema, leadReminderSchema } from "@/schemas/validation/lead.validation";
+import { type z } from "zod";
+
+/**
+ * Helper function to format Zod validation errors
+ */
+function formatZodError(error: z.ZodError): string {
+  const fieldErrors = error.flatten().fieldErrors;
+  const firstError = Object.values(fieldErrors).flat()[0];
+  return firstError || "Données de formulaire invalides";
+}
 
 /**
  * Updates a lead's stage and logs the activity
@@ -452,7 +463,7 @@ export async function logWhatsAppMessage(
 /**
  * Add a note to a lead
  */
-export async function addLeadNote(leadId: string, content: string) {
+export async function addLeadNote(leadId: string, content: unknown) {
   const supabase = await createClient();
   const {
     data: { session },
@@ -462,9 +473,13 @@ export async function addLeadNote(leadId: string, content: string) {
     throw new Error("Unauthorized");
   }
 
-  if (!content.trim()) {
-    throw new Error("Note content cannot be empty");
+  // Validate content with Zod
+  const parseResult = leadNoteSchema.safeParse({ content });
+  if (!parseResult.success) {
+    throw new Error(formatZodError(parseResult.error));
   }
+
+  const validatedContent = parseResult.data.content;
 
   const dbClient = await createDrizzleSupabaseClient();
 
@@ -474,7 +489,7 @@ export async function addLeadNote(leadId: string, content: string) {
         .insert(leadNotes)
         .values({
           leadId,
-          content: content.trim(),
+          content: validatedContent.trim(),
           createdById: session.user.id,
         })
         .returning();
@@ -496,8 +511,8 @@ export async function addLeadNote(leadId: string, content: string) {
  */
 export async function addLeadReminder(
   leadId: string,
-  dueAt: Date,
-  note?: string,
+  dueAt: unknown,
+  note?: unknown,
 ) {
   const supabase = await createClient();
   const {
@@ -508,9 +523,13 @@ export async function addLeadReminder(
     throw new Error("Unauthorized");
   }
 
-  if (dueAt <= new Date()) {
-    throw new Error("Reminder must be scheduled for a future date");
+  // Validate reminder data with Zod
+  const parseResult = leadReminderSchema.safeParse({ dueAt, note });
+  if (!parseResult.success) {
+    throw new Error(formatZodError(parseResult.error));
   }
+
+  const { dueAt: validatedDueAt, note: validatedNote } = parseResult.data;
 
   const dbClient = await createDrizzleSupabaseClient();
 
@@ -520,8 +539,8 @@ export async function addLeadReminder(
         .insert(leadReminders)
         .values({
           leadId,
-          dueAt,
-          note: note?.trim() || null,
+          dueAt: validatedDueAt,
+          note: validatedNote?.trim() || null,
           createdById: session.user.id,
         })
         .returning();
