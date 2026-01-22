@@ -14,7 +14,7 @@ export const textTemplateSchema = z.object({
     .string()
     .min(1, "Le contenu du message est requis")
     .max(2000, "Le contenu ne peut pas dépasser 2000 caractères"),
-  isDefault: z.boolean().default(false),
+  isDefault: z.boolean(),
 });
 
 export type TextTemplateFormData = z.infer<typeof textTemplateSchema>;
@@ -30,7 +30,7 @@ export const voiceTemplateSchema = z.object({
     .number()
     .min(15, "La durée minimale est de 15 secondes")
     .max(55, "La durée maximale est de 55 secondes"),
-  isDefault: z.boolean().default(false),
+  isDefault: z.boolean(),
 });
 
 export type VoiceTemplateFormData = z.infer<typeof voiceTemplateSchema>;
@@ -48,7 +48,7 @@ export const voiceTemplateClientSchema = z.object({
     .number()
     .min(15, "La durée minimale est de 15 secondes")
     .max(55, "La durée maximale est de 55 secondes"),
-  isDefault: z.boolean().default(false),
+  isDefault: z.boolean(),
 });
 
 export type VoiceTemplateClientData = z.infer<

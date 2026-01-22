@@ -2,20 +2,45 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { createTextTemplate } from "@/actions/template.actions";
+import { textTemplateSchema, type TextTemplateFormData } from "@/schemas/validation/template.validation";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { VariableToolbar } from "./variable-toolbar";
 import { renderTemplate } from "@/services/message.service";
-import type { MessageChannel } from "@/schema/message-template.schema";
 
 export function TextTemplateForm() {
-  const [name, setName] = useState("");
-  const [channel, setChannel] = useState<MessageChannel>("whatsapp");
-  const [content, setContent] = useState("");
-  const [isDefault, setIsDefault] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const router = useRouter();
+
+  const form = useForm<TextTemplateFormData>({
+    resolver: zodResolver(textTemplateSchema),
+    defaultValues: {
+      name: "",
+      channel: "whatsapp",
+      content: "",
+      isDefault: false,
+    },
+  });
 
   const handleInsertVariable = (variable: string) => {
     if (!textareaRef.current) return;
@@ -23,10 +48,11 @@ export function TextTemplateForm() {
     const textarea = textareaRef.current;
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
+    const currentContent = form.getValues("content");
     const newContent =
-      content.substring(0, start) + variable + content.substring(end);
+      currentContent.substring(0, start) + variable + currentContent.substring(end);
 
-    setContent(newContent);
+    form.setValue("content", newContent, { shouldValidate: true });
 
     // Set cursor position after inserted variable
     setTimeout(() => {
@@ -43,29 +69,20 @@ export function TextTemplateForm() {
     alert("Cette fonctionnalité sera bientôt disponible !");
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (data: TextTemplateFormData) => {
     setError(null);
-
-    if (!name.trim() || !content.trim()) {
-      setError("Le nom et le contenu sont requis");
-      return;
-    }
-
-    setIsSaving(true);
 
     try {
       await createTextTemplate({
-        name,
-        channel,
-        content,
-        isDefault,
+        name: data.name,
+        channel: data.channel,
+        content: data.content,
+        isDefault: data.isDefault,
       });
 
       router.push("/templates");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create template");
-      setIsSaving(false);
     }
   };
 
@@ -80,134 +97,161 @@ export function TextTemplateForm() {
     vendeur_nom: "Jean Dupont",
   };
 
-  const previewContent = renderTemplate(content, previewData);
+  const contentValue = form.watch("content");
+  const channelValue = form.watch("channel");
+  const previewContent = renderTemplate(contentValue, previewData);
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {error && (
-        <div className="rounded-lg border border-red-900/50 bg-red-950/30 p-4">
-          <p className="text-sm text-red-400">{error}</p>
-        </div>
-      )}
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+        {error && (
+          <div className="rounded-lg border border-red-900/50 bg-red-950/30 p-4">
+            <p className="text-sm text-red-400">{error}</p>
+          </div>
+        )}
 
-      {/* Name input */}
-      <div>
-        <label htmlFor="name" className="mb-2 block text-sm font-medium text-zinc-300">
-          Nom du template
-        </label>
-        <input
-          id="name"
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Ex: Premier contact WhatsApp"
-          className="w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-2 text-zinc-200 placeholder-zinc-500 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-          required
+        {/* Name input */}
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nom du template</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  placeholder="Ex: Premier contact WhatsApp"
+                  className="w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-2 text-zinc-200 placeholder-zinc-500 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </div>
 
-      {/* Channel select */}
-      <div>
-        <label htmlFor="channel" className="mb-2 block text-sm font-medium text-zinc-300">
-          Canal
-        </label>
-        <select
-          id="channel"
-          value={channel}
-          onChange={(e) => setChannel(e.target.value as MessageChannel)}
-          className="w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-2 text-zinc-200 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-        >
-          <option value="whatsapp">WhatsApp</option>
-          <option value="sms">SMS</option>
-          <option value="leboncoin">Leboncoin</option>
-        </select>
-      </div>
+        {/* Channel select */}
+        <FormField
+          control={form.control}
+          name="channel"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Canal</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger className="w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-2 text-zinc-200 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500">
+                    <SelectValue placeholder="Sélectionner un canal" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                  <SelectItem value="sms">SMS</SelectItem>
+                  <SelectItem value="leboncoin">Leboncoin</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
       {/* Variable toolbar */}
       <VariableToolbar onInsertVariable={handleInsertVariable} />
 
-      {/* Content textarea */}
-      <div>
-        <div className="mb-2 flex items-center justify-between">
-          <label htmlFor="content" className="text-sm font-medium text-zinc-300">
-            Contenu du message
-          </label>
-          <button
+        {/* Content textarea */}
+        <FormField
+          control={form.control}
+          name="content"
+          render={({ field }) => (
+            <FormItem>
+              <div className="mb-2 flex items-center justify-between">
+                <FormLabel>Contenu du message</FormLabel>
+                <button
+                  type="button"
+                  onClick={handleSuggestWithAI}
+                  className="flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-1.5 text-xs font-medium text-zinc-400 transition-colors hover:border-zinc-600 hover:text-zinc-300"
+                >
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                    />
+                  </svg>
+                  Suggérer par IA
+                </button>
+              </div>
+              <FormControl>
+                <textarea
+                  {...field}
+                  ref={textareaRef}
+                  placeholder="Bonjour, je suis intéressé par votre {titre_annonce}..."
+                  rows={6}
+                  className="w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-2 font-mono text-sm text-zinc-200 placeholder-zinc-500 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Live preview */}
+        <div>
+          <h3 className="mb-2 text-sm font-medium text-zinc-300">
+            Aperçu (avec données d'exemple)
+          </h3>
+          <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-4">
+            <p className="whitespace-pre-wrap text-sm text-zinc-300">
+              {previewContent || "Votre message apparaîtra ici..."}
+            </p>
+          </div>
+        </div>
+
+        {/* Is default checkbox */}
+        <FormField
+          control={form.control}
+          name="isDefault"
+          render={({ field }) => (
+            <FormItem>
+              <div className="flex items-center gap-2">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    className="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-amber-500 focus:ring-2 focus:ring-amber-500 focus:ring-offset-0"
+                  />
+                </FormControl>
+                <FormLabel className="text-sm text-zinc-300 cursor-pointer">
+                  Définir comme template par défaut pour {channelValue}
+                </FormLabel>
+              </div>
+            </FormItem>
+          )}
+        />
+
+        {/* Actions */}
+        <div className="flex gap-3">
+          <Button
             type="button"
-            onClick={handleSuggestWithAI}
-            className="flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-1.5 text-xs font-medium text-zinc-400 transition-colors hover:border-zinc-600 hover:text-zinc-300"
+            onClick={() => router.back()}
+            variant="outline"
+            className="flex-1 rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-2 font-medium text-zinc-300 transition-colors hover:bg-zinc-900"
           >
-            <svg
-              className="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-              />
-            </svg>
-            Suggérer par IA
-          </button>
+            Annuler
+          </Button>
+          <Button
+            type="submit"
+            disabled={form.formState.isSubmitting}
+            className="flex-1 rounded-lg bg-amber-500 px-4 py-2 font-medium text-black transition-colors hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {form.formState.isSubmitting ? "Création..." : "Créer le template"}
+          </Button>
         </div>
-        <textarea
-          id="content"
-          ref={textareaRef}
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="Bonjour, je suis intéressé par votre {titre_annonce}..."
-          rows={6}
-          className="w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-2 font-mono text-sm text-zinc-200 placeholder-zinc-500 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-          required
-        />
-      </div>
-
-      {/* Live preview */}
-      <div>
-        <h3 className="mb-2 text-sm font-medium text-zinc-300">
-          Aperçu (avec données d'exemple)
-        </h3>
-        <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-4">
-          <p className="whitespace-pre-wrap text-sm text-zinc-300">
-            {previewContent || "Votre message apparaîtra ici..."}
-          </p>
-        </div>
-      </div>
-
-      {/* Is default checkbox */}
-      <div className="flex items-center gap-2">
-        <input
-          id="isDefault"
-          type="checkbox"
-          checked={isDefault}
-          onChange={(e) => setIsDefault(e.target.checked)}
-          className="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-amber-500 focus:ring-2 focus:ring-amber-500 focus:ring-offset-0"
-        />
-        <label htmlFor="isDefault" className="text-sm text-zinc-300">
-          Définir comme template par défaut pour {channel}
-        </label>
-      </div>
-
-      {/* Actions */}
-      <div className="flex gap-3">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="flex-1 rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-2 font-medium text-zinc-300 transition-colors hover:bg-zinc-900"
-        >
-          Annuler
-        </button>
-        <button
-          type="submit"
-          disabled={isSaving || !name.trim() || !content.trim()}
-          className="flex-1 rounded-lg bg-amber-500 px-4 py-2 font-medium text-black transition-colors hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {isSaving ? "Création..." : "Créer le template"}
-        </button>
-      </div>
-    </form>
+      </form>
+    </Form>
   );
 }

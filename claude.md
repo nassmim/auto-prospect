@@ -33,6 +33,13 @@
 - **Always** compact between major task transitions
 - This applies ONLY in auto-work mode, not regular interactive sessions
 
+**Output Optimization (AUTO-WORK MODE ONLY):**
+- **DO NOT** announce what you will do or describe your plan before executing
+- **DO NOT** output verbose logs of tool calls or changes made
+- **Execute silently**: Run tools, make changes, update task status without commentary
+- **Only output**: Critical errors, questions requiring user input, or task completion confirmations
+- **Purpose**: Minimize context window usage and maximize efficiency in automated workflows
+
 ## Tech Stack
 - **Next.js 16.1.1** (App Router) + React 19 + TypeScript
 - **Database**: Supabase (PostgreSQL) + Drizzle ORM
