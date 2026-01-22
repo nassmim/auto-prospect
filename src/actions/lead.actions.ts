@@ -5,9 +5,9 @@ import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
 import { leads, leadNotes, leadReminders, type LeadStage } from "@/schema/lead.schema";
 import { organizationMembers } from "@/schema/organization.schema";
 import { accounts } from "@/schema/account.schema";
-import { messages, type MessageChannel } from "@/schema/message.schema";
+import { messages, leadActivities, type MessageChannel } from "@/schema/message.schema";
 import { messageTemplates } from "@/schema/message-template.schema";
-import { eq, and, inArray, isNotNull } from "drizzle-orm";
+import { eq, and, inArray, isNotNull, desc } from "drizzle-orm";
 import { createClient } from "@/lib/supabase/server";
 import { renderTemplate, extractLeadVariables } from "@/services/message.service";
 
@@ -564,5 +564,81 @@ export async function deleteLeadReminder(reminderId: string) {
   } catch (error) {
     console.error("Error deleting reminder:", error);
     throw new Error("Failed to delete reminder");
+  }
+}
+
+/**
+ * Fetch message history for a lead
+ */
+export async function getLeadMessages(leadId: string) {
+  const supabase = await createClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session) {
+    throw new Error("Unauthorized");
+  }
+
+  const dbClient = await createDrizzleSupabaseClient();
+
+  try {
+    const messagesList = await dbClient.rls(async (tx) => {
+      return tx.query.messages.findMany({
+        where: eq(messages.leadId, leadId),
+        with: {
+          sentBy: {
+            columns: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+        orderBy: [desc(messages.sentAt)],
+      });
+    });
+
+    return messagesList;
+  } catch (error) {
+    console.error("Error fetching lead messages:", error);
+    throw new Error("Failed to fetch messages");
+  }
+}
+
+/**
+ * Fetch activity timeline for a lead
+ */
+export async function getLeadActivities(leadId: string) {
+  const supabase = await createClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session) {
+    throw new Error("Unauthorized");
+  }
+
+  const dbClient = await createDrizzleSupabaseClient();
+
+  try {
+    const activitiesList = await dbClient.rls(async (tx) => {
+      return tx.query.leadActivities.findMany({
+        where: eq(leadActivities.leadId, leadId),
+        with: {
+          createdBy: {
+            columns: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+        orderBy: [desc(leadActivities.createdAt)],
+      });
+    });
+
+    return activitiesList;
+  } catch (error) {
+    console.error("Error fetching lead activities:", error);
+    throw new Error("Failed to fetch activities");
   }
 }

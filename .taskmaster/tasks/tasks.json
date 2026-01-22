@@ -315,10 +315,10 @@
               1
             ],
             "details": "Create notes section with textarea input (placeholder: 'Ajouter une note...'), 'Sauvegarder' button, and list of existing notes sorted by createdAt DESC. Each note displays content, author name + avatar, and timestamp (relative format like '2 hours ago'). Implement server action `addLeadNote(leadId, content)` that inserts into lead_notes table with organizationId, leadId, createdById (current user), content, and logs activity in lead_activities. Create reminders section with date-time picker component (use react-day-picker or similar), optional note textarea, and 'Ajouter' button. Display list of upcoming reminders sorted by dueAt ASC, each showing due date/time, note, and delete icon. Implement server action `addLeadReminder(leadId, dueAt, note)` that inserts into lead_reminders table and creates notification. Add validation: notes require non-empty content, reminders require future dueAt. Include optimistic UI updates for instant feedback.",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": "1. Add note with content, verify it appears in list immediately and persists after refresh. 2. Verify note shows correct author name and timestamp. 3. Create reminder with date picker, verify it saves and displays in list. 4. Test validation - submit empty note shows error, past date for reminder shows error. 5. Delete reminder, verify it removes from database and UI. 6. Check lead_activities table contains entries for note and reminder creation.",
             "parentId": "undefined",
-            "updatedAt": "2026-01-22T16:58:29.863Z"
+            "updatedAt": "2026-01-22T17:07:11.102Z"
           },
           {
             "id": 5,
@@ -331,12 +331,13 @@
               4
             ],
             "details": "Create `src/app/(app)/leads/[id]/page.tsx` as server component that fetches lead with all relations (ad, brand, model, fuel, gearbox, bodyType, zipcodes, etc.) plus parallel queries for notes, reminders, messages, and activities. Build page layout with sections: (1) Hero section: reuse image gallery component, price, location, stage badge, assigned user, action buttons row from drawer. (2) Vehicle specs grid: display brand.name, model.name, year, mileage (formatted with km), fuel.name, gearbox.name, color, critAir, seats, doors, fiscalPower, din, registration, firstHand (boolean badge), from ad relations. Use responsive grid layout (2-3 columns). (3) Seller info card: display seller name (ad.account or derived), phone (clickable tel: link), type badge ('Particulier' if acceptSalesmen=false, 'Professionnel' if true). (4) Description section: render ad.description with preserved line breaks. (5) Message history timeline: query messages for this lead ordered by sentAt DESC, display each with type icon (WhatsApp/SMS/Voice), status badge (sent/delivered/failed), content preview, timestamp. (6) Activity log timeline: query lead_activities ordered by createdAt DESC, display each with action type, user who performed action, timestamp. Add 'Retour au pipeline' back button. Implement breadcrumb navigation: Leads > Lead #ID. Add metadata for SEO with ad title.",
-            "status": "pending",
+            "status": "in-progress",
             "testStrategy": "1. Open full page from drawer 'Voir détails complets' button, verify all sections render with correct data. 2. Verify vehicle specs grid displays all fields with proper formatting (mileage with km, boolean badges for firstHand). 3. Check seller info shows correct type badge based on acceptSalesmen flag. 4. Verify description preserves line breaks and formatting. 5. Confirm message timeline shows all messages with correct icons and status badges. 6. Verify activity log displays all activities (stage changes, notes, assignments) chronologically. 7. Test with lead missing optional fields (e.g., no color, no critAir), verify graceful handling. 8. Click breadcrumb, verify navigation back to leads pipeline.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-01-22T17:07:45.063Z"
           }
         ],
-        "updatedAt": "2026-01-22T16:58:29.863Z"
+        "updatedAt": "2026-01-22T17:07:45.063Z"
       },
       {
         "id": "11",
@@ -415,7 +416,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-22T16:58:29.864Z",
+      "lastModified": "2026-01-22T17:07:45.066Z",
       "taskCount": 15,
       "completedCount": 11,
       "tags": [
