@@ -17,7 +17,6 @@ Autonomous task execution: fetch next task, implement it, commit, repeat until n
 3. **Commit Changes**
    - Stage all changes: `git add .`
    - Commit with task reference: `git commit -m "task <id>: <concise description>"`
-   - Add Co-Authored-By footer
 
 4. **Mark Complete**
    - Update task status: `task-master set-status --id=<id> --status=done`

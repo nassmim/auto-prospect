@@ -1,5 +1,5 @@
 #!/bin/bash
-# Auto-compact at 90% to prevent freeze
-if [ "$CONTEXT_PERCENTAGE" -gt 90 ]; then
+# Auto-compact at 70% to prevent overflow
+if [ "$CONTEXT_PERCENTAGE" -gt 70 ]; then
   echo "/compact"
 fi

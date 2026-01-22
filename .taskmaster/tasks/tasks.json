@@ -9,9 +9,9 @@
         "testStrategy": "1. Generate migration with `pnpm db:generate` and verify SQL output contains RLS policies and grants. 2. After migration applied (by human), write integration tests that verify: owner can CRUD organization, member can only read, non-member cannot access. 3. Test invitation flow creates valid token.",
         "priority": "high",
         "dependencies": [],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [],
-        "updatedAt": "2026-01-21T14:36:47.337Z"
+        "updatedAt": "2026-01-21T14:39:28.276Z"
       },
       {
         "id": "2",
@@ -23,8 +23,9 @@
         "dependencies": [
           "1"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-01-21T15:12:55.547Z"
       },
       {
         "id": "3",
@@ -37,8 +38,74 @@
           "1",
           "2"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create leads table schema with stage enum and FK relationships",
+            "description": "Define the leads pgTable in src/schema/lead.schema.ts with all required fields: id, organizationId, huntId, adId, stage enum, assignedToId, position, timestamps, and foreign key relationships to organizations, hunts, ads, and accounts tables.",
+            "dependencies": [],
+            "details": "Create `src/schema/lead.schema.ts` with:\n1. Export lead stage enum type: `leadStages = ['nouveau', 'contacte', 'relance', 'negociation', 'gagne', 'perdu'] as const`\n2. Define `leads` pgTable with columns:\n   - `id`: uuid().primaryKey().notNull().default(sql`gen_random_uuid()`)\n   - `organizationId`: uuid('organization_id').notNull()\n   - `huntId`: uuid('hunt_id').notNull()\n   - `adId`: uuid('ad_id').notNull()\n   - `stage`: varchar({ length: 20 }).notNull().default('nouveau')\n   - `assignedToId`: uuid('assigned_to_id')\n   - `position`: integer().notNull().default(0)\n   - `createdAt`/`updatedAt`: timestamp with timezone, defaults\n3. Add foreign keys using foreignKey() helper with onDelete cascade for org/hunt/ad, set null for assignedTo\n4. Import required dependencies from drizzle-orm/pg-core and reference existing tables from organization.schema, hunt.schema, ad.schema, account.schema",
+            "status": "done",
+            "testStrategy": "Verify schema compiles with pnpm db:generate, inspect generated migration SQL for correct column types and FK constraints",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-21T15:29:06.411Z"
+          },
+          {
+            "id": 2,
+            "title": "Add unique constraint and performance indexes to leads table",
+            "description": "Add the unique constraint on (organizationId, adId) to prevent duplicate leads, plus composite indexes for Kanban stage queries and user assignment filtering.",
+            "dependencies": [
+              1
+            ],
+            "details": "In the leads table third argument (constraints/indexes function), add:\n1. `unique('leads_org_ad_unique').on(table.organizationId, table.adId)` - Prevents same ad being added as lead twice in same org\n2. `index('leads_organization_stage_idx').on(table.organizationId, table.stage)` - Critical for Kanban column queries\n3. `index('leads_organization_assigned_idx').on(table.organizationId, table.assignedToId)` - For filtering leads by team member\n4. `index('leads_hunt_id_idx').on(table.huntId)` - For querying leads by source hunt\n5. Consider partial index for active stages if needed later for performance",
+            "status": "done",
+            "testStrategy": "Run pnpm db:generate and verify migration includes CREATE UNIQUE INDEX and CREATE INDEX statements with correct column combinations",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-21T15:29:11.285Z"
+          },
+          {
+            "id": 3,
+            "title": "Implement RLS policies for leads table with org member access",
+            "description": "Add Row Level Security policies to leads table ensuring only organization members can access leads, following the existing pattern from hunts table with joined_at verification.",
+            "dependencies": [
+              1
+            ],
+            "details": "Add to leads table constraints:\n1. Enable RLS with pgPolicy for 'all' operations to authenticatedRole\n2. Using clause: `sql\\`exists (select 1 from organization_members om where om.organization_id = ${table.organizationId} and om.account_id = ${authUid} and om.joined_at is not null)\\``\n3. WithCheck clause: same subquery for insert/update validation\n4. Import authenticatedRole, authUid from drizzle-orm/supabase\n5. After migration generation, manually add to SQL: `grant select, insert, update, delete on table public.leads to authenticated, service_role;`\n6. Ensure migration includes `ALTER TABLE \"leads\" ENABLE ROW LEVEL SECURITY;`",
+            "status": "done",
+            "testStrategy": "After migration, test via Supabase client that user in org A cannot see leads from org B, and non-member cannot access any leads",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-21T15:29:16.731Z"
+          },
+          {
+            "id": 4,
+            "title": "Create lead_notes and lead_reminders tables with cascading FK",
+            "description": "Define supporting tables for lead collaboration: lead_notes for text annotations and lead_reminders for follow-up scheduling, both with cascade delete from parent lead.",
+            "dependencies": [
+              1
+            ],
+            "details": "In src/schema/lead.schema.ts, add two more pgTables:\n\n**lead_notes:**\n- `id`: uuid().primaryKey().default(sql`gen_random_uuid()`)\n- `leadId`: uuid('lead_id').notNull() with FK to leads.id onDelete cascade\n- `content`: text().notNull()\n- `createdById`: uuid('created_by_id').notNull() with FK to accounts.id\n- `createdAt`: timestamp with default now()\n- RLS: org members can CRUD (join through leads to organization_members)\n\n**lead_reminders:**\n- `id`: uuid().primaryKey().default(sql`gen_random_uuid()`)\n- `leadId`: uuid('lead_id').notNull() with FK to leads.id onDelete cascade\n- `dueAt`: timestamp with timezone, notNull\n- `note`: text()\n- `completed`: boolean().default(false).notNull()\n- `createdById`: uuid('created_by_id').notNull() with FK to accounts.id\n- `createdAt`: timestamp with default now()\n- RLS: org members via leads join, index on (leadId, completed, dueAt)",
+            "status": "done",
+            "testStrategy": "Create lead, add note and reminder, delete lead and verify cascade deletes notes/reminders. Test completed filter query uses index.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-21T15:29:22.062Z"
+          },
+          {
+            "id": 5,
+            "title": "Add Drizzle relations and export schema from index",
+            "description": "Define Drizzle ORM relations for leads, lead_notes, and lead_reminders tables to enable typed eager loading, then export all new schemas from src/schema/index.ts.",
+            "dependencies": [
+              1,
+              4
+            ],
+            "details": "1. Add relations in lead.schema.ts:\n```typescript\nexport const leadsRelations = relations(leads, ({ one, many }) => ({\n  organization: one(organizations, { fields: [leads.organizationId], references: [organizations.id] }),\n  hunt: one(hunts, { fields: [leads.huntId], references: [hunts.id] }),\n  ad: one(ads, { fields: [leads.adId], references: [ads.id] }),\n  assignedTo: one(accounts, { fields: [leads.assignedToId], references: [accounts.id] }),\n  notes: many(leadNotes),\n  reminders: many(leadReminders),\n}));\n\nexport const leadNotesRelations = relations(leadNotes, ({ one }) => ({\n  lead: one(leads, { fields: [leadNotes.leadId], references: [leads.id] }),\n  createdBy: one(accounts, { fields: [leadNotes.createdById], references: [accounts.id] }),\n}));\n\nexport const leadRemindersRelations = relations(leadReminders, ...);\n```\n2. Update src/schema/index.ts: add `export * from '@/schema/lead.schema';`\n3. Run pnpm db:generate to produce final migration",
+            "status": "done",
+            "testStrategy": "After adding relations, write a test query using db.query.leads.findFirst({ with: { notes: true, ad: true } }) to verify typed eager loading works correctly",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-21T15:29:43.984Z"
+          }
+        ],
+        "updatedAt": "2026-01-21T15:29:43.984Z"
       },
       {
         "id": "4",
@@ -88,8 +155,9 @@
         "testStrategy": "1. Verify dark theme renders correctly with Tailwind 4. 2. Test responsive behavior - sidebar collapses on mobile. 3. Verify auth redirect for unauthenticated users. 4. Navigate between all sections, verify active state styling.",
         "priority": "high",
         "dependencies": [],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-01-21T15:09:14.574Z"
       },
       {
         "id": "8",
@@ -117,8 +185,72 @@
           "3",
           "7"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Leads Page Foundation with View Toggle and Filter Bar",
+            "description": "Build the main leads page at `src/app/(app)/leads/page.tsx` with a Server Component for data fetching and a Client Component for view toggle (Kanban/Liste) and filter bar. Install @dnd-kit packages for drag-and-drop functionality.",
+            "dependencies": [],
+            "details": "1. Install @dnd-kit/core and @dnd-kit/sortable packages via pnpm. 2. Create `src/app/(app)/leads/page.tsx` as Server Component that fetches leads with relations (ad, hunt, assignedTo) using `createDrizzleSupabaseClient()`. 3. Create `src/components/leads/leads-page-client.tsx` as Client Component containing: (a) View toggle tabs (Kanban | Liste) using URL search params (`?view=kanban|list`) with useSearchParams hook; (b) Filter bar with: Hunt dropdown (fetched from server), Assigned user dropdown (org members), Date range picker (createdAt), Search input (vehicle title). 4. Filters should update URL search params for shareable/bookmarkable views. 5. Update sidebar navigation href from `/pipeline` to `/leads` to match the actual route.",
+            "status": "done",
+            "testStrategy": "1. Navigate to /leads, verify page loads without errors. 2. Toggle between Kanban and List views, verify URL params update. 3. Apply filters, verify URL params update correctly. 4. Refresh page with filters in URL, verify filters are preserved.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-21T15:33:57.607Z"
+          },
+          {
+            "id": 2,
+            "title": "Build Kanban View with Drag-and-Drop Columns",
+            "description": "Implement the Kanban board view with 6 columns (nouveau, contacte, relance, negociation, gagne, perdu) using @dnd-kit library. Include drag-and-drop functionality between columns with optimistic UI updates.",
+            "dependencies": [
+              1
+            ],
+            "details": "1. Create `src/components/leads/kanban-view.tsx` Client Component using @dnd-kit/core DndContext and @dnd-kit/sortable SortableContext. 2. Create `src/components/leads/kanban-column.tsx` for each stage column with: (a) Column header showing stage name (French labels: Nouveau, Contacté, Relance, Négociation, Gagné, Perdu) and lead count; (b) Droppable area using useDroppable hook; (c) Visual feedback during drag (border highlight). 3. Implement onDragEnd handler that: (a) Identifies source and target columns; (b) Performs optimistic UI update using React state; (c) Calls updateLeadStage Server Action (Task 5); (d) Reverts on error with toast notification. 4. Use `position` field from leads schema for ordering within columns. 5. Style with dark theme matching existing design (zinc-800 borders, amber-500 accents).",
+            "status": "done",
+            "testStrategy": "1. Drag lead card from 'Nouveau' to 'Contacté', verify card moves immediately (optimistic UI). 2. Verify database is updated after drag. 3. Simulate network error, verify card returns to original position. 4. Drag multiple leads, verify order is maintained within columns.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-21T15:37:06.612Z"
+          },
+          {
+            "id": 3,
+            "title": "Build Lead Card Component for Kanban and List Views",
+            "description": "Create a reusable LeadCard component displaying thumbnail, title, price, location, phone badge, and platform badge. Card click should be wired for Lead Detail Drawer integration (Task 10).",
+            "dependencies": [
+              1
+            ],
+            "details": "1. Create `src/components/leads/lead-card.tsx` as Client Component with props: lead data (with ad relation), onSelect callback, isDragging state. 2. Card layout showing: (a) Thumbnail from ad.picture with fallback placeholder; (b) Vehicle title (ad.title) truncated to 2 lines; (c) Price formatted as EUR with French locale; (d) Location from ad.zipcode relation; (e) Phone badge (green icon if ad.hasPhone && ad.phoneNumber); (f) WhatsApp badge (amber icon if ad.isWhatsappPhone); (g) Platform badge based on ad URL domain detection (Leboncoin logo/text). 3. Wrap in @dnd-kit useSortable for Kanban draggable support. 4. onClick triggers onSelect callback passing lead ID for drawer opening. 5. Visual states: hover (subtle border glow), dragging (opacity reduced, shadow), selected (amber border). 6. Show stage badge as colored dot matching column color scheme.",
+            "status": "done",
+            "testStrategy": "1. Verify card displays all data fields correctly. 2. Click card, verify onSelect callback fires with correct lead ID. 3. Verify phone/WhatsApp badges show only when data exists. 4. Test with missing thumbnail, verify fallback renders.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-21T15:35:51.263Z"
+          },
+          {
+            "id": 4,
+            "title": "Build List View with Sortable Table and Bulk Actions",
+            "description": "Implement the table list view with sortable columns, checkbox selection for bulk operations, and pagination. Include inline stage dropdown and assign user dropdown per row.",
+            "dependencies": [
+              1,
+              3
+            ],
+            "details": "1. Create `src/components/leads/list-view.tsx` Client Component with table structure. 2. Table columns: (a) Checkbox for selection (header checkbox for select all); (b) Vehicle (thumbnail + title from LeadCard component); (c) Price (sortable, formatted EUR); (d) Location (zipcode.name); (e) Stage (dropdown select inline, calls updateLeadStage on change); (f) Assigned (dropdown with org members, calls assignLead action); (g) Date (createdAt formatted, sortable). 3. Sorting: Click column header to toggle sort direction, update URL params (?sort=price&dir=asc). 4. Bulk actions bar (appears when selection > 0): (a) Change stage dropdown; (b) Assign to user dropdown; (c) Selection count display. 5. Pagination component at bottom: page size options (10, 25, 50), page navigation, total count. 6. Use URL params for pagination (?page=1&pageSize=25). 7. Style table with zinc-800 borders, alternating row backgrounds, hover states.",
+            "status": "done",
+            "testStrategy": "1. Sort by price column, verify leads reorder and URL updates. 2. Select multiple leads via checkboxes, verify bulk action bar appears. 3. Bulk change stage, verify all selected leads update. 4. Change page size, verify correct number of leads displayed. 5. Inline change stage on single row, verify immediate update.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-21T15:38:19.136Z"
+          },
+          {
+            "id": 5,
+            "title": "Create Server Actions for Lead Stage Updates and Bulk Operations",
+            "description": "Implement Server Actions for updateLeadStage, bulkUpdateLeads, and assignLead operations. Include activity logging to lead_notes table for audit trail.",
+            "dependencies": [],
+            "details": "1. Create `src/app/(app)/leads/actions.ts` with 'use server' directive. 2. Implement `updateLeadStage(leadId: string, newStage: LeadStage)`: (a) Validate stage is valid using leadStages array from schema; (b) Get current user via createDrizzleSupabaseClient(); (c) Update lead record with new stage and updatedAt; (d) Insert activity note: 'Stage changé de {oldStage} à {newStage}' with createdById; (e) Revalidate /leads path. 3. Implement `bulkUpdateLeads(leadIds: string[], updates: { stage?: LeadStage, assignedToId?: string })`: (a) Validate all inputs; (b) Update all leads in transaction; (c) Log activity for each lead; (d) Revalidate path. 4. Implement `assignLead(leadId: string, assignedToId: string | null)`: (a) Update lead.assignedToId; (b) Log activity note; (c) Revalidate. 5. Implement `getLeadsWithFilters(filters: LeadFilters)` for server-side filtering supporting: huntId, assignedToId, dateRange, search, stage, sort, pagination. 6. Use Drizzle type-safe queries with RLS enforced via createDrizzleSupabaseClient().",
+            "status": "done",
+            "testStrategy": "1. Call updateLeadStage, verify lead stage changes in DB and activity logged. 2. Call bulkUpdateLeads with 5 leads, verify all update atomically. 3. Verify RLS prevents updating leads from other organizations. 4. Test with invalid stage value, verify error is thrown. 5. Verify revalidation triggers UI refresh.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-21T15:34:49.351Z"
+          }
+        ],
+        "updatedAt": "2026-01-21T15:38:19.136Z"
       },
       {
         "id": "10",
@@ -210,9 +342,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-21T14:36:47.341Z",
+      "lastModified": "2026-01-21T15:38:19.137Z",
       "taskCount": 15,
-      "completedCount": 0,
+      "completedCount": 5,
       "tags": [
         "master"
       ]

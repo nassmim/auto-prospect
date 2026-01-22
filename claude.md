@@ -19,6 +19,20 @@ supabase/migrations/  → Generated SQL (never edit manually)
 src/proxy.ts          → Auth middleware
 ```
 
+## Architecture: Organization-First Pattern
+
+**Every user belongs to an organization** - no standalone individual accounts:
+- **Solo users**: Auto-create personal organization (1 member) during signup
+- **Team users**: Invited to existing organizations via `organization_invitations`
+- **All data** (hunts, leads, messages) belongs to organizations, not users
+- **Benefits**: Simpler data model (single `organizationId` FK), easy solo→team upgrade, cleaner RLS
+
+**Key implementation details:**
+- `accounts.isPersonalAccount` flag identifies which org is user's default personal one
+- `createPersonalOrganization()` service called during signup flow
+- All business tables reference `organizationId` (not `accountId`)
+- `createdById` in tables is for audit trail only, not data ownership
+
 ## Database: Zero-Trust Security Model
 
 ### RLS Architecture

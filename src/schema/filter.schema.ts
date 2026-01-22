@@ -35,7 +35,6 @@ export type TemplateIds = {
   sms?: string | null;
 };
 
-// Extended baseFilters to serve as "hunts" - saved search configurations
 export const baseFilters = pgTable(
   "base_filters",
   {
@@ -55,11 +54,8 @@ export const baseFilters = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .default(sql`now()`),
-    createdById: uuid("created_by_id").notNull(),
-    // Legacy fields
-    accountId: uuid("account_id")
-      .references(() => accounts.id)
-      .notNull(),
+    createdById: uuid("created_by_id").notNull(), // Who created it (for audit trail)
+    // Search filter fields
     zipcodeId: uuid("zipcode_id")
       .references(() => zipcodes.id)
       .notNull(),
