@@ -2,7 +2,21 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { createHunt } from "@/actions/hunt-crud.actions";
+import { huntFormSchema, type HuntFormData } from "@/schemas/validation/hunt.validation";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
 import { UrlPasteTab } from "./url-paste-tab";
 import { SearchBuilderTab } from "./search-builder-tab";
 import { OutreachSettings } from "./outreach-settings";
@@ -29,28 +43,11 @@ type HuntFormProps = {
 };
 
 export function HuntForm({ hunt }: HuntFormProps) {
-  const [name, setName] = useState(hunt?.name ?? "");
   const [activeTab, setActiveTab] = useState<"url" | "builder">("url");
-  const [autoRefresh, setAutoRefresh] = useState(hunt?.autoRefresh ?? true);
-  const [outreachSettings, setOutreachSettings] = useState(
-    hunt?.outreachSettings ?? {
-      leboncoin: false,
-      whatsapp: false,
-      sms: false,
-    },
-  );
-  const [templateIds, setTemplateIds] = useState(
-    hunt?.templateIds ?? {
-      leboncoin: null,
-      whatsapp: null,
-      sms: null,
-    },
-  );
-  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  // URL paste tab state
+  // URL paste tab state (not part of form validation yet - MVP feature)
   const [searchUrl, setSearchUrl] = useState("");
 
   // Search builder tab state (stub for Phase 2)
@@ -74,14 +71,39 @@ export function HuntForm({ hunt }: HuntFormProps) {
     radius: 0,
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
+  const form = useForm<HuntFormData>({
+    resolver: zodResolver(huntFormSchema),
+    defaultValues: {
+      name: hunt?.name ?? "",
+      autoRefresh: hunt?.autoRefresh ?? true,
+      outreachSettings: hunt?.outreachSettings ?? {
+        leboncoin: false,
+        whatsapp: false,
+        sms: false,
+      },
+      templateIds: hunt?.templateIds ?? {
+        leboncoin: null,
+        whatsapp: null,
+        sms: null,
+      },
+    },
+  });
 
-    if (!name.trim()) {
-      setError("Le nom est requis");
-      return;
-    }
+  // Watch form values for OutreachSettings component
+  const outreachSettings = useWatch({
+    control: form.control,
+    name: "outreachSettings",
+    defaultValue: { leboncoin: false, whatsapp: false, sms: false },
+  });
+
+  const templateIds = useWatch({
+    control: form.control,
+    name: "templateIds",
+    defaultValue: { leboncoin: null, whatsapp: null, sms: null },
+  });
+
+  const handleSubmit = async (data: HuntFormData) => {
+    setError(null);
 
     // For MVP, we only support URL paste
     if (activeTab === "url" && !searchUrl.trim()) {
@@ -89,55 +111,57 @@ export function HuntForm({ hunt }: HuntFormProps) {
       return;
     }
 
-    setIsSaving(true);
-
     try {
       // For MVP, we'll use hardcoded values for locationId and adTypeId
       // In Phase 2, these will be parsed from the URL or selected in search builder
       await createHunt({
-        name,
+        name: data.name,
         locationId: 1, // TODO: Parse from URL or get from search builder
         radiusInKm: 0,
         adTypeId: 1, // TODO: Parse from URL or get from search builder
-        autoRefresh,
-        outreachSettings,
-        templateIds,
+        autoRefresh: data.autoRefresh,
+        outreachSettings: data.outreachSettings,
+        templateIds: data.templateIds,
       });
 
       router.push("/hunts");
     } catch (err) {
       console.error("Failed to create hunt:", err);
       setError(err instanceof Error ? err.message : "Failed to create hunt");
-      setIsSaving(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {error && (
-        <div className="rounded-lg border border-red-900/50 bg-red-950/30 p-4">
-          <p className="text-sm text-red-400">{error}</p>
-        </div>
-      )}
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+        {error && (
+          <div className="rounded-lg border border-red-900/50 bg-red-950/30 p-4">
+            <p className="text-sm text-red-400">{error}</p>
+          </div>
+        )}
 
-      {/* Name input */}
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
-        <label
-          htmlFor="name"
-          className="mb-2 block text-sm font-medium text-zinc-300"
-        >
-          Nom de la recherche
-        </label>
-        <input
-          id="name"
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Ex: Peugeot 308 GTI Paris"
-          className="w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-2 text-zinc-200 placeholder-zinc-500 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-          required
-        />
-      </div>
+        {/* Name input */}
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-medium text-zinc-300">
+                  Nom de la recherche
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    placeholder="Ex: Peugeot 308 GTI Paris"
+                    className="w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-2 text-zinc-200 placeholder-zinc-500 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                  />
+                </FormControl>
+                <FormMessage className="text-red-400" />
+              </FormItem>
+            )}
+          />
+        </div>
 
       {/* Search Definition Tabs */}
       <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
@@ -180,52 +204,62 @@ export function HuntForm({ hunt }: HuntFormProps) {
         )}
       </div>
 
-      {/* Auto-refresh toggle */}
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
-        <div className="flex items-center gap-3">
-          <input
-            id="autoRefresh"
-            type="checkbox"
-            checked={autoRefresh}
-            onChange={(e) => setAutoRefresh(e.target.checked)}
-            className="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-amber-500 focus:ring-2 focus:ring-amber-500 focus:ring-offset-0"
+        {/* Auto-refresh toggle */}
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
+          <FormField
+            control={form.control}
+            name="autoRefresh"
+            render={({ field }) => (
+              <FormItem>
+                <div className="flex items-center gap-3">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      className="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-amber-500 focus:ring-2 focus:ring-amber-500 focus:ring-offset-0"
+                    />
+                  </FormControl>
+                  <div>
+                    <FormLabel className="text-sm font-medium text-zinc-300 cursor-pointer">
+                      Rafraîchissement automatique
+                    </FormLabel>
+                    <p className="text-xs text-zinc-500">
+                      Recherche automatiquement de nouvelles annonces tous les jours
+                    </p>
+                  </div>
+                </div>
+              </FormItem>
+            )}
           />
-          <div>
-            <label htmlFor="autoRefresh" className="text-sm font-medium text-zinc-300">
-              Rafraîchissement automatique
-            </label>
-            <p className="text-xs text-zinc-500">
-              Recherche automatiquement de nouvelles annonces tous les jours
-            </p>
-          </div>
         </div>
-      </div>
 
-      {/* Outreach Settings */}
-      <OutreachSettings
-        outreachSettings={outreachSettings}
-        templateIds={templateIds}
-        onOutreachChange={setOutreachSettings}
-        onTemplateChange={setTemplateIds}
-      />
+        {/* Outreach Settings */}
+        <OutreachSettings
+          outreachSettings={outreachSettings ?? { leboncoin: false, whatsapp: false, sms: false }}
+          templateIds={templateIds ?? { leboncoin: null, whatsapp: null, sms: null }}
+          onOutreachChange={(value) => form.setValue("outreachSettings", value)}
+          onTemplateChange={(value) => form.setValue("templateIds", value)}
+        />
 
-      {/* Actions */}
-      <div className="flex gap-3">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="flex-1 rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-2 font-medium text-zinc-300 transition-colors hover:bg-zinc-900"
-        >
-          Annuler
-        </button>
-        <button
-          type="submit"
-          disabled={isSaving}
-          className="flex-1 rounded-lg bg-amber-500 px-4 py-2 font-medium text-black transition-colors hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {isSaving ? "Création..." : hunt ? "Enregistrer" : "Créer la recherche"}
-        </button>
-      </div>
-    </form>
+        {/* Actions */}
+        <div className="flex gap-3">
+          <Button
+            type="button"
+            onClick={() => router.back()}
+            variant="outline"
+            className="flex-1 rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-2 font-medium text-zinc-300 transition-colors hover:bg-zinc-900"
+          >
+            Annuler
+          </Button>
+          <Button
+            type="submit"
+            disabled={form.formState.isSubmitting}
+            className="flex-1 rounded-lg bg-amber-500 px-4 py-2 font-medium text-black transition-colors hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {form.formState.isSubmitting ? "Création..." : hunt ? "Enregistrer" : "Créer la recherche"}
+          </Button>
+        </div>
+      </form>
+    </Form>
   );
 }

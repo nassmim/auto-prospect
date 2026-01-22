@@ -32,7 +32,7 @@ export const huntFormSchema = z.object({
       "L'URL doit provenir de Leboncoin"
     )
     .optional(),
-  autoRefresh: z.boolean().default(true),
+  autoRefresh: z.boolean(),
   outreachSettings: outreachSettingsSchema,
   templateIds: templateIdsSchema,
 });
