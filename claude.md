@@ -206,10 +206,23 @@ supabase stop --backup # Stop DB (preserve data)
 
 ### Architecture
 - **Server Components by default**: Use `'use client'` only for: events, browser APIs, state, client libraries
-- **Services pattern**: `/src/services/` for reusable logic using external tools 
-or running on server but that don't necessarily need to be server actions. 
-Whenever Drizzle is needed, then move the part that needs it to server actions 
-as Drizzle can't be invoked from client side unless it is within a server action. 
+- **Page vs Component separation**: Keep `page.tsx` thin — only handle data fetching, routing, and server-side concerns. Move all UI logic, layouts, and presentation into separate components. Components should be routing-agnostic but rich in presentation logic.
+  ```typescript
+  // page.tsx - Thin, server-focused
+  export default async function HuntsPage() {
+    const hunts = await fetchHunts(); // Data fetching
+    return <HuntsView hunts={hunts} />; // Compose components
+  }
+
+  // hunts-view.tsx - Rich UI logic
+  export function HuntsView({ hunts }: { hunts: Hunt[] }) {
+    // All UI state, handlers, rendering logic here
+  }
+  ```
+- **Services pattern**: `/src/services/` for reusable logic using external tools
+or running on server but that don't necessarily need to be server actions.
+Whenever Drizzle is needed, then move the part that needs it to server actions
+as Drizzle can't be invoked from client side unless it is within a server action.
 - **Utils pattern**: `/src/utils/` for reusable logic that run client side
 - **Preference order**: Services → Server Actions → API Routes (last resort)
 
