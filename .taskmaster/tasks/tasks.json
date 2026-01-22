@@ -417,203 +417,209 @@
         "updatedAt": "2026-01-22T17:40:54.276Z"
       },
       {
-        "id": 16,
+        "id": "16",
         "title": "Install Form Validation Dependencies",
         "description": "Install the required npm packages for form validation: react-hook-form, @hookform/resolvers, and zod for client and server-side validation.",
         "details": "Run pnpm to install required dependencies:\n\n```bash\npnpm add react-hook-form @hookform/resolvers zod\n```\n\nAfter installation, verify the packages are added to package.json dependencies:\n- react-hook-form (latest stable)\n- @hookform/resolvers (for Zod integration)\n- zod (schema validation library)\n\nVerify TypeScript types are properly resolved by checking no type errors appear in the IDE after installation. These packages integrate together as follows:\n- zod defines the validation schema\n- @hookform/resolvers/zod provides the zodResolver\n- react-hook-form's useForm accepts the resolver",
         "testStrategy": "1. Run `pnpm add` command and verify successful installation\n2. Check package.json includes all three dependencies\n3. Create a minimal test import in any component to verify modules resolve correctly:\n   ```typescript\n   import { useForm } from 'react-hook-form';\n   import { zodResolver } from '@hookform/resolvers/zod';\n   import { z } from 'zod';\n   ```\n4. Run `pnpm dev` to ensure no build errors",
         "priority": "high",
         "dependencies": [],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-01-22T18:50:38.035Z"
       },
       {
-        "id": 17,
+        "id": "17",
         "title": "Initialize shadcn/ui and Install Form Components",
         "description": "Initialize shadcn/ui in the project and install the required form-related components: Form, Input, Textarea, Select, Checkbox, and Button.",
         "details": "Initialize shadcn/ui:\n```bash\npnpm dlx shadcn@latest init\n```\n\nDuring init, configure for:\n- TypeScript: Yes\n- Style: Default (or match existing zinc/amber color scheme)\n- Base color: Zinc (to match existing dark theme)\n- CSS variables: Yes\n- Tailwind CSS config: tailwind.config.ts (or app/globals.css for Tailwind v4)\n- Components alias: @/components\n- Utils alias: @/lib/utils\n\nThen install required components:\n```bash\npnpm dlx shadcn@latest add form input textarea select checkbox button label\n```\n\nThe Form component from shadcn/ui is built on top of react-hook-form and provides:\n- FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage\n- Automatic error message display integration\n- Accessible form controls with proper aria attributes\n\nNote: The existing `src/components/ui/dropdown.tsx` should be kept as it may serve a different purpose than shadcn's Select.",
         "testStrategy": "1. Verify `components.json` is created at project root with correct configuration\n2. Check `src/components/ui/` contains new shadcn components (form.tsx, input.tsx, etc.)\n3. Verify `src/lib/utils.ts` is created with cn() helper function\n4. Run `pnpm dev` and ensure no build/type errors\n5. Import a component in any file to verify path aliases work:\n   ```typescript\n   import { Button } from '@/components/ui/button';\n   ```",
         "priority": "high",
         "dependencies": [
-          16
+          "16"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "in-progress",
+        "subtasks": [],
+        "updatedAt": "2026-01-22T18:51:29.018Z"
       },
       {
-        "id": 18,
+        "id": "18",
         "title": "Create Hunt Validation Schema",
         "description": "Create the Zod validation schema for hunt creation/edit forms in a new centralized validation schemas directory with French error messages.",
         "details": "Create directory `src/schemas/validation/` and add `hunt.validation.ts`:\n\n```typescript\nimport { z } from 'zod';\n\n// Outreach settings schema\nconst outreachSettingsSchema = z.object({\n  leboncoin: z.boolean().optional(),\n  whatsapp: z.boolean().optional(),\n  sms: z.boolean().optional(),\n}).optional();\n\n// Template IDs schema\nconst templateIdsSchema = z.object({\n  leboncoin: z.string().nullable().optional(),\n  whatsapp: z.string().nullable().optional(),\n  sms: z.string().nullable().optional(),\n}).optional();\n\n// Main hunt form schema\nexport const huntFormSchema = z.object({\n  name: z.string()\n    .min(1, 'Le nom est requis')\n    .max(100, 'Le nom ne peut pas dépasser 100 caractères'),\n  searchUrl: z.string()\n    .url('Veuillez entrer une URL valide')\n    .refine(\n      (url) => url.includes('leboncoin.fr'),\n      'L\\'URL doit provenir de Leboncoin'\n    ).optional(),\n  autoRefresh: z.boolean().default(true),\n  outreachSettings: outreachSettingsSchema,\n  templateIds: templateIdsSchema,\n});\n\n// Type inference for form data\nexport type HuntFormData = z.infer<typeof huntFormSchema>;\n\n// Server action schema (includes all fields)\nexport const createHuntSchema = huntFormSchema.extend({\n  locationId: z.number().positive('L\\'emplacement est requis'),\n  radiusInKm: z.number().min(0).default(0),\n  adTypeId: z.number().positive('Le type d\\'annonce est requis'),\n});\n\nexport type CreateHuntData = z.infer<typeof createHuntSchema>;\n```\n\nAlso create an index.ts barrel export file in the validation directory.",
         "testStrategy": "1. Verify schema file compiles without TypeScript errors\n2. Test schema validation manually:\n   ```typescript\n   const result = huntFormSchema.safeParse({ name: '' });\n   console.log(result.success); // false\n   console.log(result.error?.errors[0].message); // 'Le nom est requis'\n   ```\n3. Verify type inference works: `HuntFormData` should have correct field types\n4. Test URL validation rejects non-Leboncoin URLs\n5. Test all French error messages display correctly",
         "priority": "high",
         "dependencies": [
-          16
+          "16"
         ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 19,
+        "id": "19",
         "title": "Create Template Validation Schemas",
         "description": "Create Zod validation schemas for text and voice template forms with channel-specific validation rules and French error messages.",
         "details": "Create `src/schemas/validation/template.validation.ts`:\n\n```typescript\nimport { z } from 'zod';\nimport { messageChannels, type MessageChannel } from '@/schema/message-template.schema';\n\n// Text template validation schema\nexport const textTemplateSchema = z.object({\n  name: z.string()\n    .min(1, 'Le nom est requis')\n    .max(100, 'Le nom ne peut pas dépasser 100 caractères'),\n  channel: z.enum(['whatsapp', 'sms', 'leboncoin'] as const, {\n    required_error: 'Le canal est requis',\n    invalid_type_error: 'Canal invalide',\n  }),\n  content: z.string()\n    .min(1, 'Le contenu du message est requis')\n    .max(2000, 'Le contenu ne peut pas dépasser 2000 caractères'),\n  isDefault: z.boolean().default(false),\n});\n\nexport type TextTemplateFormData = z.infer<typeof textTemplateSchema>;\n\n// Voice template validation schema\nexport const voiceTemplateSchema = z.object({\n  name: z.string()\n    .min(1, 'Le nom est requis')\n    .max(100, 'Le nom ne peut pas dépasser 100 caractères'),\n  audioUrl: z.string()\n    .url('URL audio invalide')\n    .optional(),\n  audioDuration: z.number()\n    .min(15, 'La durée minimale est de 15 secondes')\n    .max(55, 'La durée maximale est de 55 secondes'),\n  isDefault: z.boolean().default(false),\n});\n\nexport type VoiceTemplateFormData = z.infer<typeof voiceTemplateSchema>;\n\n// Client-side voice template schema (before upload)\nexport const voiceTemplateClientSchema = z.object({\n  name: z.string().min(1, 'Le nom est requis'),\n  audioBlob: z.instanceof(Blob, {\n    message: 'Veuillez enregistrer ou importer un fichier audio',\n  }),\n  audioDuration: z.number()\n    .min(15, 'La durée minimale est de 15 secondes')\n    .max(55, 'La durée maximale est de 55 secondes'),\n  isDefault: z.boolean().default(false),\n});\n\nexport type VoiceTemplateClientData = z.infer<typeof voiceTemplateClientSchema>;\n```\n\nThe voice template has two schemas:\n1. Client schema validates the form before upload (uses Blob)\n2. Server schema validates after upload (uses URL string)",
         "testStrategy": "1. Test text template schema rejects empty name and content\n2. Test channel validation only accepts valid MessageChannel values\n3. Test voice duration validation:\n   - Reject duration < 15 seconds\n   - Reject duration > 55 seconds\n   - Accept duration between 15-55 seconds\n4. Verify all error messages are in French\n5. Test type inference for both schemas",
         "priority": "high",
         "dependencies": [
-          16
+          "16"
         ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 20,
+        "id": "20",
         "title": "Create Lead and Settings Validation Schemas",
         "description": "Create Zod validation schemas for lead notes, reminders, and settings page forms with appropriate validation rules.",
         "details": "Create `src/schemas/validation/lead.validation.ts`:\n\n```typescript\nimport { z } from 'zod';\n\n// Lead note validation\nexport const leadNoteSchema = z.object({\n  content: z.string()\n    .min(1, 'Le contenu de la note est requis')\n    .max(5000, 'La note ne peut pas dépasser 5000 caractères'),\n});\n\nexport type LeadNoteFormData = z.infer<typeof leadNoteSchema>;\n\n// Lead reminder validation\nexport const leadReminderSchema = z.object({\n  dueAt: z.coerce.date()\n    .refine(\n      (date) => date > new Date(),\n      'La date doit être dans le futur'\n    ),\n  note: z.string()\n    .max(1000, 'La note ne peut pas dépasser 1000 caractères')\n    .optional(),\n});\n\nexport type LeadReminderFormData = z.infer<typeof leadReminderSchema>;\n```\n\nCreate `src/schemas/validation/settings.validation.ts`:\n\n```typescript\nimport { z } from 'zod';\n\n// Team invitation schema\nexport const teamInvitationSchema = z.object({\n  email: z.string()\n    .email('Adresse email invalide')\n    .min(1, 'L\\'email est requis'),\n  role: z.enum(['admin', 'user'], {\n    required_error: 'Le rôle est requis',\n  }),\n});\n\nexport type TeamInvitationFormData = z.infer<typeof teamInvitationSchema>;\n\n// Organization settings schema (for future use)\nexport const organizationSettingsSchema = z.object({\n  name: z.string()\n    .min(1, 'Le nom de l\\'organisation est requis')\n    .max(100, 'Le nom ne peut pas dépasser 100 caractères'),\n});\n\nexport type OrganizationSettingsFormData = z.infer<typeof organizationSettingsSchema>;\n```\n\nUpdate `src/schemas/validation/index.ts` to export all schemas.",
         "testStrategy": "1. Test note validation rejects empty content\n2. Test reminder validation rejects past dates\n3. Test email validation in team invitation schema\n4. Verify z.coerce.date() properly handles datetime-local input strings\n5. Test all error messages are in French",
         "priority": "medium",
         "dependencies": [
-          16
+          "16"
         ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 21,
+        "id": "21",
         "title": "Refactor Hunt Form with react-hook-form and Zod",
         "description": "Refactor the HuntForm component to use react-hook-form with Zod validation, replacing useState-based form handling with proper form state management.",
         "details": "Refactor `src/components/hunts/hunt-form.tsx`:\n\n1. Replace useState calls with useForm hook:\n```typescript\nimport { useForm } from 'react-hook-form';\nimport { zodResolver } from '@hookform/resolvers/zod';\nimport { huntFormSchema, type HuntFormData } from '@/schemas/validation/hunt.validation';\nimport { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';\nimport { Input } from '@/components/ui/input';\nimport { Checkbox } from '@/components/ui/checkbox';\nimport { Button } from '@/components/ui/button';\n\nconst form = useForm<HuntFormData>({\n  resolver: zodResolver(huntFormSchema),\n  defaultValues: {\n    name: hunt?.name ?? '',\n    autoRefresh: hunt?.autoRefresh ?? true,\n    outreachSettings: hunt?.outreachSettings ?? { leboncoin: false, whatsapp: false, sms: false },\n    templateIds: hunt?.templateIds ?? { leboncoin: null, whatsapp: null, sms: null },\n  },\n});\n```\n\n2. Replace form JSX with shadcn Form components:\n```typescript\n<Form {...form}>\n  <form onSubmit={form.handleSubmit(onSubmit)} className=\"space-y-6\">\n    <FormField\n      control={form.control}\n      name=\"name\"\n      render={({ field }) => (\n        <FormItem>\n          <FormLabel>Nom de la recherche</FormLabel>\n          <FormControl>\n            <Input placeholder=\"Ex: Peugeot 308 GTI Paris\" {...field} />\n          </FormControl>\n          <FormMessage />\n        </FormItem>\n      )}\n    />\n    {/* ... other fields */}\n  </form>\n</Form>\n```\n\n3. Update UrlPasteTab and SearchBuilderTab to work with form state (may need to use form.watch() and form.setValue())\n\n4. Fix the TypeScript error in search-builder-tab props by ensuring proper typing\n\n5. Update form submission to use validated data",
         "testStrategy": "1. Test form renders without errors\n2. Test validation errors display in French when submitting empty form\n3. Test name field shows error message for empty value\n4. Test successful form submission with valid data\n5. Test edit mode populates form with existing hunt data\n6. Verify autoRefresh checkbox works correctly\n7. Test form resets after successful submission\n8. Verify URL paste tab still functions correctly",
         "priority": "high",
         "dependencies": [
-          17,
-          18
+          "17",
+          "18"
         ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 22,
+        "id": "22",
         "title": "Add Server-Side Validation to Hunt Actions",
         "description": "Add Zod schema validation to createHunt and updateHunt server actions, ensuring the same validation rules apply on both client and server.",
         "details": "Update `src/actions/hunt-crud.actions.ts`:\n\n1. Import and use the schema:\n```typescript\nimport { createHuntSchema, type CreateHuntData } from '@/schemas/validation/hunt.validation';\n\nexport async function createHunt(data: unknown) {\n  const supabase = await createClient();\n  const { data: userData } = await supabase.auth.getUser();\n\n  if (!userData.user) {\n    throw new Error('Non authentifié');\n  }\n\n  // Validate input with Zod\n  const parseResult = createHuntSchema.safeParse(data);\n  if (!parseResult.success) {\n    const errors = parseResult.error.flatten();\n    throw new Error(\n      Object.values(errors.fieldErrors).flat()[0] || 'Données invalides'\n    );\n  }\n\n  const validatedData = parseResult.data;\n  // ... rest of the function using validatedData\n}\n```\n\n2. Create a helper function for consistent error formatting:\n```typescript\nfunction formatZodError(error: z.ZodError): string {\n  const fieldErrors = error.flatten().fieldErrors;\n  const firstError = Object.values(fieldErrors).flat()[0];\n  return firstError || 'Données de formulaire invalides';\n}\n```\n\n3. Apply same pattern to updateHunt action\n\n4. Ensure error messages thrown are user-friendly French strings that can be displayed in the UI",
         "testStrategy": "1. Test createHunt with invalid data returns appropriate French error message\n2. Test createHunt with missing required fields is rejected\n3. Test createHunt with valid data succeeds\n4. Test that bypassing client-side validation still gets caught by server\n5. Test updateHunt validation similarly\n6. Verify error messages are consistent between client and server",
         "priority": "high",
         "dependencies": [
-          18
+          "18"
         ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 23,
+        "id": "23",
         "title": "Refactor Template Forms with react-hook-form and Zod",
         "description": "Refactor TextTemplateForm and VoiceTemplateForm components to use react-hook-form with Zod validation and shadcn/ui components.",
         "details": "Refactor `src/components/templates/text-template-form.tsx`:\n\n1. Replace useState with useForm:\n```typescript\nimport { useForm } from 'react-hook-form';\nimport { zodResolver } from '@hookform/resolvers/zod';\nimport { textTemplateSchema, type TextTemplateFormData } from '@/schemas/validation/template.validation';\n\nconst form = useForm<TextTemplateFormData>({\n  resolver: zodResolver(textTemplateSchema),\n  defaultValues: {\n    name: '',\n    channel: 'whatsapp',\n    content: '',\n    isDefault: false,\n  },\n});\n```\n\n2. Handle variable insertion with form state:\n```typescript\nconst handleInsertVariable = (variable: string) => {\n  const currentContent = form.getValues('content');\n  // Insert at cursor position logic...\n  form.setValue('content', newContent, { shouldValidate: true });\n};\n```\n\n3. Use shadcn Select for channel dropdown:\n```typescript\n<FormField\n  control={form.control}\n  name=\"channel\"\n  render={({ field }) => (\n    <FormItem>\n      <FormLabel>Canal</FormLabel>\n      <Select onValueChange={field.onChange} defaultValue={field.value}>\n        <FormControl>\n          <SelectTrigger>\n            <SelectValue placeholder=\"Sélectionner un canal\" />\n          </SelectTrigger>\n        </FormControl>\n        <SelectContent>\n          <SelectItem value=\"whatsapp\">WhatsApp</SelectItem>\n          <SelectItem value=\"sms\">SMS</SelectItem>\n          <SelectItem value=\"leboncoin\">Leboncoin</SelectItem>\n        </SelectContent>\n      </Select>\n      <FormMessage />\n    </FormItem>\n  )}\n/>\n```\n\nRefactor `src/components/templates/voice-template-form.tsx`:\n\n1. Use voiceTemplateClientSchema for client validation\n2. Handle Blob validation specially since it can't be in react-hook-form directly:\n```typescript\nconst [audioBlob, setAudioBlob] = useState<Blob | null>(null);\n// Validate blob separately before submit\n```\n\n3. Maintain audio preview functionality while using form state",
         "testStrategy": "1. Test text template form validation errors display correctly\n2. Test channel selection works with shadcn Select\n3. Test variable insertion still works with form state\n4. Test live preview updates correctly\n5. Test voice template duration validation (15-55s)\n6. Test voice template requires audio file before submit\n7. Test both forms submit successfully with valid data\n8. Verify isDefault checkbox works correctly",
         "priority": "high",
         "dependencies": [
-          17,
-          19
+          "17",
+          "19"
         ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 24,
+        "id": "24",
         "title": "Add Server-Side Validation to Template Actions",
         "description": "Add Zod schema validation to createTextTemplate and createVoiceTemplate server actions for consistent validation.",
         "details": "Update `src/actions/template.actions.ts`:\n\n1. Import schemas:\n```typescript\nimport { textTemplateSchema, voiceTemplateSchema } from '@/schemas/validation/template.validation';\n```\n\n2. Update createTextTemplate:\n```typescript\nexport async function createTextTemplate(data: unknown) {\n  const supabase = await createClient();\n  const { data: { session } } = await supabase.auth.getSession();\n\n  if (!session) {\n    throw new Error('Non autorisé');\n  }\n\n  // Validate with Zod\n  const parseResult = textTemplateSchema.safeParse(data);\n  if (!parseResult.success) {\n    throw new Error(formatZodError(parseResult.error));\n  }\n\n  const validatedData = parseResult.data;\n  // ... rest using validatedData.name, validatedData.channel, etc.\n}\n```\n\n3. Update createVoiceTemplate similarly with voiceTemplateSchema\n\n4. Remove redundant manual validation checks that are now handled by Zod:\n```typescript\n// Remove this:\nif (!data.name.trim() || !data.content.trim()) {\n  throw new Error('Name and content are required');\n}\n// Zod handles it now\n```\n\n5. Ensure error messages match the French messages from schemas",
         "testStrategy": "1. Test createTextTemplate rejects missing name/content with French errors\n2. Test createTextTemplate rejects invalid channel values\n3. Test createVoiceTemplate rejects invalid duration (<15s or >55s)\n4. Test createVoiceTemplate rejects missing audioUrl\n5. Test valid data passes validation and creates template\n6. Verify server validation catches attempts to bypass client validation",
         "priority": "high",
         "dependencies": [
-          19
+          "19"
         ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 25,
+        "id": "25",
         "title": "Refactor Lead Drawer Forms with react-hook-form and Zod",
         "description": "Refactor the notes and reminders forms in LeadDrawer component to use react-hook-form with Zod validation.",
         "details": "Update `src/components/leads/lead-drawer.tsx`:\n\n1. Create separate form instances for notes and reminders:\n```typescript\nimport { useForm } from 'react-hook-form';\nimport { zodResolver } from '@hookform/resolvers/zod';\nimport { \n  leadNoteSchema, \n  leadReminderSchema,\n  type LeadNoteFormData,\n  type LeadReminderFormData \n} from '@/schemas/validation/lead.validation';\n\n// Notes form\nconst noteForm = useForm<LeadNoteFormData>({\n  resolver: zodResolver(leadNoteSchema),\n  defaultValues: { content: '' },\n});\n\n// Reminders form\nconst reminderForm = useForm<LeadReminderFormData>({\n  resolver: zodResolver(leadReminderSchema),\n  defaultValues: { dueAt: '', note: '' },\n});\n```\n\n2. Replace notes form section:\n```typescript\n<Form {...noteForm}>\n  <form onSubmit={noteForm.handleSubmit(handleAddNote)} className=\"space-y-2\">\n    <FormField\n      control={noteForm.control}\n      name=\"content\"\n      render={({ field }) => (\n        <FormItem>\n          <FormControl>\n            <Textarea\n              placeholder=\"Ajouter une note...\"\n              rows={3}\n              {...field}\n            />\n          </FormControl>\n          <FormMessage />\n        </FormItem>\n      )}\n    />\n    <Button type=\"submit\" disabled={noteForm.formState.isSubmitting}>\n      {noteForm.formState.isSubmitting ? 'Enregistrement...' : 'Sauvegarder'}\n    </Button>\n  </form>\n</Form>\n```\n\n3. Replace reminders form similarly with datetime-local input\n\n4. Reset forms after successful submission:\n```typescript\nconst handleAddNote = async (data: LeadNoteFormData) => {\n  try {\n    await addLeadNote(lead.id, data.content);\n    noteForm.reset();\n    // ... reload lead\n  } catch (err) {\n    noteForm.setError('root', { message: err.message });\n  }\n};\n```\n\n5. Remove separate error state variables (noteError, reminderError) - use form state instead",
         "testStrategy": "1. Test note form validation rejects empty content\n2. Test note form shows error message inline\n3. Test reminder form validates future date requirement\n4. Test reminder form accepts valid future date\n5. Test forms reset after successful submission\n6. Test submission loading states display correctly\n7. Test error handling displays errors from server actions",
         "priority": "medium",
         "dependencies": [
-          17,
-          20
+          "17",
+          "20"
         ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 26,
+        "id": "26",
         "title": "Add Server-Side Validation to Lead Actions",
         "description": "Add Zod schema validation to addLeadNote and addLeadReminder server actions.",
         "details": "Update `src/actions/lead.actions.ts`:\n\n1. Import schemas:\n```typescript\nimport { leadNoteSchema, leadReminderSchema } from '@/schemas/validation/lead.validation';\n```\n\n2. Update addLeadNote:\n```typescript\nexport async function addLeadNote(leadId: string, content: unknown) {\n  // ... auth check\n\n  // Validate content\n  const parseResult = leadNoteSchema.safeParse({ content });\n  if (!parseResult.success) {\n    throw new Error(formatZodError(parseResult.error));\n  }\n\n  const validatedContent = parseResult.data.content;\n  // ... rest of function\n}\n```\n\n3. Update addLeadReminder:\n```typescript\nexport async function addLeadReminder(\n  leadId: string,\n  dueAt: unknown,\n  note?: unknown,\n) {\n  // ... auth check\n\n  // Validate reminder data\n  const parseResult = leadReminderSchema.safeParse({ dueAt, note });\n  if (!parseResult.success) {\n    throw new Error(formatZodError(parseResult.error));\n  }\n\n  const { dueAt: validatedDueAt, note: validatedNote } = parseResult.data;\n  // ... rest of function using validated values\n}\n```\n\n4. Remove manual validation that's now handled by Zod:\n```typescript\n// Remove:\nif (!content.trim()) {\n  throw new Error('Note content cannot be empty');\n}\n// Zod handles this\n```",
         "testStrategy": "1. Test addLeadNote rejects empty content with French error\n2. Test addLeadReminder rejects past dates with French error\n3. Test valid note content is accepted\n4. Test valid future reminder date is accepted\n5. Test optional reminder note field works correctly\n6. Verify server catches validation bypass attempts",
         "priority": "medium",
         "dependencies": [
-          20
+          "20"
         ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 27,
+        "id": "27",
         "title": "Apply shadcn/ui Component Styling Consistency",
         "description": "Replace remaining custom form elements with shadcn/ui components across all refactored forms to ensure consistent styling and behavior.",
         "details": "Review and update all form components to use shadcn/ui consistently:\n\n1. **Buttons**: Replace custom button styles with shadcn Button:\n```typescript\nimport { Button } from '@/components/ui/button';\n\n// Replace:\n<button className=\"flex-1 rounded-lg bg-amber-500...\">\n// With:\n<Button variant=\"default\" className=\"flex-1\">\n```\n\nMay need to customize button variants in button.tsx to match amber theme.\n\n2. **Input fields**: All text inputs should use shadcn Input\n3. **Textareas**: Use shadcn Textarea component\n4. **Checkboxes**: Use shadcn Checkbox with proper labeling:\n```typescript\n<FormField\n  control={form.control}\n  name=\"autoRefresh\"\n  render={({ field }) => (\n    <FormItem className=\"flex items-center gap-3\">\n      <FormControl>\n        <Checkbox\n          checked={field.value}\n          onCheckedChange={field.onChange}\n        />\n      </FormControl>\n      <div>\n        <FormLabel>Rafraîchissement automatique</FormLabel>\n        <FormDescription>\n          Recherche automatiquement de nouvelles annonces tous les jours\n        </FormDescription>\n      </div>\n    </FormItem>\n  )}\n/>\n```\n\n5. **Select dropdowns**: Use shadcn Select for channel selection and similar\n\n6. **Error messages**: Ensure all use FormMessage for consistent error display\n\n7. **Theme consistency**: Update shadcn components' CSS variables in globals.css to match the existing zinc/amber dark theme",
         "testStrategy": "1. Visual inspection of all forms for consistent styling\n2. Test all interactive elements (buttons, checkboxes, selects) work correctly\n3. Verify dark theme (zinc/amber) is maintained across all shadcn components\n4. Test focus states and accessibility (keyboard navigation)\n5. Verify error message styling is consistent\n6. Test on different screen sizes for responsive behavior",
         "priority": "medium",
         "dependencies": [
-          21,
-          23,
-          25
+          "21",
+          "23",
+          "25"
         ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 28,
+        "id": "28",
         "title": "Create Barrel Export and Documentation for Validation Schemas",
         "description": "Create a proper barrel export file for all validation schemas and add inline documentation for schema usage patterns.",
         "details": "Create/update `src/schemas/validation/index.ts`:\n\n```typescript\n/**\n * Centralized validation schemas for Auto-Prospect\n * \n * These schemas are used for both client-side (react-hook-form) and \n * server-side (server actions) validation to ensure consistent validation.\n * \n * Usage in components:\n * ```typescript\n * import { huntFormSchema, type HuntFormData } from '@/schemas/validation';\n * \n * const form = useForm<HuntFormData>({\n *   resolver: zodResolver(huntFormSchema),\n * });\n * ```\n * \n * Usage in server actions:\n * ```typescript\n * import { createHuntSchema } from '@/schemas/validation';\n * \n * const result = createHuntSchema.safeParse(data);\n * if (!result.success) throw new Error(formatZodError(result.error));\n * ```\n */\n\n// Hunt schemas\nexport {\n  huntFormSchema,\n  createHuntSchema,\n  type HuntFormData,\n  type CreateHuntData,\n} from './hunt.validation';\n\n// Template schemas\nexport {\n  textTemplateSchema,\n  voiceTemplateSchema,\n  voiceTemplateClientSchema,\n  type TextTemplateFormData,\n  type VoiceTemplateFormData,\n  type VoiceTemplateClientData,\n} from './template.validation';\n\n// Lead schemas\nexport {\n  leadNoteSchema,\n  leadReminderSchema,\n  type LeadNoteFormData,\n  type LeadReminderFormData,\n} from './lead.validation';\n\n// Settings schemas\nexport {\n  teamInvitationSchema,\n  organizationSettingsSchema,\n  type TeamInvitationFormData,\n  type OrganizationSettingsFormData,\n} from './settings.validation';\n```\n\nAdd a shared utility for formatting Zod errors:\n```typescript\n// src/lib/validation.ts\nimport { z } from 'zod';\n\nexport function formatZodError(error: z.ZodError): string {\n  const fieldErrors = error.flatten().fieldErrors;\n  const firstError = Object.values(fieldErrors).flat()[0];\n  return firstError || 'Données de formulaire invalides';\n}\n```",
         "testStrategy": "1. Verify all exports are accessible from '@/schemas/validation'\n2. Test importing individual schemas works\n3. Test type imports work correctly\n4. Verify formatZodError utility returns French error messages\n5. Check no circular dependencies exist",
         "priority": "low",
         "dependencies": [
-          18,
-          19,
-          20
+          "18",
+          "19",
+          "20"
         ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 29,
+        "id": "29",
         "title": "End-to-End Form Validation Testing",
         "description": "Perform comprehensive end-to-end testing of all refactored forms including client validation, server validation, and error display.",
         "details": "Create a comprehensive testing checklist and execute manual E2E tests:\n\n**Hunt Form Tests:**\n1. Submit empty form → Verify French error for name field\n2. Enter name only, submit → Verify URL error (if URL tab active)\n3. Enter valid data → Verify successful creation and redirect\n4. Test edit mode with pre-filled data\n5. Disable JS and submit → Verify server catches validation\n\n**Text Template Form Tests:**\n1. Submit empty form → Verify name and content errors\n2. Test channel dropdown selection\n3. Test variable insertion still works\n4. Test live preview updates\n5. Submit valid form → Verify redirect to templates\n\n**Voice Template Form Tests:**\n1. Submit without audio → Verify audio required error\n2. Upload <15s audio → Verify duration error\n3. Upload >55s audio → Verify duration error\n4. Record valid audio → Verify submission works\n\n**Lead Drawer Tests:**\n1. Submit empty note → Verify error inline\n2. Submit valid note → Verify note added, form reset\n3. Add reminder with past date → Verify error\n4. Add reminder with future date → Verify success\n5. Delete reminder → Verify removed\n\n**Cross-cutting Tests:**\n1. All error messages in French\n2. Form loading states display correctly\n3. Errors clear when user starts typing\n4. Form state persists across tab switches (hunt form)\n5. Accessibility: keyboard navigation, screen reader",
         "testStrategy": "Execute each test case manually:\n1. Open each form in the browser\n2. Test each validation scenario\n3. Verify error messages match expected French text\n4. Check browser console for any JS errors\n5. Test with network throttling for loading states\n6. Document any failures for fixing\n7. Re-test after fixes until all pass",
         "priority": "high",
         "dependencies": [
-          21,
-          22,
-          23,
-          24,
-          25,
-          26,
-          27
+          "21",
+          "22",
+          "23",
+          "24",
+          "25",
+          "26",
+          "27"
         ],
         "status": "pending",
         "subtasks": []
       }
     ],
     "metadata": {
-      "created": "2026-01-22T17:51:09.487Z",
-      "updated": "2026-01-22T17:51:09.487Z",
-      "description": "Tasks for master context"
+      "version": "1.0.0",
+      "lastModified": "2026-01-22T18:51:29.036Z",
+      "taskCount": 29,
+      "completedCount": 16,
+      "tags": [
+        "master"
+      ]
     }
   }
 }
