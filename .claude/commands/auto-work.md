@@ -12,6 +12,7 @@ Autonomous task execution: fetch next task, implement it, commit, repeat until n
    - Use `feature-dev` plugin for feature tasks
    - Use `frontend-design` plugin for UI tasks
    - Use `code-simplifier` after implementation
+   - Use `explanatory-output-style` to explain complex logic and reasoning
    - Follow all code standards from CLAUDE.md
 
 3. **Commit Changes**

@@ -2,6 +2,20 @@
 
 **Automated prospection tool for professional resellers**
 
+## ⚠️ CRITICAL: Task Scope Discipline
+
+**MANDATORY: Start EVERY task response with this acknowledgment:**
+
+```
+"I will focus ONLY on: [brief restatement of the exact task requested]. Nothing more."
+```
+
+**Rules:**
+- Do ONLY what is explicitly requested - no extra improvements, refactoring, or "while I'm here" changes
+- If the task is unclear, ask for clarification BEFORE starting
+- Resist the urge to add "helpful" extras unless explicitly requested
+- Complete the specific task, then stop and wait for next instruction
+
 ## Tech Stack
 - **Next.js 16.1.1** (App Router) + React 19 + TypeScript
 - **Database**: Supabase (PostgreSQL) + Drizzle ORM
@@ -31,7 +45,6 @@ src/proxy.ts          → Auth middleware
 - `accounts.isPersonalAccount` flag identifies which org is user's default personal one
 - `createPersonalOrganization()` service called during signup flow
 - All business tables reference `organizationId` (not `accountId`)
-- `createdById` in tables is for audit trail only, not data ownership
 
 ## Database: Zero-Trust Security Model
 
@@ -42,12 +55,33 @@ src/proxy.ts          → Auth middleware
 - Two modes: `admin` (bypasses RLS), `client` (enforces RLS)
 - **Auth always server-side**: Never handle auth or sensitive data on client
 
+### Database Drizzle Access
+
+**Direct queries:**
+```typescript
+import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
+const dbClient = await createDrizzleSupabaseClient()
+
+  const query = (tx: TDBQuery) =>
+    tx.query.contactedAds.findMany({
+      where: (table, { eq }) => eq(table.accountId, accountId),
+      columns: { adId: true },
+    });
+
+  if (bypassRLS) return query(client.admin); // Without RLS (admin)
+  return client.rls(query); // With RLS (user context)
+```
+
 ### Migration Workflow (STRICT)
+
+#### Development Phase (Pre-Production)
+**Current Status:** Migrations not yet applied to production database.
+
 ```bash
 1. Modify schema:     src/schema/*.ts
 2. Generate:          pnpm db:generate
 3. Review SQL:        supabase/migrations/*.sql
-4. Apply:             pnpm db:migrate-only (human only)
+4. Apply locally:     pnpm db:migrate-only (human only)
 5. Commit:            schema + migration files
 ```
 
@@ -55,7 +89,7 @@ src/proxy.ts          → Auth middleware
 - `pnpm db:migrate-only` / `pnpm db:migrate` (apply migrations)
 - `pnpm db:dump` (dump seed data)
 - `drizzle-kit push` or `supabase db push`
-- UI changes (Supabase dashboard)
+- UI changes on Supabase dashboard
 - Manual SQL outside migrations
 
 ### New Table Checklist
@@ -65,13 +99,13 @@ src/proxy.ts          → Auth middleware
 1. ✅ Define RLS policies in schema (see `src/schema/user.ts`)
 2. ✅ **ALWAYS add explicit grants in migration** (see example in `0009_create_leads_tables.sql`):
    ```sql
-   -- Explicit grants for all new tables
+   -- Explicit grants for a specific table and for roles
+   -- Adjust the grants for each new table you create
    grant select, insert, update, delete on table public.my_table to authenticated, service_role;
    ```
-   **Why:** Supabase requires explicit grants even with RLS enabled. Without grants, authenticated users cannot access the table even if RLS policies allow it.
+   **Why:** Supabase requires explicit grants even with RLS enabled. Without grants, users cannot access the table even if RLS policies allow it.
 
 3. ✅ Foreign keys to `auth.users` on cascade delete (if user-owned)
-4. ✅ Verify no duplicate migration numbers (check `ls supabase/migrations/`)
 
 ## Environment Setup
 - **5 files**: `.env.local`, `.env.development`, `.env.development.local`, `.env.production`, `.env.production.local`
@@ -86,19 +120,6 @@ src/proxy.ts          → Auth middleware
 3. Server components → `createClient()` (server.ts)
 4. Browser → `createClient()` (client.ts)
 5. DB queries → RLS wrapper injects JWT → policies evaluate
-
-### Database Access
-
-**Direct queries:**
-```typescript
-// With RLS (user context)
-import { db } from '@/lib/drizzle/dbClient'
-const data = await db.select().from(accounts)
-
-// Without RLS (admin)
-import { adminDb } from '@/lib/drizzle/dbClient'
-const data = await adminDb.select().from(accounts)
-```
 
 ## MCP Servers
 - `filesystem` → File operations

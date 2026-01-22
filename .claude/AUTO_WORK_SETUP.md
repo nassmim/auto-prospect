@@ -10,6 +10,7 @@
 ### 2. Existing Setup (Already in Place)
 - ✅ `.claude/commands/auto-work.md` - Workflow definition
 - ✅ `.claude/settings.json` - Plugins enabled (feature-dev, frontend-design, code-simplifier)
+- ✅ `.claude/settings.local.json` - Also use the Plugins enabled here (explanatory-output-style)
 - ✅ `.taskmaster/tasks/tasks.json` - 9 pending tasks ready to implement
 
 ## How to Use
@@ -37,7 +38,7 @@ claude
 
 ### What Happens Automatically
 1. **Task Fetch** - Gets next pending task via `task-master next`
-2. **Implementation** - Uses appropriate plugin (feature-dev/frontend-design/code-simplifier)
+2. **Implementation** - Uses appropriate plugin (feature-dev/frontend-design/code-simplifier/explanatory-output-style)
 3. **Commit** - Creates git commit with format: `task <id>: <description>`
 4. **Mark Done** - Updates task status to done
 5. **Loop** - Repeats until no pending tasks
