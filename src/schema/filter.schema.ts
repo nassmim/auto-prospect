@@ -1,11 +1,12 @@
 import { accounts } from "@/schema/account.schema";
-import { adSubTypes, adTypes, brands, zipcodes } from "@/schema/ad.schema";
+import { adSubTypes, adTypes, brands, locations } from "@/schema/ad.schema";
 import { organizations } from "@/schema/organization.schema";
 import { relations, sql } from "drizzle-orm";
 import {
   boolean,
   foreignKey,
   index,
+  integer,
   jsonb,
   pgPolicy,
   pgTable,
@@ -41,6 +42,14 @@ export const baseFilters = pgTable(
     id: uuid().defaultRandom().primaryKey(),
     // Hunt metadata
     organizationId: uuid("organization_id").notNull(),
+    createdById: uuid("created_by_id").notNull(), // Who created it (for audit trail)
+    adTypeId: smallint("ad_type_id")
+    .references(() => adTypes.id)
+    .notNull(),
+    // Search filter fields
+    locationId: uuid("location_id")
+      .references(() => locations.id)
+      .notNull(),    
     name: varchar({ length: 255 }).notNull(),
     status: varchar({ length: 20 }).notNull().default("active"),
     autoRefresh: boolean("auto_refresh").notNull().default(true),
@@ -54,13 +63,6 @@ export const baseFilters = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .default(sql`now()`),
-    createdById: uuid("created_by_id").notNull(), // Who created it (for audit trail)
-    // Search filter fields
-    zipcodeId: uuid("zipcode_id")
-      .references(() => zipcodes.id)
-      .notNull(),
-    latCenter: smallint("lat_center"),
-    lngCenter: smallint("lng_center"),
     priceMin: real("price_min").default(0),
     mileageMin: real("mileage_min").default(0),
     mileageMax: real("mileage_max"),
@@ -360,7 +362,7 @@ export const baseFiltersRelations = relations(baseFilters, ({ one, many }) => ({
     references: [locations.id],
   }),
   type: one(adTypes, {
-    fields: [baseFilters.adTypeId],
+    fields: [baseFilters.],
     references: [adTypes.id],
   }),
   subTypes: many(adSubTypesFilters),
