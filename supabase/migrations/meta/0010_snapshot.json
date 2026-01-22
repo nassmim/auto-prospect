@@ -1,6 +1,6 @@
 {
-  "id": "bb5a1e05-ff13-47cb-9e3e-eeb28a0a3081",
-  "prevId": "dc74523f-c975-4916-9114-b83e490bdd9e",
+  "id": "30ffe9ad-ce59-48e1-a635-34fb702299ee",
+  "prevId": "bb5a1e05-ff13-47cb-9e3e-eeb28a0a3081",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -2740,6 +2740,15 @@
         }
       },
       "policies": {
+        "enable insert for authenticated users": {
+          "name": "enable insert for authenticated users",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "authenticated"
+          ],
+          "withCheck": "(select auth.uid()) = account_id"
+        },
         "enable read for organization members": {
           "name": "enable read for organization members",
           "as": "PERMISSIVE",
@@ -2749,15 +2758,24 @@
           ],
           "using": "exists (\n        select 1 from organization_members om\n        where om.organization_id = \"organization_members\".\"organization_id\"\n        and om.account_id = (select auth.uid())\n        and om.joined_at is not null\n      )"
         },
-        "enable write for organization admins": {
-          "name": "enable write for organization admins",
+        "enable update delete for organization admins": {
+          "name": "enable update delete for organization admins",
           "as": "PERMISSIVE",
-          "for": "ALL",
+          "for": "UPDATE",
           "to": [
             "authenticated"
           ],
           "using": "exists (\n        select 1 from organization_members om\n        where om.organization_id = \"organization_members\".\"organization_id\"\n        and om.account_id = (select auth.uid())\n        and om.role in ('owner', 'admin')\n        and om.joined_at is not null\n      )",
           "withCheck": "exists (\n        select 1 from organization_members om\n        where om.organization_id = \"organization_members\".\"organization_id\"\n        and om.account_id = (select auth.uid())\n        and om.role in ('owner', 'admin')\n        and om.joined_at is not null\n      )"
+        },
+        "enable delete for organization admins": {
+          "name": "enable delete for organization admins",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "authenticated"
+          ],
+          "using": "exists (\n        select 1 from organization_members om\n        where om.organization_id = \"organization_members\".\"organization_id\"\n        and om.account_id = (select auth.uid())\n        and om.role in ('owner', 'admin')\n        and om.joined_at is not null\n      )"
         },
         "enable update for accepting invitation": {
           "name": "enable update for accepting invitation",
@@ -2846,15 +2864,33 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {
-        "enable all for organization owner": {
-          "name": "enable all for organization owner",
+        "enable insert for authenticated users": {
+          "name": "enable insert for authenticated users",
           "as": "PERMISSIVE",
-          "for": "ALL",
+          "for": "INSERT",
+          "to": [
+            "authenticated"
+          ],
+          "withCheck": "(select auth.uid()) = owner_id"
+        },
+        "enable update delete for organization owner": {
+          "name": "enable update delete for organization owner",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
           "to": [
             "authenticated"
           ],
           "using": "(select auth.uid()) = owner_id",
           "withCheck": "(select auth.uid()) = owner_id"
+        },
+        "enable delete for organization owner": {
+          "name": "enable delete for organization owner",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "authenticated"
+          ],
+          "using": "(select auth.uid()) = owner_id"
         },
         "enable read for organization members": {
           "name": "enable read for organization members",

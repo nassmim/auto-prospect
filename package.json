@@ -23,6 +23,7 @@
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.90.1",
     "@whiskeysockets/baileys": "7.0.0-rc.9",
+    "date-fns": "^4.1.0",
     "drizzle-orm": "^0.45.1",
     "jwt-decode": "^4.0.0",
     "libphonenumber-js": "^1.12.34",

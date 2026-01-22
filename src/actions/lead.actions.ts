@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { db } from "@/lib/drizzle/dbClient";
+import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
 import { leads, leadNotes, type LeadStage } from "@/schema/lead.schema";
 import { eq, and, inArray } from "drizzle-orm";
 import { createClient } from "@/lib/supabase/server";
@@ -20,21 +20,26 @@ export async function updateLeadStage(leadId: string, newStage: LeadStage) {
     throw new Error("Unauthorized");
   }
 
-  try {
-    // Update lead stage and updatedAt timestamp
-    await db
-      .update(leads)
-      .set({
-        stage: newStage,
-        updatedAt: new Date(),
-      })
-      .where(eq(leads.id, leadId));
+  const dbClient = await createDrizzleSupabaseClient();
 
-    // Log activity as a note
-    await db.insert(leadNotes).values({
-      leadId,
-      content: `Stage changé vers: ${newStage}`,
-      createdById: session.user.id,
+  try {
+    // RLS query wrapper - enforces organization access
+    await dbClient.rls(async (tx) => {
+      // Update lead stage and updatedAt timestamp
+      await tx
+        .update(leads)
+        .set({
+          stage: newStage,
+          updatedAt: new Date(),
+        })
+        .where(eq(leads.id, leadId));
+
+      // Log activity as a note
+      await tx.insert(leadNotes).values({
+        leadId,
+        content: `Stage changé vers: ${newStage}`,
+        createdById: session.user.id,
+      });
     });
 
     revalidatePath("/leads");
@@ -63,6 +68,8 @@ export async function updateLeadPosition(
     throw new Error("Unauthorized");
   }
 
+  const dbClient = await createDrizzleSupabaseClient();
+
   try {
     const updateData: { position: number; updatedAt: Date; stage?: string } = {
       position: newPosition,
@@ -73,7 +80,9 @@ export async function updateLeadPosition(
       updateData.stage = newStage;
     }
 
-    await db.update(leads).set(updateData).where(eq(leads.id, leadId));
+    await dbClient.rls(async (tx) => {
+      await tx.update(leads).set(updateData).where(eq(leads.id, leadId));
+    });
 
     revalidatePath("/leads");
 
@@ -108,6 +117,8 @@ export async function bulkUpdateLeads(
     return { success: true, count: 0 };
   }
 
+  const dbClient = await createDrizzleSupabaseClient();
+
   try {
     // Update all leads
     const updateData: {
@@ -125,25 +136,27 @@ export async function bulkUpdateLeads(
       updateData.assignedToId = updates.assignedToId;
     }
 
-    await db.update(leads).set(updateData).where(inArray(leads.id, leadIds));
+    await dbClient.rls(async (tx) => {
+      await tx.update(leads).set(updateData).where(inArray(leads.id, leadIds));
 
-    // Log bulk action as notes for each lead
-    const noteContent = [];
-    if (updates.stage) noteContent.push(`Stage: ${updates.stage}`);
-    if (updates.assignedToId !== undefined)
-      noteContent.push(
-        `Assigné à: ${updates.assignedToId || "Non assigné"}`,
-      );
+      // Log bulk action as notes for each lead
+      const noteContent: string[] = [];
+      if (updates.stage) noteContent.push(`Stage: ${updates.stage}`);
+      if (updates.assignedToId !== undefined)
+        noteContent.push(
+          `Assigné à: ${updates.assignedToId || "Non assigné"}`,
+        );
 
-    if (noteContent.length > 0) {
-      await db.insert(leadNotes).values(
-        leadIds.map((leadId) => ({
-          leadId,
-          content: `Action groupée - ${noteContent.join(", ")}`,
-          createdById: session.user.id,
-        })),
-      );
-    }
+      if (noteContent.length > 0) {
+        await tx.insert(leadNotes).values(
+          leadIds.map((leadId) => ({
+            leadId,
+            content: `Action groupée - ${noteContent.join(", ")}`,
+            createdById: session.user.id,
+          })),
+        );
+      }
+    });
 
     revalidatePath("/leads");
 
@@ -167,22 +180,26 @@ export async function assignLead(leadId: string, userId: string | null) {
     throw new Error("Unauthorized");
   }
 
-  try {
-    await db
-      .update(leads)
-      .set({
-        assignedToId: userId,
-        updatedAt: new Date(),
-      })
-      .where(eq(leads.id, leadId));
+  const dbClient = await createDrizzleSupabaseClient();
 
-    // Log assignment
-    await db.insert(leadNotes).values({
-      leadId,
-      content: userId
-        ? `Lead assigné à un utilisateur`
-        : `Lead non assigné`,
-      createdById: session.user.id,
+  try {
+    await dbClient.rls(async (tx) => {
+      await tx
+        .update(leads)
+        .set({
+          assignedToId: userId,
+          updatedAt: new Date(),
+        })
+        .where(eq(leads.id, leadId));
+
+      // Log assignment
+      await tx.insert(leadNotes).values({
+        leadId,
+        content: userId
+          ? `Lead assigné à un utilisateur`
+          : `Lead non assigné`,
+        createdById: session.user.id,
+      });
     });
 
     revalidatePath("/leads");

@@ -43,13 +43,26 @@ export const organizations = pgTable(
       name: "organizations_owner_id_fk",
     }).onDelete("cascade"),
     index("organizations_owner_id_idx").on(table.ownerId),
-    // Owner can perform all operations on their organization
-    pgPolicy("enable all for organization owner", {
+    // Authenticated users can create organizations (for personal org during signup)
+    pgPolicy("enable insert for authenticated users", {
       as: "permissive",
-      for: "all",
+      for: "insert",
+      to: authenticatedRole,
+      withCheck: sql`${authUid} = owner_id`,
+    }),
+    // Owner can update/delete their organization
+    pgPolicy("enable update delete for organization owner", {
+      as: "permissive",
+      for: "update",
       to: authenticatedRole,
       using: sql`${authUid} = owner_id`,
       withCheck: sql`${authUid} = owner_id`,
+    }),
+    pgPolicy("enable delete for organization owner", {
+      as: "permissive",
+      for: "delete",
+      to: authenticatedRole,
+      using: sql`${authUid} = owner_id`,
     }),
     // Members can read organizations they belong to
     pgPolicy("enable read for organization members", {
@@ -103,6 +116,13 @@ export const organizationMembers = pgTable(
     ),
     index("organization_members_organization_id_idx").on(table.organizationId),
     index("organization_members_account_id_idx").on(table.accountId),
+    // Authenticated users can insert themselves as members (for personal org during signup)
+    pgPolicy("enable insert for authenticated users", {
+      as: "permissive",
+      for: "insert",
+      to: authenticatedRole,
+      withCheck: sql`${authUid} = account_id`,
+    }),
     // Members can read their own membership and other members in their organization
     pgPolicy("enable read for organization members", {
       as: "permissive",
@@ -115,10 +135,10 @@ export const organizationMembers = pgTable(
         and om.joined_at is not null
       )`,
     }),
-    // Owner and admins can manage memberships
-    pgPolicy("enable write for organization admins", {
+    // Owner and admins can update/delete memberships
+    pgPolicy("enable update delete for organization admins", {
       as: "permissive",
-      for: "all",
+      for: "update",
       to: authenticatedRole,
       using: sql`exists (
         select 1 from organization_members om
@@ -128,6 +148,18 @@ export const organizationMembers = pgTable(
         and om.joined_at is not null
       )`,
       withCheck: sql`exists (
+        select 1 from organization_members om
+        where om.organization_id = ${table.organizationId}
+        and om.account_id = ${authUid}
+        and om.role in ('owner', 'admin')
+        and om.joined_at is not null
+      )`,
+    }),
+    pgPolicy("enable delete for organization admins", {
+      as: "permissive",
+      for: "delete",
+      to: authenticatedRole,
+      using: sql`exists (
         select 1 from organization_members om
         where om.organization_id = ${table.organizationId}
         and om.account_id = ${authUid}

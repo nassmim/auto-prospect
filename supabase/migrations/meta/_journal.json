@@ -64,6 +64,20 @@
       "when": 1769073013435,
       "tag": "0008_opposite_shatterstar",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1769095254237,
+      "tag": "0009_hesitant_lyja",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1769097025038,
+      "tag": "0010_slippery_doctor_faustus",
+      "breakpoints": true
     }
   ]
 }
