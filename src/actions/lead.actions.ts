@@ -5,8 +5,11 @@ import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
 import { leads, leadNotes, type LeadStage } from "@/schema/lead.schema";
 import { organizationMembers } from "@/schema/organization.schema";
 import { accounts } from "@/schema/account.schema";
+import { messages, type MessageChannel } from "@/schema/message.schema";
+import { messageTemplates } from "@/schema/message-template.schema";
 import { eq, and, inArray, isNotNull } from "drizzle-orm";
 import { createClient } from "@/lib/supabase/server";
+import { renderTemplate, extractLeadVariables } from "@/services/message.service";
 
 /**
  * Updates a lead's stage and logs the activity
@@ -345,5 +348,103 @@ export async function getOrganizationMembers(leadId: string) {
   } catch (error) {
     console.error("Error fetching organization members:", error);
     throw new Error("Failed to fetch organization members");
+  }
+}
+
+/**
+ * Get the default WhatsApp template for the organization
+ */
+export async function getDefaultWhatsAppTemplate(leadId: string) {
+  const supabase = await createClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session) {
+    throw new Error("Unauthorized");
+  }
+
+  const dbClient = await createDrizzleSupabaseClient();
+
+  try {
+    // First get the lead's organization
+    const lead = await dbClient.rls(async (tx) => {
+      return tx.query.leads.findFirst({
+        where: eq(leads.id, leadId),
+        columns: {
+          organizationId: true,
+        },
+      });
+    });
+
+    if (!lead) {
+      throw new Error("Lead not found");
+    }
+
+    // Get the default WhatsApp template
+    const template = await dbClient.rls(async (tx) => {
+      return tx.query.messageTemplates.findFirst({
+        where: and(
+          eq(messageTemplates.organizationId, lead.organizationId),
+          eq(messageTemplates.channel, "whatsapp"),
+          eq(messageTemplates.isDefault, true),
+        ),
+      });
+    });
+
+    return template;
+  } catch (error) {
+    console.error("Error fetching WhatsApp template:", error);
+    throw new Error("Failed to fetch WhatsApp template");
+  }
+}
+
+/**
+ * Log a WhatsApp message attempt
+ * MVP: Just logs the message, doesn't actually send via API
+ */
+export async function logWhatsAppMessage(
+  leadId: string,
+  renderedMessage: string,
+  templateId?: string,
+) {
+  const supabase = await createClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session) {
+    throw new Error("Unauthorized");
+  }
+
+  const dbClient = await createDrizzleSupabaseClient();
+
+  try {
+    await dbClient.rls(async (tx) => {
+      // Log message in messages table
+      await tx.insert(messages).values({
+        leadId,
+        templateId: templateId || null,
+        channel: "whatsapp",
+        content: renderedMessage,
+        status: "sent", // MVP: assume sent immediately
+        sentAt: new Date(),
+        sentById: session.user.id,
+      });
+
+      // Log activity
+      await tx.insert(leadNotes).values({
+        leadId,
+        content: `Message WhatsApp envoyé`,
+        createdById: session.user.id,
+      });
+    });
+
+    revalidatePath(`/leads/${leadId}`);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error logging WhatsApp message:", error);
+    throw new Error("Failed to log WhatsApp message");
   }
 }

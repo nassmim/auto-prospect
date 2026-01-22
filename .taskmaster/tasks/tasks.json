@@ -302,9 +302,10 @@
               1
             ],
             "details": "Create action buttons row with 4 buttons: WhatsApp (green), SMS (blue), Voice (purple), Platform (gray). For WhatsApp button: import renderTemplate from whatsapp.services.ts, generate wa.me/{phone}?text={encodedMessage} link using lead's phone and organization's default WhatsApp template, open link in new tab (_blank), log message attempt in messages table with type='whatsapp'. For SMS button: trigger SMS modal component (create modal shell, full implementation deferred), disable if organization has no SMS credits, show tooltip 'Nécessite des crédits'. For Voice button: trigger voice modal component (create modal shell), disable if no credits, show tooltip. For Platform button: create direct link to ad.url (original listing), open in new tab with external link icon. Add loading states for each button during server actions. Include error handling with toast notifications for failed actions.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. Click WhatsApp button on lead with valid phone, verify wa.me link opens in new tab with correctly formatted message. 2. Verify template variables like {titre_annonce} are replaced with actual ad data. 3. Check message logged in messages table with correct leadId and type. 4. Click Platform button, verify original listing URL opens correctly. 5. Test with lead missing phone number - WhatsApp button should be disabled with tooltip. 6. Verify SMS/Voice buttons are disabled when credits are insufficient.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-01-22T16:27:49.148Z"
           },
           {
             "id": 4,
@@ -334,7 +335,7 @@
             "parentId": "undefined"
           }
         ],
-        "updatedAt": "2026-01-22T16:24:37.159Z"
+        "updatedAt": "2026-01-22T16:27:49.148Z"
       },
       {
         "id": "11",
@@ -413,7 +414,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-22T16:24:37.160Z",
+      "lastModified": "2026-01-22T16:27:49.149Z",
       "taskCount": 15,
       "completedCount": 11,
       "tags": [
