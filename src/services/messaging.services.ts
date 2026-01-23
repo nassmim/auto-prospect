@@ -15,3 +15,34 @@ export const sendSlackMessage = async (message: string) => {
     body: JSON.stringify(payload),
   });
 };
+
+/**
+ * Send SMS via SMSMobileAPI
+ */
+export const sendSms = async ({
+  to,
+  message,
+}: {
+  to: string
+  message: string
+}) => {
+  const apiKey = process.env.SMSMOBILEAPI_API_KEY!
+
+  const body = new URLSearchParams()
+  body.set("apikey", apiKey)
+  body.set("recipients", to)
+  body.set("message", message)
+  body.set("sendsms", "1")
+
+  const res = await fetch("https://api.smsmobileapi.com/sendsms/", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body,
+  })
+
+  if (!res.ok) {
+    throw new Error("Failed to send SMS")
+  }
+
+  return res.json()
+}
