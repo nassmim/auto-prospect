@@ -1,7 +1,9 @@
-import { getOrganizationHunts } from "@/actions/hunt-crud.actions";
+// TODO: Uncomment real data fetching when auth is implemented
+// import { getOrganizationHunts } from "@/actions/hunt-crud.actions";
 import { HuntsView } from "@/components/hunts/hunts-view";
 import { getSEOTags } from "@/lib/seo";
 import { pages } from "@/config/routes";
+import { mockOrganizationHunts } from "@/lib/mock-data";
 
 export const metadata = getSEOTags({
   title: "Recherches",
@@ -10,7 +12,11 @@ export const metadata = getSEOTags({
 });
 
 export default async function HuntsPage() {
-  const hunts = await getOrganizationHunts();
+  // TODO: Replace with real data fetching
+  // const hunts = await getOrganizationHunts();
+
+  // Using mock data for testing without auth
+  const hunts = mockOrganizationHunts;
 
   return <HuntsView hunts={hunts} />;
 }

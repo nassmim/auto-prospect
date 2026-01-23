@@ -22,14 +22,15 @@ export function UrlPasteTab({ value, onChange }: UrlPasteTabProps) {
           className="w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-2 font-mono text-sm text-zinc-200 placeholder-zinc-500 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
         />
         <p className="mt-2 text-xs text-zinc-500">
-          Effectuez votre recherche sur Leboncoin, puis copiez l'URL complète ici
+          Effectuez votre recherche sur Leboncoin, puis copiez l&apos;URL
+          complète ici
         </p>
       </div>
 
       {/* Instructions */}
       <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-4">
         <h4 className="mb-2 text-sm font-semibold text-zinc-300">
-          Comment obtenir l'URL ?
+          Comment obtenir l&apos;URL ?
         </h4>
         <ol className="space-y-1 text-xs text-zinc-400">
           <li className="flex gap-2">
@@ -38,15 +39,18 @@ export function UrlPasteTab({ value, onChange }: UrlPasteTabProps) {
           </li>
           <li className="flex gap-2">
             <span className="font-semibold text-amber-500">2.</span>
-            <span>Appliquez tous les filtres souhaités (prix, marque, localisation, etc.)</span>
+            <span>
+              Appliquez tous les filtres souhaités (prix, marque, localisation,
+              etc.)
+            </span>
           </li>
           <li className="flex gap-2">
             <span className="font-semibold text-amber-500">3.</span>
-            <span>Copiez l'URL complète de la page de résultats</span>
+            <span>Copiez l&apos;URL complète de la page de résultats</span>
           </li>
           <li className="flex gap-2">
             <span className="font-semibold text-amber-500">4.</span>
-            <span>Collez l'URL dans le champ ci-dessus</span>
+            <span>Collez l&apos;URL dans le champ ci-dessus</span>
           </li>
         </ol>
       </div>

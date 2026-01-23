@@ -3,10 +3,7 @@
 import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
 import { createClient } from "@/lib/supabase/server";
 import { leads } from "@/schema/lead.schema";
-import { baseFilters } from "@/schema/filter.schema";
-import { messageTemplates } from "@/schema/message-template.schema";
-import { organizationMembers } from "@/schema/organization.schema";
-import { eq, and, gte, sql, desc } from "drizzle-orm";
+import { and, desc, eq, gte, sql } from "drizzle-orm";
 
 /**
  * Gets the current user's primary organization ID
@@ -28,7 +25,7 @@ async function getCurrentOrganizationId(): Promise<string | null> {
     return tx.query.organizationMembers.findFirst({
       where: (table, { and, eq, isNotNull }) =>
         and(
-          eq(table.accountId, session.user.id),
+          eq(table.organizationId, session.user.id),
           isNotNull(table.joinedAt),
         ),
       columns: { organizationId: true },
@@ -155,9 +152,7 @@ export async function getActiveHunts(): Promise<HuntSummary[]> {
         const contactedLeads = await tx
           .select({ count: sql<number>`cast(count(*) as integer)` })
           .from(leads)
-          .where(
-            and(eq(leads.huntId, hunt.id), eq(leads.stage, "contacte")),
-          );
+          .where(and(eq(leads.huntId, hunt.id), eq(leads.stage, "contacte")));
 
         // Determine primary platform from outreach settings
         const outreach = hunt.outreachSettings as {

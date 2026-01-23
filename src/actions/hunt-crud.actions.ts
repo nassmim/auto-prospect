@@ -2,10 +2,10 @@
 
 import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
 import { createClient } from "@/lib/supabase/server";
-import { baseFilters, type HuntStatus, type OutreachSettings, type TemplateIds } from "@/schema/filter.schema";
-import { eq } from "drizzle-orm";
-import { createHuntSchema, updateHuntSchema } from "@/schemas/validation";
 import { formatZodError } from "@/lib/validation";
+import { baseFilters, type HuntStatus } from "@/schema/filter.schema";
+import { createHuntSchema, updateHuntSchema } from "@/validation-schemas";
+import { eq } from "drizzle-orm";
 
 /**
  * Fetches all hunts for the current user's organization

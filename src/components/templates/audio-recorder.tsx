@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useRef, useState } from "react";
 
 type AudioRecorderProps = {
   onRecordingComplete: (audioBlob: Blob, duration: number) => void;
@@ -64,9 +64,7 @@ export function AudioRecorder({ onRecordingComplete }: AudioRecorderProps) {
       }, 100);
     } catch (err) {
       console.error("Error starting recording:", err);
-      setError(
-        "Impossible d'accéder au microphone. Vérifiez les permissions.",
-      );
+      setError("Impossible d'accéder au microphone. Vérifiez les permissions.");
     }
   };
 
@@ -155,7 +153,7 @@ export function AudioRecorder({ onRecordingComplete }: AudioRecorderProps) {
         {/* Instructions */}
         <div className="mt-4 text-center text-sm text-zinc-400">
           {!isRecording ? (
-            <p>Cliquez pour commencer l'enregistrement</p>
+            <p>Cliquez pour commencer l&aposenregistrement</p>
           ) : (
             <p className="animate-pulse font-medium text-red-400">
               Enregistrement en cours...
@@ -166,9 +164,7 @@ export function AudioRecorder({ onRecordingComplete }: AudioRecorderProps) {
 
       {/* Requirements */}
       <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
-        <h4 className="mb-2 text-sm font-semibold text-zinc-300">
-          Exigences
-        </h4>
+        <h4 className="mb-2 text-sm font-semibold text-zinc-300">Exigences</h4>
         <ul className="space-y-1 text-xs text-zinc-500">
           <li className="flex items-center gap-2">
             <svg

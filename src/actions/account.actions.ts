@@ -1,3 +1,5 @@
+"use server";
+
 import { createDrizzleSupabaseClient, TDBClient } from "@/lib/drizzle/dbClient";
 
 /**

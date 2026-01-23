@@ -1,23 +1,17 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { createTextTemplate } from "@/actions/template.actions";
-import { textTemplateSchema, type TextTemplateFormData } from "@/schemas/validation";
-import { pages } from "@/config/routes";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
+  FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormControl,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -25,8 +19,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { VariableToolbar } from "./variable-toolbar";
+import { pages } from "@/config/routes";
 import { renderTemplate } from "@/services/message.service";
+import {
+  textTemplateSchema,
+  type TextTemplateFormData,
+} from "@/validation-schemas";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
+import { useRef, useState } from "react";
+import { useForm } from "react-hook-form";
+import { VariableToolbar } from "./variable-toolbar";
 
 export function TextTemplateForm() {
   const [error, setError] = useState<string | null>(null);
@@ -43,17 +46,28 @@ export function TextTemplateForm() {
     },
   });
 
+  const {
+    control,
+    setValue,
+    getValues,
+    watch,
+    formState: { isSubmitting },
+    handleSubmit,
+  } = form;
+
   const handleInsertVariable = (variable: string) => {
     if (!textareaRef.current) return;
 
     const textarea = textareaRef.current;
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
-    const currentContent = form.getValues("content");
+    const currentContent = getValues("content");
     const newContent =
-      currentContent.substring(0, start) + variable + currentContent.substring(end);
+      currentContent.substring(0, start) +
+      variable +
+      currentContent.substring(end);
 
-    form.setValue("content", newContent, { shouldValidate: true });
+    setValue("content", newContent, { shouldValidate: true });
 
     // Set cursor position after inserted variable
     setTimeout(() => {
@@ -70,7 +84,7 @@ export function TextTemplateForm() {
     alert("Cette fonctionnalité sera bientôt disponible !");
   };
 
-  const handleSubmit = async (data: TextTemplateFormData) => {
+  const onSubmit = async (data: TextTemplateFormData) => {
     setError(null);
 
     try {
@@ -83,7 +97,9 @@ export function TextTemplateForm() {
 
       router.push(pages.templates);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create template");
+      setError(
+        err instanceof Error ? err.message : "Failed to create template",
+      );
     }
   };
 
@@ -98,13 +114,13 @@ export function TextTemplateForm() {
     vendeur_nom: "Jean Dupont",
   };
 
-  const contentValue = form.watch("content");
-  const channelValue = form.watch("channel");
+  const contentValue = watch("content");
+  const channelValue = watch("channel");
   const previewContent = renderTemplate(contentValue, previewData);
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {error && (
           <div className="rounded-lg border border-red-900/50 bg-red-950/30 p-4">
             <p className="text-sm text-red-400">{error}</p>
@@ -113,7 +129,7 @@ export function TextTemplateForm() {
 
         {/* Name input */}
         <FormField
-          control={form.control}
+          control={control}
           name="name"
           render={({ field }) => (
             <FormItem>
@@ -132,7 +148,7 @@ export function TextTemplateForm() {
 
         {/* Channel select */}
         <FormField
-          control={form.control}
+          control={control}
           name="channel"
           render={({ field }) => (
             <FormItem>
@@ -154,12 +170,12 @@ export function TextTemplateForm() {
           )}
         />
 
-      {/* Variable toolbar */}
-      <VariableToolbar onInsertVariable={handleInsertVariable} />
+        {/* Variable toolbar */}
+        <VariableToolbar onInsertVariable={handleInsertVariable} />
 
         {/* Content textarea */}
         <FormField
-          control={form.control}
+          control={control}
           name="content"
           render={({ field }) => (
             <FormItem>
@@ -203,7 +219,7 @@ export function TextTemplateForm() {
         {/* Live preview */}
         <div>
           <h3 className="mb-2 text-sm font-medium text-zinc-300">
-            Aperçu (avec données d'exemple)
+            Aperçu (avec données d&aposexemple)
           </h3>
           <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-4">
             <p className="whitespace-pre-wrap text-sm text-zinc-300">
@@ -214,7 +230,7 @@ export function TextTemplateForm() {
 
         {/* Is default checkbox */}
         <FormField
-          control={form.control}
+          control={control}
           name="isDefault"
           render={({ field }) => (
             <FormItem>
@@ -246,10 +262,10 @@ export function TextTemplateForm() {
           </Button>
           <Button
             type="submit"
-            disabled={form.formState.isSubmitting}
+            disabled={isSubmitting}
             className="flex-1 rounded-lg bg-amber-500 px-4 py-2 font-medium text-black transition-colors hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {form.formState.isSubmitting ? "Création..." : "Créer le template"}
+            {isSubmitting ? "Création..." : "Créer le template"}
           </Button>
         </div>
       </form>

@@ -1,17 +1,21 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
-import { leads, leadNotes, leadReminders, type LeadStage } from "@/schema/lead.schema";
-import { organizationMembers, organizations } from "@/schema/organization.schema";
-import { messages, leadActivities, type MessageChannel } from "@/schema/message.schema";
 import { getUserPersonalOrganizationId } from "@/actions/organization.actions";
-import { messageTemplates } from "@/schema/message-template.schema";
-import { eq, and, inArray, isNotNull, desc } from "drizzle-orm";
+import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
 import { createClient } from "@/lib/supabase/server";
-import { renderTemplate, extractLeadVariables } from "@/services/message.service";
-import { leadNoteSchema, leadReminderSchema } from "@/schemas/validation";
 import { formatZodError } from "@/lib/validation";
+import {
+  leadNotes,
+  leadReminders,
+  leads,
+  type LeadStage,
+} from "@/schema/lead.schema";
+import { messageTemplates } from "@/schema/message-template.schema";
+import { leadActivities, messages } from "@/schema/message.schema";
+import { organizationMembers } from "@/schema/organization.schema";
+import { leadNoteSchema, leadReminderSchema } from "@/validation-schemas";
+import { and, desc, eq, inArray, isNotNull } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 
 /**
  * Updates a lead's stage and logs the activity
@@ -152,9 +156,7 @@ export async function bulkUpdateLeads(
       const noteContent: string[] = [];
       if (updates.stage) noteContent.push(`Stage: ${updates.stage}`);
       if (updates.assignedToId !== undefined)
-        noteContent.push(
-          `Assigné à: ${updates.assignedToId || "Non assigné"}`,
-        );
+        noteContent.push(`Assigné à: ${updates.assignedToId || "Non assigné"}`);
 
       if (noteContent.length > 0) {
         await tx.insert(leadNotes).values(
@@ -205,9 +207,7 @@ export async function assignLead(leadId: string, userId: string | null) {
       // Log assignment
       await tx.insert(leadNotes).values({
         leadId,
-        content: userId
-          ? `Lead assigné à un utilisateur`
-          : `Lead non assigné`,
+        content: userId ? `Lead assigné à un utilisateur` : `Lead non assigné`,
         createdById: userOrgId,
       });
     });

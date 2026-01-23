@@ -1,5 +1,10 @@
 import * as schema from "@/schema";
-import { DrizzleConfig, ExtractTablesWithRelations } from "drizzle-orm";
+import {
+  and,
+  DrizzleConfig,
+  eq,
+  ExtractTablesWithRelations,
+} from "drizzle-orm";
 import { drizzle, PostgresJsQueryResultHKT } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 
@@ -50,11 +55,9 @@ type TDBQuery =
     >
   | typeof defaultDBClient;
 
-export {
-  createDrizzleSupabaseClient,
-  defaultDBClient,
-  postgresClient,
-  type TDBClient,
-  type TDBModel,
-  type TDBQuery,
-};
+type TEqOperator = typeof eq;
+type TANDperator = typeof and;
+
+export { createDrizzleSupabaseClient, defaultDBClient, postgresClient };
+
+export type { TANDperator, TDBClient, TDBModel, TDBQuery, TEqOperator };

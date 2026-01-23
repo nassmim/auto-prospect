@@ -25,7 +25,7 @@ import {
   TContactedAd,
   TLocation,
 } from "@/types/ad.types";
-import { TFiltersWithRelations } from "@/types/prospecting.types";
+import { THuntWithRelations } from "@/types/hunt.types";
 import { BinaryOperator, sql } from "drizzle-orm";
 import { PgColumn } from "drizzle-orm/pg-core";
 
@@ -153,7 +153,7 @@ export const getAdsContactedByUser = async (
  * Fetches ads matching user's automated robot filters
  */
 export const getMatchingAds = async (
-  robot: TFiltersWithRelations,
+  robot: THuntWithRelations,
   {
     contactedAdsIds = [],
     excludeContactedAds = true,

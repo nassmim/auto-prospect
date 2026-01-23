@@ -1,6 +1,6 @@
 import { TLocation } from "@/types/ad.types";
 
-type TFilters = {
+type THunt = {
   id: string;
   organizationId: string;
   adTypeId: number;
@@ -20,7 +20,7 @@ type TFilters = {
 };
 
 type THuntWithRelations = Omit<
-  TFilters,
+  THunt,
   "typeId" | "subtypeId" | "locationId" | "brandId"
 > & {
   type?: {
@@ -41,4 +41,4 @@ type THuntWithRelations = Omit<
   }[];
 };
 
-export type { TFilters, THuntWithRelations };
+export type { THunt, THuntWithRelations };

@@ -1,10 +1,10 @@
+import { pages } from "@/config/routes";
+import { type LeadStage } from "@/schema/lead.schema";
+import { format, formatDistance } from "date-fns";
+import { fr } from "date-fns/locale";
 import Image from "next/image";
 import Link from "next/link";
 import type React from "react";
-import { formatDistance, format } from "date-fns";
-import { fr } from "date-fns/locale";
-import { type LeadStage } from "@/schema/lead.schema";
-import { pages } from "@/config/routes";
 
 // Constants for stage labels and colors
 const STAGE_LABELS: Record<LeadStage, string> = {
@@ -87,9 +87,15 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 // Type definitions based on action return types
-type Lead = Awaited<ReturnType<typeof import("@/actions/lead.actions").getLeadDetails>>;
-type Message = Awaited<ReturnType<typeof import("@/actions/lead.actions").getLeadMessages>>[number];
-type Activity = Awaited<ReturnType<typeof import("@/actions/lead.actions").getLeadActivities>>[number];
+type Lead = Awaited<
+  ReturnType<typeof import("@/actions/lead.actions").getLeadDetails>
+>;
+type Message = Awaited<
+  ReturnType<typeof import("@/actions/lead.actions").getLeadMessages>
+>[number];
+type Activity = Awaited<
+  ReturnType<typeof import("@/actions/lead.actions").getLeadActivities>
+>[number];
 
 interface LeadDetailViewProps {
   lead: Lead;
@@ -483,7 +489,7 @@ export function LeadDetailView({
             {/* Activity timeline */}
             <section className="space-y-4 rounded-xl border border-zinc-800/50 bg-zinc-900/50 p-6">
               <h2 className="text-lg font-semibold text-zinc-100">
-                Journal d'activité ({activities.length})
+                Journal d&apos;activité ({activities.length})
               </h2>
 
               {activities.length === 0 ? (
@@ -502,8 +508,7 @@ export function LeadDetailView({
                         <p className="font-medium text-zinc-300">
                           {activity.type === "stage_change" &&
                             "Changement de statut"}
-                          {activity.type === "message_sent" &&
-                            "Message envoyé"}
+                          {activity.type === "message_sent" && "Message envoyé"}
                           {activity.type === "assignment_change" &&
                             "Assignation modifiée"}
                           {activity.type === "note_added" && "Note ajoutée"}

@@ -1,43 +1,43 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
-import Image from "next/image";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  getLeadDetails,
-  updateLeadStage,
-  assignLead,
-  getOrganizationMembers,
-  getDefaultWhatsAppTemplate,
-  logWhatsAppMessage,
   addLeadNote,
   addLeadReminder,
+  assignLead,
   deleteLeadReminder,
+  getDefaultWhatsAppTemplate,
+  getLeadDetails,
+  getOrganizationMembers,
+  logWhatsAppMessage,
+  updateLeadStage,
 } from "@/actions/lead.actions";
-import { formatDistance, format } from "date-fns";
-import { fr } from "date-fns/locale";
-import { leadStages, type LeadStage } from "@/schema/lead.schema";
 import { Dropdown } from "@/components/ui/dropdown";
 import {
-  renderTemplate,
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { leadStages, type LeadStage } from "@/schema/lead.schema";
+import {
   extractLeadVariables,
   generateWhatsAppLink,
+  renderTemplate,
 } from "@/services/message.service";
 import {
   leadNoteSchema,
   leadReminderSchema,
   type LeadNoteFormData,
   type LeadReminderFormData,
-} from "@/schemas/validation";
-import {
-  Form,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage,
-} from "@/components/ui/form";
+} from "@/validation-schemas";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { format, formatDistance } from "date-fns";
+import { fr } from "date-fns/locale";
+import Image from "next/image";
+import { useEffect, useState, useTransition } from "react";
+import { useForm } from "react-hook-form";
 
 type LeadDrawerProps = {
   leadId: string | null;
@@ -137,12 +137,12 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
 
     const previousAssignee = lead.assignedTo;
     // Optimistic update
-    const newAssignee = userId
-      ? orgMembers.find((m) => m.id === userId)
-      : null;
+    const newAssignee = userId ? orgMembers.find((m) => m.id === userId) : null;
     setLead({
       ...lead,
-      assignedTo: newAssignee ? { id: newAssignee.id, name: newAssignee.name } : null,
+      assignedTo: newAssignee
+        ? { id: newAssignee.id, name: newAssignee.name }
+        : null,
     });
 
     try {
@@ -554,13 +554,16 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
                         d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
                       />
                     </svg>
-                    <span>Voir l'annonce</span>
+                    <span>Voir l&apos;annonce</span>
                   </a>
                 )}
               </section>
 
               {/* Vehicle Specs Grid */}
-              {(lead.ad.brand || lead.ad.fuel || lead.ad.gearBox || lead.ad.modelYear) && (
+              {(lead.ad.brand ||
+                lead.ad.fuel ||
+                lead.ad.gearBox ||
+                lead.ad.modelYear) && (
                 <section className="space-y-3">
                   <h4 className="text-sm font-semibold uppercase tracking-wider text-zinc-500">
                     Caractéristiques

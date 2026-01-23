@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { bulkUpdateLeads } from "@/actions/lead.actions";
 import { leadStages, type LeadStage } from "@/schema/lead.schema";
-import { bulkUpdateLeads, assignLead } from "@/actions/lead.actions";
+import { useState, useTransition } from "react";
 
 type Lead = {
   id: string;
@@ -46,8 +46,7 @@ export function ListView({ initialLeads, onLeadClick }: ListViewProps) {
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [isPending, startTransition] = useTransition();
 
-  const allSelected =
-    leads.length > 0 && selectedIds.size === leads.length;
+  const allSelected = leads.length > 0 && selectedIds.size === leads.length;
   const someSelected = selectedIds.size > 0 && !allSelected;
 
   const toggleSelectAll = () => {
@@ -91,8 +90,8 @@ export function ListView({ initialLeads, onLeadClick }: ListViewProps) {
   };
 
   const sortedLeads = [...leads].sort((a, b) => {
-    let aVal: any;
-    let bVal: any;
+    let aVal: number | string | Date | undefined;
+    let bVal: number | string | Date | undefined;
 
     switch (sortField) {
       case "title":
@@ -130,15 +129,13 @@ export function ListView({ initialLeads, onLeadClick }: ListViewProps) {
       {selectedIds.size > 0 && (
         <div className="mb-4 flex items-center gap-3 rounded-lg border border-amber-500/50 bg-amber-500/10 p-3">
           <span className="text-sm text-zinc-100">
-            {selectedIds.size} lead{selectedIds.size > 1 ? "s" : ""}{" "}
-            sélectionné{selectedIds.size > 1 ? "s" : ""}
+            {selectedIds.size} lead{selectedIds.size > 1 ? "s" : ""} sélectionné
+            {selectedIds.size > 1 ? "s" : ""}
           </span>
 
           <select
             className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1 text-sm text-zinc-100"
-            onChange={(e) =>
-              handleBulkStageUpdate(e.target.value as LeadStage)
-            }
+            onChange={(e) => handleBulkStageUpdate(e.target.value as LeadStage)}
             defaultValue=""
           >
             <option value="" disabled>

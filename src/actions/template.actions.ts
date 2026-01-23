@@ -1,19 +1,15 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
 import {
-  messageTemplates,
-  type MessageTemplateType,
-  type MessageChannel,
-} from "@/schema/message-template.schema";
-import { eq } from "drizzle-orm";
+  createDrizzleSupabaseClient,
+  TANDperator,
+} from "@/lib/drizzle/dbClient";
 import { createClient } from "@/lib/supabase/server";
-import {
-  textTemplateSchema,
-  voiceTemplateSchema,
-} from "@/schemas/validation";
 import { formatZodError } from "@/lib/validation";
+import { messageTemplates } from "@/schema/message-template.schema";
+import { textTemplateSchema, voiceTemplateSchema } from "@/validation-schemas";
+import { and, BinaryOperator, eq } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 
 /**
  * Fetch all templates for the user's organization
@@ -35,7 +31,10 @@ export async function getOrganizationTemplates() {
     const member = await dbClient.rls(async (tx) => {
       return tx.query.organizationMembers.findFirst({
         where: (members, { eq, and, isNotNull }) =>
-          and(eq(members.accountId, session.user.id), isNotNull(members.joinedAt)),
+          and(
+            eq(members.organizationId, session.user.id),
+            isNotNull(members.joinedAt),
+          ),
         with: {
           organization: {
             columns: {
@@ -101,7 +100,10 @@ export async function createTextTemplate(data: unknown) {
     const member = await dbClient.rls(async (tx) => {
       return tx.query.organizationMembers.findFirst({
         where: (members, { eq, and, isNotNull }) =>
-          and(eq(members.accountId, session.user.id), isNotNull(members.joinedAt)),
+          and(
+            eq(members.organizationId, session.user.id),
+            isNotNull(members.joinedAt),
+          ),
         with: {
           organization: {
             columns: {
@@ -118,19 +120,18 @@ export async function createTextTemplate(data: unknown) {
 
     // If setting as default, unset other defaults for this channel
     if (validatedData.isDefault) {
-      await dbClient.rls(async (tx) => {
-        await tx
+      await dbClient.rls((tx) =>
+        tx
           .update(messageTemplates)
           .set({ isDefault: false })
           .where(
-            (table, { and, eq }) =>
-              and(
-                eq(table.organizationId, member.organization.id),
-                eq(table.channel, validatedData.channel),
-                eq(table.type, "text"),
-              ),
-          );
-      });
+            and(
+              eq(messageTemplates.organizationId, member.organization.id),
+              eq(messageTemplates.channel, validatedData.channel),
+              eq(messageTemplates.type, "text"),
+            ),
+          ),
+      );
     }
 
     // Create template
@@ -186,7 +187,10 @@ export async function createVoiceTemplate(data: unknown) {
     const member = await dbClient.rls(async (tx) => {
       return tx.query.organizationMembers.findFirst({
         where: (members, { eq, and, isNotNull }) =>
-          and(eq(members.accountId, session.user.id), isNotNull(members.joinedAt)),
+          and(
+            eq(members.organizationId, session.user.id),
+            isNotNull(members.joinedAt),
+          ),
         with: {
           organization: {
             columns: {
@@ -208,11 +212,10 @@ export async function createVoiceTemplate(data: unknown) {
           .update(messageTemplates)
           .set({ isDefault: false })
           .where(
-            (table, { and, eq }) =>
-              and(
-                eq(table.organizationId, member.organization.id),
-                eq(table.type, "voice"),
-              ),
+            and(
+              eq(messageTemplates.organizationId, member.organization.id),
+              eq(messageTemplates.type, "voice"),
+            ),
           );
       });
     }
@@ -260,7 +263,9 @@ export async function deleteTemplate(templateId: string) {
 
   try {
     await dbClient.rls(async (tx) => {
-      await tx.delete(messageTemplates).where(eq(messageTemplates.id, templateId));
+      await tx
+        .delete(messageTemplates)
+        .where(eq(messageTemplates.id, templateId));
     });
 
     revalidatePath("/templates");
@@ -320,7 +325,10 @@ export async function updateTemplate(
         if (template) {
           await dbClient.rls(async (tx) => {
             const conditions = [
-              (table: typeof messageTemplates, { eq, and }: any) =>
+              (
+                table: typeof messageTemplates,
+                { eq, and }: { eq: BinaryOperator; and: TANDperator },
+              ) =>
                 and(
                   eq(table.organizationId, template.organizationId),
                   eq(table.type, template.type),
@@ -328,22 +336,30 @@ export async function updateTemplate(
             ];
 
             if (template.channel) {
-              conditions.push((table: typeof messageTemplates, { eq }: any) =>
-                eq(table.channel, template.channel),
+              conditions.push(
+                (
+                  table: typeof messageTemplates,
+                  { eq }: { eq: BinaryOperator },
+                ) => eq(table.channel, template.channel!),
               );
             }
 
             await tx
               .update(messageTemplates)
               .set({ isDefault: false })
-              .where((table, { and }) => and(...conditions.map((c) => c(table, { eq, and }))));
+              .where(
+                and(...conditions.map((c) => c(messageTemplates, { eq, and }))),
+              );
           });
         }
       }
     }
 
     await dbClient.rls(async (tx) => {
-      await tx.update(messageTemplates).set(updates).where(eq(messageTemplates.id, templateId));
+      await tx
+        .update(messageTemplates)
+        .set(updates)
+        .where(eq(messageTemplates.id, templateId));
     });
 
     revalidatePath("/templates");

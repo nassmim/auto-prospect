@@ -1,3 +1,5 @@
+"use server";
+
 import { getUserPlan } from "@/actions/account.actions";
 import { getAdsContactedByUser, getMatchingAds } from "@/actions/ad.actions";
 import { createDrizzleSupabaseClient, TDBClient } from "@/lib/drizzle/dbClient";
@@ -104,18 +106,21 @@ async function contactAdsOwners(
         adId: ad.id,
         organizationId: organizationId,
         messageTypeId: 1, // TODO: Use actual message type based on hunt settings
-      }))
+      })),
     ),
 
     // Create leads for CRM pipeline (with duplicate prevention)
-    dbClient.admin.insert(leads).values(
-      matchingAds.map((ad, index) => ({
-        organizationId: organizationId,
-        huntId: hunt.id,
-        adId: ad.id,
-        stage: 'contacte', // Already contacted via message
-        position: index,
-      }))
-    ).onConflictDoNothing(), // Unique constraint on (organizationId, adId)
+    dbClient.admin
+      .insert(leads)
+      .values(
+        matchingAds.map((ad, index) => ({
+          organizationId: organizationId,
+          huntId: hunt.id,
+          adId: ad.id,
+          stage: "contacte", // Already contacted via message
+          position: index,
+        })),
+      )
+      .onConflictDoNothing(), // Unique constraint on (organizationId, adId)
   ]);
 }

@@ -36,8 +36,9 @@ export function SearchBuilderTab({ value, onChange }: SearchBuilderTabProps) {
           Fonctionnalité à venir
         </h3>
         <p className="text-xs text-zinc-400">
-          Le constructeur de recherche visuel sera disponible dans une prochaine version.
-          En attendant, utilisez l'onglet "Coller une URL" pour créer vos recherches.
+          Le constructeur de recherche visuel sera disponible dans une prochaine
+          version. En attendant, utilisez l&apos;onglet &quot;Coller une
+          URL&quot; pour créer vos recherches.
         </p>
       </div>
 

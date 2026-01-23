@@ -1,4 +1,9 @@
-import { relations, sql } from "drizzle-orm";
+import {
+  InferInsertModel,
+  InferSelectModel,
+  relations,
+  sql,
+} from "drizzle-orm";
 import {
   foreignKey,
   index,
@@ -147,10 +152,7 @@ export type OrganizationRole = (typeof organizationRoles)[number];
 export const organizationMembers = pgTable(
   "organization_members",
   {
-    id: uuid()
-      .primaryKey()
-      .notNull()
-      .default(sql`gen_random_uuid()`),
+    id: uuid().primaryKey().defaultRandom(),
     organizationId: uuid("organization_id").notNull(),
     memberOrganizationId: uuid("member_organization_id").notNull(), // References personal org of member
     role: varchar({ length: 20 }).notNull().default("user"),
@@ -331,3 +333,16 @@ export const organizationMembersRelations = relations(
     }),
   }),
 );
+
+export type TOrganizationMemberSelect = InferSelectModel<
+  typeof organizationMembers
+>;
+export type TOrganizationMemberInsert = InferInsertModel<
+  typeof organizationMembers
+>;
+export type TOrganizationInvitationSelect = InferSelectModel<
+  typeof organizationInvitations
+>;
+export type TOrganizationInvitationInsert = InferInsertModel<
+  typeof organizationInvitations
+>;

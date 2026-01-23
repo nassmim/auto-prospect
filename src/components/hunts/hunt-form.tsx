@@ -1,27 +1,27 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useForm, useWatch } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { createHunt } from "@/actions/hunt-crud.actions";
-import { huntFormSchema, type HuntFormData } from "@/schemas/validation";
-import { pages } from "@/config/routes";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
+  FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormControl,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UrlPasteTab } from "./url-paste-tab";
-import { SearchBuilderTab } from "./search-builder-tab";
+import { pages } from "@/config/routes";
+import { huntFormSchema, type HuntFormData } from "@/validation-schemas";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
 import { OutreachSettings } from "./outreach-settings";
+import { SearchBuilderTab } from "./search-builder-tab";
+import { UrlPasteTab } from "./url-paste-tab";
 
 type HuntFormProps = {
   hunt?: {
@@ -165,27 +165,35 @@ export function HuntForm({ hunt }: HuntFormProps) {
           />
         </div>
 
-      {/* Search Definition Tabs */}
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
-        <h3 className="mb-4 text-sm font-semibold text-zinc-300">
-          Définir la recherche
-        </h3>
+        {/* Search Definition Tabs */}
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
+          <h3 className="mb-4 text-sm font-semibold text-zinc-300">
+            Définir la recherche
+          </h3>
 
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "url" | "builder")}>
-          <TabsList className="mb-6">
-            <TabsTrigger value="url">Coller une URL</TabsTrigger>
-            <TabsTrigger value="builder">Constructeur de recherche</TabsTrigger>
-          </TabsList>
+          <Tabs
+            value={activeTab}
+            onValueChange={(value) => setActiveTab(value as "url" | "builder")}
+          >
+            <TabsList className="mb-6">
+              <TabsTrigger value="url">Coller une URL</TabsTrigger>
+              <TabsTrigger value="builder">
+                Constructeur de recherche
+              </TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="url">
-            <UrlPasteTab value={searchUrl} onChange={setSearchUrl} />
-          </TabsContent>
+            <TabsContent value="url">
+              <UrlPasteTab value={searchUrl} onChange={setSearchUrl} />
+            </TabsContent>
 
-          <TabsContent value="builder">
-            <SearchBuilderTab value={searchFilters} onChange={setSearchFilters} />
-          </TabsContent>
-        </Tabs>
-      </div>
+            <TabsContent value="builder">
+              <SearchBuilderTab
+                value={searchFilters}
+                onChange={setSearchFilters}
+              />
+            </TabsContent>
+          </Tabs>
+        </div>
 
         {/* Auto-refresh toggle */}
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
@@ -207,7 +215,8 @@ export function HuntForm({ hunt }: HuntFormProps) {
                       Rafraîchissement automatique
                     </FormLabel>
                     <p className="text-xs text-zinc-500">
-                      Recherche automatiquement de nouvelles annonces tous les jours
+                      Recherche automatiquement de nouvelles annonces tous les
+                      jours
                     </p>
                   </div>
                 </div>
@@ -218,8 +227,16 @@ export function HuntForm({ hunt }: HuntFormProps) {
 
         {/* Outreach Settings */}
         <OutreachSettings
-          outreachSettings={outreachSettings ?? { leboncoin: false, whatsapp: false, sms: false }}
-          templateIds={templateIds ?? { leboncoin: null, whatsapp: null, sms: null }}
+          outreachSettings={
+            outreachSettings ?? {
+              leboncoin: false,
+              whatsapp: false,
+              sms: false,
+            }
+          }
+          templateIds={
+            templateIds ?? { leboncoin: null, whatsapp: null, sms: null }
+          }
           onOutreachChange={(value) => form.setValue("outreachSettings", value)}
           onTemplateChange={(value) => form.setValue("templateIds", value)}
         />
@@ -239,7 +256,11 @@ export function HuntForm({ hunt }: HuntFormProps) {
             disabled={form.formState.isSubmitting}
             className="flex-1 rounded-lg bg-amber-500 px-4 py-2 font-medium text-black transition-colors hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {form.formState.isSubmitting ? "Création..." : hunt ? "Enregistrer" : "Créer la recherche"}
+            {form.formState.isSubmitting
+              ? "Création..."
+              : hunt
+                ? "Enregistrer"
+                : "Créer la recherche"}
           </Button>
         </div>
       </form>

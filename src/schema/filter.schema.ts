@@ -119,7 +119,7 @@ export const baseFilters = pgTable(
 );
 
 export const adSubTypesFilters = pgTable(
-  "ad_sub_types_filter",
+  "ad_sub_types_filters",
   {
     id: uuid().defaultRandom().primaryKey(),
     baseFilterId: uuid("base_filter_id").notNull(),

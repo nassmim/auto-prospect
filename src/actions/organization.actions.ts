@@ -1,16 +1,16 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
 import { createClient } from "@/lib/supabase/server";
 import {
-  organizations,
-  organizationMembers,
   organizationInvitations,
+  organizationMembers,
+  organizations,
   type OrganizationSettings,
 } from "@/schema/organization.schema";
-import { eq, and } from "drizzle-orm";
 import { randomBytes } from "crypto";
+import { and, eq } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 
 /**
  * Gets the current user's organization with member role
@@ -31,7 +31,7 @@ export async function getCurrentOrganization() {
     return tx.query.organizationMembers.findFirst({
       where: (table, { and, eq, isNotNull }) =>
         and(
-          eq(table.accountId, session.user.id),
+          eq(table.organizationId, session.user.id),
           isNotNull(table.joinedAt),
         ),
       with: {
@@ -76,7 +76,8 @@ export async function updateOrganizationSettings(
     }
 
     // Merge with existing settings
-    const currentSettings = (organization.settings as OrganizationSettings) || {};
+    const currentSettings =
+      (organization.settings as OrganizationSettings) || {};
     const newSettings = { ...currentSettings, ...settings };
 
     await dbClient.rls(async (tx) => {
@@ -163,12 +164,11 @@ export async function getOrganizationMembers() {
           isNotNull(table.joinedAt),
         ),
       with: {
-        account: {
+        organization: {
           columns: {
             id: true,
             email: true,
-            firstName: true,
-            lastName: true,
+            name: true,
           },
         },
       },
@@ -240,19 +240,19 @@ export async function inviteTeamMember(email: string, role: string) {
     }
 
     // Check if user already exists in org
-    const existingMember = await dbClient.rls(async (tx) => {
+    const member = await dbClient.rls(async (tx) => {
       return tx.query.organizationMembers.findFirst({
-        where: (table, { and, eq }) =>
-          and(eq(table.organizationId, organization.id)),
+        where: (table, { eq }) => eq(table.organizationId, organization.id),
         with: {
-          account: {
-            where: (account, { eq }) => eq(account.email, email.toLowerCase()),
-          },
+          organization: { columns: { email: true } },
         },
       });
     });
 
-    if (existingMember && existingMember.account) {
+    const existingMember =
+      member?.organization?.email === email.toLowerCase() ? member : null;
+
+    if (existingMember) {
       throw new Error("User is already a member of this organization");
     }
 
@@ -402,7 +402,7 @@ export async function cancelInvitation(invitationId: string) {
  * @throws Error if personal organization not found
  */
 export async function getUserPersonalOrganizationId(
-  authUserId: string
+  authUserId: string,
 ): Promise<string> {
   const dbClient = await createDrizzleSupabaseClient();
 
@@ -415,7 +415,7 @@ export async function getUserPersonalOrganizationId(
 
   if (!personalOrg) {
     throw new Error(
-      `Personal organization not found for user ${authUserId}. This should never happen - every user must have a personal organization.`
+      `Personal organization not found for user ${authUserId}. This should never happen - every user must have a personal organization.`,
     );
   }
 
@@ -444,9 +444,7 @@ export async function getUserProfile(authUserId: string) {
   });
 
   if (!personalOrg) {
-    throw new Error(
-      `Personal organization not found for user ${authUserId}`
-    );
+    throw new Error(`Personal organization not found for user ${authUserId}`);
   }
 
   return personalOrg;
