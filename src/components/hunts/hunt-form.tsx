@@ -18,6 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UrlPasteTab } from "./url-paste-tab";
 import { SearchBuilderTab } from "./search-builder-tab";
 import { OutreachSettings } from "./outreach-settings";
@@ -170,39 +171,20 @@ export function HuntForm({ hunt }: HuntFormProps) {
           Définir la recherche
         </h3>
 
-        {/* Tabs */}
-        <div className="mb-6 flex gap-2 border-b border-zinc-800">
-          <button
-            type="button"
-            onClick={() => setActiveTab("url")}
-            className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === "url"
-                ? "border-amber-500 text-amber-500"
-                : "border-transparent text-zinc-400 hover:text-zinc-300"
-            }`}
-          >
-            Coller une URL
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("builder")}
-            className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === "builder"
-                ? "border-amber-500 text-amber-500"
-                : "border-transparent text-zinc-400 hover:text-zinc-300"
-            }`}
-          >
-            Constructeur de recherche
-          </button>
-        </div>
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "url" | "builder")}>
+          <TabsList className="mb-6">
+            <TabsTrigger value="url">Coller une URL</TabsTrigger>
+            <TabsTrigger value="builder">Constructeur de recherche</TabsTrigger>
+          </TabsList>
 
-        {/* Tab content */}
-        {activeTab === "url" && (
-          <UrlPasteTab value={searchUrl} onChange={setSearchUrl} />
-        )}
-        {activeTab === "builder" && (
-          <SearchBuilderTab value={searchFilters} onChange={setSearchFilters} />
-        )}
+          <TabsContent value="url">
+            <UrlPasteTab value={searchUrl} onChange={setSearchUrl} />
+          </TabsContent>
+
+          <TabsContent value="builder">
+            <SearchBuilderTab value={searchFilters} onChange={setSearchFilters} />
+          </TabsContent>
+        </Tabs>
       </div>
 
         {/* Auto-refresh toggle */}

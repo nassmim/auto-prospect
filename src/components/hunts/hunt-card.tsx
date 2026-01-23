@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { deleteHunt, updateHuntStatus } from "@/actions/hunt-crud.actions";
 import type { HuntStatus } from "@/schema/filter.schema";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 type Hunt = {
   id: string;
@@ -66,38 +69,33 @@ export function HuntCard({ hunt }: HuntCardProps) {
   const isActive = currentStatus === "active";
 
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6 transition-colors hover:border-zinc-700">
-      {/* Header */}
-      <div className="mb-4 flex items-start justify-between">
-        <div className="flex-1">
-          <Link
-            href={`/hunts/${hunt.id}/edit`}
-            className="text-lg font-semibold text-zinc-100 hover:text-amber-500"
-          >
-            {hunt.name}
-          </Link>
-          <div className="mt-1 flex items-center gap-2">
-            <span
-              className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                isActive
-                  ? "bg-green-500/10 text-green-500"
-                  : "bg-zinc-700/50 text-zinc-400"
-              }`}
+    <Card className="transition-colors hover:border-zinc-700">
+      <CardHeader>
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <Link
+              href={`/hunts/${hunt.id}/edit`}
+              className="hover:text-amber-500"
             >
-              {isActive ? "Active" : "En pause"}
-            </span>
-            {hunt.autoRefresh && (
-              <span className="rounded-full bg-blue-500/10 px-2 py-0.5 text-xs font-medium text-blue-500">
-                Auto-refresh
-              </span>
-            )}
+              <CardTitle>{hunt.name}</CardTitle>
+            </Link>
+            <div className="mt-2 flex items-center gap-2">
+              <Badge variant={isActive ? "default" : "secondary"}>
+                {isActive ? "Active" : "En pause"}
+              </Badge>
+              {hunt.autoRefresh && (
+                <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20">
+                  Auto-refresh
+                </Badge>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      </CardHeader>
 
-      {/* Details */}
-      <div className="mb-4 space-y-2 text-sm">
-        <div className="flex items-center gap-2 text-zinc-400">
+      <CardContent>
+        <div className="space-y-2 text-sm">
+          <div className="flex items-center gap-2 text-zinc-400">
           <svg
             className="h-4 w-4"
             fill="none"
@@ -160,39 +158,37 @@ export function HuntCard({ hunt }: HuntCardProps) {
             </span>
           </div>
         )}
-      </div>
+        </div>
+      </CardContent>
 
-      {/* Actions */}
-      <div className="flex gap-2">
-        <Link
-          href={`/hunts/${hunt.id}/edit`}
-          className="flex-1 rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2 text-center text-sm font-medium text-zinc-300 transition-colors hover:bg-zinc-800"
-        >
-          Modifier
-        </Link>
-        <button
+      <CardFooter className="flex gap-2">
+        <Button variant="outline" size="sm" className="flex-1" asChild>
+          <Link href={`/hunts/${hunt.id}/edit`}>
+            Modifier
+          </Link>
+        </Button>
+        <Button
+          variant={isActive ? "outline" : "default"}
+          size="sm"
           onClick={handleToggleStatus}
           disabled={isTogglingStatus}
-          className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors disabled:opacity-50 ${
-            isActive
-              ? "border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800"
-              : "border-green-900 bg-green-950/30 text-green-500 hover:bg-green-950/50"
-          }`}
+          className="flex-1"
         >
           {isTogglingStatus
             ? "..."
             : isActive
               ? "Mettre en pause"
               : "Activer"}
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="destructive"
+          size="sm"
           onClick={handleDelete}
           disabled={isDeleting}
-          className="rounded-lg border border-red-900 bg-red-950/30 px-3 py-2 text-sm font-medium text-red-500 transition-colors hover:bg-red-950/50 disabled:opacity-50"
         >
           {isDeleting ? "..." : "Supprimer"}
-        </button>
-      </div>
-    </div>
+        </Button>
+      </CardFooter>
+    </Card>
   );
 }
