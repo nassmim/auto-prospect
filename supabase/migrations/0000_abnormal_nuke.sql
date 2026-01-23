@@ -55,8 +55,3 @@ alter default privileges in schema storage revoke all on sequences from anon, au
 grant usage on schema public to anon;
 grant usage on schema public to authenticated;
 grant usage on schema public to service_role;
-
--- ============================================
--- PART 2: GRANT TABLES ACCESS
--- ============================================
-grant select, insert, update, delete on table public.accounts to authenticated, service_role;

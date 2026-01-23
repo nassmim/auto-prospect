@@ -30,15 +30,12 @@ export type OrganizationType = (typeof organizationTypes)[number];
 export const organizations = pgTable(
   "organizations",
   {
-    id: uuid()
-      .primaryKey()
-      .notNull()
-      .default(sql`gen_random_uuid()`),
+    id: uuid().primaryKey().defaultRandom(),
     // User identity (for personal orgs only, 1:1 with auth.users)
     authUserId: uuid("auth_user_id"),
     // Profile/Team info
-    name: varchar({ length: 255 }).notNull(),
-    email: varchar({ length: 320 }),
+    name: varchar({ length: 255 }),
+    email: varchar({ length: 320 }).notNull(),
     pictureUrl: varchar("picture_url", { length: 1000 }),
     phoneNumber: varchar("phone_number", { length: 14 }),
     // Organization type discriminator
@@ -178,7 +175,9 @@ export const organizationMembers = pgTable(
       table.memberOrganizationId,
     ),
     index("organization_members_organization_id_idx").on(table.organizationId),
-    index("organization_members_member_organization_id_idx").on(table.memberOrganizationId),
+    index("organization_members_member_organization_id_idx").on(
+      table.memberOrganizationId,
+    ),
     // Authenticated users can insert themselves as members
     pgPolicy("enable insert for authenticated users", {
       as: "permissive",
@@ -317,7 +316,6 @@ export const organizationInvitations = pgTable(
     }),
   ],
 );
-
 
 // Relations for type-safe joins
 export const organizationMembersRelations = relations(

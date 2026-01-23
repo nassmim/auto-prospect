@@ -71,3 +71,26 @@ export function extractLeadVariables(lead: {
     vendeur_nom: lead.ad.ownerName,
   };
 }
+
+/**
+ * Sends a message to a Slack channel via webhook
+ */
+export async function sendSlackMessage(message: string): Promise<void> {
+  const webhook = process.env.SLACK_WEBHOOK_URL;
+
+  if (!webhook) {
+    throw new Error("SLACK_WEBHOOK_URL environment variable is not configured");
+  }
+
+  const payload = {
+    text: message,
+  };
+
+  await fetch(webhook, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+}

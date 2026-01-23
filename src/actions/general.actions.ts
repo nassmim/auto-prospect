@@ -1,7 +1,7 @@
 "use server";
 
 import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
-import { sendSlackMessage } from "@/services/messaging.services";
+import { sendSlackMessage } from "@/services/message.service";
 
 export const sendAlertToAdmin = async (message: string): Promise<void> => {
   const dbClient = await createDrizzleSupabaseClient();

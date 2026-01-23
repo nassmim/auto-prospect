@@ -102,7 +102,8 @@ src/proxy.ts          → Auth middleware
 **Key implementation details:**
 - `organizations.authUserId` links personal orgs to auth.users (1:1, only for type='personal')
 - `organizations.type` discriminates between 'personal' (user profile) and 'team' (shared workspace)
-- `createPersonalOrganization()` service called during signup flow
+- **Database trigger** `handle_new_user_organization()` auto-creates personal org during signup (migration 0014)
+- `createPersonalOrganization()` service available for manual creation (rarely needed due to trigger)
 - All business tables reference `organizationId` for data ownership
 - User references (createdById, assignedToId, sentById) use personal organization ID via `getUserPersonalOrganizationId()`
 
@@ -117,20 +118,73 @@ src/proxy.ts          → Auth middleware
 
 ### Database Drizzle Access
 
-**Direct queries:**
+**Choose the right pattern based on your use case:**
+
+#### Pattern 1: Dynamic (Both Admin and RLS Needed)
+Use when a function needs to run in **both** contexts (e.g., server action callable by users OR cron jobs).
+
 ```typescript
 import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
-const dbClient = await createDrizzleSupabaseClient()
 
+async function getContactedAds(accountId: string, bypassRLS: boolean = false) {
+  const dbClient = await createDrizzleSupabaseClient();
+
+  // Define query once, reuse for both modes
   const query = (tx: TDBQuery) =>
     tx.query.contactedAds.findMany({
       where: (table, { eq }) => eq(table.accountId, accountId),
       columns: { adId: true },
     });
 
-  if (bypassRLS) return query(client.admin); // Without RLS (admin)
-  return client.rls(query); // With RLS (user context)
+  if (bypassRLS) return query(dbClient.admin); // Admin mode (bypasses RLS)
+  return dbClient.rls(query); // User mode (enforces RLS)
+}
 ```
+
+**When to use:** Mixed-context functions (user-facing actions that admins/cron jobs may also call).
+
+---
+
+#### Pattern 2: Admin Only (Bypass RLS)
+Use when the function **always** runs with admin privileges (e.g., cron jobs, system tasks, migrations).
+
+```typescript
+import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
+
+async function cronCleanupOldAds() {
+  const dbClient = await createDrizzleSupabaseClient();
+
+  // Direct admin access - no RLS wrapper needed
+  return dbClient.admin.query.contactedAds.findMany({
+    where: (table, { lt }) => lt(table.createdAt, new Date('2024-01-01')),
+  });
+}
+```
+
+**When to use:** Background jobs, system operations, data migrations, admin scripts.
+
+---
+
+#### Pattern 3: RLS Only (User Context)
+Use when the function **always** runs in user context (e.g., user-triggered server actions, API routes).
+
+```typescript
+import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
+
+async function getUserContactedAds(accountId: string) {
+  const dbClient = await createDrizzleSupabaseClient();
+
+  // RLS enforced - user can only access their own data
+  return dbClient.rls((tx: TDBQuery) =>
+    tx.query.contactedAds.findMany({
+      where: (table, { eq }) => eq(table.accountId, accountId),
+      columns: { adId: true },
+    })
+  );
+}
+```
+
+**When to use:** Server actions, API routes, any user-triggered database operations.
 
 ### Migration Workflow (STRICT)
 

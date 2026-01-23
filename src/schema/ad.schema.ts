@@ -1,5 +1,5 @@
-import { organizations } from "@/schema/organization.schema";
 import { messageTypes } from "@/schema/general.schema";
+import { organizations } from "@/schema/organization.schema";
 import { relations, sql } from "drizzle-orm";
 import {
   boolean,
@@ -232,7 +232,7 @@ export const locations = pgTable(
     unique("zipcode_name_unique").on(table.name, table.zipcode),
     index("locations_geo_idx").using(
       "gist",
-      sql`ST_MakePoint(${table.lng}, ${table.lat})::geography`,
+      sql`(ST_MakePoint(${table.lng}, ${table.lat})::geography)`,
     ),
     pgPolicy("enable read for authenticated users", {
       as: "permissive",
@@ -303,14 +303,14 @@ export const contactedAds = pgTable(
     }),
     pgPolicy("enable update for authenticated users", {
       as: "permissive",
-      for: "select",
+      for: "update",
       to: authenticatedRole,
       using: sql`true`,
       withCheck: sql`true`,
     }),
     pgPolicy("enable insert for authenticated users", {
       as: "permissive",
-      for: "select",
+      for: "insert",
       to: authenticatedRole,
       withCheck: sql`true`,
     }),

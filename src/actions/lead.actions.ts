@@ -5,7 +5,7 @@ import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
 import { leads, leadNotes, leadReminders, type LeadStage } from "@/schema/lead.schema";
 import { organizationMembers, organizations } from "@/schema/organization.schema";
 import { messages, leadActivities, type MessageChannel } from "@/schema/message.schema";
-import { getUserPersonalOrganizationId } from "@/services/organization.service";
+import { getUserPersonalOrganizationId } from "@/actions/organization.actions";
 import { messageTemplates } from "@/schema/message-template.schema";
 import { eq, and, inArray, isNotNull, desc } from "drizzle-orm";
 import { createClient } from "@/lib/supabase/server";
