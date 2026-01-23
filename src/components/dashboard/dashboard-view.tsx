@@ -2,6 +2,7 @@ import { StatCard } from "@/components/dashboard/stat-card";
 import { HuntListItem } from "@/components/dashboard/hunt-list-item";
 import { type DashboardStats, type HuntSummary } from "@/actions/dashboard.actions";
 import Link from "next/link";
+import { pages } from "@/config/routes";
 
 interface DashboardViewProps {
   stats: DashboardStats;
@@ -22,7 +23,7 @@ export function DashboardView({ stats, hunts }: DashboardViewProps) {
           </p>
         </div>
         <Link
-          href="/hunts/create"
+          href={pages.hunts_create}
           className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-zinc-950 transition-colors hover:bg-amber-400"
         >
           Nouvelle Recherche
@@ -119,7 +120,7 @@ export function DashboardView({ stats, hunts }: DashboardViewProps) {
             Recherches actives
           </h2>
           <Link
-            href="/hunts"
+            href={pages.hunts}
             className="text-sm text-zinc-400 hover:text-zinc-100"
           >
             Voir tout
@@ -157,7 +158,7 @@ export function DashboardView({ stats, hunts }: DashboardViewProps) {
               Créez votre première recherche pour commencer à trouver des leads
             </p>
             <Link
-              href="/hunts/create"
+              href={pages.hunts_create}
               className="mt-4 inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-zinc-950 transition-colors hover:bg-amber-400"
             >
               <svg

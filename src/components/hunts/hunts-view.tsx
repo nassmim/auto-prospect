@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { HuntCard } from "@/components/hunts/hunt-card";
+import { pages } from "@/config/routes";
 
 // Type based on action return type
 type Hunt = Awaited<ReturnType<typeof import("@/actions/hunt-crud.actions").getOrganizationHunts>>[number];
@@ -21,7 +22,7 @@ export function HuntsView({ hunts }: HuntsViewProps) {
             </p>
           </div>
           <Link
-            href="/hunts/new"
+            href={pages.hunts_new}
             className="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 font-medium text-black transition-colors hover:bg-amber-400"
           >
             <svg
@@ -66,7 +67,7 @@ export function HuntsView({ hunts }: HuntsViewProps) {
               Créez votre première recherche pour commencer la prospection automatique
             </p>
             <Link
-              href="/hunts/new"
+              href={pages.hunts_new}
               className="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 font-medium text-black transition-colors hover:bg-amber-400"
             >
               <svg

@@ -1,11 +1,12 @@
 import { getDashboardStats, getActiveHunts } from "@/actions/dashboard.actions";
 import { DashboardView } from "@/components/dashboard/dashboard-view";
 import { getSEOTags } from "@/lib/seo";
+import { pages } from "@/config/routes";
 
 export const metadata = getSEOTags({
   title: "Dashboard",
   description: "Vue d'ensemble de votre activité de prospection : leads, messages et recherches actives",
-  canonical: "/dashboard",
+  canonical: pages.dashboard,
 });
 
 export default async function DashboardPage() {

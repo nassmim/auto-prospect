@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { HuntForm } from "@/components/hunts/hunt-form";
+import { pages } from "@/config/routes";
 
 export function NewHuntView() {
   return (
@@ -8,7 +9,7 @@ export function NewHuntView() {
         {/* Breadcrumb */}
         <nav className="mb-6 flex items-center gap-2 text-sm">
           <Link
-            href="/hunts"
+            href={pages.hunts}
             className="text-zinc-400 transition-colors hover:text-zinc-100"
           >
             Recherches

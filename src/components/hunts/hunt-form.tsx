@@ -6,6 +6,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createHunt } from "@/actions/hunt-crud.actions";
 import { huntFormSchema, type HuntFormData } from "@/schemas/validation";
+import { pages } from "@/config/routes";
 import {
   Form,
   FormField,
@@ -124,7 +125,7 @@ export function HuntForm({ hunt }: HuntFormProps) {
         templateIds: data.templateIds,
       });
 
-      router.push("/hunts");
+      router.push(pages.hunts);
     } catch (err) {
       console.error("Failed to create hunt:", err);
       setError(err instanceof Error ? err.message : "Failed to create hunt");

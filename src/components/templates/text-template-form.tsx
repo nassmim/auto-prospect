@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createTextTemplate } from "@/actions/template.actions";
 import { textTemplateSchema, type TextTemplateFormData } from "@/schemas/validation";
+import { pages } from "@/config/routes";
 import {
   Form,
   FormField,
@@ -80,7 +81,7 @@ export function TextTemplateForm() {
         isDefault: data.isDefault,
       });
 
-      router.push("/templates");
+      router.push(pages.templates);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create template");
     }

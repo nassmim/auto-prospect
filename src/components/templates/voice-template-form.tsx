@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { createVoiceTemplate } from "@/actions/template.actions";
+import { pages } from "@/config/routes";
 import {
   Form,
   FormField,
@@ -123,7 +124,7 @@ export function VoiceTemplateForm() {
         isDefault: data.isDefault,
       });
 
-      router.push("/templates");
+      router.push(pages.templates);
     } catch (err) {
       console.error("Failed to create voice template:", err);
       setError(

@@ -11,14 +11,15 @@ import {
   CurrencyDollarIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
+import { pages } from "@/config/routes";
 
 const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: HomeIcon },
-  { name: "Hunts", href: "/hunts", icon: MagnifyingGlassIcon },
-  { name: "Pipeline", href: "/pipeline", icon: Squares2X2Icon },
-  { name: "Templates", href: "/templates", icon: ChatBubbleBottomCenterTextIcon },
-  { name: "Settings", href: "/settings", icon: Cog6ToothIcon },
-  { name: "Credits", href: "/credits", icon: CurrencyDollarIcon },
+  { name: "Dashboard", href: pages.dashboard, icon: HomeIcon },
+  { name: "Hunts", href: pages.hunts, icon: MagnifyingGlassIcon },
+  { name: "Pipeline", href: pages.pipeline, icon: Squares2X2Icon },
+  { name: "Templates", href: pages.templates, icon: ChatBubbleBottomCenterTextIcon },
+  { name: "Settings", href: pages.settings, icon: Cog6ToothIcon },
+  { name: "Credits", href: pages.credits, icon: CurrencyDollarIcon },
 ];
 
 interface SidebarProps {

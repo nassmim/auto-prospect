@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { pages } from "@/config/routes";
 
 export function UserMenu() {
   const [isOpen, setIsOpen] = useState(false);
@@ -9,7 +10,7 @@ export function UserMenu() {
 
   const handleLogout = async () => {
     // TODO: Implement logout with Supabase
-    router.push("/login");
+    router.push(pages.login);
   };
 
   return (

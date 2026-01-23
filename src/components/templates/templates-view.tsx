@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { TemplateCard } from "@/components/templates/template-card";
+import { pages } from "@/config/routes";
 
 // Type based on action return type
 type Template = Awaited<ReturnType<typeof import("@/actions/template.actions").getOrganizationTemplates>>[number];
@@ -28,7 +29,7 @@ export function TemplatesView({ templates }: TemplatesViewProps) {
 
           {/* New template button */}
           <Link
-            href="/templates/new?type=text"
+            href={`${pages.templates_new}?type=text`}
             className="rounded-lg bg-amber-500 px-4 py-2 font-medium text-black transition-colors hover:bg-amber-400"
           >
             + Nouveau Template
@@ -44,7 +45,7 @@ export function TemplatesView({ templates }: TemplatesViewProps) {
                 Templates Texte ({textTemplates.length})
               </h2>
               <Link
-                href="/templates/new?type=text"
+                href={`${pages.templates_new}?type=text`}
                 className="text-sm text-amber-500 transition-colors hover:text-amber-400"
               >
                 + Ajouter un template texte
@@ -57,7 +58,7 @@ export function TemplatesView({ templates }: TemplatesViewProps) {
                   Aucun template texte créé
                 </p>
                 <Link
-                  href="/templates/new?type=text"
+                  href={`${pages.templates_new}?type=text`}
                   className="mt-4 inline-block rounded-lg border border-amber-500 px-4 py-2 text-sm font-medium text-amber-500 transition-colors hover:bg-amber-500/10"
                 >
                   Créer votre premier template
@@ -79,7 +80,7 @@ export function TemplatesView({ templates }: TemplatesViewProps) {
                 Templates Voix ({voiceTemplates.length})
               </h2>
               <Link
-                href="/templates/new?type=voice"
+                href={`${pages.templates_new}?type=voice`}
                 className="text-sm text-amber-500 transition-colors hover:text-amber-400"
               >
                 + Ajouter un template voix
@@ -92,7 +93,7 @@ export function TemplatesView({ templates }: TemplatesViewProps) {
                   Aucun template vocal créé
                 </p>
                 <Link
-                  href="/templates/new?type=voice"
+                  href={`${pages.templates_new}?type=voice`}
                   className="mt-4 inline-block rounded-lg border border-amber-500 px-4 py-2 text-sm font-medium text-amber-500 transition-colors hover:bg-amber-500/10"
                 >
                   Créer votre premier template vocal
