@@ -1,4 +1,3 @@
-import { accounts } from "@/schema/account.schema";
 import { adSubTypes, adTypes, brands, locations } from "@/schema/ad.schema";
 import { organizations } from "@/schema/organization.schema";
 import { relations, sql } from "drizzle-orm";
@@ -85,7 +84,7 @@ export const baseFilters = pgTable(
     }).onDelete("cascade"),
     foreignKey({
       columns: [table.createdById],
-      foreignColumns: [accounts.id],
+      foreignColumns: [organizations.id],
       name: "base_filters_created_by_id_fk",
     }).onDelete("cascade"),
     index("base_filters_organization_id_status_idx").on(
@@ -102,13 +101,17 @@ export const baseFilters = pgTable(
       using: sql`exists (
       select 1 from organization_members om
       where om.organization_id = ${table.organizationId}
-      and om.account_id = ${authUid}
+      and om.member_organization_id in (
+        select id from organizations where auth_user_id = ${authUid}
+      )
       and om.joined_at is not null
     )`,
       withCheck: sql`exists (
       select 1 from organization_members om
       where om.organization_id = ${table.organizationId}
-      and om.account_id = ${authUid}
+      and om.member_organization_id in (
+        select id from organizations where auth_user_id = ${authUid}
+      )
       and om.joined_at is not null
     )`,
     }),
@@ -316,9 +319,9 @@ export const baseFiltersRelations = relations(baseFilters, ({ one, many }) => ({
     fields: [baseFilters.organizationId],
     references: [organizations.id],
   }),
-  createdBy: one(accounts, {
+  createdBy: one(organizations, {
     fields: [baseFilters.createdById],
-    references: [accounts.id],
+    references: [organizations.id],
   }),
   location: one(locations, {
     fields: [baseFilters.locationId],

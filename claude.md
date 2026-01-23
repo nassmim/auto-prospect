@@ -100,9 +100,11 @@ src/proxy.ts          → Auth middleware
 - **Benefits**: Simpler data model (single `organizationId` FK), easy solo→team upgrade, cleaner RLS
 
 **Key implementation details:**
-- `accounts.isPersonalAccount` flag identifies which org is user's default personal one
+- `organizations.authUserId` links personal orgs to auth.users (1:1, only for type='personal')
+- `organizations.type` discriminates between 'personal' (user profile) and 'team' (shared workspace)
 - `createPersonalOrganization()` service called during signup flow
-- All business tables reference `organizationId` (not `accountId`)
+- All business tables reference `organizationId` for data ownership
+- User references (createdById, assignedToId, sentById) use personal organization ID via `getUserPersonalOrganizationId()`
 
 ## Database: Zero-Trust Security Model
 
@@ -149,6 +151,14 @@ const dbClient = await createDrizzleSupabaseClient()
 - `drizzle-kit push` or `supabase db push`
 - UI changes on Supabase dashboard
 - Manual SQL outside migrations
+
+**⚠️ INTERACTIVE MIGRATION GENERATION:**
+If `pnpm db:generate` requires user interaction (e.g., choosing between "create column" vs "rename column"), **STOP immediately** and inform the user:
+- Do NOT attempt to provide input programmatically
+- Do NOT try multiple times
+- Explain what drizzle-kit is asking and why it needs user input
+- Tell the user to run `pnpm db:generate` manually and select the appropriate option
+- Document what option should be selected based on the schema changes
 
 ### New Table Checklist
 

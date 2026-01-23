@@ -1,4 +1,4 @@
-import { accounts } from "@/schema/account.schema";
+import { organizations } from "@/schema/organization.schema";
 import { messageTypes } from "@/schema/general.schema";
 import { relations, sql } from "drizzle-orm";
 import {
@@ -287,7 +287,7 @@ export const contactedAds = pgTable(
       .references(() => ads.id, { onDelete: "cascade" })
       .notNull(),
     organizationId: uuid("organization_id")
-      .references(() => accounts.id, { onDelete: "cascade" })
+      .references(() => organizations.id, { onDelete: "cascade" })
       .notNull(),
     messageTypeId: smallint("message_type_id")
       .references(() => messageTypes.id)
@@ -406,8 +406,8 @@ export const contactedAdsRelations = relations(contactedAds, ({ one }) => ({
     fields: [contactedAds.adId],
     references: [ads.id],
   }),
-  account: one(accounts, {
+  organization: one(organizations, {
     fields: [contactedAds.organizationId],
-    references: [accounts.id],
+    references: [organizations.id],
   }),
 }));

@@ -12,7 +12,6 @@ import {
 } from "drizzle-orm/pg-core";
 import { authenticatedRole, authUid, serviceRole } from "drizzle-orm/supabase";
 import { organizations } from "./organization.schema";
-import { accounts } from "./account.schema";
 
 // Transaction types
 export const transactionTypes = [
@@ -96,7 +95,9 @@ export const creditBalances = pgTable(
       using: sql`exists (
         select 1 from organization_members om
         where om.organization_id = ${table.organizationId}
-        and om.account_id = ${authUid}
+        and om.member_organization_id in (
+          select id from organizations where auth_user_id = ${authUid}
+        )
         and om.joined_at is not null
       )`,
     }),
@@ -150,7 +151,7 @@ export const creditTransactions = pgTable(
     }).onDelete("cascade"),
     foreignKey({
       columns: [table.createdById],
-      foreignColumns: [accounts.id],
+      foreignColumns: [organizations.id],
       name: "credit_transactions_created_by_id_fk",
     }).onDelete("set null"),
     // Index for transaction history queries
@@ -167,7 +168,9 @@ export const creditTransactions = pgTable(
       using: sql`exists (
         select 1 from organization_members om
         where om.organization_id = ${table.organizationId}
-        and om.account_id = ${authUid}
+        and om.member_organization_id in (
+          select id from organizations where auth_user_id = ${authUid}
+        )
         and om.joined_at is not null
       )`,
     }),
@@ -199,9 +202,9 @@ export const creditTransactionsRelations = relations(
       fields: [creditTransactions.organizationId],
       references: [organizations.id],
     }),
-    createdBy: one(accounts, {
+    createdBy: one(organizations, {
       fields: [creditTransactions.createdById],
-      references: [accounts.id],
+      references: [organizations.id],
     }),
   }),
 );

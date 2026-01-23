@@ -3,9 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
 import { leads, leadNotes, leadReminders, type LeadStage } from "@/schema/lead.schema";
-import { organizationMembers } from "@/schema/organization.schema";
-import { accounts } from "@/schema/account.schema";
+import { organizationMembers, organizations } from "@/schema/organization.schema";
 import { messages, leadActivities, type MessageChannel } from "@/schema/message.schema";
+import { getUserPersonalOrganizationId } from "@/services/organization.service";
 import { messageTemplates } from "@/schema/message-template.schema";
 import { eq, and, inArray, isNotNull, desc } from "drizzle-orm";
 import { createClient } from "@/lib/supabase/server";
@@ -28,6 +28,7 @@ export async function updateLeadStage(leadId: string, newStage: LeadStage) {
   }
 
   const dbClient = await createDrizzleSupabaseClient();
+  const userOrgId = await getUserPersonalOrganizationId(session.user.id);
 
   try {
     // RLS query wrapper - enforces organization access
@@ -45,7 +46,7 @@ export async function updateLeadStage(leadId: string, newStage: LeadStage) {
       await tx.insert(leadNotes).values({
         leadId,
         content: `Stage changé vers: ${newStage}`,
-        createdById: session.user.id,
+        createdById: userOrgId,
       });
     });
 
@@ -125,6 +126,7 @@ export async function bulkUpdateLeads(
   }
 
   const dbClient = await createDrizzleSupabaseClient();
+  const userOrgId = await getUserPersonalOrganizationId(session.user.id);
 
   try {
     // Update all leads
@@ -159,7 +161,7 @@ export async function bulkUpdateLeads(
           leadIds.map((leadId) => ({
             leadId,
             content: `Action groupée - ${noteContent.join(", ")}`,
-            createdById: session.user.id,
+            createdById: userOrgId,
           })),
         );
       }
@@ -188,6 +190,7 @@ export async function assignLead(leadId: string, userId: string | null) {
   }
 
   const dbClient = await createDrizzleSupabaseClient();
+  const userOrgId = await getUserPersonalOrganizationId(session.user.id);
 
   try {
     await dbClient.rls(async (tx) => {
@@ -205,7 +208,7 @@ export async function assignLead(leadId: string, userId: string | null) {
         content: userId
           ? `Lead assigné à un utilisateur`
           : `Lead non assigné`,
-        createdById: session.user.id,
+        createdById: userOrgId,
       });
     });
 
@@ -334,7 +337,7 @@ export async function getOrganizationMembers(leadId: string) {
           isNotNull(organizationMembers.joinedAt),
         ),
         with: {
-          account: {
+          memberOrganization: {
             columns: {
               id: true,
               name: true,
@@ -346,7 +349,7 @@ export async function getOrganizationMembers(leadId: string) {
       });
     });
 
-    return members.map((m) => m.account);
+    return members.map((m) => m.memberOrganization);
   } catch (error) {
     console.error("Error fetching organization members:", error);
     throw new Error("Failed to fetch organization members");
@@ -420,6 +423,7 @@ export async function logWhatsAppMessage(
   }
 
   const dbClient = await createDrizzleSupabaseClient();
+  const userOrgId = await getUserPersonalOrganizationId(session.user.id);
 
   try {
     await dbClient.rls(async (tx) => {
@@ -431,14 +435,14 @@ export async function logWhatsAppMessage(
         content: renderedMessage,
         status: "sent", // MVP: assume sent immediately
         sentAt: new Date(),
-        sentById: session.user.id,
+        sentById: userOrgId,
       });
 
       // Log activity
       await tx.insert(leadNotes).values({
         leadId,
         content: `Message WhatsApp envoyé`,
-        createdById: session.user.id,
+        createdById: userOrgId,
       });
     });
 
@@ -473,6 +477,7 @@ export async function addLeadNote(leadId: string, content: unknown) {
   const validatedContent = parseResult.data.content;
 
   const dbClient = await createDrizzleSupabaseClient();
+  const userOrgId = await getUserPersonalOrganizationId(session.user.id);
 
   try {
     const note = await dbClient.rls(async (tx) => {
@@ -481,7 +486,7 @@ export async function addLeadNote(leadId: string, content: unknown) {
         .values({
           leadId,
           content: validatedContent.trim(),
-          createdById: session.user.id,
+          createdById: userOrgId,
         })
         .returning();
 
@@ -523,6 +528,7 @@ export async function addLeadReminder(
   const { dueAt: validatedDueAt, note: validatedNote } = parseResult.data;
 
   const dbClient = await createDrizzleSupabaseClient();
+  const userOrgId = await getUserPersonalOrganizationId(session.user.id);
 
   try {
     const reminder = await dbClient.rls(async (tx) => {
@@ -532,7 +538,7 @@ export async function addLeadReminder(
           leadId,
           dueAt: validatedDueAt,
           note: validatedNote?.trim() || null,
-          createdById: session.user.id,
+          createdById: userOrgId,
         })
         .returning();
 

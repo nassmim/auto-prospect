@@ -1,58 +1,50 @@
 /**
  * Onboarding service - handles new user setup
  * Organization-first pattern: auto-creates personal organization for each new user
+ *
+ * In this architecture:
+ * - Every user has exactly ONE personal organization (type='personal', 1:1 with auth.users)
+ * - Team organizations are created separately and users are linked via organization_members
+ * - All user references (createdById, assignedToId, etc.) point to the user's personal org ID
  */
 
 import { createDrizzleSupabaseClient, TDBQuery } from "@/lib/drizzle/dbClient";
-import { accounts } from "@/schema/account.schema";
-import { organizations, organizationMembers } from "@/schema/organization.schema";
+import { organizations } from "@/schema/organization.schema";
 
 /**
- * Creates a personal organization for a new user
- * Called during signup flow to ensure every user has an organization
+ * Creates a personal organization for a new user during signup
+ * This is the ONLY organization type that has auth_user_id set
  *
- * @param userId - Supabase auth.users.id (same as accounts.id)
+ * @param authUserId - Supabase auth.users.id
  * @param userName - User's display name
  * @param userEmail - User's email
- * @returns The created organization ID
+ * @param pictureUrl - Optional profile picture URL
+ * @returns The created personal organization ID
  */
 export async function createPersonalOrganization(
-  userId: string,
+  authUserId: string,
   userName: string,
   userEmail: string,
+  pictureUrl?: string,
 ): Promise<string> {
   const dbClient = await createDrizzleSupabaseClient();
 
-  // Use RLS - policies allow authenticated users to insert their own records
+  // Use RLS - policies allow authenticated users to insert their own personal org
   const query = async (tx: TDBQuery) => {
-    // Create account record (mirrors auth.users)
-    await tx.insert(accounts).values({
-      id: userId,
-      name: userName,
-      email: userEmail,
-      isPersonalAccount: true,
-    });
-
-    // Create personal organization (named after user)
+    // Create personal organization (1:1 with auth.users)
     const [org] = await tx
       .insert(organizations)
       .values({
-        name: `${userName}'s Workspace`,
-        ownerId: userId,
-        settings: {
-          allowReassignment: true,
-          restrictVisibility: false,
-        },
+        authUserId, // This makes it a personal org
+        name: userName,
+        email: userEmail,
+        pictureUrl,
+        type: "personal",
+        // ownerId is NULL for personal orgs (no self-reference)
+        ownerId: null,
+        settings: null, // Settings are only for team orgs
       })
       .returning();
-
-    // Add user as organization owner
-    await tx.insert(organizationMembers).values({
-      organizationId: org.id,
-      accountId: userId,
-      role: "owner",
-      joinedAt: new Date(),
-    });
 
     return org.id;
   };
@@ -61,22 +53,24 @@ export async function createPersonalOrganization(
 }
 
 /**
- * Gets the personal organization for a user (where they are the only member)
- * Useful for determining which org to use for solo user workflows
+ * Gets the personal organization ID for a user
+ * Every user MUST have exactly one personal organization
+ *
+ * @param authUserId - Supabase auth.users.id
+ * @returns The user's personal organization ID, or null if not found (should never happen)
  */
-export async function getPersonalOrganization(userId: string): Promise<string | null> {
+export async function getPersonalOrganization(authUserId: string): Promise<string | null> {
   const dbClient = await createDrizzleSupabaseClient();
 
-  // Query with RLS wrapper pattern (follows ad.actions.ts pattern)
   const query = (tx: TDBQuery) =>
-    tx.query.organizationMembers.findFirst({
-      where: (table, { eq }) => eq(table.accountId, userId),
+    tx.query.organizations.findFirst({
+      where: (table, { eq }) => eq(table.authUserId, authUserId),
       columns: {
-        organizationId: true,
+        id: true,
       },
     });
 
-  const membership = await dbClient.rls(query);
+  const org = await dbClient.rls(query);
 
-  return membership?.organizationId ?? null;
+  return org?.id ?? null;
 }

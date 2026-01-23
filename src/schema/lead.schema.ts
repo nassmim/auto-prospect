@@ -16,7 +16,6 @@ import { authenticatedRole, authUid } from "drizzle-orm/supabase";
 import { organizations } from "./organization.schema";
 import { baseFilters } from "./filter.schema";
 import { ads } from "./ad.schema";
-import { accounts } from "./account.schema";
 
 // Lead stage enum - pipeline stages for the Kanban view
 export const leadStages = [
@@ -69,7 +68,7 @@ export const leads = pgTable(
     }).onDelete("cascade"),
     foreignKey({
       columns: [table.assignedToId],
-      foreignColumns: [accounts.id],
+      foreignColumns: [organizations.id],
       name: "leads_assigned_to_id_fk",
     }).onDelete("set null"),
     // Prevent duplicate leads for the same ad in an organization
@@ -96,13 +95,17 @@ export const leads = pgTable(
       using: sql`exists (
         select 1 from organization_members om
         where om.organization_id = ${table.organizationId}
-        and om.account_id = ${authUid}
+        and om.member_organization_id in (
+          select id from organizations where auth_user_id = ${authUid}
+        )
         and om.joined_at is not null
       )`,
       withCheck: sql`exists (
         select 1 from organization_members om
         where om.organization_id = ${table.organizationId}
-        and om.account_id = ${authUid}
+        and om.member_organization_id in (
+          select id from organizations where auth_user_id = ${authUid}
+        )
         and om.joined_at is not null
       )`,
     }),
@@ -132,7 +135,7 @@ export const leadNotes = pgTable(
     }).onDelete("cascade"),
     foreignKey({
       columns: [table.createdById],
-      foreignColumns: [accounts.id],
+      foreignColumns: [organizations.id],
       name: "lead_notes_created_by_id_fk",
     }).onDelete("cascade"),
     index("lead_notes_lead_id_idx").on(table.leadId),
@@ -146,14 +149,18 @@ export const leadNotes = pgTable(
         select 1 from leads l
         join organization_members om on om.organization_id = l.organization_id
         where l.id = ${table.leadId}
-        and om.account_id = ${authUid}
+        and om.member_organization_id in (
+          select id from organizations where auth_user_id = ${authUid}
+        )
         and om.joined_at is not null
       )`,
       withCheck: sql`exists (
         select 1 from leads l
         join organization_members om on om.organization_id = l.organization_id
         where l.id = ${table.leadId}
-        and om.account_id = ${authUid}
+        and om.member_organization_id in (
+          select id from organizations where auth_user_id = ${authUid}
+        )
         and om.joined_at is not null
       )`,
     }),
@@ -185,7 +192,7 @@ export const leadReminders = pgTable(
     }).onDelete("cascade"),
     foreignKey({
       columns: [table.createdById],
-      foreignColumns: [accounts.id],
+      foreignColumns: [organizations.id],
       name: "lead_reminders_created_by_id_fk",
     }).onDelete("cascade"),
     index("lead_reminders_lead_id_idx").on(table.leadId),
@@ -200,14 +207,18 @@ export const leadReminders = pgTable(
         select 1 from leads l
         join organization_members om on om.organization_id = l.organization_id
         where l.id = ${table.leadId}
-        and om.account_id = ${authUid}
+        and om.member_organization_id in (
+          select id from organizations where auth_user_id = ${authUid}
+        )
         and om.joined_at is not null
       )`,
       withCheck: sql`exists (
         select 1 from leads l
         join organization_members om on om.organization_id = l.organization_id
         where l.id = ${table.leadId}
-        and om.account_id = ${authUid}
+        and om.member_organization_id in (
+          select id from organizations where auth_user_id = ${authUid}
+        )
         and om.joined_at is not null
       )`,
     }),
@@ -228,9 +239,9 @@ export const leadsRelations = relations(leads, ({ one, many }) => ({
     fields: [leads.adId],
     references: [ads.id],
   }),
-  assignedTo: one(accounts, {
+  assignedTo: one(organizations, {
     fields: [leads.assignedToId],
-    references: [accounts.id],
+    references: [organizations.id],
   }),
   notes: many(leadNotes),
   reminders: many(leadReminders),
@@ -241,9 +252,9 @@ export const leadNotesRelations = relations(leadNotes, ({ one }) => ({
     fields: [leadNotes.leadId],
     references: [leads.id],
   }),
-  createdBy: one(accounts, {
+  createdBy: one(organizations, {
     fields: [leadNotes.createdById],
-    references: [accounts.id],
+    references: [organizations.id],
   }),
 }));
 
@@ -252,8 +263,8 @@ export const leadRemindersRelations = relations(leadReminders, ({ one }) => ({
     fields: [leadReminders.leadId],
     references: [leads.id],
   }),
-  createdBy: one(accounts, {
+  createdBy: one(organizations, {
     fields: [leadReminders.createdById],
-    references: [accounts.id],
+    references: [organizations.id],
   }),
 }));

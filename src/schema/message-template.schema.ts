@@ -12,7 +12,6 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { authenticatedRole, authUid } from "drizzle-orm/supabase";
-import { accounts } from "./account.schema";
 import { organizations } from "./organization.schema";
 
 // Message template types
@@ -57,7 +56,7 @@ export const messageTemplates = pgTable(
     }).onDelete("cascade"),
     foreignKey({
       columns: [table.createdById],
-      foreignColumns: [accounts.id],
+      foreignColumns: [organizations.id],
       name: "message_templates_created_by_id_fk",
     }),
     // Organization members can perform all operations on templates
@@ -68,13 +67,17 @@ export const messageTemplates = pgTable(
       using: sql`exists (
         select 1 from organization_members om
         where om.organization_id = ${table.organizationId}
-        and om.account_id = ${authUid}
+        and om.member_organization_id in (
+          select id from organizations where auth_user_id = ${authUid}
+        )
         and om.joined_at is not null
       )`,
       withCheck: sql`exists (
         select 1 from organization_members om
         where om.organization_id = ${table.organizationId}
-        and om.account_id = ${authUid}
+        and om.member_organization_id in (
+          select id from organizations where auth_user_id = ${authUid}
+        )
         and om.joined_at is not null
       )`,
     }),
@@ -97,9 +100,9 @@ export const messageTemplatesRelations = relations(
       fields: [messageTemplates.organizationId],
       references: [organizations.id],
     }),
-    createdBy: one(accounts, {
+    createdBy: one(organizations, {
       fields: [messageTemplates.createdById],
-      references: [accounts.id],
+      references: [organizations.id],
     }),
   }),
 );

@@ -13,7 +13,7 @@ import {
 import { authenticatedRole, authUid } from "drizzle-orm/supabase";
 import { leads } from "./lead.schema";
 import { messageTemplates } from "./message-template.schema";
-import { accounts } from "./account.schema";
+import { organizations } from "./organization.schema";
 
 // Message channels
 export const messageChannels = [
@@ -118,7 +118,7 @@ export const messages = pgTable(
     }).onDelete("set null"),
     foreignKey({
       columns: [table.sentById],
-      foreignColumns: [accounts.id],
+      foreignColumns: [organizations.id],
       name: "messages_sent_by_id_fk",
     }).onDelete("cascade"),
     // Index for message history queries
@@ -134,14 +134,18 @@ export const messages = pgTable(
         select 1 from leads l
         join organization_members om on om.organization_id = l.organization_id
         where l.id = ${table.leadId}
-        and om.account_id = ${authUid}
+        and om.member_organization_id in (
+          select id from organizations where auth_user_id = ${authUid}
+        )
         and om.joined_at is not null
       )`,
       withCheck: sql`exists (
         select 1 from leads l
         join organization_members om on om.organization_id = l.organization_id
         where l.id = ${table.leadId}
-        and om.account_id = ${authUid}
+        and om.member_organization_id in (
+          select id from organizations where auth_user_id = ${authUid}
+        )
         and om.joined_at is not null
       )`,
     }),
@@ -174,7 +178,7 @@ export const leadActivities = pgTable(
     }).onDelete("cascade"),
     foreignKey({
       columns: [table.createdById],
-      foreignColumns: [accounts.id],
+      foreignColumns: [organizations.id],
       name: "lead_activities_created_by_id_fk",
     }).onDelete("cascade"),
     // Index for timeline queries (chronological order)
@@ -192,7 +196,9 @@ export const leadActivities = pgTable(
         select 1 from leads l
         join organization_members om on om.organization_id = l.organization_id
         where l.id = ${table.leadId}
-        and om.account_id = ${authUid}
+        and om.member_organization_id in (
+          select id from organizations where auth_user_id = ${authUid}
+        )
         and om.joined_at is not null
       )`,
     }),
@@ -205,7 +211,9 @@ export const leadActivities = pgTable(
         select 1 from leads l
         join organization_members om on om.organization_id = l.organization_id
         where l.id = ${table.leadId}
-        and om.account_id = ${authUid}
+        and om.member_organization_id in (
+          select id from organizations where auth_user_id = ${authUid}
+        )
         and om.joined_at is not null
       )`,
     }),
@@ -222,9 +230,9 @@ export const messagesRelations = relations(messages, ({ one }) => ({
     fields: [messages.templateId],
     references: [messageTemplates.id],
   }),
-  sentBy: one(accounts, {
+  sentBy: one(organizations, {
     fields: [messages.sentById],
-    references: [accounts.id],
+    references: [organizations.id],
   }),
 }));
 
@@ -233,8 +241,8 @@ export const leadActivitiesRelations = relations(leadActivities, ({ one }) => ({
     fields: [leadActivities.leadId],
     references: [leads.id],
   }),
-  createdBy: one(accounts, {
+  createdBy: one(organizations, {
     fields: [leadActivities.createdById],
-    references: [accounts.id],
+    references: [organizations.id],
   }),
 }));
