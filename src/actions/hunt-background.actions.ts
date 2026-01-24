@@ -7,9 +7,15 @@ import { createDrizzleSupabaseClient, TDBClient } from "@/lib/drizzle/dbClient";
 import { contactedAds } from "@/schema/ad.schema";
 import { THunt } from "@/schema/hunt.schema";
 import { leads } from "@/schema/lead.schema";
+import { createDailyContactTracker, DailyContactTracker } from "@/services/daily-contact-tracker.service";
+import { allocateAdsToChannels } from "@/services/channel-allocator.service";
+import { consumeCredit } from "@/services/credit-consumption.service";
 
 export const runDailyHunts = async () => {
   const dbClient = await createDrizzleSupabaseClient();
+
+  // Create daily contact tracker for this job run
+  const dailyContactTracker = createDailyContactTracker();
 
   // Gets the active hunts that search for ads matching user criteria
   const activeHunts = await fetchAllActiveHunts(dbClient);
@@ -17,7 +23,7 @@ export const runDailyHunts = async () => {
   if (activeHunts?.length === 0) return;
 
   // Send messages to matching ad owners
-  await bulkSend(activeHunts, dbClient);
+  await bulkSend(activeHunts, dbClient, dailyContactTracker);
 };
 
 /**
@@ -38,7 +44,11 @@ const fetchAllActiveHunts = async (dbClient: TDBClient): Promise<THunt[]> => {
  * Processes multiple hunts with controlled concurrency
  * Uses Promise.race pattern to avoid Vercel edge function timeouts
  */
-async function bulkSend(hunts: THunt[], dbClient: TDBClient): Promise<void> {
+async function bulkSend(
+  hunts: THunt[],
+  dbClient: TDBClient,
+  dailyContactTracker: DailyContactTracker,
+): Promise<void> {
   const concurrency = 5;
   const queue = [...hunts]; // Queue of jobs to be processed
   const inFlight: Promise<void>[] = []; // Currently processing jobs
@@ -48,7 +58,7 @@ async function bulkSend(hunts: THunt[], dbClient: TDBClient): Promise<void> {
     // Start new jobs while we're under capacity and have work
     while (inFlight.length < concurrency && queue.length) {
       const hunt = queue.shift()!;
-      const huntJobPromise = contactAdsOwners(hunt, dbClient)
+      const huntJobPromise = contactAdsOwners(hunt, dbClient, dailyContactTracker)
         .catch(() => {})
         .finally(() => {
           // Remove this promise from inFlight when done
@@ -68,8 +78,14 @@ async function bulkSend(hunts: THunt[], dbClient: TDBClient): Promise<void> {
 async function contactAdsOwners(
   hunt: THunt,
   dbClient: TDBClient,
+  dailyContactTracker: DailyContactTracker,
 ): Promise<void> {
   const organizationId = hunt.organizationId;
+
+  // Check if already at daily pacing limit
+  if (dailyContactTracker.isAtLimit(hunt.id, hunt.dailyPacingLimit)) {
+    return; // Skip this hunt - already reached daily limit
+  }
 
   // Check if organization has an active subscription
   const plan = await getUserPlan(organizationId, dbClient);
@@ -91,32 +107,58 @@ async function contactAdsOwners(
 
   if (matchingAds.length === 0) return;
 
-  // Send messages (whatsapp, audio, sms) to matching ads
-  // TODO: Implement actual message sending
+  // Allocate ads to channels based on priority, credits, and daily limits
+  const allocations = await allocateAdsToChannels({
+    huntId: hunt.id,
+    adIds: matchingAds.map((ad) => ad.id),
+    dailyContactTracker,
+  });
 
-  // Track contacted ads and create leads for CRM
-  await Promise.all([
-    // Track in contactedAds (lightweight history)
-    dbClient.admin.insert(contactedAds).values(
-      matchingAds.map((ad) => ({
-        adId: ad.id,
+  if (allocations.length === 0) {
+    return; // No allocations possible (no credits or at daily limit)
+  }
+
+  // Process each allocation: send message, consume credit, track contact
+  for (const allocation of allocations) {
+    // TODO: Implement actual message sending based on allocation.channel
+    // For now, we'll skip the actual send and just consume credits and track
+
+    // Consume credit for this channel
+    const creditResult = await consumeCredit({
+      huntId: hunt.id,
+      channel: allocation.channel,
+      messageId: undefined, // Will be set when actual sending is implemented
+      recipient: undefined, // Will be set when actual sending is implemented
+    });
+
+    // Only track if credit consumption succeeded
+    if (creditResult.success) {
+      // Increment daily contact tracker
+      dailyContactTracker.increment(hunt.id, allocation.channel);
+
+      // Track in contactedAds (lightweight history)
+      await dbClient.admin.insert(contactedAds).values({
+        adId: allocation.adId,
         organizationId: organizationId,
-        messageTypeId: 1, // TODO: Use actual message type based on hunt settings
-      })),
-    ),
+        messageTypeId: 1, // TODO: Map from allocation.messageType to messageTypeId
+      });
 
-    // Create leads for CRM pipeline (with duplicate prevention)
-    dbClient.admin
-      .insert(leads)
-      .values(
-        matchingAds.map((ad, index) => ({
+      // Create lead for CRM pipeline (with duplicate prevention)
+      await dbClient.admin
+        .insert(leads)
+        .values({
           organizationId: organizationId,
           huntId: hunt.id,
-          adId: ad.id,
+          adId: allocation.adId,
           stage: ELeadStage.CONTACTE, // Already contacted via message
-          position: index,
-        })),
-      )
-      .onConflictDoNothing(), // Unique constraint on (organizationId, adId)
-  ]);
+          position: 0, // Will be reordered by user in UI
+        })
+        .onConflictDoNothing(); // Unique constraint on (organizationId, adId)
+    }
+
+    // Check if we've hit the daily limit after this contact
+    if (dailyContactTracker.isAtLimit(hunt.id, hunt.dailyPacingLimit)) {
+      break; // Stop processing this hunt
+    }
+  }
 }

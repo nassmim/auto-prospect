@@ -1099,18 +1099,18 @@
           "36",
           "40"
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [],
         "complexity": 9,
         "recommendedSubtasks": 7,
         "expansionPrompt": "Break down into: (1) Add channel priority config fetch to contactAdsOwners function, (2) Implement allocateAdsToChannels algorithm with priority queue logic (iterate channels in order, check limits, allocate first available), (3) Create channel usage tracking table or extend contactedAds with channel information, (4) Implement getChannelUsageToday query with date filtering and grouping, (5) Update bulkSend to use allocated channel assignments, (6) Implement daily limit reset logic with timezone handling, (7) Write comprehensive tests for allocation edge cases (all channels at limit, disabled channels, priority ordering). Update hunt-background.actions.ts core logic.",
-        "updatedAt": "2026-01-24T17:19:59.406Z"
+        "updatedAt": "2026-01-24T17:21:20.204Z"
       },
       {
         "id": "42",
         "title": "Implement Daily Contact Counter Increment Logic",
         "description": "Create an in-memory daily contact tracking utility for use during background job execution. This tracks contacts per hunt to enforce dailyPacingLimit without database persistence.",
-        "status": "pending",
+        "status": "in-progress",
         "dependencies": [
           "40"
         ],
@@ -1166,7 +1166,7 @@
         "complexity": 5,
         "recommendedSubtasks": 4,
         "expansionPrompt": "Break down into: (1) Create ChannelUsageDisplay component with props for channelSettings, todayUsage, totalUsage, and channelOrder, (2) Build UI for each enabled channel showing progress bars for daily and total limits with visual indicators, (3) Implement 'At Limit' badge display when daily limit reached and 'next channel' indicator logic, (4) Style with shadcn Card/Progress/Badge components using zinc/amber theme and ensure responsive design. Add color coding (amber=active, zinc=at-limit, green=available).",
-        "updatedAt": "2026-01-24T17:19:45.760Z"
+        "updatedAt": "2026-01-24T17:21:32.364Z"
       },
       {
         "id": "43",
@@ -1206,9 +1206,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-24T17:19:59.407Z",
+      "lastModified": "2026-01-24T17:21:32.368Z",
       "taskCount": 44,
-      "completedCount": 40,
+      "completedCount": 41,
       "tags": [
         "master"
       ]
