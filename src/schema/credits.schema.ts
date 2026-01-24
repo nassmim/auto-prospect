@@ -8,6 +8,7 @@ import {
   pgEnum,
   pgPolicy,
   pgTable,
+  smallserial,
   timestamp,
   uuid,
 } from "drizzle-orm/pg-core";
@@ -19,7 +20,8 @@ export const transactionType = pgEnum(
   "transaction_type",
   Object.values(ETransactionType) as [string, ...string[]],
 );
-export type TransactionType = (typeof ETransactionType)[keyof typeof ETransactionType];
+export type TransactionType =
+  (typeof ETransactionType)[keyof typeof ETransactionType];
 
 // Credit types enum
 export const creditType = pgEnum(
@@ -27,7 +29,6 @@ export const creditType = pgEnum(
   Object.values(ECreditType) as [string, ...string[]],
 );
 export type CreditType = (typeof ECreditType)[keyof typeof ECreditType];
-
 
 // Metadata types for transactions
 export type PurchaseMetadata = {
@@ -107,7 +108,7 @@ export const creditTransactions = pgTable(
       .references(() => organizations.id, { onDelete: "cascade" })
       .notNull(),
     type: transactionType().notNull(),
-    creditType: creditType().notNull(),
+    creditType: creditType("credit_type").notNull(),
     amount: integer().notNull(), // Positive for purchase/refund, negative for usage
     balanceAfter: integer("balance_after").notNull(), // Balance snapshot after transaction
     referenceId: uuid("reference_id"), // Message ID for usage, payment ID for purchase
@@ -151,6 +152,28 @@ export const creditTransactions = pgTable(
 );
 export type TCreditTransaction = InferSelectModel<typeof creditTransactions>;
 
+// Credit packs table - pricing configuration
+export const creditPacks = pgTable(
+  "credit_packs",
+  {
+    id: smallserial().primaryKey(),
+    creditType: creditType().notNull(),
+    credits: integer().notNull(),
+    priceEur: integer("price_eur").notNull(), // Store in cents for precision
+    isActive: boolean("is_active").notNull().default(true),
+  },
+  (table) => [
+    index("credit_packs_credit_type_idx").on(table.creditType),
+    pgPolicy("enable read for authenticated users", {
+      as: "permissive",
+      for: "select",
+      to: authenticatedRole,
+      using: sql`true`,
+    }),
+  ],
+);
+export type TCreditPack = InferSelectModel<typeof creditPacks>;
+
 // Relations
 export const creditBalancesRelations = relations(creditBalances, ({ one }) => ({
   organization: one(organizations, {
@@ -168,31 +191,3 @@ export const creditTransactionsRelations = relations(
     }),
   }),
 );
-
-// Credit packs table - pricing configuration
-export const creditPacks = pgTable(
-  "credit_packs",
-  {
-    id: uuid().defaultRandom().primaryKey(),
-    creditType: creditType().notNull(),
-    credits: integer().notNull(),
-    priceEur: integer("price_eur").notNull(), // Store in cents for precision
-    isActive: boolean("is_active").notNull().default(true),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-  },
-  (table) => [
-    index("credit_packs_credit_type_idx").on(table.creditType),
-    pgPolicy("enable read for authenticated users", {
-      as: "permissive",
-      for: "select",
-      to: authenticatedRole,
-      using: sql`true`,
-    }),
-  ],
-);
-export type TCreditPack = InferSelectModel<typeof creditPacks>;

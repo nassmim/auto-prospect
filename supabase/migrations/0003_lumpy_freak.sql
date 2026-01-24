@@ -2,12 +2,9 @@
 -- Organization tables
 grant select, insert, update, delete on table public.organizations to authenticated, service_role;
 grant select, insert, update, delete on table public.organization_members to authenticated, service_role;
-grant select, insert, update, delete on table public.organization_invitations to authenticated, service_role;
 
 -- Lead management tables
 grant select, insert, update, delete on table public.leads to authenticated, service_role;
-grant select, insert, update, delete on table public.lead_notes to authenticated, service_role;
-grant select, insert, update, delete on table public.lead_reminders to authenticated, service_role;
 grant select, insert, update, delete on table public.lead_activities to authenticated, service_role;
 
 -- Message tables
@@ -21,11 +18,13 @@ grant select, insert, update, delete on table public.template_variables to servi
 -- Credit system tables
 grant select, insert, update, delete on table public.credit_balances to authenticated, service_role;
 grant select, insert, update, delete on table public.credit_transactions to authenticated, service_role;
+grant select on table public.credit_packs to authenticated;
+grant select, insert, update, delete on table public.credit_packs to service_role;
 
 -- Hunt/filter tables
-grant select, insert, update, delete on table public.base_filters to authenticated, service_role;
-grant select, insert, update, delete on table public.ad_sub_types_filter to authenticated, service_role;
-grant select, insert, update, delete on table public.brands_filter to authenticated, service_role;
+grant select, insert, update, delete on table public.hunts to authenticated, service_role;
+grant select, insert, update, delete on table public.sub_types_hunts to authenticated, service_role;
+grant select, insert, update, delete on table public.brands_hunts to authenticated, service_role;
 
 -- Ad tables
 grant select, insert, update, delete on table public.ads to authenticated, service_role;

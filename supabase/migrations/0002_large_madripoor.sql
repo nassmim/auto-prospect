@@ -11,8 +11,6 @@ $function$;
 -- Create personal organization for new auth users
 -- This implements the organization-first architecture where:
 -- - Every user has exactly ONE personal organization (type='personal')
--- - Personal org has auth_user_id set (1:1 with auth.users)
--- - Personal org has ownerId NULL (no self-reference)
 -- - All user data belongs to organizations, not individual auth users
 CREATE OR REPLACE FUNCTION public.handle_new_user_organization()
  RETURNS trigger
@@ -39,28 +37,9 @@ begin
     email = excluded.email
   returning id into new_org_id;
 
-  -- Initialize credit balances for the organization (all channels start at 0)
-  insert into public.credit_balances (
-    organization_id,
-    sms,
-    ringless_voice,
-    whatsapp
-  )
-  values (
-    new_org_id,
-    0,
-    0,
-    0
-  )
-  on conflict (organization_id) do nothing;
-
   return new;
 end;
 $function$;
-
--- ============================================================================
--- NEW: Auth triggers for personal organization creation
--- ============================================================================
 
 -- Trigger on new user signup
 -- Automatically creates a personal organization when user signs up
