@@ -962,12 +962,12 @@
         "testStrategy": "1. Verify migration generates correct SQL for the new field. 2. Confirm existing hunts without dailyPacingLimit continue to work (null = unlimited). 3. Validate Zod schema rejects invalid limits (<1 or >1000). 4. TypeScript compilation passes with updated types.",
         "priority": "high",
         "dependencies": [],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [],
         "complexity": 4,
         "recommendedSubtasks": 3,
         "expansionPrompt": "Break down the channel_priority_config schema creation into: (1) Define Drizzle table schema with proper types and constraints, (2) Implement RLS policies following existing organization-based access patterns, (3) Generate and validate migration SQL. Focus on proper JSONB typing for channelOrder array and unique constraint on organizationId.",
-        "updatedAt": "2026-01-24T16:05:14.811Z"
+        "updatedAt": "2026-01-24T16:07:51.835Z"
       },
       {
         "id": "34",
@@ -979,11 +979,12 @@
         "dependencies": [
           "33"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [],
         "complexity": 5,
         "recommendedSubtasks": 4,
-        "expansionPrompt": "Break down into: (1) Update hunt.schema.ts with new channelSettings JSONB field and proper TypeScript typing, (2) Create TChannelSettings and TChannelConfig type definitions in hunt.types.ts, (3) Generate migration ensuring backward compatibility with existing outreachSettings field, (4) Validate default JSONB value syntax and test schema compilation. Ensure the migration doesn't break existing hunt queries."
+        "expansionPrompt": "Break down into: (1) Update hunt.schema.ts with new channelSettings JSONB field and proper TypeScript typing, (2) Create TChannelSettings and TChannelConfig type definitions in hunt.types.ts, (3) Generate migration ensuring backward compatibility with existing outreachSettings field, (4) Validate default JSONB value syntax and test schema compilation. Ensure the migration doesn't break existing hunt queries.",
+        "updatedAt": "2026-01-24T16:08:10.198Z"
       },
       {
         "id": "35",
@@ -1154,9 +1155,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-24T16:05:14.813Z",
+      "lastModified": "2026-01-24T16:08:10.199Z",
       "taskCount": 44,
-      "completedCount": 32,
+      "completedCount": 33,
       "tags": [
         "master"
       ]

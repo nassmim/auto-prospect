@@ -36,6 +36,13 @@
       "when": 1769270799837,
       "tag": "0004_sour_mandroid",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1769270944269,
+      "tag": "0005_living_ultimo",
+      "breakpoints": true
     }
   ]
 }

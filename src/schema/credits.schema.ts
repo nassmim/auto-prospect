@@ -1,7 +1,8 @@
 import { ECreditType, ETransactionType } from "@/constants/enums";
-import { InferSelectModel, relations, sql } from "drizzle-orm";
+import { InferInsertModel, InferSelectModel, relations, sql } from "drizzle-orm";
 import {
   boolean,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -10,9 +11,11 @@ import {
   pgTable,
   smallserial,
   timestamp,
+  unique,
   uuid,
 } from "drizzle-orm/pg-core";
 import { authenticatedRole, authUid } from "drizzle-orm/supabase";
+import { hunts } from "./hunt.schema";
 import { organizations } from "./organization.schema";
 
 // Transaction types enum
@@ -174,6 +177,54 @@ export const creditPacks = pgTable(
 );
 export type TCreditPack = InferSelectModel<typeof creditPacks>;
 
+// Hunt channel credits table - per-hunt, per-channel credit allocation
+export const huntChannelCredits = pgTable(
+  "hunt_channel_credits",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    huntId: uuid("hunt_id").notNull(),
+    channel: creditType().notNull(),
+    creditsAllocated: integer("credits_allocated").notNull().default(0),
+    creditsConsumed: integer("credits_consumed").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .default(sql`now()`),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .default(sql`now()`),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.huntId],
+      foreignColumns: [hunts.id],
+      name: "hunt_channel_credits_hunt_id_fk",
+    }).onDelete("cascade"),
+    unique("hunt_channel_unique").on(table.huntId, table.channel),
+    index("hunt_channel_credits_hunt_id_idx").on(table.huntId),
+    pgPolicy("enable all for hunt owners", {
+      as: "permissive",
+      for: "all",
+      to: authenticatedRole,
+      using: sql`exists (
+        select 1 from hunts h
+        join organizations o on o.id = h.organization_id
+        where h.id = ${table.huntId}
+        and o.auth_user_id = ${authUid}
+      )`,
+      withCheck: sql`exists (
+        select 1 from hunts h
+        join organizations o on o.id = h.organization_id
+        where h.id = ${table.huntId}
+        and o.auth_user_id = ${authUid}
+      )`,
+    }),
+  ],
+);
+export type THuntChannelCredit = InferSelectModel<typeof huntChannelCredits>;
+export type THuntChannelCreditInsert = InferInsertModel<
+  typeof huntChannelCredits
+>;
+
 // Relations
 export const creditBalancesRelations = relations(creditBalances, ({ one }) => ({
   organization: one(organizations, {
@@ -188,6 +239,16 @@ export const creditTransactionsRelations = relations(
     organization: one(organizations, {
       fields: [creditTransactions.organizationId],
       references: [organizations.id],
+    }),
+  }),
+);
+
+export const huntChannelCreditsRelations = relations(
+  huntChannelCredits,
+  ({ one }) => ({
+    hunt: one(hunts, {
+      fields: [huntChannelCredits.huntId],
+      references: [hunts.id],
     }),
   }),
 );
