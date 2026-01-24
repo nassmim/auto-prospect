@@ -55,6 +55,7 @@ export const hunts = pgTable(
     name: varchar({ length: 255 }).notNull(),
     status: huntStatus().notNull().default(EHuntStatus.PAUSED),
     autoRefresh: boolean("auto_refresh").notNull().default(true),
+    dailyPacingLimit: smallint("daily_pacing_limit"),
     outreachSettings: jsonb("outreach_settings")
       .$type<TOutreachSettings>()
       .default(sql`'{}'::jsonb`),

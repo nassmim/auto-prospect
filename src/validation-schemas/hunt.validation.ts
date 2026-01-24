@@ -6,6 +6,7 @@ const outreachSettingsSchema = z
     leboncoin: z.boolean().optional(),
     whatsapp: z.boolean().optional(),
     sms: z.boolean().optional(),
+    ringlessVoice: z.boolean().optional(),
   })
   .optional();
 
@@ -15,6 +16,7 @@ const templateIdsSchema = z
     leboncoin: z.string().nullable().optional(),
     whatsapp: z.string().nullable().optional(),
     sms: z.string().nullable().optional(),
+    ringlessVoice: z.string().nullable().optional(),
   })
   .optional();
 
@@ -45,6 +47,7 @@ export const createHuntSchema = huntFormSchema.extend({
   locationId: z.number().positive("L'emplacement est requis"),
   radiusInKm: z.number().min(0).default(0),
   adTypeId: z.number().positive("Le type d'annonce est requis"),
+  dailyPacingLimit: z.number().int().min(1).max(1000).optional().nullable(),
   // Optional filter fields
   priceMin: z.number().min(0).optional(),
   priceMax: z.number().positive().optional(),
@@ -73,6 +76,7 @@ export const updateHuntSchema = z.object({
     .max(100, "Le nom ne peut pas dépasser 100 caractères")
     .optional(),
   autoRefresh: z.boolean().optional(),
+  dailyPacingLimit: z.number().int().min(1).max(1000).optional().nullable(),
   outreachSettings: outreachSettingsSchema,
   templateIds: templateIdsSchema,
   locationId: z.number().positive().optional(),

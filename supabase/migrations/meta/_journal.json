@@ -29,6 +29,13 @@
       "when": 1769262391349,
       "tag": "0003_lumpy_freak",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1769270799837,
+      "tag": "0004_sour_mandroid",
+      "breakpoints": true
     }
   ]
 }
