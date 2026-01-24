@@ -996,12 +996,12 @@
         "dependencies": [
           "33"
         ],
-        "status": "done",
+        "status": "pending",
         "subtasks": [],
         "complexity": 6,
         "recommendedSubtasks": 4,
         "expansionPrompt": "Break down into: (1) Create channelConfigSchema with dailyLimit/totalLimit/enabled fields and cross-field refinement (dailyLimit <= totalLimit), (2) Create channelSettingsSchema with optional channel configs and 'at least one enabled' refinement, (3) Create channelPriorityConfigSchema for priority array validation, (4) Write comprehensive unit tests for all refinements, edge cases (empty settings, all disabled), and French error messages. Update existing hunt schemas.",
-        "updatedAt": "2026-01-24T16:11:27.861Z"
+        "updatedAt": "2026-01-24T16:44:39.490Z"
       },
       {
         "id": "36",
@@ -1046,12 +1046,12 @@
           "34",
           "37"
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [],
         "complexity": 6,
         "recommendedSubtasks": 5,
         "expansionPrompt": "Break down into: (1) Create ChannelConfigSection component structure with react-hook-form integration, (2) Build individual channel cards (SMS, WhatsApp, Ringless Voice) with enable toggles, (3) Implement daily/total limit inputs with conditional enabling based on channel toggle, (4) Add visual indicators for dailyLimit <= totalLimit constraint validation, (5) Integrate shadcn components (Checkbox, Input, Label, FormField) and ensure accessibility (keyboard navigation, ARIA labels). Style with existing zinc/amber theme.",
-        "updatedAt": "2026-01-24T16:15:39.453Z"
+        "updatedAt": "2026-01-24T16:17:41.162Z"
       },
       {
         "id": "39",
@@ -1158,7 +1158,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-24T16:15:39.455Z",
+      "lastModified": "2026-01-24T16:44:39.491Z",
       "taskCount": 44,
       "completedCount": 36,
       "tags": [
