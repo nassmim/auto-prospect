@@ -1,3 +1,4 @@
+import { EOrganizationType, ERole } from "@/constants/enums";
 import {
   InferInsertModel,
   InferSelectModel,
@@ -6,16 +7,17 @@ import {
 } from "drizzle-orm";
 import {
   foreignKey,
-  index,
   jsonb,
+  pgEnum,
   pgPolicy,
   pgTable,
+  text,
   timestamp,
   unique,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
-import { authenticatedRole, authUid } from "drizzle-orm/supabase";
+import { authenticatedRole, authUid, authUsers } from "drizzle-orm/supabase";
 
 // Organization settings type for JSONB field
 export type OrganizationSettings = {
@@ -25,299 +27,281 @@ export type OrganizationSettings = {
   ignorePhonesVisible?: boolean;
 };
 
-// Organization types - discriminated union
-export const organizationTypes = ["personal", "team"] as const;
-export type OrganizationType = (typeof organizationTypes)[number];
+// Types of organizations
+export const organizationType = pgEnum(
+  "organization_type",
+  Object.values(EOrganizationType) as [string, ...string[]],
+);
 
-// Organizations table - unified entity for both user profiles (personal) and teams
-// Personal org: type='personal', authUserId set, ownerId NULL
-// Team org: type='team', authUserId NULL, ownerId references creator's personal org
+// Role enum type for organization members
+export const role = pgEnum(
+  "role",
+  Object.values(ERole) as [string, ...string[]],
+);
+
+// Organizations table - will have either just one member or several
 export const organizations = pgTable(
   "organizations",
   {
     id: uuid().primaryKey().defaultRandom(),
-    // User identity (for personal orgs only, 1:1 with auth.users)
-    authUserId: uuid("auth_user_id"),
-    // Profile/Team info
+    authUserId: uuid("auth_user_id").notNull(),
     name: varchar({ length: 255 }),
     email: varchar({ length: 320 }).notNull(),
     pictureUrl: varchar("picture_url", { length: 1000 }),
     phoneNumber: varchar("phone_number", { length: 14 }),
     // Organization type discriminator
-    type: varchar({ length: 20 }).notNull().default("personal"),
-    // Team-specific fields (NULL for personal orgs)
-    ownerId: uuid("owner_id"), // References personal org of creator (NULL for personal orgs)
+    type: organizationType("type")
+      .notNull()
+      .default(EOrganizationType.PERSONAL),
     settings: jsonb().$type<OrganizationSettings>(),
-    // Metadata
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
-      .default(sql`now()`),
+      .defaultNow(),
   },
   (table) => [
-    // Self-reference for team ownership (set null when personal org deleted)
     foreignKey({
-      columns: [table.ownerId],
-      foreignColumns: [table.id],
-      name: "organizations_owner_id_fk",
+      columns: [table.authUserId],
+      foreignColumns: [authUsers.id],
+      name: "auth_user_id_fk",
     }).onDelete("set null"),
-    // Unique index on authUserId for personal orgs (1:1 with auth.users)
-    index("organizations_auth_user_id_idx").on(table.authUserId),
-    unique("organizations_auth_user_id_key").on(table.authUserId),
-    index("organizations_owner_id_idx").on(table.ownerId),
-    // Authenticated users can create organizations
-    // Personal org: created by database trigger on signup
-    // Team org: created by users who already have a personal org
-    pgPolicy("enable insert for authenticated users", {
-      as: "permissive",
-      for: "insert",
-      to: authenticatedRole,
-      withCheck: sql`
-        ${authUid} = auth_user_id OR
-        exists (
-          select 1 from organizations o
-          where o.auth_user_id = ${authUid}
-          and o.type = 'personal'
-        )
-      `,
-    }),
-    // Users can update their own personal org OR team orgs where they're owner/admin
-    pgPolicy("enable update for organization owner", {
+    unique("auth_user_id_unique").on(table.authUserId),
+    pgPolicy("enable update for organization owners", {
       as: "permissive",
       for: "update",
       to: authenticatedRole,
       using: sql`
-        ${authUid} = auth_user_id OR
-        exists (
-          select 1 from organization_members om
-          join organizations o on o.id = om.member_organization_id
-          where om.organization_id = ${table.id}
-          and o.auth_user_id = ${authUid}
-          and om.role in ('owner', 'admin')
-          and om.joined_at is not null
+        ${authUid} = auth_user_id 
+        -- OR
+        -- exists (
+        --   select 1 from organization_members om
+        --   join organizations o on o.id = om.member_organization_id
+        --   where om.organization_id = ${table.id}
+        --   and o.auth_user_id = ${authUid}
+        --   and om.role = ${ERole.ADMIN}
+        --   and om.joined_at is not null
         )
       `,
       withCheck: sql`
-        ${authUid} = auth_user_id OR
-        exists (
-          select 1 from organization_members om
-          join organizations o on o.id = om.member_organization_id
-          where om.organization_id = ${table.id}
-          and o.auth_user_id = ${authUid}
-          and om.role in ('owner', 'admin')
-          and om.joined_at is not null
+        ${authUid} = auth_user_id 
+        -- OR
+        -- exists (
+        --   select 1 from organization_members om
+        --   join organizations o on o.id = om.member_organization_id
+        --   where om.organization_id = ${table.id}
+        --   and o.auth_user_id = ${authUid}
+        --   and om.role = ${ERole.ADMIN}
+        --   and om.joined_at is not null
         )
       `,
     }),
-    // Users can delete their personal org OR team orgs they own
-    pgPolicy("enable delete for organization owner", {
+    // Users can delete their own org
+    pgPolicy("enable delete for organization owners", {
       as: "permissive",
       for: "delete",
       to: authenticatedRole,
       using: sql`
-        ${authUid} = auth_user_id OR
-        exists (
-          select 1 from organization_members om
-          join organizations o on o.id = om.member_organization_id
-          where om.organization_id = ${table.id}
-          and o.auth_user_id = ${authUid}
-          and om.role = 'owner'
-          and om.joined_at is not null
-        )
+        ${authUid} = ${table.authUserId} 
       `,
     }),
-    // Members can read their personal org OR team orgs they belong to
-    pgPolicy("enable read for organization members", {
+    // Members can read data for orgs they belong to
+    pgPolicy("enable read for organization owners", {
       as: "permissive",
       for: "select",
       to: authenticatedRole,
       using: sql`
-        ${authUid} = auth_user_id OR
-        exists (
-          select 1 from organization_members om
-          join organizations o on o.id = om.member_organization_id
-          where om.organization_id = ${table.id}
-          and o.auth_user_id = ${authUid}
-          and om.joined_at is not null
-        )
+        ${authUid} = auth_user_id 
+        -- OR
+        -- exists (
+        --   select 1 from organization_members om
+        --   where om.organization_id = ${table.id}
+        --   and om.auth_user_id = ${authUid}
+        --   and om.joined_at is not null
+        -- )
       `,
     }),
   ],
 );
+export type TOrganization = InferSelectModel<typeof organizations>;
 
-// Role enum type for organization members
-export const organizationRoles = ["owner", "admin", "user"] as const;
-export type OrganizationRole = (typeof organizationRoles)[number];
-
-// Organization members table - links personal orgs (members) to team orgs with roles
+// Organization members table - they are not users, they are only data for now.
+// We'll implement team-based features later
 export const organizationMembers = pgTable(
   "organization_members",
   {
     id: uuid().primaryKey().defaultRandom(),
     organizationId: uuid("organization_id").notNull(),
-    memberOrganizationId: uuid("member_organization_id").notNull(), // References personal org of member
-    role: varchar({ length: 20 }).notNull().default("user"),
-    invitedAt: timestamp("invited_at", { withTimezone: true })
-      .notNull()
-      .default(sql`now()`),
-    joinedAt: timestamp("joined_at", { withTimezone: true }),
+    // authUserId: uuid("auth_user_id").notNull(),
+    name: text().notNull(),
+    // role: role().notNull().default(ERole.MEMBER),
+    // invitedAt: timestamp("invited_at", { withTimezone: true })
+    //   .notNull()
+    //   .defaultNow(),
+    // joinedAt: timestamp("joined_at", { withTimezone: true }),
   },
   (table) => [
     foreignKey({
       columns: [table.organizationId],
       foreignColumns: [organizations.id],
-      name: "organization_members_organization_id_fk",
+      name: "organization_id_fk",
     }).onDelete("cascade"),
-    foreignKey({
-      columns: [table.memberOrganizationId],
-      foreignColumns: [organizations.id],
-      name: "organization_members_member_organization_id_fk",
-    }).onDelete("cascade"),
-    unique("organization_members_org_member_key").on(
+    unique("organisation_id_member_name_unique").on(
       table.organizationId,
-      table.memberOrganizationId,
+      table.name,
     ),
-    index("organization_members_organization_id_idx").on(table.organizationId),
-    index("organization_members_member_organization_id_idx").on(
-      table.memberOrganizationId,
-    ),
-    // Authenticated users can insert themselves as members
-    pgPolicy("enable insert for authenticated users", {
-      as: "permissive",
-      for: "insert",
-      to: authenticatedRole,
-      withCheck: sql`exists (
-        select 1 from organizations o
-        where o.id = member_organization_id
-        and o.auth_user_id = ${authUid}
-        and o.type = 'personal'
-      )`,
-    }),
-    // Members can read their own membership and other members in their organization
-    pgPolicy("enable read for organization members", {
-      as: "permissive",
-      for: "select",
-      to: authenticatedRole,
-      using: sql`exists (
-        select 1 from organization_members om
-        join organizations o on o.id = om.member_organization_id
-        where om.organization_id = ${table.organizationId}
-        and o.auth_user_id = ${authUid}
-        and om.joined_at is not null
-      )`,
-    }),
-    // Owner and admins can update/delete memberships
-    pgPolicy("enable update delete for organization admins", {
-      as: "permissive",
-      for: "update",
-      to: authenticatedRole,
-      using: sql`exists (
-        select 1 from organization_members om
-        join organizations o on o.id = om.member_organization_id
-        where om.organization_id = ${table.organizationId}
-        and o.auth_user_id = ${authUid}
-        and om.role in ('owner', 'admin')
-        and om.joined_at is not null
-      )`,
-      withCheck: sql`exists (
-        select 1 from organization_members om
-        join organizations o on o.id = om.member_organization_id
-        where om.organization_id = ${table.organizationId}
-        and o.auth_user_id = ${authUid}
-        and om.role in ('owner', 'admin')
-        and om.joined_at is not null
-      )`,
-    }),
-    pgPolicy("enable delete for organization admins", {
-      as: "permissive",
-      for: "delete",
-      to: authenticatedRole,
-      using: sql`exists (
-        select 1 from organization_members om
-        join organizations o on o.id = om.member_organization_id
-        where om.organization_id = ${table.organizationId}
-        and o.auth_user_id = ${authUid}
-        and om.role in ('owner', 'admin')
-        and om.joined_at is not null
-      )`,
-    }),
-    // Members can update their own joinedAt timestamp when accepting invitation
-    pgPolicy("enable update for accepting invitation", {
-      as: "permissive",
-      for: "update",
-      to: authenticatedRole,
-      using: sql`exists (
-        select 1 from organizations o
-        where o.id = member_organization_id
-        and o.auth_user_id = ${authUid}
-      ) and joined_at is null`,
-      withCheck: sql`exists (
-        select 1 from organizations o
-        where o.id = member_organization_id
-        and o.auth_user_id = ${authUid}
-      )`,
-    }),
-  ],
-);
-
-// Organization invitations table - manages pending invites with secure tokens
-export const organizationInvitations = pgTable(
-  "organization_invitations",
-  {
-    id: uuid()
-      .primaryKey()
-      .notNull()
-      .default(sql`gen_random_uuid()`),
-    organizationId: uuid("organization_id").notNull(),
-    email: varchar({ length: 320 }).notNull(),
-    role: varchar({ length: 20 }).notNull().default("user"),
-    token: varchar({ length: 64 }).notNull().unique(),
-    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .notNull()
-      .default(sql`now()`),
-  },
-  (table) => [
-    foreignKey({
-      columns: [table.organizationId],
-      foreignColumns: [organizations.id],
-      name: "organization_invitations_organization_id_fk",
-    }).onDelete("cascade"),
-    index("organization_invitations_organization_id_idx").on(
-      table.organizationId,
-    ),
-    index("organization_invitations_token_idx").on(table.token),
-    unique("organization_invitations_token_key").on(table.token),
-    // Organization admins can manage invitations
-    pgPolicy("enable all for organization admins", {
+    // foreignKey({
+    //   columns: [table.authUserId],
+    //   foreignColumns: [authUsers.id],
+    //   name: "auth_user_id_fk",
+    // }).onDelete("cascade"),
+    // unique("organization_member_unique").on(table.authUserId),
+    pgPolicy("enable all for organization owners", {
       as: "permissive",
       for: "all",
       to: authenticatedRole,
       using: sql`exists (
-        select 1 from organization_members om
-        join organizations o on o.id = om.member_organization_id
-        where om.organization_id = ${table.organizationId}
+        select 1 from organizations o
+        where o.id = ${table.organizationId}
         and o.auth_user_id = ${authUid}
-        and om.role in ('owner', 'admin')
-        and om.joined_at is not null
       )`,
       withCheck: sql`exists (
-        select 1 from organization_members om
-        join organizations o on o.id = om.member_organization_id
-        where om.organization_id = ${table.organizationId}
+        select 1 from organizations o
+        where o.id = ${table.organizationId}
         and o.auth_user_id = ${authUid}
-        and om.role in ('owner', 'admin')
-        and om.joined_at is not null
       )`,
     }),
-    // Anyone with the token can read the invitation (for accepting invites)
-    pgPolicy("enable read by token", {
-      as: "permissive",
-      for: "select",
-      to: authenticatedRole,
-      using: sql`true`,
-    }),
+    // // Members can read their own membership and other members in their organization
+    // pgPolicy("enable read for organization members", {
+    //   as: "permissive",
+    //   for: "select",
+    //   to: authenticatedRole,
+    //   using: sql`exists (
+    //     exists (
+    //       select 1 from organization_members om
+    //       where om.organization_id = ${table.organizationId}
+    //       and om.auth_user_id = ${authUid}
+    //       and om.joined_at is not null
+    //     )z
+    //   )`,
+    // }),
+    // // Owner and admins can update memberships
+    // pgPolicy("enable update for organization owner and admins", {
+    //   as: "permissive",
+    //   for: "update",
+    //   to: authenticatedRole,
+    //   using: sql`exists (
+    //     select 1 from organization_members om
+    //     where om.organization_id = ${table.organizationId}
+    //     and o.auth_user_id = ${authUid}
+    //     and om.role in ('owner', 'admin')
+    //     and om.joined_at is not null
+    //   )`,
+    //   withCheck: sql`exists (
+    //       select 1 from organization_members om
+    //     where om.organization_id = ${table.organizationId}
+    //     and o.auth_user_id = ${authUid}
+    //     and om.role in ('owner', 'admin')
+    //     and om.joined_at is not null
+    //   )`,
+    // }),
+    // pgPolicy("enable delete for organization owners and admins", {
+    //   as: "permissive",
+    //   for: "delete",
+    //   to: authenticatedRole,
+    //   using: sql`exists (
+    //     select 1 from organization_members om
+    //     where om.organization_id = ${table.organizationId}
+    //     and o.auth_user_id = ${authUid}
+    //     and om.role in ('owner', 'admin')
+    //     and om.joined_at is not null
+    //   )`,
+    // }),
+    // // Members can update their own joinedAt timestamp when accepting invitation
+    // pgPolicy("enable update for accepting invitation", {
+    //   as: "permissive",
+    //   for: "update",
+    //   to: authenticatedRole,
+    //   using: sql`exists (
+    //     select 1 from organizations o
+    //     where o.id = ${table.organizationId}
+    //     and o.auth_user_id = ${authUid}
+    //   ) and joined_at is null`,
+    //   withCheck: sql`exists (
+    //     select 1 from organizations o
+    //     where o.id = ${table.organizationId}
+    //     and o.auth_user_id = ${authUid}
+    //   )`,
+    // }),
   ],
 );
+export type TOrganizationMemberInsert = InferInsertModel<
+  typeof organizationMembers
+>;
+export type TOrganizationMember = InferSelectModel<typeof organizationMembers>;
+
+// // Organization invitations table - manages pending invites with secure tokens
+// export const organizationInvitations = pgTable(
+//   "organization_invitations",
+//   {
+//     id: uuid()
+//       .primaryKey()
+//       .defaultRandom(),
+//     organizationId: uuid("organization_id").notNull(),
+//     email: varchar({ length: 320 }).notNull(),
+//     role: varchar({ length: 20 }).notNull().default("user"),
+//     token: varchar({ length: 64 }).notNull().unique(),
+//     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+//     createdAt: timestamp("created_at", { withTimezone: true })
+//       .notNull()
+//       .default(sql`now()`),
+//   },
+//   (table) => [
+//     foreignKey({
+//       columns: [table.organizationId],
+//       foreignColumns: [organizations.id],
+//       name: "organization_invitations_organization_id_fk",
+//     }).onDelete("cascade"),
+//     index("organization_invitations_organization_id_idx").on(
+//       table.organizationId,
+//     ),
+//     index("organization_invitations_token_idx").on(table.token),
+//     unique("organization_invitations_token_key").on(table.token),
+//     // Organization admins can manage invitations
+//     pgPolicy("enable all for organization admins", {
+//       as: "permissive",
+//       for: "all",
+//       to: authenticatedRole,
+//       using: sql`exists (
+//         select 1 from organization_members om
+//         join organizations o on o.id = om.member_organization_id
+//         where om.organization_id = ${table.organizationId}
+//         and o.auth_user_id = ${authUid}
+//         and om.role in ('owner', 'admin')
+//         and om.joined_at is not null
+//       )`,
+//       withCheck: sql`exists (
+//         select 1 from organization_members om
+//         join organizations o on o.id = om.member_organization_id
+//         where om.organization_id = ${table.organizationId}
+//         and o.auth_user_id = ${authUid}
+//         and om.role in ('owner', 'admin')
+//         and om.joined_at is not null
+//       )`,
+//     }),
+//     // Anyone with the token can read the invitation (for accepting invites)
+//     pgPolicy("enable read by token", {
+//       as: "permissive",
+//       for: "select",
+//       to: authenticatedRole,
+//       using: sql`true`,
+//     }),
+//   ],
+// );
+// export type TOrganizationInvitationInsert = InferInsertModel<
+//   typeof organizationInvitations
+// >;
+// export type TOrganizationInvitation = InferSelectModel<
+//   typeof organizationInvitations
+// >;
 
 // Relations for type-safe joins
 export const organizationMembersRelations = relations(
@@ -327,22 +311,9 @@ export const organizationMembersRelations = relations(
       fields: [organizationMembers.organizationId],
       references: [organizations.id],
     }),
-    memberOrganization: one(organizations, {
-      fields: [organizationMembers.memberOrganizationId],
-      references: [organizations.id],
-    }),
+    // authUser: one(organizations, {
+    //   fields: [organizationMembers.authUserId],
+    //   references: [authUsers.id],
+    // }),
   }),
 );
-
-export type TOrganizationMemberSelect = InferSelectModel<
-  typeof organizationMembers
->;
-export type TOrganizationMemberInsert = InferInsertModel<
-  typeof organizationMembers
->;
-export type TOrganizationInvitationSelect = InferSelectModel<
-  typeof organizationInvitations
->;
-export type TOrganizationInvitationInsert = InferInsertModel<
-  typeof organizationInvitations
->;

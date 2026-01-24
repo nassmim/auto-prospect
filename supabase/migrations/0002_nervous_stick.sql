@@ -22,6 +22,7 @@ CREATE OR REPLACE FUNCTION public.handle_new_user_organization()
 AS $function$
 declare
   user_email text;
+  new_org_id uuid;
 begin
   user_email := new.email;
 
@@ -35,7 +36,23 @@ begin
     user_email                -- User's email
   )
   on conflict (auth_user_id) do update set
-    email = excluded.email;
+    email = excluded.email
+  returning id into new_org_id;
+
+  -- Initialize credit balances for the organization (all channels start at 0)
+  insert into public.credit_balances (
+    organization_id,
+    sms,
+    ringless_voice,
+    whatsapp
+  )
+  values (
+    new_org_id,
+    0,
+    0,
+    0
+  )
+  on conflict (organization_id) do nothing;
 
   return new;
 end;

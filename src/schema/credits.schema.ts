@@ -1,45 +1,33 @@
-import { relations, sql } from "drizzle-orm";
+import { ECreditType, ETransactionType } from "@/constants/enums";
+import { InferSelectModel, relations, sql } from "drizzle-orm";
 import {
-  foreignKey,
+  boolean,
   index,
   integer,
   jsonb,
+  pgEnum,
   pgPolicy,
   pgTable,
   timestamp,
   uuid,
-  varchar,
 } from "drizzle-orm/pg-core";
-import { authenticatedRole, authUid, serviceRole } from "drizzle-orm/supabase";
+import { authenticatedRole, authUid } from "drizzle-orm/supabase";
 import { organizations } from "./organization.schema";
 
-// Transaction types
-export const transactionTypes = [
-  "purchase",
-  "usage",
-  "refund",
-  "adjustment",
-] as const;
-export type TransactionType = (typeof transactionTypes)[number];
+// Transaction types enum
+export const transactionType = pgEnum(
+  "transaction_type",
+  Object.values(ETransactionType) as [string, ...string[]],
+);
+export type TransactionType = (typeof ETransactionType)[keyof typeof ETransactionType];
 
-// Credit types
-export const creditTypes = ["sms", "voice"] as const;
-export type CreditType = (typeof creditTypes)[number];
+// Credit types enum
+export const creditType = pgEnum(
+  "credit_type",
+  Object.values(ECreditType) as [string, ...string[]],
+);
+export type CreditType = (typeof ECreditType)[keyof typeof ECreditType];
 
-// Credit pack pricing (from PRD)
-export const SMS_PACKS = [
-  { credits: 100, priceEur: 15 },
-  { credits: 500, priceEur: 70 },
-  { credits: 1000, priceEur: 100 },
-  { credits: 5000, priceEur: 400 },
-] as const;
-
-export const VOICE_PACKS = [
-  { credits: 100, priceEur: 40 },
-  { credits: 500, priceEur: 175 },
-  { credits: 1000, priceEur: 300 },
-  { credits: 5000, priceEur: 1250 },
-] as const;
 
 // Metadata types for transactions
 export type PurchaseMetadata = {
@@ -69,71 +57,57 @@ export type TransactionMetadata =
 export const creditBalances = pgTable(
   "credit_balances",
   {
-    id: uuid()
-      .primaryKey()
+    id: uuid().defaultRandom().primaryKey(),
+    organizationId: uuid("organization_id")
+      .references(() => organizations.id, { onDelete: "cascade" })
       .notNull()
-      .default(sql`gen_random_uuid()`),
-    organizationId: uuid("organization_id").notNull().unique(),
-    smsCredits: integer("sms_credits").notNull().default(0),
-    voiceCredits: integer("voice_credits").notNull().default(0),
+      .unique(),
+    sms: integer("sms").notNull().default(0),
+    ringlessVoice: integer("ringless_voice").notNull().default(0),
+    whatsappText: integer("whatsapp").notNull().default(0),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .default(sql`now()`),
   },
   (table) => [
-    foreignKey({
-      columns: [table.organizationId],
-      foreignColumns: [organizations.id],
-      name: "credit_balances_organization_id_fk",
-    }).onDelete("cascade"),
     index("credit_balances_organization_id_idx").on(table.organizationId),
-    // Organization members can read their balance
-    pgPolicy("enable read for organization members", {
+    pgPolicy("enable read for credit walet owners", {
       as: "permissive",
       for: "select",
       to: authenticatedRole,
       using: sql`exists (
-        select 1 from organization_members om
-        where om.organization_id = ${table.organizationId}
-        and om.member_organization_id in (
-          select id from organizations where auth_user_id = ${authUid}
-        )
-        and om.joined_at is not null
+        select 1 from organizations o
+        where o.id = ${table.organizationId}
+        and o.auth_user_id = ${authUid}
       )`,
     }),
+    // // Organization members can read their balance
+    // pgPolicy("enable read for organization members", {
+    //   as: "permissive",
+    //   for: "select",
+    //   to: authenticatedRole,
+    //   using: sql`exists (
+    //     select 1 from organization_members om
+    //     where om.organization_id = ${table.organizationId}
+    //     and om.auth_user_id = ${authUid}
+    //     and om.joined_at is not null
+    //   )`,
+    // }),
     // Only service role can update balances (via backend services)
-    pgPolicy("enable update for service role", {
-      as: "permissive",
-      for: "update",
-      to: serviceRole,
-      using: sql`true`,
-      withCheck: sql`true`,
-    }),
-    // Only service role can insert balances (during org creation)
-    pgPolicy("enable insert for service role", {
-      as: "permissive",
-      for: "insert",
-      to: serviceRole,
-      withCheck: sql`true`,
-    }),
   ],
 );
+export type TCreditBalance = InferSelectModel<typeof creditBalances>;
 
 // Credit transactions table - immutable audit log
 export const creditTransactions = pgTable(
   "credit_transactions",
   {
-    id: uuid()
-      .primaryKey()
-      .notNull()
-      .default(sql`gen_random_uuid()`),
-    organizationId: uuid("organization_id").notNull(),
-    type: varchar({ length: 20 })
-      .$type<TransactionType>()
+    id: uuid().defaultRandom().primaryKey(),
+    organizationId: uuid("organization_id")
+      .references(() => organizations.id, { onDelete: "cascade" })
       .notNull(),
-    creditType: varchar("credit_type", { length: 10 })
-      .$type<CreditType>()
-      .notNull(),
+    type: transactionType().notNull(),
+    creditType: creditType().notNull(),
     amount: integer().notNull(), // Positive for purchase/refund, negative for usage
     balanceAfter: integer("balance_after").notNull(), // Balance snapshot after transaction
     referenceId: uuid("reference_id"), // Message ID for usage, payment ID for purchase
@@ -141,59 +115,49 @@ export const creditTransactions = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .default(sql`now()`),
-    createdById: uuid("created_by_id"), // Null for system transactions
   },
   (table) => [
-    foreignKey({
-      columns: [table.organizationId],
-      foreignColumns: [organizations.id],
-      name: "credit_transactions_organization_id_fk",
-    }).onDelete("cascade"),
-    foreignKey({
-      columns: [table.createdById],
-      foreignColumns: [organizations.id],
-      name: "credit_transactions_created_by_id_fk",
-    }).onDelete("set null"),
     // Index for transaction history queries
     index("credit_transactions_org_created_idx").on(
       table.organizationId,
       table.createdAt,
     ),
     index("credit_transactions_reference_id_idx").on(table.referenceId),
-    // Organization members can read transaction history
-    pgPolicy("enable read for organization members", {
+    pgPolicy("enable read for transaction owners", {
       as: "permissive",
       for: "select",
       to: authenticatedRole,
       using: sql`exists (
-        select 1 from organization_members om
-        where om.organization_id = ${table.organizationId}
-        and om.member_organization_id in (
-          select id from organizations where auth_user_id = ${authUid}
-        )
-        and om.joined_at is not null
-      )`,
+            select 1 from organizations o
+            where o.id = ${table.organizationId}
+            and o.auth_user_id = ${authUid}
+          )`,
     }),
-    // Only service role can insert transactions (immutable log)
-    pgPolicy("enable insert for service role", {
-      as: "permissive",
-      for: "insert",
-      to: serviceRole,
-      withCheck: sql`true`,
-    }),
+    // // Organization members can read transaction history
+    // pgPolicy("enable read for organization members", {
+    //   as: "permissive",
+    //   for: "select",
+    //   to: authenticatedRole,
+    //   using: sql`exists (
+    //     select 1 from organization_members om
+    //     where om.organization_id = ${table.organizationId}
+    //     and om.member_organization_id in (
+    //       select id from organizations where auth_user_id = ${authUid}
+    //     )
+    //     and om.joined_at is not null
+    //   )`,
+    // })
   ],
 );
+export type TCreditTransaction = InferSelectModel<typeof creditTransactions>;
 
 // Relations
-export const creditBalancesRelations = relations(
-  creditBalances,
-  ({ one }) => ({
-    organization: one(organizations, {
-      fields: [creditBalances.organizationId],
-      references: [organizations.id],
-    }),
+export const creditBalancesRelations = relations(creditBalances, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [creditBalances.organizationId],
+    references: [organizations.id],
   }),
-);
+}));
 
 export const creditTransactionsRelations = relations(
   creditTransactions,
@@ -202,9 +166,33 @@ export const creditTransactionsRelations = relations(
       fields: [creditTransactions.organizationId],
       references: [organizations.id],
     }),
-    createdBy: one(organizations, {
-      fields: [creditTransactions.createdById],
-      references: [organizations.id],
-    }),
   }),
 );
+
+// Credit packs table - pricing configuration
+export const creditPacks = pgTable(
+  "credit_packs",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    creditType: creditType().notNull(),
+    credits: integer().notNull(),
+    priceEur: integer("price_eur").notNull(), // Store in cents for precision
+    isActive: boolean("is_active").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("credit_packs_credit_type_idx").on(table.creditType),
+    pgPolicy("enable read for authenticated users", {
+      as: "permissive",
+      for: "select",
+      to: authenticatedRole,
+      using: sql`true`,
+    }),
+  ],
+);
+export type TCreditPack = InferSelectModel<typeof creditPacks>;

@@ -1,6 +1,11 @@
 import { messageTypes } from "@/schema/general.schema";
-import { organizations } from "@/schema/organization.schema";
-import { relations, sql } from "drizzle-orm";
+import { organizations, TOrganization } from "@/schema/organization.schema";
+import {
+  InferInsertModel,
+  InferSelectModel,
+  relations,
+  sql,
+} from "drizzle-orm";
 import {
   boolean,
   date,
@@ -23,7 +28,7 @@ import { authenticatedRole } from "drizzle-orm/supabase";
 export const ads = pgTable(
   "ads",
   {
-    id: uuid().defaultRandom().primaryKey().notNull(),
+    id: uuid().defaultRandom().primaryKey(),
     typeId: smallint("type_id")
       .references(() => adTypes.id)
       .notNull(),
@@ -108,6 +113,8 @@ export const ads = pgTable(
   ],
 );
 
+export type TAdInsert = Omit<InferInsertModel<typeof ads>, "createdAt">;
+
 export const adTypes = pgTable(
   "ad_types",
   {
@@ -125,6 +132,7 @@ export const adTypes = pgTable(
     }),
   ],
 );
+export type TAdType = InferSelectModel<typeof adTypes>;
 
 export const adSubTypes = pgTable(
   "sub_types",
@@ -146,6 +154,7 @@ export const adSubTypes = pgTable(
     }),
   ],
 );
+export type TAdSubType = InferSelectModel<typeof adSubTypes>;
 
 export const drivingLicences = pgTable(
   "driving_licences",
@@ -164,6 +173,7 @@ export const drivingLicences = pgTable(
     }),
   ],
 );
+export type TDrivingLicence = InferSelectModel<typeof drivingLicences>;
 
 export const gearBoxes = pgTable(
   "gear_boxes",
@@ -182,6 +192,7 @@ export const gearBoxes = pgTable(
     }),
   ],
 );
+export type TGearBoxe = InferSelectModel<typeof gearBoxes>;
 
 export const vehicleSeats = pgTable(
   "vehicle_seats",
@@ -200,6 +211,7 @@ export const vehicleSeats = pgTable(
     }),
   ],
 );
+export type TVehicleSeats = InferSelectModel<typeof vehicleSeats>;
 
 export const vehicleStates = pgTable(
   "vehicle_states",
@@ -218,6 +230,7 @@ export const vehicleStates = pgTable(
     }),
   ],
 );
+export type TVehicleState = InferSelectModel<typeof vehicleStates>;
 
 export const locations = pgTable(
   "locations",
@@ -242,6 +255,7 @@ export const locations = pgTable(
     }),
   ],
 );
+export type TLocation = InferSelectModel<typeof locations>;
 
 export const brands = pgTable(
   "brands",
@@ -260,6 +274,7 @@ export const brands = pgTable(
     }),
   ],
 );
+export type TBrand = InferSelectModel<typeof brands>;
 
 export const fuels = pgTable(
   "fuels",
@@ -278,6 +293,7 @@ export const fuels = pgTable(
     }),
   ],
 );
+export type TFuel = InferSelectModel<typeof fuels>;
 
 export const contactedAds = pgTable(
   "contacted_ads",
@@ -356,50 +372,62 @@ export const adsRelations = relations(ads, ({ one, many }) => ({
   }),
   contactedAds: many(contactedAds),
 }));
+export type TAd = InferSelectModel<typeof ads> & {
+  type?: TAdType;
+  location?: TLocation;
+  subtype?: TAdSubType | null;
+  drivingLicence?: TDrivingLicence | null;
+  gearBox?: TGearBoxe | null;
+  vehicleSeats?: TVehicleSeats | null;
+  vehicleState?: TVehicleState | null;
+  brand?: TBrand | null;
+  fuel?: TFuel | null;
+  contactedAds?: TContactedAd[];
+};
 
-export const adTypesRelations = relations(adTypes, ({ many }) => ({
-  ads: many(ads),
-  subTypes: many(adSubTypes),
-}));
+// export const adTypesRelations = relations(adTypes, ({ many }) => ({
+//   ads: many(ads),
+//   subTypes: many(adSubTypes),
+// }));
 
-export const adSubTypesRelations = relations(adSubTypes, ({ one, many }) => ({
-  adType: one(adTypes, {
-    fields: [adSubTypes.adTypeId],
-    references: [adTypes.id],
-  }),
-  ads: many(ads),
-}));
+// export const adSubTypesRelations = relations(adSubTypes, ({ one, many }) => ({
+//   adType: one(adTypes, {
+//     fields: [adSubTypes.adTypeId],
+//     references: [adTypes.id],
+//   }),
+//   ads: many(ads),
+// }));
 
-export const drivingLicencesRelations = relations(
-  drivingLicences,
-  ({ many }) => ({
-    ads: many(ads),
-  }),
-);
+// export const drivingLicencesRelations = relations(
+//   drivingLicences,
+//   ({ many }) => ({
+//     ads: many(ads),
+//   }),
+// );
 
-export const gearBoxesRelations = relations(gearBoxes, ({ many }) => ({
-  ads: many(ads),
-}));
+// export const gearBoxesRelations = relations(gearBoxes, ({ many }) => ({
+//   ads: many(ads),
+// }));
 
-export const vehicleSeatsRelations = relations(vehicleSeats, ({ many }) => ({
-  ads: many(ads),
-}));
+// export const vehicleSeatsRelations = relations(vehicleSeats, ({ many }) => ({
+//   ads: many(ads),
+// }));
 
-export const vehicleStatesRelations = relations(vehicleStates, ({ many }) => ({
-  ads: many(ads),
-}));
+// export const vehicleStatesRelations = relations(vehicleStates, ({ many }) => ({
+//   ads: many(ads),
+// }));
 
-export const locationsRelations = relations(locations, ({ many }) => ({
-  ads: many(ads),
-}));
+// export const locationsRelations = relations(locations, ({ many }) => ({
+//   ads: many(ads),
+// }));
 
-export const brandsRelations = relations(brands, ({ many }) => ({
-  ads: many(ads),
-}));
+// export const brandsRelations = relations(brands, ({ many }) => ({
+//   ads: many(ads),
+// }));
 
-export const fuelsRelations = relations(fuels, ({ many }) => ({
-  ads: many(ads),
-}));
+// export const fuelsRelations = relations(fuels, ({ many }) => ({
+//   ads: many(ads),
+// }));
 
 export const contactedAdsRelations = relations(contactedAds, ({ one }) => ({
   ad: one(ads, {
@@ -411,3 +439,7 @@ export const contactedAdsRelations = relations(contactedAds, ({ one }) => ({
     references: [organizations.id],
   }),
 }));
+export type TContactedAd = InferSelectModel<typeof contactedAds> & {
+  ad: TAd;
+  organization: TOrganization;
+};

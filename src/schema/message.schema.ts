@@ -1,8 +1,14 @@
-import { relations, sql } from "drizzle-orm";
+import {
+  ELeadActivityType,
+  EMessageChannel,
+  EMessageStatus,
+} from "@/constants/enums";
+import { InferInsertModel, relations, sql } from "drizzle-orm";
 import {
   foreignKey,
   index,
   jsonb,
+  pgEnum,
   pgPolicy,
   pgTable,
   text,
@@ -15,35 +21,29 @@ import { leads } from "./lead.schema";
 import { messageTemplates } from "./message-template.schema";
 import { organizations } from "./organization.schema";
 
-// Message channels
-export const messageChannels = [
-  "whatsapp",
-  "sms",
-  "voice",
-  "leboncoin",
-] as const;
-export type MessageChannel = (typeof messageChannels)[number];
+// Message channels enum
+export const messageChannel = pgEnum(
+  "message_channel",
+  Object.values(EMessageChannel) as [string, ...string[]],
+);
+export type MessageChannel =
+  (typeof EMessageChannel)[keyof typeof EMessageChannel];
 
 // Message status enum
-export const messageStatuses = [
-  "pending",
-  "sent",
-  "delivered",
-  "failed",
-  "read",
-] as const;
-export type MessageStatus = (typeof messageStatuses)[number];
+export const messageStatus = pgEnum(
+  "message_status",
+  Object.values(EMessageStatus) as [string, ...string[]],
+);
+export type MessageStatus =
+  (typeof EMessageStatus)[keyof typeof EMessageStatus];
 
-// Lead activity types
-export const leadActivityTypes = [
-  "stage_change",
-  "message_sent",
-  "assignment_change",
-  "note_added",
-  "reminder_set",
-  "created",
-] as const;
-export type LeadActivityType = (typeof leadActivityTypes)[number];
+// Lead activity types enum
+export const leadActivityType = pgEnum(
+  "lead_activity_type",
+  Object.values(ELeadActivityType) as [string, ...string[]],
+);
+export type LeadActivityType =
+  (typeof ELeadActivityType)[keyof typeof ELeadActivityType];
 
 // Metadata types for different activity types
 export type StageChangeMetadata = {
@@ -84,20 +84,12 @@ export type ActivityMetadata =
 export const messages = pgTable(
   "messages",
   {
-    id: uuid()
-      .primaryKey()
-      .notNull()
-      .default(sql`gen_random_uuid()`),
+    id: uuid().defaultRandom().primaryKey(),
     leadId: uuid("lead_id").notNull(),
     templateId: uuid("template_id"), // Null if message wasn't from template
-    channel: varchar({ length: 20 })
-      .$type<MessageChannel>()
-      .notNull(),
+    channel: messageChannel().notNull(),
     content: text().notNull(), // Rendered message with variables replaced
-    status: varchar({ length: 20 })
-      .$type<MessageStatus>()
-      .notNull()
-      .default("pending"),
+    status: messageStatus().notNull().default(EMessageStatus.PENDING),
     externalId: varchar("external_id", { length: 255 }), // Provider message ID for tracking
     sentAt: timestamp("sent_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -125,45 +117,61 @@ export const messages = pgTable(
     index("messages_lead_id_created_at_idx").on(table.leadId, table.createdAt),
     index("messages_status_idx").on(table.status),
     index("messages_external_id_idx").on(table.externalId),
-    // RLS: Org members can access messages for leads in their org
-    pgPolicy("enable all for organization members", {
-      as: "permissive",
-      for: "all",
-      to: authenticatedRole,
-      using: sql`exists (
+    pgPolicy(
+      "enable all for owners of the organization to which the leads are linked",
+      {
+        as: "permissive",
+        for: "all",
+        to: authenticatedRole,
+        using: sql`exists (
         select 1 from leads l
-        join organization_members om on om.organization_id = l.organization_id
+        join organization o on o.id = l.organization_id
         where l.id = ${table.leadId}
-        and om.member_organization_id in (
-          select id from organizations where auth_user_id = ${authUid}
-        )
-        and om.joined_at is not null
+        and o.auth_user_id = ${authUid}
       )`,
-      withCheck: sql`exists (
+        withCheck: sql`exists (
         select 1 from leads l
-        join organization_members om on om.organization_id = l.organization_id
+        join organization o on o.id = l.organization_id
         where l.id = ${table.leadId}
-        and om.member_organization_id in (
-          select id from organizations where auth_user_id = ${authUid}
-        )
-        and om.joined_at is not null
+        and o.auth_user_id = ${authUid}
       )`,
-    }),
+      },
+    ),
+    // // RLS: Org members can access messages for leads in their org
+    // pgPolicy("enable all for organization members", {
+    //   as: "permissive",
+    //   for: "all",
+    //   to: authenticatedRole,
+    //   using: sql`exists (
+    //     select 1 from leads l
+    //     join organization_members om on om.organization_id = l.organization_id
+    //     where l.id = ${table.leadId}
+    //     and om.member_organization_id in (
+    //       select id from organizations where auth_user_id = ${authUid}
+    //     )
+    //     and om.joined_at is not null
+    //   )`,
+    //   withCheck: sql`exists (
+    //     select 1 from leads l
+    //     join organization_members om on om.organization_id = l.organization_id
+    //     where l.id = ${table.leadId}
+    //     and om.member_organization_id in (
+    //       select id from organizations where auth_user_id = ${authUid}
+    //     )
+    //     and om.joined_at is not null
+    //   )`,
+    // }),
   ],
 );
+export type TMessageInsert = InferInsertModel<typeof messages>;
 
 // Lead activities table - immutable activity log for leads
 export const leadActivities = pgTable(
   "lead_activities",
   {
-    id: uuid()
-      .primaryKey()
-      .notNull()
-      .default(sql`gen_random_uuid()`),
+    id: uuid().defaultRandom().primaryKey(),
     leadId: uuid("lead_id").notNull(),
-    type: varchar({ length: 50 })
-      .$type<LeadActivityType>()
-      .notNull(),
+    type: leadActivityType().notNull(),
     metadata: jsonb().$type<ActivityMetadata>(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -187,38 +195,68 @@ export const leadActivities = pgTable(
       table.createdAt,
     ),
     index("lead_activities_type_idx").on(table.type),
-    // RLS: Org members can read activities for leads in their org
-    pgPolicy("enable read for organization members", {
-      as: "permissive",
-      for: "select",
-      to: authenticatedRole,
-      using: sql`exists (
+    pgPolicy(
+      "enable read for owners of the organization to which the leads are linked",
+      {
+        as: "permissive",
+        for: "select",
+        to: authenticatedRole,
+        using: sql`exists (
         select 1 from leads l
-        join organization_members om on om.organization_id = l.organization_id
+        join organization o on o.id = l.organization_id
         where l.id = ${table.leadId}
-        and om.member_organization_id in (
-          select id from organizations where auth_user_id = ${authUid}
-        )
-        and om.joined_at is not null
+        and o.auth_user_id = ${authUid}
       )`,
-    }),
+      },
+    ),
     // Org members can insert activities
-    pgPolicy("enable insert for organization members", {
-      as: "permissive",
-      for: "insert",
-      to: authenticatedRole,
-      withCheck: sql`exists (
-        select 1 from leads l
-        join organization_members om on om.organization_id = l.organization_id
+    pgPolicy(
+      "enable insert for owners of the organization to which the leads are linked",
+      {
+        as: "permissive",
+        for: "insert",
+        to: authenticatedRole,
+        withCheck: sql`exists (
+              select 1 from leads l
+        join organization o on o.id = l.organization_id
         where l.id = ${table.leadId}
-        and om.member_organization_id in (
-          select id from organizations where auth_user_id = ${authUid}
-        )
-        and om.joined_at is not null
+        and o.auth_user_id = ${authUid}
       )`,
-    }),
+      },
+    ),
+    // // RLS: Org members can read activities for leads in their org
+    // pgPolicy("enable read for organization members", {
+    //   as: "permissive",
+    //   for: "select",
+    //   to: authenticatedRole,
+    //   using: sql`exists (
+    //     select 1 from leads l
+    //     join organization_members om on om.organization_id = l.organization_id
+    //     where l.id = ${table.leadId}
+    //     and om.member_organization_id in (
+    //       select id from organizations where auth_user_id = ${authUid}
+    //     )
+    //     and om.joined_at is not null
+    //   )`,
+    // }),
+    // // Org members can insert activities
+    // pgPolicy("enable insert for organization members", {
+    //   as: "permissive",
+    //   for: "insert",
+    //   to: authenticatedRole,
+    //   withCheck: sql`exists (
+    //     select 1 from leads l
+    //     join organization_members om on om.organization_id = l.organization_id
+    //     where l.id = ${table.leadId}
+    //     and om.member_organization_id in (
+    //       select id from organizations where auth_user_id = ${authUid}
+    //     )
+    //     and om.joined_at is not null
+    //   )`,
+    // }),
   ],
 );
+export type TLeadActivityInsert = InferInsertModel<typeof leadActivities>;
 
 // Relations
 export const messagesRelations = relations(messages, ({ one }) => ({

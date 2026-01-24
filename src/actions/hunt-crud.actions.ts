@@ -3,7 +3,7 @@
 import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
 import { createClient } from "@/lib/supabase/server";
 import { formatZodError } from "@/lib/validation";
-import { baseFilters, type HuntStatus } from "@/schema/filter.schema";
+import { baseFilters, type HuntStatus } from "@/schema/hunt.schema";
 import { createHuntSchema, updateHuntSchema } from "@/validation-schemas";
 import { eq } from "drizzle-orm";
 

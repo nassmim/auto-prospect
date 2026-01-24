@@ -91,21 +91,34 @@ supabase/migrations/  → Generated SQL (never edit manually)
 src/proxy.ts          → Auth middleware
 ```
 
-## Architecture: Organization-First Pattern
+## Data Architecture and Definition
 
-**Every user belongs to an organization** - no standalone individual accounts:
-- **Solo users**: Auto-create personal organization (1 member) during signup
-- **Team users**: Invited to existing organizations via `organization_invitations`
-- **All data** (hunts, leads, messages) belongs to organizations, not users
-- **Benefits**: Simpler data model (single `organizationId` FK), easy solo→team upgrade, cleaner RLS
+### Schema definition
+Always prefer drizzle-first built-in features when possible.
+For instance use:
+```typescript
+// Not good
+id: uuid()
+  .primaryKey()
+  .default(sql`gen_random_uuid()`)
 
-**Key implementation details:**
-- `organizations.authUserId` links personal orgs to auth.users (1:1, only for type='personal')
-- `organizations.type` discriminates between 'personal' (user profile) and 'team' (shared workspace)
-- **Database trigger** `handle_new_user_organization()` auto-creates personal org during signup (migration 0014)
-- `createPersonalOrganization()` service available for manual creation (rarely needed due to trigger)
-- All business tables reference `organizationId` for data ownership
-- User references (createdById, assignedToId, sentById) use personal organization ID via `getUserPersonalOrganizationId()`
+foreignKey({
+  columns: [table.typeId],
+  foreignColumns: [adTypes.id],
+  // But if you did need another name than the one automatically generated, then 
+  // it would make sense adopting this method to write the FK
+  name: "table_type_id_ad_types_id_fk", 
+}).onDelete("cascade")
+
+// Good
+id: uuid()
+  .primaryKey()
+  .defaultRandom()
+    
+typeId: smallint("type_id")
+  .references(() => adTypes.id)
+  .notNull()
+```
 
 ## Database: Zero-Trust Security Model
 
@@ -195,22 +208,20 @@ async function getUserContactedAds(accountId: string) {
 1. Modify schema:     src/schema/*.ts
 2. Generate:          pnpm db:generate
 3. Review SQL:        supabase/migrations/*.sql
-4. Apply locally:     pnpm db:migrate-only (human only)
-5. Commit:            schema + migration files
+4. Commit:            schema + migration files
 ```
 
 **❌ AI FORBIDDEN:**
 - `pnpm db:migrate-only` / `pnpm db:migrate` (apply migrations)
 - `pnpm db:dump` (dump seed data)
 - `drizzle-kit push` or `supabase db push`
+- `supabase stop`or `supabase stop --backup`
 - UI changes on Supabase dashboard
 - Manual SQL outside migrations
 
 **⚠️ INTERACTIVE MIGRATION GENERATION:**
 If `pnpm db:generate` requires user interaction (e.g., choosing between "create column" vs "rename column"), **STOP immediately** and inform the user:
 - Do NOT attempt to provide input programmatically
-- Do NOT try multiple times
-- Explain what drizzle-kit is asking and why it needs user input
 - Tell the user to run `pnpm db:generate` manually and select the appropriate option
 - Document what option should be selected based on the schema changes
 
@@ -227,14 +238,7 @@ If `pnpm db:generate` requires user interaction (e.g., choosing between "create 
    ```
    **Why:** Supabase requires explicit grants even with RLS enabled. Without grants, users cannot access the table even if RLS policies allow it.
 
-3. ✅ Foreign keys to `auth.users` on cascade delete (if user-owned)
-
-## Environment Setup
-- **5 files**: `.env.local`, `.env.development`, `.env.development.local`, `.env.production`, `.env.production.local`
-- Local dev: `pnpm supabase:start` (uses dotenvx to load all files)
-- Dev server: `pnpm dev` (port 3000 default)
-
-## Environment Setup
+## GIT Setup
 When committing, be concise in the description. No need to indicate who is the 
 co-author like "Co-Authored-By:"
 
@@ -251,20 +255,6 @@ co-author like "Co-Authored-By:"
 - `filesystem` → File operations
 - `next-devtools` → Next.js debugging
 - `supabase` → DB, storage, functions
-
-## Development Commands
-```bash
-# AI can run:
-pnpm dev               # Dev server (auto-loads .env.development*)
-pnpm supabase:start    # Start local DB (with dotenvx)
-pnpm db:generate       # Generate migration from schema
-
-# AI forbidden (human only):
-pnpm db:migrate        # Generate + apply migration
-pnpm db:migrate-only   # Apply migration only
-pnpm db:dump           # Export seed data
-supabase stop --backup # Stop DB (preserve data)
-```
 
 ## Code Standards
 

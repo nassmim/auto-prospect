@@ -1,41 +1,42 @@
-import { relations, sql } from "drizzle-orm";
+import { EMessageChannel, EMessageType } from "@/constants/enums";
+import { InferInsertModel, relations, sql } from "drizzle-orm";
 import {
   boolean,
   foreignKey,
   integer,
+  pgEnum,
   pgPolicy,
   pgTable,
   serial,
   text,
   timestamp,
   uuid,
-  varchar,
 } from "drizzle-orm/pg-core";
 import { authenticatedRole, authUid } from "drizzle-orm/supabase";
 import { organizations } from "./organization.schema";
 
-// Message template types
-export const messageTemplateTypes = ["text", "voice"] as const;
-export type MessageTemplateType = (typeof messageTemplateTypes)[number];
+export const messageType = pgEnum(
+  "message_type",
+  Object.values(EMessageType) as [string, ...string[]],
+);
 
-// Message channels
-export const messageChannels = ["whatsapp", "sms", "leboncoin"] as const;
-export type MessageChannel = (typeof messageChannels)[number];
+// Message channels enum
+export const messageChannel = pgEnum(
+  "message_channel",
+  Object.values(EMessageChannel) as [string, ...string[]],
+);
+export type MessageChannel =
+  (typeof EMessageChannel)[keyof typeof EMessageChannel];
 
 // Message templates table - organization-scoped text/voice templates
 export const messageTemplates = pgTable(
   "message_templates",
   {
-    id: uuid()
-      .primaryKey()
-      .notNull()
-      .default(sql`gen_random_uuid()`),
+    id: uuid().defaultRandom().primaryKey(),
     organizationId: uuid("organization_id").notNull(),
-    name: varchar({ length: 255 }).notNull(),
-    type: varchar({ length: 20 })
-      .$type<MessageTemplateType>()
-      .notNull(),
-    channel: varchar({ length: 20 }).$type<MessageChannel>(), // null for voice templates
+    name: text().notNull(),
+    type: messageType().notNull(),
+    channel: messageChannel(), // null for voice templates
     content: text(), // Template content with variable placeholders like {titre_annonce}
     audioUrl: text("audio_url"), // Supabase Storage URL for voice templates
     audioDuration: integer("audio_duration"), // Duration in seconds (validated 15-55)
@@ -46,7 +47,7 @@ export const messageTemplates = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .default(sql`now()`),
-    createdById: uuid("created_by_id").notNull(),
+    // createdById: uuid("created_by_id").notNull(),
   },
   (table) => [
     foreignKey({
@@ -54,41 +55,57 @@ export const messageTemplates = pgTable(
       foreignColumns: [organizations.id],
       name: "message_templates_organization_id_fk",
     }).onDelete("cascade"),
-    foreignKey({
-      columns: [table.createdById],
-      foreignColumns: [organizations.id],
-      name: "message_templates_created_by_id_fk",
-    }),
-    // Organization members can perform all operations on templates
-    pgPolicy("enable all for organization members", {
+    // foreignKey({
+    //   columns: [table.createdById],
+    //   foreignColumns: [organizations.id],
+    //   name: "message_templates_created_by_id_fk",
+    // }),
+    pgPolicy("enable all for owners of the associated organization", {
       as: "permissive",
       for: "all",
       to: authenticatedRole,
       using: sql`exists (
-        select 1 from organization_members om
-        where om.organization_id = ${table.organizationId}
-        and om.member_organization_id in (
-          select id from organizations where auth_user_id = ${authUid}
-        )
-        and om.joined_at is not null
-      )`,
+            select 1 from organizations o
+            where o.id = ${table.organizationId}
+            and o.auth_user_id = ${authUid}
+          )`,
       withCheck: sql`exists (
-        select 1 from organization_members om
-        where om.organization_id = ${table.organizationId}
-        and om.member_organization_id in (
-          select id from organizations where auth_user_id = ${authUid}
-        )
-        and om.joined_at is not null
-      )`,
+            select 1 from organizations o
+            where o.id = ${table.organizationId}
+            and o.auth_user_id = ${authUid}
+          )`,
     }),
+    // // Organization members can perform all operations on templates
+    // pgPolicy("enable all for organization members", {
+    //   as: "permissive",
+    //   for: "all",
+    //   to: authenticatedRole,
+    //   using: sql`exists (
+    //     select 1 from organization_members om
+    //     where om.organization_id = ${table.organizationId}
+    //     and om.member_organization_id in (
+    //       select id from organizations where auth_user_id = ${authUid}
+    //     )
+    //     and om.joined_at is not null
+    //   )`,
+    //   withCheck: sql`exists (
+    //     select 1 from organization_members om
+    //     where om.organization_id = ${table.organizationId}
+    //     and om.member_organization_id in (
+    //       select id from organizations where auth_user_id = ${authUid}
+    //     )
+    //     and om.joined_at is not null
+    //   )`,
+    // }),
   ],
 );
+export type TMessageTemplateInsert = InferInsertModel<typeof messageTemplates>;
 
 // Template variables table - static reference for available variables
 export const templateVariables = pgTable("template_variables", {
-  id: serial().primaryKey().notNull(),
-  key: varchar({ length: 50 }).notNull().unique(), // e.g., 'titre_annonce'
-  label: varchar({ length: 100 }).notNull(), // Display name in French
+  id: serial().primaryKey(),
+  key: text().notNull().unique(), // e.g., 'titre_annonce'
+  label: text().notNull(), // Display name in French
   description: text(),
 });
 
@@ -100,9 +117,9 @@ export const messageTemplatesRelations = relations(
       fields: [messageTemplates.organizationId],
       references: [organizations.id],
     }),
-    createdBy: one(organizations, {
-      fields: [messageTemplates.createdById],
-      references: [organizations.id],
-    }),
+    // createdBy: one(organizations, {
+    //   fields: [messageTemplates.createdById],
+    //   references: [organizations.id],
+    // }),
   }),
 );

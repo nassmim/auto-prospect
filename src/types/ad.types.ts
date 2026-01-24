@@ -1,11 +1,3 @@
-type TLocation = {
-  id: number;
-  zipcode: string;
-  name: string;
-  lat: number;
-  lng: number;
-};
-
 type TAdFromLobstr = {
   id: string;
   object: string;
@@ -144,126 +136,6 @@ type TAdFromLobstr = {
   user_id: string;
 };
 
-type TAd = {
-  id: string;
-  typeId: number;
-  subtypeId: number | null;
-  drivingLicenceId: number | null;
-  gearBoxId: number | null;
-  vehicleSeatsId: number | null;
-  vehicleStateId: number | null;
-  locationId: number;
-  brandId: number | null;
-  fuelId: number | null;
-  originalAdId: string;
-  url: string;
-  title: string;
-  description: string | null;
-  picture: string | null;
-  price: number;
-  hasBeenReposted: boolean;
-  hasBeenBoosted: boolean;
-  isUrgent: boolean;
-  modelYear: number | null;
-  initialPublicationDate: string;
-  lastPublicationDate: string;
-  mileage: number | null;
-  createdAt: string | null;
-  priceHasDropped: boolean;
-  favourite: boolean;
-  priceMin: number | null;
-  priceMax: number | null;
-  isLowPrice: boolean;
-  phoneNumber: string | null;
-  ownerName: string;
-  entryYear: number | null;
-  hasPhone: boolean;
-  equipments: string | null;
-  otherSpecifications: string | null;
-  technicalInspectionYear: number | null;
-  model: string | null;
-  acceptSalesmen: boolean;
-};
-
-type TAdWithRelations = Omit<
-  TAd,
-  | "typeId"
-  | "subtypeId"
-  | "drivingLicenceId"
-  | "gearBoxId"
-  | "vehicleSeatsId"
-  | "vehicleStateId"
-  | "locationId"
-  | "brandId"
-  | "fuelId"
-> & {
-  type?: {
-    id: number;
-    name: string;
-  };
-  location?: TLocation;
-  subtype?: {
-    id: number;
-    adTypeId: number;
-    name: string;
-    lbcValue: string | null;
-    lobstrValue: string | null;
-  } | null;
-  drivingLicence?: {
-    id: number;
-    name: string;
-    lbcValue: string | null;
-    lobstrValue: string | null;
-  } | null;
-  gearBox?: {
-    id: number;
-    name: string;
-    lbcValue: string | null;
-    lobstrValue: string | null;
-  } | null;
-  vehicleSeats?: {
-    id: number;
-    name: string;
-    lbcValue: string | null;
-    lobstrValue: string | null;
-  } | null;
-  vehicleState?: {
-    id: number;
-    name: string;
-    lbcValue: string | null;
-    lobstrValue: string | null;
-  } | null;
-  brand?: {
-    id: number;
-    name: string;
-    lbcValue: string | null;
-    lobstrValue: string | null;
-  } | null;
-  fuel?: {
-    id: number;
-    name: string;
-    lbcValue: string | null;
-    lobstrValue: string | null;
-  } | null;
-  contactedAds?: {
-    id: string;
-    adId: string;
-    organizationId: string;
-    messageTypeId: number;
-    createdAt: string;
-  }[];
-};
-
-type TAdInsert = Omit<TAd, "id" | "createdAt">;
-
-type TContactedAd = {
-  id: string;
-  adId: string;
-  organizationId: string;
-  messageTypeId: string;
-  createdAt: string;
-};
-
 type AutoSenderPreferencesType = {
   id: string;
   organizationId: string;
@@ -397,13 +269,9 @@ export type {
   AutoSenderPreferencesType,
   AutoSenderPreferencesTypeWithoutRelations,
   GeneralParametersType,
-  TAd,
   TAdFromLobstr,
-  TAdInsert,
   TAdReferenceData,
-  TAdWithRelations,
   TContactedAd,
   TextVariableType,
-  TLocation,
   TSubscription,
 };

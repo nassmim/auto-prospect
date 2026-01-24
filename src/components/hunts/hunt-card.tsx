@@ -1,13 +1,19 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { deleteHunt, updateHuntStatus } from "@/actions/hunt-crud.actions";
-import type { HuntStatus } from "@/schema/filter.schema";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import type { HuntStatus } from "@/schema/hunt.schema";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 type Hunt = {
   id: string;
@@ -84,7 +90,10 @@ export function HuntCard({ hunt }: HuntCardProps) {
                 {isActive ? "Active" : "En pause"}
               </Badge>
               {hunt.autoRefresh && (
-                <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20">
+                <Badge
+                  variant="outline"
+                  className="bg-blue-500/10 text-blue-500 border-blue-500/20"
+                >
                   Auto-refresh
                 </Badge>
               )}
@@ -96,30 +105,6 @@ export function HuntCard({ hunt }: HuntCardProps) {
       <CardContent>
         <div className="space-y-2 text-sm">
           <div className="flex items-center gap-2 text-zinc-400">
-          <svg
-            className="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-            />
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-            />
-          </svg>
-          <span>{hunt.location.name}</span>
-        </div>
-
-        {hunt.brands && hunt.brands.length > 0 && (
-          <div className="flex items-center gap-2 text-zinc-400">
             <svg
               className="h-4 w-4"
               fill="none"
@@ -130,42 +115,64 @@ export function HuntCard({ hunt }: HuntCardProps) {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
               />
-            </svg>
-            <span>{hunt.brands.map((b) => b.brand.name).join(", ")}</span>
-          </div>
-        )}
-
-        {hunt.lastScanAt && (
-          <div className="flex items-center gap-2 text-zinc-400">
-            <svg
-              className="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
               />
             </svg>
-            <span>
-              Dernière recherche:{" "}
-              {new Date(hunt.lastScanAt).toLocaleDateString("fr-FR")}
-            </span>
+            <span>{hunt.location.name}</span>
           </div>
-        )}
+
+          {hunt.brands && hunt.brands.length > 0 && (
+            <div className="flex items-center gap-2 text-zinc-400">
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                />
+              </svg>
+              <span>{hunt.brands.map((b) => b.brand.name).join(", ")}</span>
+            </div>
+          )}
+
+          {hunt.lastScanAt && (
+            <div className="flex items-center gap-2 text-zinc-400">
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span>
+                Dernière recherche:{" "}
+                {new Date(hunt.lastScanAt).toLocaleDateString("fr-FR")}
+              </span>
+            </div>
+          )}
         </div>
       </CardContent>
 
       <CardFooter className="flex gap-2">
         <Button variant="outline" size="sm" className="flex-1" asChild>
-          <Link href={`/hunts/${hunt.id}/edit`}>
-            Modifier
-          </Link>
+          <Link href={`/hunts/${hunt.id}/edit`}>Modifier</Link>
         </Button>
         <Button
           variant={isActive ? "outline" : "default"}
@@ -174,11 +181,7 @@ export function HuntCard({ hunt }: HuntCardProps) {
           disabled={isTogglingStatus}
           className="flex-1"
         >
-          {isTogglingStatus
-            ? "..."
-            : isActive
-              ? "Mettre en pause"
-              : "Activer"}
+          {isTogglingStatus ? "..." : isActive ? "Mettre en pause" : "Activer"}
         </Button>
         <Button
           variant="destructive"

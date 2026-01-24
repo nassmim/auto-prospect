@@ -1,14 +1,18 @@
 "use client";
 
-import { useState, useTransition } from "react";
 import {
-  updateOrganizationName,
-  updateOrganizationSettings,
+  cancelInvitation,
   inviteTeamMember,
   removeTeamMember,
-  cancelInvitation,
+  updateOrganizationName,
+  updateOrganizationSettings,
 } from "@/actions/organization.actions";
-import type { OrganizationSettings } from "@/schema/organization.schema";
+import type {
+  OrganizationSettings,
+  TOrganizationInvitationSelect,
+  TOrganizationMemberSelect,
+} from "@/schema/organization.schema";
+import { useState, useTransition } from "react";
 
 type TeamTabProps = {
   organization: {
@@ -19,8 +23,8 @@ type TeamTabProps = {
     createdAt: Date;
   };
   userRole: "owner" | "admin" | "user";
-  initialMembers: any[];
-  initialInvitations: any[];
+  initialMembers: TOrganizationMemberSelect[];
+  initialInvitations: TOrganizationInvitationSelect[];
 };
 
 /**
@@ -71,7 +75,9 @@ export function TeamTab({
         setSuccess("Nom de l'organisation mis à jour");
         setTimeout(() => setSuccess(null), 3000);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Une erreur est survenue");
+        setError(
+          err instanceof Error ? err.message : "Une erreur est survenue",
+        );
       }
     });
   };
@@ -91,7 +97,9 @@ export function TeamTab({
         setSuccess("Paramètres mis à jour");
         setTimeout(() => setSuccess(null), 3000);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Une erreur est survenue");
+        setError(
+          err instanceof Error ? err.message : "Une erreur est survenue",
+        );
       }
     });
   };
@@ -118,7 +126,9 @@ export function TeamTab({
         setSuccess("Invitation envoyée");
         setTimeout(() => setSuccess(null), 3000);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Une erreur est survenue");
+        setError(
+          err instanceof Error ? err.message : "Une erreur est survenue",
+        );
       }
     });
   };
@@ -137,7 +147,9 @@ export function TeamTab({
         setSuccess("Membre retiré");
         setTimeout(() => setSuccess(null), 3000);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Une erreur est survenue");
+        setError(
+          err instanceof Error ? err.message : "Une erreur est survenue",
+        );
       }
     });
   };
@@ -154,7 +166,9 @@ export function TeamTab({
         setSuccess("Invitation annulée");
         setTimeout(() => setSuccess(null), 3000);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Une erreur est survenue");
+        setError(
+          err instanceof Error ? err.message : "Une erreur est survenue",
+        );
       }
     });
   };
@@ -373,7 +387,9 @@ export function TeamTab({
               />
               <select
                 value={inviteRole}
-                onChange={(e) => setInviteRole(e.target.value as "user" | "admin")}
+                onChange={(e) =>
+                  setInviteRole(e.target.value as "user" | "admin")
+                }
                 disabled={isPending}
                 className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-2 text-sm text-zinc-100 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 disabled:opacity-50"
               >

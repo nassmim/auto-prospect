@@ -1,44 +1,15 @@
-import { TLocation } from "@/types/ad.types";
-
-type THunt = {
-  id: string;
-  organizationId: string;
-  adTypeId: number;
-  locationId: number;
-  radiusInKm: number;
-  priceMin: number;
-  priceMax: number | null;
-  isLowPrice: boolean;
-  hasBeenReposted: boolean;
-  hasBeenBoosted: boolean;
-  isUrgent: boolean;
-  modelYearMin: number;
-  priceHasDropped: boolean;
-  modelYearMax: number | null;
-  mileageMin: number;
-  mileageMax: number | null;
+// Outreach settings type for JSONB field
+type TOutreachSettings = {
+  leboncoin?: boolean;
+  whatsapp?: boolean;
+  sms?: boolean;
 };
 
-type THuntWithRelations = Omit<
-  THunt,
-  "typeId" | "subtypeId" | "locationId" | "brandId"
-> & {
-  type?: {
-    id: string;
-    adTypeId: number;
-    baseFilterId: string;
-  };
-  location: TLocation;
-  brands: {
-    id: string;
-    brandId: number;
-    baseFilterId: string;
-  }[];
-  subTypes: {
-    id: string;
-    subTypeId: number;
-    baseFilterId: string;
-  }[];
+// Template IDs type for JSONB field
+type TMessageTemplateIds = {
+  leboncoin?: string | null;
+  whatsapp?: string | null;
+  sms?: string | null;
 };
 
-export type { THunt, THuntWithRelations };
+export type { TMessageTemplateIds, TOutreachSettings };
