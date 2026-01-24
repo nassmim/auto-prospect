@@ -10,6 +10,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { authenticatedRole, authUid, authUsers } from "drizzle-orm/supabase";
 import { contactedAds } from "@/schema/ad.schema";
+import { whatsappSessions } from "@/schema/whatsapp-session.schema";
 
 export const accounts = pgTable(
   "accounts",
@@ -20,6 +21,7 @@ export const accounts = pgTable(
     isPersonalAccount: boolean("is_personal_account").default(true).notNull(),
     pictureUrl: varchar("picture_url", { length: 1000 }),
     phoneNumber: varchar("phone_number", { length: 14 }),
+    whatsappPhoneNumber: varchar("whatsapp_phone_number", { length: 20 }),
   },
   (table) => [
     foreignKey({
@@ -58,6 +60,7 @@ export const accounts = pgTable(
   ],
 );
 
-export const accountsRelations = relations(accounts, ({ many }) => ({
+export const accountsRelations = relations(accounts, ({ many, one }) => ({
   contactedAds: many(contactedAds),
+  whatsappSession: one(whatsappSessions),
 }));
