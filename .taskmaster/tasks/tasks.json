@@ -979,12 +979,12 @@
         "dependencies": [
           "33"
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [],
         "complexity": 5,
         "recommendedSubtasks": 4,
         "expansionPrompt": "Break down into: (1) Update hunt.schema.ts with new channelSettings JSONB field and proper TypeScript typing, (2) Create TChannelSettings and TChannelConfig type definitions in hunt.types.ts, (3) Generate migration ensuring backward compatibility with existing outreachSettings field, (4) Validate default JSONB value syntax and test schema compilation. Ensure the migration doesn't break existing hunt queries.",
-        "updatedAt": "2026-01-24T16:08:10.198Z"
+        "updatedAt": "2026-01-24T16:09:46.254Z"
       },
       {
         "id": "35",
@@ -996,11 +996,12 @@
         "dependencies": [
           "33"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [],
         "complexity": 6,
         "recommendedSubtasks": 4,
-        "expansionPrompt": "Break down into: (1) Create channelConfigSchema with dailyLimit/totalLimit/enabled fields and cross-field refinement (dailyLimit <= totalLimit), (2) Create channelSettingsSchema with optional channel configs and 'at least one enabled' refinement, (3) Create channelPriorityConfigSchema for priority array validation, (4) Write comprehensive unit tests for all refinements, edge cases (empty settings, all disabled), and French error messages. Update existing hunt schemas."
+        "expansionPrompt": "Break down into: (1) Create channelConfigSchema with dailyLimit/totalLimit/enabled fields and cross-field refinement (dailyLimit <= totalLimit), (2) Create channelSettingsSchema with optional channel configs and 'at least one enabled' refinement, (3) Create channelPriorityConfigSchema for priority array validation, (4) Write comprehensive unit tests for all refinements, edge cases (empty settings, all disabled), and French error messages. Update existing hunt schemas.",
+        "updatedAt": "2026-01-24T16:10:05.923Z"
       },
       {
         "id": "36",
@@ -1155,9 +1156,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-24T16:08:10.199Z",
+      "lastModified": "2026-01-24T16:10:05.923Z",
       "taskCount": 44,
-      "completedCount": 33,
+      "completedCount": 34,
       "tags": [
         "master"
       ]

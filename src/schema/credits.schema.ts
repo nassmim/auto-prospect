@@ -2,6 +2,7 @@ import { ECreditType, ETransactionType } from "@/constants/enums";
 import { InferInsertModel, InferSelectModel, relations, sql } from "drizzle-orm";
 import {
   boolean,
+  date,
   foreignKey,
   index,
   integer,
@@ -14,7 +15,7 @@ import {
   unique,
   uuid,
 } from "drizzle-orm/pg-core";
-import { authenticatedRole, authUid } from "drizzle-orm/supabase";
+import { authenticatedRole, authUid, serviceRole } from "drizzle-orm/supabase";
 import { hunts } from "./hunt.schema";
 import { organizations } from "./organization.schema";
 
@@ -225,6 +226,59 @@ export type THuntChannelCreditInsert = InferInsertModel<
   typeof huntChannelCredits
 >;
 
+// Daily contact tracking table - tracks daily contact counts per hunt
+export const huntDailyContacts = pgTable(
+  "hunt_daily_contacts",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    huntId: uuid("hunt_id").notNull(),
+    date: date().notNull(),
+    totalContacts: integer("total_contacts").notNull().default(0),
+    smsContacts: integer("sms_contacts").notNull().default(0),
+    whatsappContacts: integer("whatsapp_contacts").notNull().default(0),
+    ringlessVoiceContacts: integer("ringless_voice_contacts")
+      .notNull()
+      .default(0),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .default(sql`now()`),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .default(sql`now()`),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.huntId],
+      foreignColumns: [hunts.id],
+      name: "hunt_daily_contacts_hunt_id_fk",
+    }).onDelete("cascade"),
+    unique("hunt_date_unique").on(table.huntId, table.date),
+    index("hunt_daily_contacts_hunt_id_date_idx").on(table.huntId, table.date),
+    pgPolicy("enable read for hunt owners", {
+      as: "permissive",
+      for: "select",
+      to: authenticatedRole,
+      using: sql`exists (
+        select 1 from hunts h
+        join organizations o on o.id = h.organization_id
+        where h.id = ${table.huntId}
+        and o.auth_user_id = ${authUid}
+      )`,
+    }),
+    pgPolicy("enable all for service role", {
+      as: "permissive",
+      for: "all",
+      to: serviceRole,
+      using: sql`true`,
+      withCheck: sql`true`,
+    }),
+  ],
+);
+export type THuntDailyContact = InferSelectModel<typeof huntDailyContacts>;
+export type THuntDailyContactInsert = InferInsertModel<
+  typeof huntDailyContacts
+>;
+
 // Relations
 export const creditBalancesRelations = relations(creditBalances, ({ one }) => ({
   organization: one(organizations, {
@@ -248,6 +302,16 @@ export const huntChannelCreditsRelations = relations(
   ({ one }) => ({
     hunt: one(hunts, {
       fields: [huntChannelCredits.huntId],
+      references: [hunts.id],
+    }),
+  }),
+);
+
+export const huntDailyContactsRelations = relations(
+  huntDailyContacts,
+  ({ one }) => ({
+    hunt: one(hunts, {
+      fields: [huntDailyContacts.huntId],
       references: [hunts.id],
     }),
   }),
