@@ -1064,12 +1064,12 @@
         "dependencies": [
           "34"
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [],
         "complexity": 5,
         "recommendedSubtasks": 4,
         "expansionPrompt": "Break down into: (1) Create ChannelPrioritySettings component with DndContext setup using @dnd-kit patterns from existing kanban-view.tsx, (2) Implement SortableChannelItem component with drag handle, channel icon/label, and priority number display, (3) Add save functionality with optimistic updates and loading states, (4) Implement error handling with toast notifications and revert logic on failure. Ensure keyboard accessibility for reordering.",
-        "updatedAt": "2026-01-24T17:04:15.220Z"
+        "updatedAt": "2026-01-24T17:05:30.890Z"
       },
       {
         "id": "40",
@@ -1151,18 +1151,19 @@
         "dependencies": [
           "37"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [],
         "complexity": 5,
         "recommendedSubtasks": 4,
-        "expansionPrompt": "Break down into: (1) Update settings page data loading to fetch channel priority config via server action, (2) Create new ChannelsTab component receiving initialChannelOrder prop, (3) Integrate ChannelPrioritySettings drag-and-drop component in the new tab, (4) Add 'Canaux' tab to settings-page-client.tsx navigation with icon and implement save handler calling updateChannelPriorityConfig with toast notifications. Style consistently with existing settings tabs."
+        "expansionPrompt": "Break down into: (1) Update settings page data loading to fetch channel priority config via server action, (2) Create new ChannelsTab component receiving initialChannelOrder prop, (3) Integrate ChannelPrioritySettings drag-and-drop component in the new tab, (4) Add 'Canaux' tab to settings-page-client.tsx navigation with icon and implement save handler calling updateChannelPriorityConfig with toast notifications. Style consistently with existing settings tabs.",
+        "updatedAt": "2026-01-24T17:05:48.496Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-24T17:04:15.221Z",
+      "lastModified": "2026-01-24T17:05:48.557Z",
       "taskCount": 44,
-      "completedCount": 37,
+      "completedCount": 38,
       "tags": [
         "master"
       ]
