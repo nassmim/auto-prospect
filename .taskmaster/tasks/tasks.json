@@ -1081,12 +1081,12 @@
         "dependencies": [
           "34"
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [],
         "complexity": 8,
         "recommendedSubtasks": 6,
         "expansionPrompt": "Break down into: (1) Design SQL migration script to convert outreachSettings boolean flags to channelSettings structure with default limits (dailyLimit: 10, totalLimit: 100), (2) Handle null/empty outreachSettings gracefully with COALESCE, (3) Create migration for channel_priority_config defaults for all existing organizations, (4) Document and test rollback procedure, (5) Validate migration on development database with existing data, (6) Document the migration SQL for user execution (AI cannot run migrations per CLAUDE.md). Leave outreachSettings column for future cleanup.",
-        "updatedAt": "2026-01-24T17:14:02.176Z"
+        "updatedAt": "2026-01-24T17:15:44.102Z"
       },
       {
         "id": "41",
@@ -1108,18 +1108,64 @@
       {
         "id": "42",
         "title": "Implement Daily Contact Counter Increment Logic",
-        "description": "Create the service to increment daily contact counts after successful message sends, with proper upsert handling for new days.",
-        "details": "After a message is successfully sent, we need to update the daily contact tracking:\n\n1. **Upsert pattern**: If no record exists for today, create one with count=1. If exists, increment.\n\n2. **Track both total and per-channel**: Increment the total contactCount (for pacing) and the specific channel count (for internal analytics).\n\n3. **Helper function**: Provide a way to query today's contact count for a hunt (used by allocator to check pacing limit).\n\n4. **Atomic updates**: Ensure concurrent message sends don't cause lost updates.\n\nThis runs in admin mode since it's called from background processing.",
-        "testStrategy": "1. Verify new day creates new row. 2. Test increment on existing day updates correctly. 3. Test concurrent increments are atomic. 4. Verify channel-specific counts update correctly.",
-        "priority": "high",
+        "description": "Create an in-memory daily contact tracking utility for use during background job execution. This tracks contacts per hunt to enforce dailyPacingLimit without database persistence.",
+        "status": "in-progress",
         "dependencies": [
           "40"
         ],
-        "status": "pending",
-        "subtasks": [],
+        "priority": "medium",
+        "details": "Since task 35 was cancelled (no huntDailyContacts table), the daily contact counting moves to an in-memory approach during background job execution:\n\n1. **In-Memory Counter Utility**: Create a simple counter class/object that tracks contacts per hunt during a single job run:\n   ```typescript\n   // src/services/daily-contact-tracker.ts\n   type HuntContactTracker = Map<string, number>; // huntId -> contactCount\n   \n   export function createDailyContactTracker(): {\n     increment: (huntId: string) => number;\n     getCount: (huntId: string) => number;\n     isAtLimit: (huntId: string, limit: number | null) => boolean;\n   }\n   ```\n\n2. **Integration with Background Job**: The tracker is instantiated at the start of `runDailyHunts()` in `src/actions/hunt-background.actions.ts` and passed through to processing functions.\n\n3. **Pacing Limit Check**: Before sending a message, check `isAtLimit(huntId, hunt.dailyPacingLimit)`. If at limit, skip that hunt for the rest of the job run.\n\n4. **Increment After Send**: After successful message send (and credit consumption via task 40), call `increment(huntId)` to track the contact.\n\n5. **No Database Persistence**: Daily counts reset naturally when the next job runs. The `dailyPacingLimit` field on the `hunts` table (from task 33) provides the configuration.\n\nNote: This approach works because background jobs run periodically and don't need cross-job persistence for daily limits. The limit applies within each job execution context.",
+        "testStrategy": "1. Unit test the tracker utility: verify increment returns updated count, getCount returns 0 for unknown huntId, isAtLimit returns true when count >= limit. 2. Test with null limit (no pacing) returns false for isAtLimit. 3. Integration test: verify background job respects pacing limit by stopping contacts for a hunt once limit reached. 4. Verify tracker resets between job runs (new instance per execution).",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create in-memory daily contact tracker utility",
+            "description": "Create a simple, stateless utility in `src/services/daily-contact-tracker.ts` that provides methods to track and check daily contact counts per hunt during background job execution.",
+            "dependencies": [],
+            "details": "Implement `createDailyContactTracker()` factory function that returns an object with:\n- `increment(huntId: string): number` - increments and returns new count\n- `getCount(huntId: string): number` - returns current count (0 if not tracked)\n- `isAtLimit(huntId: string, limit: number | null): boolean` - returns true if count >= limit (false if limit is null/undefined)\n\nUse a Map<string, number> internally for O(1) lookups. Export types for the tracker interface.",
+            "status": "pending",
+            "testStrategy": "Unit tests: verify increment returns correct count, getCount returns 0 for unknown huntId, isAtLimit handles null/undefined limits correctly, multiple increments accumulate properly.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Integrate tracker with background job execution",
+            "description": "Modify `runDailyHunts()` in `src/actions/hunt-background.actions.ts` to instantiate the tracker and pass it through to `bulkSend()` and `contactAdsOwners()` functions.",
+            "dependencies": [
+              1
+            ],
+            "details": "Update function signatures:\n- `runDailyHunts()` creates tracker instance via `createDailyContactTracker()`\n- Pass tracker to `bulkSend(hunts, dbClient, tracker)`\n- Pass tracker to `contactAdsOwners(hunt, dbClient, tracker)`\n\nThis ensures all hunt processing within a single job run shares the same counter state, allowing pacing limits to work across the batch.",
+            "status": "pending",
+            "testStrategy": "Verify tracker is created once per job run and shared across all hunt processing. Check that the same instance is passed through the call chain.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Add pacing limit enforcement in contactAdsOwners",
+            "description": "Modify the `contactAdsOwners()` function to check pacing limits before processing contacts and increment the counter after successful message sends.",
+            "dependencies": [
+              2
+            ],
+            "details": "In `contactAdsOwners()`:\n1. Early return if `tracker.isAtLimit(hunt.id, hunt.dailyPacingLimit)` returns true\n2. Calculate how many contacts can still be made: `remaining = dailyPacingLimit - tracker.getCount(huntId)` (if limit is set)\n3. Slice `matchingAds` to not exceed remaining allowance\n4. After each successful message send (when credit consumption is integrated), call `tracker.increment(hunt.id)`\n\nNote: Step 4 will be completed when the messaging integration is done - for now, increment after the mock send.",
+            "status": "pending",
+            "testStrategy": "Test that: (1) hunts at pacing limit are skipped entirely, (2) matching ads are limited to remaining daily allowance, (3) counter increments correctly after each contact, (4) null pacing limit means no restriction.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Provide helper to get today's count for UI display",
+            "description": "Create a simple query function to get today's contact count for display in the CreditUsageDisplay component, using the contactedAds table as the source of truth.",
+            "dependencies": [],
+            "details": "Since daily counts aren't persisted in a dedicated table, derive today's count from existing data:\n\n```typescript\n// src/services/daily-contact-tracker.ts (or hunt.actions.ts)\nexport async function getTodayContactCount(huntId: string): Promise<number> {\n  // Count contactedAds created today for leads belonging to this hunt\n  // Use SQL: COUNT(*) WHERE hunt_id = ? AND DATE(created_at) = CURRENT_DATE\n}\n```\n\nAlternatively, count leads created today for the hunt. This provides the `dailyContactsCount` prop needed by `src/components/hunts/credit-usage-display.tsx`.",
+            "status": "pending",
+            "testStrategy": "Verify query correctly counts only today's contacts. Test with contacts from multiple days to ensure only today's are counted. Test with no contacts returns 0.",
+            "parentId": "undefined"
+          }
+        ],
         "complexity": 5,
         "recommendedSubtasks": 4,
-        "expansionPrompt": "Break down into: (1) Create ChannelUsageDisplay component with props for channelSettings, todayUsage, totalUsage, and channelOrder, (2) Build UI for each enabled channel showing progress bars for daily and total limits with visual indicators, (3) Implement 'At Limit' badge display when daily limit reached and 'next channel' indicator logic, (4) Style with shadcn Card/Progress/Badge components using zinc/amber theme and ensure responsive design. Add color coding (amber=active, zinc=at-limit, green=available)."
+        "expansionPrompt": "Break down into: (1) Create ChannelUsageDisplay component with props for channelSettings, todayUsage, totalUsage, and channelOrder, (2) Build UI for each enabled channel showing progress bars for daily and total limits with visual indicators, (3) Implement 'At Limit' badge display when daily limit reached and 'next channel' indicator logic, (4) Style with shadcn Card/Progress/Badge components using zinc/amber theme and ensure responsive design. Add color coding (amber=active, zinc=at-limit, green=available).",
+        "updatedAt": "2026-01-24T17:18:01.775Z"
       },
       {
         "id": "43",
@@ -1159,9 +1205,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-24T17:14:02.177Z",
+      "lastModified": "2026-01-24T17:18:01.776Z",
       "taskCount": 44,
-      "completedCount": 39,
+      "completedCount": 40,
       "tags": [
         "master"
       ]
