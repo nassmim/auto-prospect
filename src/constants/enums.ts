@@ -29,12 +29,6 @@ export enum EMessageChannel {
   PHONE = "phone",
 }
 
-export enum ECreditType {
-  SMS = "sms",
-  RINGLESS_VOICE = "ringlessVoice",
-  WHATSAPP_TEXT = "whatsappText",
-}
-
 export enum ETransactionType {
   PURCHASE = "purchase",
   USAGE = "usage",

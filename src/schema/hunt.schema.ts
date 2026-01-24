@@ -100,7 +100,7 @@ export const hunts = pgTable(
       as: "permissive",
       for: "insert",
       to: authenticatedRole,
-      using: sql`true`,
+      withCheck: sql`true`,
     }),
     pgPolicy("enable read update and delete for the hunt owners", {
       as: "permissive",
@@ -144,7 +144,7 @@ export const hunts = pgTable(
 export type THuntInsert = InferInsertModel<typeof hunts>;
 
 export const subTypesHunts = pgTable(
-  "sub_types_Hunts",
+  "sub_types_hunts",
   {
     id: uuid().defaultRandom().primaryKey(),
     huntId: uuid("hunt_id").notNull(),

@@ -10,8 +10,6 @@ grant select, insert, update, delete on table public.lead_activities to authenti
 -- Message tables
 grant select, insert, update, delete on table public.messages to authenticated, service_role;
 grant select, insert, update, delete on table public.message_templates to authenticated, service_role;
-grant select on table public.message_types to authenticated;
-grant select, insert, update, delete on table public.message_types to service_role;
 grant select on table public.template_variables to authenticated;
 grant select, insert, update, delete on table public.template_variables to service_role;
 
@@ -52,3 +50,6 @@ grant select, insert, update, delete on table public.locations to service_role;
 
 -- App settings (service_role only)
 grant select, insert, update, delete on table public.app_settings to service_role;
+
+grant insert, update, delete on table public.channel_priorities to service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE "public"."hunt_channel_credits" TO "authenticated", "service_role";

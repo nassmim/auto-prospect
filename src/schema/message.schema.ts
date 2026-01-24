@@ -15,8 +15,10 @@ import {
   pgPolicy,
   pgTable,
   serial,
+  smallserial,
   text,
   timestamp,
+  unique,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
@@ -53,6 +55,26 @@ export const leadActivityType = pgEnum(
 );
 export type LeadActivityType =
   (typeof ELeadActivityType)[keyof typeof ELeadActivityType];
+
+// Channel priorities table - defines which channels to try first
+export const channelPriorities = pgTable(
+  "channel_priorities",
+  {
+    id: smallserial().primaryKey(),
+    channel: messageType().notNull(),
+    priority: smallserial().notNull(),
+  },
+  (table) => [
+    unique("channel_priorities_channel_unique").on(table.channel),
+    unique("channel_priorities_priority_unique").on(table.priority),
+    pgPolicy("enable read for authenticated users", {
+      as: "permissive",
+      for: "select",
+      to: authenticatedRole,
+      using: sql`true`,
+    }),
+  ],
+);
 
 // Metadata types for different activity types
 export type StageChangeMetadata = {
@@ -207,26 +229,23 @@ export const messages = pgTable(
     index("messages_lead_id_created_at_idx").on(table.leadId, table.createdAt),
     index("messages_status_idx").on(table.status),
     index("messages_external_id_idx").on(table.externalId),
-    pgPolicy(
-      "enable all for owners of the organization to which the leads are linked",
-      {
-        as: "permissive",
-        for: "all",
-        to: authenticatedRole,
-        using: sql`exists (
+    pgPolicy("enable all for organization owners", {
+      as: "permissive",
+      for: "all",
+      to: authenticatedRole,
+      using: sql`exists (
         select 1 from leads l
-        join organization o on o.id = l.organization_id
+        join organizations o on o.id = l.organization_id
         where l.id = ${table.leadId}
         and o.auth_user_id = ${authUid}
       )`,
-        withCheck: sql`exists (
+      withCheck: sql`exists (
         select 1 from leads l
-        join organization o on o.id = l.organization_id
+        join organizations o on o.id = l.organization_id
         where l.id = ${table.leadId}
         and o.auth_user_id = ${authUid}
       )`,
-      },
-    ),
+    }),
     // // RLS: Org members can access messages for leads in their org
     // pgPolicy("enable all for organization members", {
     //   as: "permissive",
@@ -234,7 +253,7 @@ export const messages = pgTable(
     //   to: authenticatedRole,
     //   using: sql`exists (
     //     select 1 from leads l
-    //     join organization_members om on om.organization_id = l.organization_id
+    //     join organizations_members om on om.organization_id = l.organization_id
     //     where l.id = ${table.leadId}
     //     and om.member_organization_id in (
     //       select id from organizations where auth_user_id = ${authUid}
@@ -243,7 +262,7 @@ export const messages = pgTable(
     //   )`,
     //   withCheck: sql`exists (
     //     select 1 from leads l
-    //     join organization_members om on om.organization_id = l.organization_id
+    //     join organizations_members om on om.organization_id = l.organization_id
     //     where l.id = ${table.leadId}
     //     and om.member_organization_id in (
     //       select id from organizations where auth_user_id = ${authUid}
@@ -285,35 +304,29 @@ export const leadActivities = pgTable(
       table.createdAt,
     ),
     index("lead_activities_type_idx").on(table.type),
-    pgPolicy(
-      "enable read for owners of the organization to which the leads are linked",
-      {
-        as: "permissive",
-        for: "select",
-        to: authenticatedRole,
-        using: sql`exists (
+    pgPolicy("enable read for organization owners", {
+      as: "permissive",
+      for: "select",
+      to: authenticatedRole,
+      using: sql`exists (
         select 1 from leads l
-        join organization o on o.id = l.organization_id
+        join organizations o on o.id = l.organization_id
         where l.id = ${table.leadId}
         and o.auth_user_id = ${authUid}
       )`,
-      },
-    ),
+    }),
     // Org members can insert activities
-    pgPolicy(
-      "enable insert for owners of the organization to which the leads are linked",
-      {
-        as: "permissive",
-        for: "insert",
-        to: authenticatedRole,
-        withCheck: sql`exists (
+    pgPolicy("enable insert for organization owners", {
+      as: "permissive",
+      for: "insert",
+      to: authenticatedRole,
+      withCheck: sql`exists (
               select 1 from leads l
-        join organization o on o.id = l.organization_id
+        join organizations o on o.id = l.organization_id
         where l.id = ${table.leadId}
         and o.auth_user_id = ${authUid}
       )`,
-      },
-    ),
+    }),
     // // RLS: Org members can read activities for leads in their org
     // pgPolicy("enable read for organization members", {
     //   as: "permissive",
@@ -321,7 +334,7 @@ export const leadActivities = pgTable(
     //   to: authenticatedRole,
     //   using: sql`exists (
     //     select 1 from leads l
-    //     join organization_members om on om.organization_id = l.organization_id
+    //     join organizations_members om on om.organization_id = l.organization_id
     //     where l.id = ${table.leadId}
     //     and om.member_organization_id in (
     //       select id from organizations where auth_user_id = ${authUid}
@@ -336,7 +349,7 @@ export const leadActivities = pgTable(
     //   to: authenticatedRole,
     //   withCheck: sql`exists (
     //     select 1 from leads l
-    //     join organization_members om on om.organization_id = l.organization_id
+    //     join organizations_members om on om.organization_id = l.organization_id
     //     where l.id = ${table.leadId}
     //     and om.member_organization_id in (
     //       select id from organizations where auth_user_id = ${authUid}

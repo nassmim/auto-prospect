@@ -70,29 +70,9 @@ export const organizations = pgTable(
       for: "update",
       to: authenticatedRole,
       using: sql`
-        ${authUid} = auth_user_id 
-        -- OR
-        -- exists (
-        --   select 1 from organization_members om
-        --   join organizations o on o.id = om.member_organization_id
-        --   where om.organization_id = ${table.id}
-        --   and o.auth_user_id = ${authUid}
-        --   and om.role = ${ERole.ADMIN}
-        --   and om.joined_at is not null
-        )
-      `,
+        ${authUid} = auth_user_id`,
       withCheck: sql`
-        ${authUid} = auth_user_id 
-        -- OR
-        -- exists (
-        --   select 1 from organization_members om
-        --   join organizations o on o.id = om.member_organization_id
-        --   where om.organization_id = ${table.id}
-        --   and o.auth_user_id = ${authUid}
-        --   and om.role = ${ERole.ADMIN}
-        --   and om.joined_at is not null
-        )
-      `,
+        ${authUid} = auth_user_id`,
     }),
     // Users can delete their own org
     pgPolicy("enable delete for organization owners", {
@@ -109,15 +89,7 @@ export const organizations = pgTable(
       for: "select",
       to: authenticatedRole,
       using: sql`
-        ${authUid} = auth_user_id 
-        -- OR
-        -- exists (
-        --   select 1 from organization_members om
-        --   where om.organization_id = ${table.id}
-        --   and om.auth_user_id = ${authUid}
-        --   and om.joined_at is not null
-        -- )
-      `,
+        ${authUid} = auth_user_id`,
     }),
   ],
 );

@@ -1,22 +1,17 @@
-/**
- * Credit Consumption Service
- * Handles atomic credit consumption and transaction logging for hunt channels
- * Runs in admin mode (bypasses RLS) as it's called from background jobs
- */
+"use server";
 
+import { EMessageType, ETransactionType } from "@/constants/enums";
 import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
 import {
   creditTransactions,
   huntChannelCredits,
   TCreditTransaction,
 } from "@/schema/credits.schema";
-import { hunts } from "@/schema/hunt.schema";
-import { ECreditType, ETransactionType } from "@/constants/enums";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 export type ConsumeCreditsParams = {
   huntId: string;
-  channel: ECreditType;
+  channel: EMessageType;
   messageId?: string;
   recipient?: string;
 };
@@ -41,16 +36,10 @@ export async function consumeCredit({
     // Use admin mode for background job operations
     const result = await dbClient.admin.transaction(async (tx) => {
       // Lock the hunt channel credits row to prevent concurrent modifications
-      const [channelCredit] = await tx
-        .select()
-        .from(huntChannelCredits)
-        .where(
-          and(
-            eq(huntChannelCredits.huntId, huntId),
-            eq(huntChannelCredits.channel, channel),
-          ),
-        )
-        .for("update"); // Row-level lock
+      const channelCredit = await tx.query.huntChannelCredits.findFirst({
+        where: (table, { and, eq }) =>
+          and(eq(table.huntId, huntId), eq(table.channel, channel)),
+      });
 
       // Error handling: No credits configured for this channel
       if (!channelCredit) {
@@ -70,7 +59,7 @@ export async function consumeCredit({
         );
       }
 
-      // Increment consumed credits
+      // Increment consumed credits atomically
       await tx
         .update(huntChannelCredits)
         .set({
@@ -80,10 +69,10 @@ export async function consumeCredit({
         .where(eq(huntChannelCredits.id, channelCredit.id));
 
       // Get hunt organization ID for transaction logging
-      const [hunt] = await tx
-        .select({ organizationId: hunts.organizationId })
-        .from(hunts)
-        .where(eq(hunts.id, huntId));
+      const hunt = await tx.query.hunts.findFirst({
+        where: (table, { eq }) => eq(table.id, huntId),
+        columns: { organizationId: true },
+      });
 
       if (!hunt) {
         throw new Error(`Hunt not found: ${huntId}`);
@@ -124,28 +113,26 @@ export async function consumeCredit({
  */
 export async function getRemainingCredits(
   huntId: string,
-  channel: ECreditType,
+  channel: EMessageType,
 ): Promise<number | null> {
   const dbClient = await createDrizzleSupabaseClient();
 
-  const [channelCredit] = await dbClient.admin
-    .select({
-      allocated: huntChannelCredits.creditsAllocated,
-      consumed: huntChannelCredits.creditsConsumed,
-    })
-    .from(huntChannelCredits)
-    .where(
-      and(
-        eq(huntChannelCredits.huntId, huntId),
-        eq(huntChannelCredits.channel, channel),
-      ),
-    );
+  const channelCredit = await dbClient.admin.query.huntChannelCredits.findFirst(
+    {
+      where: (table, { and, eq }) =>
+        and(eq(table.huntId, huntId), eq(table.channel, channel)),
+      columns: {
+        creditsAllocated: true,
+        creditsConsumed: true,
+      },
+    },
+  );
 
   if (!channelCredit) {
     return null;
   }
 
-  return channelCredit.allocated - channelCredit.consumed;
+  return channelCredit.creditsAllocated - channelCredit.creditsConsumed;
 }
 
 /**
@@ -154,10 +141,9 @@ export async function getRemainingCredits(
 export async function getHuntChannelCredits(huntId: string) {
   const dbClient = await createDrizzleSupabaseClient();
 
-  const credits = await dbClient.admin
-    .select()
-    .from(huntChannelCredits)
-    .where(eq(huntChannelCredits.huntId, huntId));
+  const credits = await dbClient.admin.query.huntChannelCredits.findMany({
+    where: (table, { eq }) => eq(table.huntId, huntId),
+  });
 
   return credits.map((credit) => ({
     channel: credit.channel,

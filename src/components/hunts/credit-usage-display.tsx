@@ -1,7 +1,7 @@
 "use client";
 
 import { Progress } from "@/components/ui/progress";
-import { ECreditType } from "@/constants/enums";
+import { EMessageType } from "@/constants/enums";
 import type { THuntChannelCredit } from "@/schema/credits.schema";
 
 type CreditUsageDisplayProps = {
@@ -10,10 +10,10 @@ type CreditUsageDisplayProps = {
   dailyContactsCount?: number;
 };
 
-const channelLabels: Record<ECreditType, string> = {
-  [ECreditType.SMS]: "SMS",
-  [ECreditType.RINGLESS_VOICE]: "Voix sans sonnerie",
-  [ECreditType.WHATSAPP_TEXT]: "WhatsApp",
+const channelLabels: Record<EMessageType, string> = {
+  [EMessageType.SMS]: "SMS",
+  [EMessageType.RINGLESS_VOICE]: "Voix sans sonnerie",
+  [EMessageType.WHATSAPP_TEXT]: "WhatsApp",
 };
 
 export function CreditUsageDisplay({
@@ -56,7 +56,7 @@ export function CreditUsageDisplay({
             <div key={credit.id} className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-zinc-300">
-                  {channelLabels[credit.channel as ECreditType]}
+                  {channelLabels[credit.channel as EMessageType]}
                 </span>
                 <span className="text-xs text-zinc-500">
                   {credit.creditsConsumed} / {credit.creditsAllocated} utilisés

@@ -1,20 +1,20 @@
 /**
  * Channel Allocator Service
- * Allocates ads to communication channels based on priority, credits, and daily limits
- * Used by background jobs to determine which ads to contact via which channel
+ * Pure business logic for allocating ads to channels based on priority, credits, and daily limits
+ * Database operations delegated to server actions
  */
 
-import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
-import { channelPriorities } from "@/schema/general.schema";
-import { huntChannelCredits } from "@/schema/credits.schema";
-import { hunts } from "@/schema/hunt.schema";
-import { ECreditType, EMessageType } from "@/constants/enums";
-import { eq, asc } from "drizzle-orm";
+import { EMessageType } from "@/constants/enums";
 import { DailyContactTracker } from "./daily-contact-tracker.service";
+import {
+  getHuntDailyPacingLimit,
+  getChannelPriorities,
+  getHuntChannelCreditsMap,
+} from "@/actions/channel.actions";
 
 export type ChannelAllocation = {
   adId: string;
-  channel: ECreditType;
+  channel: EMessageType;
   messageType: EMessageType;
 };
 
@@ -24,33 +24,6 @@ export type AllocateAdsToChannelsParams = {
   dailyContactTracker: DailyContactTracker;
 };
 
-/**
- * Maps credit types to message types for database tracking
- */
-function creditTypeToMessageType(creditType: ECreditType): EMessageType {
-  switch (creditType) {
-    case ECreditType.SMS:
-      return EMessageType.SMS;
-    case ECreditType.WHATSAPP_TEXT:
-      return EMessageType.WHATSAPP_TEXT;
-    case ECreditType.RINGLESS_VOICE:
-      return EMessageType.RINGLESS_VOICE;
-  }
-}
-
-/**
- * Maps message types (from channel priorities table) to credit types
- */
-function messageTypeToCreditType(messageType: EMessageType): ECreditType {
-  switch (messageType) {
-    case EMessageType.SMS:
-      return ECreditType.SMS;
-    case EMessageType.WHATSAPP_TEXT:
-      return ECreditType.WHATSAPP_TEXT;
-    case EMessageType.RINGLESS_VOICE:
-      return ECreditType.RINGLESS_VOICE;
-  }
-}
 
 /**
  * Allocates ads to channels based on priority, available credits, and daily pacing limit
@@ -69,42 +42,19 @@ export async function allocateAdsToChannels({
   adIds,
   dailyContactTracker,
 }: AllocateAdsToChannelsParams): Promise<ChannelAllocation[]> {
-  const dbClient = await createDrizzleSupabaseClient();
-
-  // Get hunt daily pacing limit
-  const [hunt] = await dbClient.admin
-    .select({ dailyPacingLimit: hunts.dailyPacingLimit })
-    .from(hunts)
-    .where(eq(hunts.id, huntId));
-
-  if (!hunt) {
-    throw new Error(`Hunt not found: ${huntId}`);
-  }
+  // Get hunt daily pacing limit from database (bypass RLS for background job)
+  const dailyPacingLimit = await getHuntDailyPacingLimit(huntId, true);
 
   // Check if already at daily limit
-  if (dailyContactTracker.isAtLimit(huntId, hunt.dailyPacingLimit)) {
+  if (dailyContactTracker.isAtLimit(huntId, dailyPacingLimit)) {
     return []; // No more contacts allowed today
   }
 
-  // Get channel priorities (ordered by priority ascending)
-  const priorities = await dbClient.admin
-    .select()
-    .from(channelPriorities)
-    .orderBy(asc(channelPriorities.priority));
+  // Get channel priorities (ordered by priority ascending, bypass RLS for background job)
+  const priorities = await getChannelPriorities(true);
 
-  // Get hunt channel credits with remaining balance
-  const channelCreditsRaw = await dbClient.admin
-    .select()
-    .from(huntChannelCredits)
-    .where(eq(huntChannelCredits.huntId, huntId));
-
-  // Calculate remaining credits per channel
-  const channelCreditsMap = new Map(
-    channelCreditsRaw.map((cc) => [
-      cc.channel,
-      cc.creditsAllocated - cc.creditsConsumed,
-    ]),
-  );
+  // Get hunt channel credits with remaining balance (bypass RLS for background job)
+  const channelCreditsMap = await getHuntChannelCreditsMap(huntId, true);
 
   const allocations: ChannelAllocation[] = [];
   const adsToAllocate = [...adIds]; // Copy to avoid mutation
@@ -117,26 +67,23 @@ export async function allocateAdsToChannels({
 
     // Check if we've hit the daily limit
     if (
-      hunt.dailyPacingLimit !== null &&
-      hunt.dailyPacingLimit !== undefined &&
-      currentDailyCount >= hunt.dailyPacingLimit
+      dailyPacingLimit !== null &&
+      dailyPacingLimit !== undefined &&
+      currentDailyCount >= dailyPacingLimit
     ) {
       break; // Stop allocation if daily limit reached
     }
 
-    // Convert message type to credit type
-    const creditType = messageTypeToCreditType(messageType);
-
-    // Get remaining credits for this channel
-    const remainingCredits = channelCreditsMap.get(creditType) || 0;
+    // Get remaining credits for this channel (messageType now maps 1:1 to credit type)
+    const remainingCredits = channelCreditsMap.get(messageType) || 0;
 
     // Skip if no credits available for this channel
     if (remainingCredits <= 0) continue;
 
     // Calculate how many ads we can allocate to this channel
     const remainingDailySlots =
-      hunt.dailyPacingLimit !== null && hunt.dailyPacingLimit !== undefined
-        ? hunt.dailyPacingLimit - currentDailyCount
+      dailyPacingLimit !== null && dailyPacingLimit !== undefined
+        ? dailyPacingLimit - currentDailyCount
         : Infinity;
 
     const maxAllocations = Math.min(
@@ -150,8 +97,8 @@ export async function allocateAdsToChannels({
       const adId = adsToAllocate.shift()!;
       allocations.push({
         adId,
-        channel: creditType,
-        messageType,
+        channel: messageType as EMessageType,
+        messageType: messageType as EMessageType,
       });
       currentDailyCount++;
     }
@@ -160,15 +107,5 @@ export async function allocateAdsToChannels({
   return allocations;
 }
 
-/**
- * Gets channel priorities in order (lowest priority number first)
- * Useful for displaying channel order to users
- */
-export async function getChannelPriorities() {
-  const dbClient = await createDrizzleSupabaseClient();
-
-  return dbClient.admin
-    .select()
-    .from(channelPriorities)
-    .orderBy(asc(channelPriorities.priority));
-}
+// Re-export getChannelPriorities from server actions for convenience
+export { getChannelPriorities } from "@/actions/channel.actions";

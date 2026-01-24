@@ -2,14 +2,17 @@
 
 import { getUserPlan } from "@/actions/account.actions";
 import { getAdsContactedByUser, getMatchingAds } from "@/actions/ad.actions";
+import { consumeCredit } from "@/actions/credit.actions";
 import { ELeadStage } from "@/constants/enums";
 import { createDrizzleSupabaseClient, TDBClient } from "@/lib/drizzle/dbClient";
 import { contactedAds } from "@/schema/ad.schema";
 import { THunt } from "@/schema/hunt.schema";
 import { leads } from "@/schema/lead.schema";
-import { createDailyContactTracker, DailyContactTracker } from "@/services/daily-contact-tracker.service";
 import { allocateAdsToChannels } from "@/services/channel-allocator.service";
-import { consumeCredit } from "@/services/credit-consumption.service";
+import {
+  createDailyContactTracker,
+  DailyContactTracker,
+} from "@/services/daily-contact-tracker.service";
 
 export const runDailyHunts = async () => {
   const dbClient = await createDrizzleSupabaseClient();
@@ -58,7 +61,11 @@ async function bulkSend(
     // Start new jobs while we're under capacity and have work
     while (inFlight.length < concurrency && queue.length) {
       const hunt = queue.shift()!;
-      const huntJobPromise = contactAdsOwners(hunt, dbClient, dailyContactTracker)
+      const huntJobPromise = contactAdsOwners(
+        hunt,
+        dbClient,
+        dailyContactTracker,
+      )
         .catch(() => {})
         .finally(() => {
           // Remove this promise from inFlight when done
@@ -140,7 +147,7 @@ async function contactAdsOwners(
       await dbClient.admin.insert(contactedAds).values({
         adId: allocation.adId,
         organizationId: organizationId,
-        messageTypeId: 1, // TODO: Map from allocation.messageType to messageTypeId
+        messageType: allocation.messageType,
       });
 
       // Create lead for CRM pipeline (with duplicate prevention)

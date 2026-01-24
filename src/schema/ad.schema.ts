@@ -1,4 +1,4 @@
-import { messageTypes } from "@/schema/general.schema";
+import { MessageTypeDBEnum } from "@/schema/general.schema";
 import { organizations, TOrganization } from "@/schema/organization.schema";
 import {
   InferInsertModel,
@@ -305,9 +305,7 @@ export const contactedAds = pgTable(
     organizationId: uuid("organization_id")
       .references(() => organizations.id, { onDelete: "cascade" })
       .notNull(),
-    messageTypeId: smallint("message_type_id")
-      .references(() => messageTypes.id)
-      .notNull(),
+    messageType: MessageTypeDBEnum("message_type").notNull(),
     createdAt: date("created_at").defaultNow().notNull(),
   },
   () => [

@@ -1110,7 +1110,7 @@
         "id": "42",
         "title": "Implement Daily Contact Counter Increment Logic",
         "description": "Create an in-memory daily contact tracking utility for use during background job execution. This tracks contacts per hunt to enforce dailyPacingLimit without database persistence.",
-        "status": "in-progress",
+        "status": "done",
         "dependencies": [
           "40"
         ],
@@ -1157,7 +1157,7 @@
             "title": "Provide helper to get today's count for UI display",
             "description": "Create a simple query function to get today's contact count for display in the CreditUsageDisplay component, using the contactedAds table as the source of truth.",
             "dependencies": [],
-            "details": "Since daily counts aren't persisted in a dedicated table, derive today's count from existing data:\n\n```typescript\n// src/services/daily-contact-tracker.ts (or hunt.actions.ts)\nexport async function getTodayContactCount(huntId: string): Promise<number> {\n  // Count contactedAds created today for leads belonging to this hunt\n  // Use SQL: COUNT(*) WHERE hunt_id = ? AND DATE(created_at) = CURRENT_DATE\n}\n```\n\nAlternatively, count leads created today for the hunt. This provides the `dailyContactsCount` prop needed by `src/components/hunts/credit-usage-display.tsx`.",
+            "details": "Since daily counts aren't persisted in a dedicated table, derive today's count from existing data:\n\n```typescript\n// src/services/daily-contact-tracker.ts (or hunt.actions.ts)\nexport async function getTodayContactCount(huntId: string): Promise<number> {\n  // Count contactedAds created today for leads belonging to this hunt\n  // Use SQL: COUNT(*) WHERE hunt_id = ? AND DATE(created_at) = CURRENT_DATE\n}\n```\n\nAlternatively, count leads created today for the hunt. This provides the `dailyContactsCount` prop needed by `src/components/hunts/credit-usage-display.tsx`.\n<info added on 2026-01-24T17:23:33.163Z>\nI will focus ONLY on: updating subtask 42.4 details based on the user's request that this subtask is not applicable with the in-memory tracking approach. Nothing more.\n\nLet me first analyze the codebase to understand the current implementation and verify the user's assessment.Based on my analysis of the codebase, I can confirm the user's assessment is correct. The daily contact tracker (`src/services/daily-contact-tracker.service.ts`) is an in-memory solution that resets with each job run. The `CreditUsageDisplay` component already receives `channelCredits` (from `huntChannelCredits` table showing credits consumed/allocated) and `dailyContactsCount` as props. For UI purposes, the `contactedAds` table with its `createdAt` field can be queried with a date filter to get historical daily counts.\n\nHere is the update text:\n\nNOT APPLICABLE: This subtask was designed for a database-persisted daily count approach that was cancelled. The implemented in-memory tracking in `src/services/daily-contact-tracker.service.ts` resets with each background job run and does not persist counts. For UI display needs, the system already provides: (1) Hunt channel credits consumed/allocated via `huntChannelCredits` table passed to `CreditUsageDisplay` component at `src/components/hunts/credit-usage-display.tsx`, (2) Historical contact counts queryable from `contactedAds` table (`src/schema/ad.schema.ts:298-334`) filtered by `createdAt` date. No additional helper function is needed as these data sources already exist. Marked as done with no implementation work required.\n</info added on 2026-01-24T17:23:33.163Z>",
             "status": "pending",
             "testStrategy": "Verify query correctly counts only today's contacts. Test with contacts from multiple days to ensure only today's are counted. Test with no contacts returns 0.",
             "parentId": "undefined"
@@ -1166,7 +1166,7 @@
         "complexity": 5,
         "recommendedSubtasks": 4,
         "expansionPrompt": "Break down into: (1) Create ChannelUsageDisplay component with props for channelSettings, todayUsage, totalUsage, and channelOrder, (2) Build UI for each enabled channel showing progress bars for daily and total limits with visual indicators, (3) Implement 'At Limit' badge display when daily limit reached and 'next channel' indicator logic, (4) Style with shadcn Card/Progress/Badge components using zinc/amber theme and ensure responsive design. Add color coding (amber=active, zinc=at-limit, green=available).",
-        "updatedAt": "2026-01-24T17:21:32.364Z"
+        "updatedAt": "2026-01-24T17:23:48.368Z"
       },
       {
         "id": "43",
@@ -1180,11 +1180,12 @@
           "39",
           "42"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [],
         "complexity": 6,
         "recommendedSubtasks": 5,
-        "expansionPrompt": "Break down into: (1) Update new-hunt-view.tsx to import and integrate ChannelConfigSection component, (2) Modify useForm setup to include channelSettings in defaultValues and schema, (3) Update form layout to include Channel Configuration section (replace/supplement OutreachSettings), (4) Update form submission handler to include channelSettings in server action call, (5) Implement edit mode with existing channelSettings population and backward compatibility for old hunts. Test validation error display per channel."
+        "expansionPrompt": "Break down into: (1) Update new-hunt-view.tsx to import and integrate ChannelConfigSection component, (2) Modify useForm setup to include channelSettings in defaultValues and schema, (3) Update form layout to include Channel Configuration section (replace/supplement OutreachSettings), (4) Update form submission handler to include channelSettings in server action call, (5) Implement edit mode with existing channelSettings population and backward compatibility for old hunts. Test validation error display per channel.",
+        "updatedAt": "2026-01-25T13:34:36.543Z"
       },
       {
         "id": "44",
@@ -1206,9 +1207,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-24T17:21:32.368Z",
+      "lastModified": "2026-01-25T13:34:36.544Z",
       "taskCount": 44,
-      "completedCount": 41,
+      "completedCount": 43,
       "tags": [
         "master"
       ]

@@ -1,6 +1,6 @@
 "use server";
 
-import { ECreditType, EHuntStatus } from "@/constants/enums";
+import { EMessageType, EHuntStatus } from "@/constants/enums";
 import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
 import { createClient } from "@/lib/supabase/server";
 import { formatZodError } from "@/lib/validation";
@@ -10,7 +10,7 @@ import { createHuntSchema, updateHuntSchema } from "@/validation-schemas";
 import { eq } from "drizzle-orm";
 
 /**
- * Fetches all hunts for the current user's organization
+ * Fetches all hunts for the current user's organization with channel credits
  */
 export async function getOrganizationHunts() {
   const supabase = await createClient();
@@ -23,7 +23,7 @@ export async function getOrganizationHunts() {
   const dbClient = await createDrizzleSupabaseClient();
 
   // Use RLS wrapper to ensure user can only see their organization's hunts
-  const hunts = await dbClient.rls(async (tx) => {
+  const huntsData = await dbClient.rls(async (tx) => {
     return tx.query.hunts.findMany({
       orderBy: (table, { desc }) => [desc(table.createdAt)],
       with: {
@@ -42,7 +42,33 @@ export async function getOrganizationHunts() {
     });
   });
 
-  return hunts;
+  // Fetch all channel credits for these hunts
+  const huntIds = huntsData.map(h => h.id);
+
+  if (huntIds.length === 0) {
+    return [];
+  }
+
+  const allChannelCredits = await dbClient.rls(async (tx) => {
+    return tx.query.huntChannelCredits.findMany({
+      where: (table, { inArray }) => inArray(table.huntId, huntIds),
+    });
+  });
+
+  // Group credits by hunt ID
+  const creditsByHuntId = new Map<string, typeof allChannelCredits>();
+  for (const credit of allChannelCredits) {
+    if (!creditsByHuntId.has(credit.huntId)) {
+      creditsByHuntId.set(credit.huntId, []);
+    }
+    creditsByHuntId.get(credit.huntId)!.push(credit);
+  }
+
+  // Attach credits to each hunt
+  return huntsData.map(hunt => ({
+    ...hunt,
+    channelCredits: creditsByHuntId.get(hunt.id) || [],
+  }));
 }
 
 /**
@@ -182,7 +208,7 @@ export async function createHunt(data: unknown) {
     if (validatedData.channelCredits?.sms && validatedData.channelCredits.sms > 0) {
       channelCreditsToInsert.push({
         huntId: newHunt.id,
-        channel: ECreditType.SMS,
+        channel: EMessageType.SMS,
         creditsAllocated: validatedData.channelCredits.sms,
         creditsConsumed: 0,
       });
@@ -191,7 +217,7 @@ export async function createHunt(data: unknown) {
     if (validatedData.channelCredits?.whatsapp && validatedData.channelCredits.whatsapp > 0) {
       channelCreditsToInsert.push({
         huntId: newHunt.id,
-        channel: ECreditType.WHATSAPP_TEXT,
+        channel: EMessageType.WHATSAPP_TEXT,
         creditsAllocated: validatedData.channelCredits.whatsapp,
         creditsConsumed: 0,
       });
@@ -200,7 +226,7 @@ export async function createHunt(data: unknown) {
     if (validatedData.channelCredits?.ringlessVoice && validatedData.channelCredits.ringlessVoice > 0) {
       channelCreditsToInsert.push({
         huntId: newHunt.id,
-        channel: ECreditType.RINGLESS_VOICE,
+        channel: EMessageType.RINGLESS_VOICE,
         creditsAllocated: validatedData.channelCredits.ringlessVoice,
         creditsConsumed: 0,
       });
@@ -303,7 +329,7 @@ export async function updateHuntChannelCredits(
           where: (table, { and, eq }) =>
             and(
               eq(table.huntId, huntId),
-              eq(table.channel, ECreditType.SMS)
+              eq(table.channel, EMessageType.SMS)
             ),
         });
 
@@ -315,7 +341,7 @@ export async function updateHuntChannelCredits(
         } else {
           await tx.insert(huntChannelCredits).values({
             huntId,
-            channel: ECreditType.SMS,
+            channel: EMessageType.SMS,
             creditsAllocated: channelCredits.sms,
             creditsConsumed: 0,
           });
@@ -330,7 +356,7 @@ export async function updateHuntChannelCredits(
           where: (table, { and, eq }) =>
             and(
               eq(table.huntId, huntId),
-              eq(table.channel, ECreditType.WHATSAPP_TEXT)
+              eq(table.channel, EMessageType.WHATSAPP_TEXT)
             ),
         });
 
@@ -342,7 +368,7 @@ export async function updateHuntChannelCredits(
         } else {
           await tx.insert(huntChannelCredits).values({
             huntId,
-            channel: ECreditType.WHATSAPP_TEXT,
+            channel: EMessageType.WHATSAPP_TEXT,
             creditsAllocated: channelCredits.whatsapp,
             creditsConsumed: 0,
           });
@@ -357,7 +383,7 @@ export async function updateHuntChannelCredits(
           where: (table, { and, eq }) =>
             and(
               eq(table.huntId, huntId),
-              eq(table.channel, ECreditType.RINGLESS_VOICE)
+              eq(table.channel, EMessageType.RINGLESS_VOICE)
             ),
         });
 
@@ -369,7 +395,7 @@ export async function updateHuntChannelCredits(
         } else {
           await tx.insert(huntChannelCredits).values({
             huntId,
-            channel: ECreditType.RINGLESS_VOICE,
+            channel: EMessageType.RINGLESS_VOICE,
             creditsAllocated: channelCredits.ringlessVoice,
             creditsConsumed: 0,
           });

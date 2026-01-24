@@ -1,6 +1,6 @@
 {
-  "id": "67985cb5-c578-4393-bba3-16e4644f2c1a",
-  "prevId": "0d36b192-ac6d-487b-a4fc-5585c6fc4aa9",
+  "id": "2b383367-f9aa-4d4f-933e-2fc9b5ed8d26",
+  "prevId": "194f398e-9531-4f2b-a597-90078a1b0608",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -763,9 +763,10 @@
           "primaryKey": false,
           "notNull": true
         },
-        "message_type_id": {
-          "name": "message_type_id",
-          "type": "smallint",
+        "message_type": {
+          "name": "message_type",
+          "type": "message_type",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
@@ -804,19 +805,6 @@
           ],
           "onUpdate": "no action",
           "onDelete": "cascade"
-        },
-        "contacted_ads_message_type_id_message_types_id_fk": {
-          "name": "contacted_ads_message_type_id_message_types_id_fk",
-          "tableFrom": "contacted_ads",
-          "columnsFrom": [
-            "message_type_id"
-          ],
-          "tableTo": "message_types",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -1512,6 +1500,117 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.hunt_channel_credits": {
+      "name": "hunt_channel_credits",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "hunt_id": {
+          "name": "hunt_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "channel": {
+          "name": "channel",
+          "type": "credit_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "credits_allocated": {
+          "name": "credits_allocated",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "credits_consumed": {
+          "name": "credits_consumed",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "hunt_channel_credits_hunt_id_idx": {
+          "name": "hunt_channel_credits_hunt_id_idx",
+          "columns": [
+            {
+              "expression": "hunt_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "hunt_channel_credits_hunt_id_fk": {
+          "name": "hunt_channel_credits_hunt_id_fk",
+          "tableFrom": "hunt_channel_credits",
+          "columnsFrom": [
+            "hunt_id"
+          ],
+          "tableTo": "hunts",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "hunt_channel_unique": {
+          "name": "hunt_channel_unique",
+          "columns": [
+            "hunt_id",
+            "channel"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {
+        "enable all for hunt owners": {
+          "name": "enable all for hunt owners",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "authenticated"
+          ],
+          "using": "exists (\n        select 1 from hunts h\n        join organizations o on o.id = h.organization_id\n        where h.id = \"hunt_channel_credits\".\"hunt_id\"\n        and o.auth_user_id = (select auth.uid())\n      )",
+          "withCheck": "exists (\n        select 1 from hunts h\n        join organizations o on o.id = h.organization_id\n        where h.id = \"hunt_channel_credits\".\"hunt_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.app_settings": {
       "name": "app_settings",
       "schema": "",
@@ -1542,50 +1641,6 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.message_types": {
-      "name": "message_types",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "smallserial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "name": {
-          "name": "name",
-          "type": "message_type",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "message_types_name_unique": {
-          "name": "message_types_name_unique",
-          "columns": [
-            "name"
-          ],
-          "nullsNotDistinct": false
-        }
-      },
-      "policies": {
-        "enable read for authenticated users": {
-          "name": "enable read for authenticated users",
-          "as": "PERMISSIVE",
-          "for": "SELECT",
-          "to": [
-            "authenticated"
-          ],
-          "using": "true"
-        }
-      },
       "checkConstraints": {},
       "isRLSEnabled": false
     },
@@ -1715,6 +1770,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": true
+        },
+        "daily_pacing_limit": {
+          "name": "daily_pacing_limit",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
         },
         "outreach_settings": {
           "name": "outreach_settings",
@@ -1914,7 +1975,7 @@
           "to": [
             "authenticated"
           ],
-          "using": "true"
+          "withCheck": "true"
         },
         "enable read update and delete for the hunt owners": {
           "name": "enable read update and delete for the hunt owners",
@@ -1930,8 +1991,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.sub_types_Hunts": {
-      "name": "sub_types_Hunts",
+    "public.sub_types_hunts": {
+      "name": "sub_types_hunts",
       "schema": "",
       "columns": {
         "id": {
@@ -1958,7 +2019,7 @@
       "foreignKeys": {
         "hunt_id_fk": {
           "name": "hunt_id_fk",
-          "tableFrom": "sub_types_Hunts",
+          "tableFrom": "sub_types_hunts",
           "columnsFrom": [
             "hunt_id"
           ],
@@ -1971,7 +2032,7 @@
         },
         "sub_types_id_fk": {
           "name": "sub_types_id_fk",
-          "tableFrom": "sub_types_Hunts",
+          "tableFrom": "sub_types_hunts",
           "columnsFrom": [
             "sub_type_id"
           ],
@@ -1993,8 +2054,8 @@
           "to": [
             "authenticated"
           ],
-          "using": "exists (\n        select 1 from hunts h\n        join organizations o on o.id = h.organization_id\n        where h.id = \"sub_types_Hunts\".\"hunt_id\"\n        and o.auth_user_id = (select auth.uid())\n      )",
-          "withCheck": "exists (\n        select 1 from hunts h\n        join organizations o on o.id = h.organization_id\n        where h.id = \"sub_types_Hunts\".\"hunt_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
+          "using": "exists (\n        select 1 from hunts h\n        join organizations o on o.id = h.organization_id\n        where h.id = \"sub_types_hunts\".\"hunt_id\"\n        and o.auth_user_id = (select auth.uid())\n      )",
+          "withCheck": "exists (\n        select 1 from hunts h\n        join organizations o on o.id = h.organization_id\n        where h.id = \"sub_types_hunts\".\"hunt_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
         }
       },
       "checkConstraints": {},
@@ -2225,158 +2286,60 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.message_templates": {
-      "name": "message_templates",
+    "public.channel_priorities": {
+      "name": "channel_priorities",
       "schema": "",
       "columns": {
         "id": {
           "name": "id",
-          "type": "uuid",
+          "type": "smallserial",
           "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "organization_id": {
-          "name": "organization_id",
-          "type": "uuid",
-          "primaryKey": false,
           "notNull": true
         },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "type": {
-          "name": "type",
+        "channel": {
+          "name": "channel",
           "type": "message_type",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
-        "channel": {
-          "name": "channel",
-          "type": "message_channel",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "content": {
-          "name": "content",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "audio_url": {
-          "name": "audio_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "audio_duration": {
-          "name": "audio_duration",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "is_default": {
-          "name": "is_default",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "message_templates_organization_id_fk": {
-          "name": "message_templates_organization_id_fk",
-          "tableFrom": "message_templates",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "tableTo": "organizations",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {
-        "enable all for owners of the associated organization": {
-          "name": "enable all for owners of the associated organization",
-          "as": "PERMISSIVE",
-          "for": "ALL",
-          "to": [
-            "authenticated"
-          ],
-          "using": "exists (\n            select 1 from organizations o\n            where o.id = \"message_templates\".\"organization_id\"\n            and o.auth_user_id = (select auth.uid())\n          )",
-          "withCheck": "exists (\n            select 1 from organizations o\n            where o.id = \"message_templates\".\"organization_id\"\n            and o.auth_user_id = (select auth.uid())\n          )"
-        }
-      },
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.template_variables": {
-      "name": "template_variables",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "key": {
-          "name": "key",
-          "type": "text",
+        "priority": {
+          "name": "priority",
+          "type": "smallserial",
           "primaryKey": false,
           "notNull": true
-        },
-        "label": {
-          "name": "label",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "description": {
-          "name": "description",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "template_variables_key_unique": {
-          "name": "template_variables_key_unique",
+        "channel_priorities_channel_unique": {
+          "name": "channel_priorities_channel_unique",
           "columns": [
-            "key"
+            "channel"
+          ],
+          "nullsNotDistinct": false
+        },
+        "channel_priorities_priority_unique": {
+          "name": "channel_priorities_priority_unique",
+          "columns": [
+            "priority"
           ],
           "nullsNotDistinct": false
         }
       },
-      "policies": {},
+      "policies": {
+        "enable read for authenticated users": {
+          "name": "enable read for authenticated users",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "authenticated"
+          ],
+          "using": "true"
+        }
+      },
       "checkConstraints": {},
       "isRLSEnabled": false
     },
@@ -2493,23 +2456,133 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {
-        "enable read for owners of the organization to which the leads are linked": {
-          "name": "enable read for owners of the organization to which the leads are linked",
+        "enable read for organization owners": {
+          "name": "enable read for organization owners",
           "as": "PERMISSIVE",
           "for": "SELECT",
           "to": [
             "authenticated"
           ],
-          "using": "exists (\n        select 1 from leads l\n        join organization o on o.id = l.organization_id\n        where l.id = \"lead_activities\".\"lead_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
+          "using": "exists (\n        select 1 from leads l\n        join organizations o on o.id = l.organization_id\n        where l.id = \"lead_activities\".\"lead_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
         },
-        "enable insert for owners of the organization to which the leads are linked": {
-          "name": "enable insert for owners of the organization to which the leads are linked",
+        "enable insert for organization owners": {
+          "name": "enable insert for organization owners",
           "as": "PERMISSIVE",
           "for": "INSERT",
           "to": [
             "authenticated"
           ],
-          "withCheck": "exists (\n              select 1 from leads l\n        join organization o on o.id = l.organization_id\n        where l.id = \"lead_activities\".\"lead_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
+          "withCheck": "exists (\n              select 1 from leads l\n        join organizations o on o.id = l.organization_id\n        where l.id = \"lead_activities\".\"lead_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.message_templates": {
+      "name": "message_templates",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "message_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "channel": {
+          "name": "channel",
+          "type": "message_channel",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "content": {
+          "name": "content",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "audio_url": {
+          "name": "audio_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "audio_duration": {
+          "name": "audio_duration",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_default": {
+          "name": "is_default",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "message_templates_organization_id_fk": {
+          "name": "message_templates_organization_id_fk",
+          "tableFrom": "message_templates",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "tableTo": "organizations",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "enable all for owners of the associated organization": {
+          "name": "enable all for owners of the associated organization",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "authenticated"
+          ],
+          "using": "exists (\n            select 1 from organizations o\n            where o.id = \"message_templates\".\"organization_id\"\n            and o.auth_user_id = (select auth.uid())\n          )",
+          "withCheck": "exists (\n            select 1 from organizations o\n            where o.id = \"message_templates\".\"organization_id\"\n            and o.auth_user_id = (select auth.uid())\n          )"
         }
       },
       "checkConstraints": {},
@@ -2682,17 +2755,62 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {
-        "enable all for owners of the organization to which the leads are linked": {
-          "name": "enable all for owners of the organization to which the leads are linked",
+        "enable all for organization owners": {
+          "name": "enable all for organization owners",
           "as": "PERMISSIVE",
           "for": "ALL",
           "to": [
             "authenticated"
           ],
-          "using": "exists (\n        select 1 from leads l\n        join organization o on o.id = l.organization_id\n        where l.id = \"messages\".\"lead_id\"\n        and o.auth_user_id = (select auth.uid())\n      )",
-          "withCheck": "exists (\n        select 1 from leads l\n        join organization o on o.id = l.organization_id\n        where l.id = \"messages\".\"lead_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
+          "using": "exists (\n        select 1 from leads l\n        join organizations o on o.id = l.organization_id\n        where l.id = \"messages\".\"lead_id\"\n        and o.auth_user_id = (select auth.uid())\n      )",
+          "withCheck": "exists (\n        select 1 from leads l\n        join organizations o on o.id = l.organization_id\n        where l.id = \"messages\".\"lead_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
         }
       },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.template_variables": {
+      "name": "template_variables",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "key": {
+          "name": "key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "label": {
+          "name": "label",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "template_variables_key_unique": {
+          "name": "template_variables_key_unique",
+          "columns": [
+            "key"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
     },
@@ -2860,8 +2978,8 @@
           "to": [
             "authenticated"
           ],
-          "using": "\n        (select auth.uid()) = auth_user_id \n        -- OR\n        -- exists (\n        --   select 1 from organization_members om\n        --   join organizations o on o.id = om.member_organization_id\n        --   where om.organization_id = \"organizations\".\"id\"\n        --   and o.auth_user_id = (select auth.uid())\n        --   and om.role = $1\n        --   and om.joined_at is not null\n        )\n      ",
-          "withCheck": "\n        (select auth.uid()) = auth_user_id \n        -- OR\n        -- exists (\n        --   select 1 from organization_members om\n        --   join organizations o on o.id = om.member_organization_id\n        --   where om.organization_id = \"organizations\".\"id\"\n        --   and o.auth_user_id = (select auth.uid())\n        --   and om.role = $1\n        --   and om.joined_at is not null\n        )\n      "
+          "using": "\n        (select auth.uid()) = auth_user_id",
+          "withCheck": "\n        (select auth.uid()) = auth_user_id"
         },
         "enable delete for organization owners": {
           "name": "enable delete for organization owners",
@@ -2879,7 +2997,7 @@
           "to": [
             "authenticated"
           ],
-          "using": "\n        (select auth.uid()) = auth_user_id \n        -- OR\n        -- exists (\n        --   select 1 from organization_members om\n        --   where om.organization_id = \"organizations\".\"id\"\n        --   and om.auth_user_id = (select auth.uid())\n        --   and om.joined_at is not null\n        -- )\n      "
+          "using": "\n        (select auth.uid()) = auth_user_id"
         }
       },
       "checkConstraints": {},
@@ -2891,9 +3009,9 @@
       "name": "credit_type",
       "schema": "public",
       "values": [
+        "whatsappText",
         "sms",
-        "ringlessVoice",
-        "whatsappText"
+        "ringlessVoice"
       ]
     },
     "public.transaction_type": {
@@ -2934,14 +3052,6 @@
         "perdu"
       ]
     },
-    "public.message_channel": {
-      "name": "message_channel",
-      "schema": "public",
-      "values": [
-        "whatsapp",
-        "phone"
-      ]
-    },
     "public.lead_activity_type": {
       "name": "lead_activity_type",
       "schema": "public",
@@ -2952,6 +3062,14 @@
         "note_added",
         "reminder_set",
         "created"
+      ]
+    },
+    "public.message_channel": {
+      "name": "message_channel",
+      "schema": "public",
+      "values": [
+        "whatsapp",
+        "phone"
       ]
     },
     "public.message_status": {

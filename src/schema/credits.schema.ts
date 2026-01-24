@@ -1,4 +1,4 @@
-import { ECreditType, ETransactionType } from "@/constants/enums";
+import { EMessageType, ETransactionType } from "@/constants/enums";
 import { InferInsertModel, InferSelectModel, relations, sql } from "drizzle-orm";
 import {
   boolean,
@@ -26,12 +26,12 @@ export const transactionType = pgEnum(
 export type TransactionType =
   (typeof ETransactionType)[keyof typeof ETransactionType];
 
-// Credit types enum
+// Credit types enum (uses EMessageType since they map 1:1)
 export const creditType = pgEnum(
   "credit_type",
-  Object.values(ECreditType) as [string, ...string[]],
+  Object.values(EMessageType) as [string, ...string[]],
 );
-export type CreditType = (typeof ECreditType)[keyof typeof ECreditType];
+export type CreditType = (typeof EMessageType)[keyof typeof EMessageType];
 
 // Metadata types for transactions
 export type PurchaseMetadata = {

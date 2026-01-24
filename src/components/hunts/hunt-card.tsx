@@ -22,6 +22,7 @@ type Hunt = {
   autoRefresh: boolean;
   lastScanAt: Date | null;
   createdAt: Date;
+  dailyPacingLimit?: number | null;
   location: {
     name: string;
   };
@@ -29,6 +30,10 @@ type Hunt = {
     brand: {
       name: string;
     };
+  }>;
+  channelCredits?: Array<{
+    creditsAllocated: number;
+    creditsConsumed: number;
   }>;
 };
 
@@ -74,6 +79,16 @@ export function HuntCard({ hunt }: HuntCardProps) {
 
   const isActive = currentStatus === "active";
 
+  // Calculate total credits
+  const totalAllocated = hunt.channelCredits?.reduce(
+    (sum, credit) => sum + credit.creditsAllocated,
+    0
+  ) || 0;
+  const totalConsumed = hunt.channelCredits?.reduce(
+    (sum, credit) => sum + credit.creditsConsumed,
+    0
+  ) || 0;
+
   return (
     <Card className="transition-colors hover:border-zinc-700">
       <CardHeader>
@@ -85,7 +100,7 @@ export function HuntCard({ hunt }: HuntCardProps) {
             >
               <CardTitle>{hunt.name}</CardTitle>
             </Link>
-            <div className="mt-2 flex items-center gap-2">
+            <div className="mt-2 flex items-center gap-2 flex-wrap">
               <Badge variant={isActive ? "default" : "secondary"}>
                 {isActive ? "Active" : "En pause"}
               </Badge>
@@ -95,6 +110,20 @@ export function HuntCard({ hunt }: HuntCardProps) {
                   className="bg-blue-500/10 text-blue-500 border-blue-500/20"
                 >
                   Auto-refresh
+                </Badge>
+              )}
+              {totalAllocated > 0 && (
+                <Badge
+                  variant="outline"
+                  className={
+                    totalConsumed >= totalAllocated
+                      ? "bg-red-500/10 text-red-500 border-red-500/20"
+                      : totalConsumed / totalAllocated >= 0.8
+                      ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
+                      : "bg-zinc-500/10 text-zinc-400 border-zinc-500/20"
+                  }
+                >
+                  {totalConsumed}/{totalAllocated} crédits
                 </Badge>
               )}
             </div>
@@ -164,6 +193,27 @@ export function HuntCard({ hunt }: HuntCardProps) {
               <span>
                 Dernière recherche:{" "}
                 {new Date(hunt.lastScanAt).toLocaleDateString("fr-FR")}
+              </span>
+            </div>
+          )}
+
+          {hunt.dailyPacingLimit && (
+            <div className="flex items-center gap-2 text-zinc-400">
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span>
+                Limite quotidienne: {hunt.dailyPacingLimit} contacts/jour
               </span>
             </div>
           )}

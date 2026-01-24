@@ -1,6 +1,6 @@
 {
-  "id": "0d36b192-ac6d-487b-a4fc-5585c6fc4aa9",
-  "prevId": "c2952771-c3b9-428e-bf93-d002280fd46e",
+  "id": "194f398e-9531-4f2b-a597-90078a1b0608",
+  "prevId": "c235aaf8-a502-42d6-8fc8-51d22e0efc2f",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -44,25 +44,25 @@
         "sub_types_ad_type_id_ad_types_id_fk": {
           "name": "sub_types_ad_type_id_ad_types_id_fk",
           "tableFrom": "sub_types",
+          "tableTo": "ad_types",
           "columnsFrom": [
             "ad_type_id"
           ],
-          "tableTo": "ad_types",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "ad_sub_type_name_unique": {
           "name": "ad_sub_type_name_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "name"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {
@@ -114,10 +114,10 @@
       "uniqueConstraints": {
         "ad_type_name_unique": {
           "name": "ad_type_name_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "name"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {
@@ -522,9 +522,9 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         },
         "ads_title_search_idx": {
           "name": "ads_title_search_idx",
@@ -537,138 +537,138 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "ads_type_id_ad_types_id_fk": {
           "name": "ads_type_id_ad_types_id_fk",
           "tableFrom": "ads",
+          "tableTo": "ad_types",
           "columnsFrom": [
             "type_id"
           ],
-          "tableTo": "ad_types",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "ads_subtype_id_sub_types_id_fk": {
           "name": "ads_subtype_id_sub_types_id_fk",
           "tableFrom": "ads",
+          "tableTo": "sub_types",
           "columnsFrom": [
             "subtype_id"
           ],
-          "tableTo": "sub_types",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "ads_driving_licence_id_driving_licences_id_fk": {
           "name": "ads_driving_licence_id_driving_licences_id_fk",
           "tableFrom": "ads",
+          "tableTo": "driving_licences",
           "columnsFrom": [
             "driving_licence_id"
           ],
-          "tableTo": "driving_licences",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "ads_gear_box_id_gear_boxes_id_fk": {
           "name": "ads_gear_box_id_gear_boxes_id_fk",
           "tableFrom": "ads",
+          "tableTo": "gear_boxes",
           "columnsFrom": [
             "gear_box_id"
           ],
-          "tableTo": "gear_boxes",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "ads_vehicle_seats_id_vehicle_seats_id_fk": {
           "name": "ads_vehicle_seats_id_vehicle_seats_id_fk",
           "tableFrom": "ads",
+          "tableTo": "vehicle_seats",
           "columnsFrom": [
             "vehicle_seats_id"
           ],
-          "tableTo": "vehicle_seats",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "ads_vehicle_state_id_vehicle_states_id_fk": {
           "name": "ads_vehicle_state_id_vehicle_states_id_fk",
           "tableFrom": "ads",
+          "tableTo": "vehicle_states",
           "columnsFrom": [
             "vehicle_state_id"
           ],
-          "tableTo": "vehicle_states",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "ads_location_id_locations_id_fk": {
           "name": "ads_location_id_locations_id_fk",
           "tableFrom": "ads",
+          "tableTo": "locations",
           "columnsFrom": [
             "location_id"
           ],
-          "tableTo": "locations",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "ads_brand_id_brands_id_fk": {
           "name": "ads_brand_id_brands_id_fk",
           "tableFrom": "ads",
+          "tableTo": "brands",
           "columnsFrom": [
             "brand_id"
           ],
-          "tableTo": "brands",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "ads_fuel_id_fuels_id_fk": {
           "name": "ads_fuel_id_fuels_id_fk",
           "tableFrom": "ads",
+          "tableTo": "fuels",
           "columnsFrom": [
             "fuel_id"
           ],
-          "tableTo": "fuels",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "ads_original_ad_id_unique": {
           "name": "ads_original_ad_id_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "original_ad_id"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {
@@ -720,10 +720,10 @@
       "uniqueConstraints": {
         "brand_name_unique": {
           "name": "brand_name_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "name"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {
@@ -763,9 +763,10 @@
           "primaryKey": false,
           "notNull": true
         },
-        "message_type_id": {
-          "name": "message_type_id",
-          "type": "smallint",
+        "message_type": {
+          "name": "message_type",
+          "type": "message_type",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
@@ -782,41 +783,28 @@
         "contacted_ads_ad_id_ads_id_fk": {
           "name": "contacted_ads_ad_id_ads_id_fk",
           "tableFrom": "contacted_ads",
+          "tableTo": "ads",
           "columnsFrom": [
             "ad_id"
           ],
-          "tableTo": "ads",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         },
         "contacted_ads_organization_id_organizations_id_fk": {
           "name": "contacted_ads_organization_id_organizations_id_fk",
           "tableFrom": "contacted_ads",
+          "tableTo": "organizations",
           "columnsFrom": [
             "organization_id"
           ],
-          "tableTo": "organizations",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
-        },
-        "contacted_ads_message_type_id_message_types_id_fk": {
-          "name": "contacted_ads_message_type_id_message_types_id_fk",
-          "tableFrom": "contacted_ads",
-          "columnsFrom": [
-            "message_type_id"
-          ],
-          "tableTo": "message_types",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -889,10 +877,10 @@
       "uniqueConstraints": {
         "driving_licence_name_unique": {
           "name": "driving_licence_name_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "name"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {
@@ -944,10 +932,10 @@
       "uniqueConstraints": {
         "fuel_name_unique": {
           "name": "fuel_name_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "name"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {
@@ -999,10 +987,10 @@
       "uniqueConstraints": {
         "gear_box_name_unique": {
           "name": "gear_box_name_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "name"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {
@@ -1060,15 +1048,15 @@
           "columns": [
             {
               "expression": "(ST_MakePoint(\"lng\", \"lat\")::geography)",
-              "isExpression": true,
               "asc": true,
+              "isExpression": true,
               "nulls": "last"
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "gist",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {},
@@ -1076,11 +1064,11 @@
       "uniqueConstraints": {
         "zipcode_name_unique": {
           "name": "zipcode_name_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "name",
             "zipcode"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {
@@ -1132,10 +1120,10 @@
       "uniqueConstraints": {
         "vehicle_seats_name_unique": {
           "name": "vehicle_seats_name_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "name"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {
@@ -1187,10 +1175,10 @@
       "uniqueConstraints": {
         "vehicle_state_name_unique": {
           "name": "vehicle_state_name_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "name"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {
@@ -1265,34 +1253,34 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "credit_balances_organization_id_organizations_id_fk": {
           "name": "credit_balances_organization_id_organizations_id_fk",
           "tableFrom": "credit_balances",
+          "tableTo": "organizations",
           "columnsFrom": [
             "organization_id"
           ],
-          "tableTo": "organizations",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "credit_balances_organization_id_unique": {
           "name": "credit_balances_organization_id_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "organization_id"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {
@@ -1358,9 +1346,9 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {},
@@ -1461,9 +1449,9 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         },
         "credit_transactions_reference_id_idx": {
           "name": "credit_transactions_reference_id_idx",
@@ -1476,24 +1464,24 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "credit_transactions_organization_id_organizations_id_fk": {
           "name": "credit_transactions_organization_id_organizations_id_fk",
           "tableFrom": "credit_transactions",
+          "tableTo": "organizations",
           "columnsFrom": [
             "organization_id"
           ],
-          "tableTo": "organizations",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -1507,6 +1495,117 @@
             "authenticated"
           ],
           "using": "exists (\n            select 1 from organizations o\n            where o.id = \"credit_transactions\".\"organization_id\"\n            and o.auth_user_id = (select auth.uid())\n          )"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.hunt_channel_credits": {
+      "name": "hunt_channel_credits",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "hunt_id": {
+          "name": "hunt_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "channel": {
+          "name": "channel",
+          "type": "credit_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "credits_allocated": {
+          "name": "credits_allocated",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "credits_consumed": {
+          "name": "credits_consumed",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "hunt_channel_credits_hunt_id_idx": {
+          "name": "hunt_channel_credits_hunt_id_idx",
+          "columns": [
+            {
+              "expression": "hunt_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "hunt_channel_credits_hunt_id_fk": {
+          "name": "hunt_channel_credits_hunt_id_fk",
+          "tableFrom": "hunt_channel_credits",
+          "tableTo": "hunts",
+          "columnsFrom": [
+            "hunt_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "hunt_channel_unique": {
+          "name": "hunt_channel_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "hunt_id",
+            "channel"
+          ]
+        }
+      },
+      "policies": {
+        "enable all for hunt owners": {
+          "name": "enable all for hunt owners",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "authenticated"
+          ],
+          "using": "exists (\n        select 1 from hunts h\n        join organizations o on o.id = h.organization_id\n        where h.id = \"hunt_channel_credits\".\"hunt_id\"\n        and o.auth_user_id = (select auth.uid())\n      )",
+          "withCheck": "exists (\n        select 1 from hunts h\n        join organizations o on o.id = h.organization_id\n        where h.id = \"hunt_channel_credits\".\"hunt_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
         }
       },
       "checkConstraints": {},
@@ -1545,50 +1644,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.message_types": {
-      "name": "message_types",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "smallserial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "name": {
-          "name": "name",
-          "type": "message_type",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "message_types_name_unique": {
-          "name": "message_types_name_unique",
-          "columns": [
-            "name"
-          ],
-          "nullsNotDistinct": false
-        }
-      },
-      "policies": {
-        "enable read for authenticated users": {
-          "name": "enable read for authenticated users",
-          "as": "PERMISSIVE",
-          "for": "SELECT",
-          "to": [
-            "authenticated"
-          ],
-          "using": "true"
-        }
-      },
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.brands_hunts": {
       "name": "brands_hunts",
       "schema": "",
@@ -1618,28 +1673,28 @@
         "hunt_id_fk": {
           "name": "hunt_id_fk",
           "tableFrom": "brands_hunts",
+          "tableTo": "hunts",
           "columnsFrom": [
             "hunt_id"
           ],
-          "tableTo": "hunts",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         },
         "brands_id_fk": {
           "name": "brands_id_fk",
           "tableFrom": "brands_hunts",
+          "tableTo": "brands",
           "columnsFrom": [
             "brand_id"
           ],
-          "tableTo": "brands",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -1715,6 +1770,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": true
+        },
+        "daily_pacing_limit": {
+          "name": "daily_pacing_limit",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
         },
         "outreach_settings": {
           "name": "outreach_settings",
@@ -1843,9 +1904,9 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         },
         "hunt_organization_id_idx": {
           "name": "hunt_organization_id_idx",
@@ -1858,50 +1919,50 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "hunts_type_id_ad_types_id_fk": {
           "name": "hunts_type_id_ad_types_id_fk",
           "tableFrom": "hunts",
+          "tableTo": "ad_types",
           "columnsFrom": [
             "type_id"
           ],
-          "tableTo": "ad_types",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "hunts_location_id_locations_id_fk": {
           "name": "hunts_location_id_locations_id_fk",
           "tableFrom": "hunts",
+          "tableTo": "locations",
           "columnsFrom": [
             "location_id"
           ],
-          "tableTo": "locations",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "hunt_organization_id_fk": {
           "name": "hunt_organization_id_fk",
           "tableFrom": "hunts",
+          "tableTo": "organizations",
           "columnsFrom": [
             "organization_id"
           ],
-          "tableTo": "organizations",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -1914,7 +1975,7 @@
           "to": [
             "authenticated"
           ],
-          "using": "true"
+          "withCheck": "true"
         },
         "enable read update and delete for the hunt owners": {
           "name": "enable read update and delete for the hunt owners",
@@ -1930,8 +1991,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.sub_types_Hunts": {
-      "name": "sub_types_Hunts",
+    "public.sub_types_hunts": {
+      "name": "sub_types_hunts",
       "schema": "",
       "columns": {
         "id": {
@@ -1958,29 +2019,29 @@
       "foreignKeys": {
         "hunt_id_fk": {
           "name": "hunt_id_fk",
-          "tableFrom": "sub_types_Hunts",
+          "tableFrom": "sub_types_hunts",
+          "tableTo": "hunts",
           "columnsFrom": [
             "hunt_id"
           ],
-          "tableTo": "hunts",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         },
         "sub_types_id_fk": {
           "name": "sub_types_id_fk",
-          "tableFrom": "sub_types_Hunts",
+          "tableFrom": "sub_types_hunts",
+          "tableTo": "sub_types",
           "columnsFrom": [
             "sub_type_id"
           ],
-          "tableTo": "sub_types",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -1993,8 +2054,8 @@
           "to": [
             "authenticated"
           ],
-          "using": "exists (\n        select 1 from hunts h\n        join organizations o on o.id = h.organization_id\n        where h.id = \"sub_types_Hunts\".\"hunt_id\"\n        and o.auth_user_id = (select auth.uid())\n      )",
-          "withCheck": "exists (\n        select 1 from hunts h\n        join organizations o on o.id = h.organization_id\n        where h.id = \"sub_types_Hunts\".\"hunt_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
+          "using": "exists (\n        select 1 from hunts h\n        join organizations o on o.id = h.organization_id\n        where h.id = \"sub_types_hunts\".\"hunt_id\"\n        and o.auth_user_id = (select auth.uid())\n      )",
+          "withCheck": "exists (\n        select 1 from hunts h\n        join organizations o on o.id = h.organization_id\n        where h.id = \"sub_types_hunts\".\"hunt_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
         }
       },
       "checkConstraints": {},
@@ -2089,9 +2150,9 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         },
         "leads_organization_id_assigned_to_id_idx": {
           "name": "leads_organization_id_assigned_to_id_idx",
@@ -2110,9 +2171,9 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         },
         "leads_hunt_id_idx": {
           "name": "leads_hunt_id_idx",
@@ -2125,9 +2186,9 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         },
         "leads_ad_id_idx": {
           "name": "leads_ad_id_idx",
@@ -2140,74 +2201,74 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "leads_organization_id_organizations_id_fk": {
           "name": "leads_organization_id_organizations_id_fk",
           "tableFrom": "leads",
+          "tableTo": "organizations",
           "columnsFrom": [
             "organization_id"
           ],
-          "tableTo": "organizations",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         },
         "leads_hunt_id_hunts_id_fk": {
           "name": "leads_hunt_id_hunts_id_fk",
           "tableFrom": "leads",
+          "tableTo": "hunts",
           "columnsFrom": [
             "hunt_id"
           ],
-          "tableTo": "hunts",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         },
         "leads_ad_id_ads_id_fk": {
           "name": "leads_ad_id_ads_id_fk",
           "tableFrom": "leads",
+          "tableTo": "ads",
           "columnsFrom": [
             "ad_id"
           ],
-          "tableTo": "ads",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         },
         "leads_assigned_to_id_organization_members_id_fk": {
           "name": "leads_assigned_to_id_organization_members_id_fk",
           "tableFrom": "leads",
+          "tableTo": "organization_members",
           "columnsFrom": [
             "assigned_to_id"
           ],
-          "tableTo": "organization_members",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "set null"
+          "onDelete": "set null",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "leads_organization_id_ad_id_key": {
           "name": "leads_organization_id_ad_id_key",
+          "nullsNotDistinct": false,
           "columns": [
             "organization_id",
             "ad_id"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {
@@ -2220,6 +2281,198 @@
           ],
           "using": "exists (\n            select 1 from organizations o\n            where o.id = \"leads\".\"organization_id\"\n            and o.auth_user_id = (select auth.uid())\n          )",
           "withCheck": "exists (\n            select 1 from organizations o\n            where o.id = \"leads\".\"organization_id\"\n            and o.auth_user_id = (select auth.uid())\n          )"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.channel_priorities": {
+      "name": "channel_priorities",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "smallserial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "channel": {
+          "name": "channel",
+          "type": "message_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "priority": {
+          "name": "priority",
+          "type": "smallserial",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "channel_priorities_channel_unique": {
+          "name": "channel_priorities_channel_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "channel"
+          ]
+        },
+        "channel_priorities_priority_unique": {
+          "name": "channel_priorities_priority_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "priority"
+          ]
+        }
+      },
+      "policies": {
+        "enable read for authenticated users": {
+          "name": "enable read for authenticated users",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "authenticated"
+          ],
+          "using": "true"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.lead_activities": {
+      "name": "lead_activities",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "lead_id": {
+          "name": "lead_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "lead_activity_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "metadata": {
+          "name": "metadata",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_by_id": {
+          "name": "created_by_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "lead_activities_lead_id_created_at_idx": {
+          "name": "lead_activities_lead_id_created_at_idx",
+          "columns": [
+            {
+              "expression": "lead_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "lead_activities_type_idx": {
+          "name": "lead_activities_type_idx",
+          "columns": [
+            {
+              "expression": "type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "lead_activities_lead_id_fk": {
+          "name": "lead_activities_lead_id_fk",
+          "tableFrom": "lead_activities",
+          "tableTo": "leads",
+          "columnsFrom": [
+            "lead_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "lead_activities_created_by_id_fk": {
+          "name": "lead_activities_created_by_id_fk",
+          "tableFrom": "lead_activities",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "created_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "enable read for organization owners": {
+          "name": "enable read for organization owners",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "authenticated"
+          ],
+          "using": "exists (\n        select 1 from leads l\n        join organizations o on o.id = l.organization_id\n        where l.id = \"lead_activities\".\"lead_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
+        },
+        "enable insert for organization owners": {
+          "name": "enable insert for organization owners",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "authenticated"
+          ],
+          "withCheck": "exists (\n              select 1 from leads l\n        join organizations o on o.id = l.organization_id\n        where l.id = \"lead_activities\".\"lead_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
         }
       },
       "checkConstraints": {},
@@ -2307,15 +2560,15 @@
         "message_templates_organization_id_fk": {
           "name": "message_templates_organization_id_fk",
           "tableFrom": "message_templates",
+          "tableTo": "organizations",
           "columnsFrom": [
             "organization_id"
           ],
-          "tableTo": "organizations",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -2330,186 +2583,6 @@
           ],
           "using": "exists (\n            select 1 from organizations o\n            where o.id = \"message_templates\".\"organization_id\"\n            and o.auth_user_id = (select auth.uid())\n          )",
           "withCheck": "exists (\n            select 1 from organizations o\n            where o.id = \"message_templates\".\"organization_id\"\n            and o.auth_user_id = (select auth.uid())\n          )"
-        }
-      },
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.template_variables": {
-      "name": "template_variables",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "key": {
-          "name": "key",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "label": {
-          "name": "label",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "description": {
-          "name": "description",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "template_variables_key_unique": {
-          "name": "template_variables_key_unique",
-          "columns": [
-            "key"
-          ],
-          "nullsNotDistinct": false
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.lead_activities": {
-      "name": "lead_activities",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "lead_id": {
-          "name": "lead_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "type": {
-          "name": "type",
-          "type": "lead_activity_type",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "metadata": {
-          "name": "metadata",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "created_by_id": {
-          "name": "created_by_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {
-        "lead_activities_lead_id_created_at_idx": {
-          "name": "lead_activities_lead_id_created_at_idx",
-          "columns": [
-            {
-              "expression": "lead_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "with": {},
-          "method": "btree",
-          "concurrently": false
-        },
-        "lead_activities_type_idx": {
-          "name": "lead_activities_type_idx",
-          "columns": [
-            {
-              "expression": "type",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "with": {},
-          "method": "btree",
-          "concurrently": false
-        }
-      },
-      "foreignKeys": {
-        "lead_activities_lead_id_fk": {
-          "name": "lead_activities_lead_id_fk",
-          "tableFrom": "lead_activities",
-          "columnsFrom": [
-            "lead_id"
-          ],
-          "tableTo": "leads",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
-        },
-        "lead_activities_created_by_id_fk": {
-          "name": "lead_activities_created_by_id_fk",
-          "tableFrom": "lead_activities",
-          "columnsFrom": [
-            "created_by_id"
-          ],
-          "tableTo": "organizations",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {
-        "enable read for owners of the organization to which the leads are linked": {
-          "name": "enable read for owners of the organization to which the leads are linked",
-          "as": "PERMISSIVE",
-          "for": "SELECT",
-          "to": [
-            "authenticated"
-          ],
-          "using": "exists (\n        select 1 from leads l\n        join organization o on o.id = l.organization_id\n        where l.id = \"lead_activities\".\"lead_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
-        },
-        "enable insert for owners of the organization to which the leads are linked": {
-          "name": "enable insert for owners of the organization to which the leads are linked",
-          "as": "PERMISSIVE",
-          "for": "INSERT",
-          "to": [
-            "authenticated"
-          ],
-          "withCheck": "exists (\n              select 1 from leads l\n        join organization o on o.id = l.organization_id\n        where l.id = \"lead_activities\".\"lead_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
         }
       },
       "checkConstraints": {},
@@ -2603,9 +2676,9 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         },
         "messages_status_idx": {
           "name": "messages_status_idx",
@@ -2618,9 +2691,9 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         },
         "messages_external_id_idx": {
           "name": "messages_external_id_idx",
@@ -2633,66 +2706,111 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "messages_lead_id_fk": {
           "name": "messages_lead_id_fk",
           "tableFrom": "messages",
+          "tableTo": "leads",
           "columnsFrom": [
             "lead_id"
           ],
-          "tableTo": "leads",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         },
         "messages_template_id_fk": {
           "name": "messages_template_id_fk",
           "tableFrom": "messages",
+          "tableTo": "message_templates",
           "columnsFrom": [
             "template_id"
           ],
-          "tableTo": "message_templates",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "set null"
+          "onDelete": "set null",
+          "onUpdate": "no action"
         },
         "messages_sent_by_id_fk": {
           "name": "messages_sent_by_id_fk",
           "tableFrom": "messages",
+          "tableTo": "organizations",
           "columnsFrom": [
             "sent_by_id"
           ],
-          "tableTo": "organizations",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {
-        "enable all for owners of the organization to which the leads are linked": {
-          "name": "enable all for owners of the organization to which the leads are linked",
+        "enable all for organization owners": {
+          "name": "enable all for organization owners",
           "as": "PERMISSIVE",
           "for": "ALL",
           "to": [
             "authenticated"
           ],
-          "using": "exists (\n        select 1 from leads l\n        join organization o on o.id = l.organization_id\n        where l.id = \"messages\".\"lead_id\"\n        and o.auth_user_id = (select auth.uid())\n      )",
-          "withCheck": "exists (\n        select 1 from leads l\n        join organization o on o.id = l.organization_id\n        where l.id = \"messages\".\"lead_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
+          "using": "exists (\n        select 1 from leads l\n        join organizations o on o.id = l.organization_id\n        where l.id = \"messages\".\"lead_id\"\n        and o.auth_user_id = (select auth.uid())\n      )",
+          "withCheck": "exists (\n        select 1 from leads l\n        join organizations o on o.id = l.organization_id\n        where l.id = \"messages\".\"lead_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
         }
       },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.template_variables": {
+      "name": "template_variables",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "key": {
+          "name": "key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "label": {
+          "name": "label",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "template_variables_key_unique": {
+          "name": "template_variables_key_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "key"
+          ]
+        }
+      },
+      "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
     },
@@ -2725,26 +2843,26 @@
         "organization_id_fk": {
           "name": "organization_id_fk",
           "tableFrom": "organization_members",
+          "tableTo": "organizations",
           "columnsFrom": [
             "organization_id"
           ],
-          "tableTo": "organizations",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "organisation_id_member_name_unique": {
           "name": "organisation_id_member_name_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "organization_id",
             "name"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {
@@ -2830,26 +2948,26 @@
         "auth_user_id_fk": {
           "name": "auth_user_id_fk",
           "tableFrom": "organizations",
+          "tableTo": "users",
+          "schemaTo": "auth",
           "columnsFrom": [
             "auth_user_id"
           ],
-          "tableTo": "users",
-          "schemaTo": "auth",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "set null"
+          "onDelete": "set null",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "auth_user_id_unique": {
           "name": "auth_user_id_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "auth_user_id"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {
@@ -2860,8 +2978,8 @@
           "to": [
             "authenticated"
           ],
-          "using": "\n        (select auth.uid()) = auth_user_id \n        -- OR\n        -- exists (\n        --   select 1 from organization_members om\n        --   join organizations o on o.id = om.member_organization_id\n        --   where om.organization_id = \"organizations\".\"id\"\n        --   and o.auth_user_id = (select auth.uid())\n        --   and om.role = $1\n        --   and om.joined_at is not null\n        )\n      ",
-          "withCheck": "\n        (select auth.uid()) = auth_user_id \n        -- OR\n        -- exists (\n        --   select 1 from organization_members om\n        --   join organizations o on o.id = om.member_organization_id\n        --   where om.organization_id = \"organizations\".\"id\"\n        --   and o.auth_user_id = (select auth.uid())\n        --   and om.role = $1\n        --   and om.joined_at is not null\n        )\n      "
+          "using": "\n        (select auth.uid()) = auth_user_id",
+          "withCheck": "\n        (select auth.uid()) = auth_user_id"
         },
         "enable delete for organization owners": {
           "name": "enable delete for organization owners",
@@ -2879,7 +2997,7 @@
           "to": [
             "authenticated"
           ],
-          "using": "\n        (select auth.uid()) = auth_user_id \n        -- OR\n        -- exists (\n        --   select 1 from organization_members om\n        --   where om.organization_id = \"organizations\".\"id\"\n        --   and om.auth_user_id = (select auth.uid())\n        --   and om.joined_at is not null\n        -- )\n      "
+          "using": "\n        (select auth.uid()) = auth_user_id"
         }
       },
       "checkConstraints": {},
@@ -2891,9 +3009,9 @@
       "name": "credit_type",
       "schema": "public",
       "values": [
+        "whatsappText",
         "sms",
-        "ringlessVoice",
-        "whatsappText"
+        "ringlessVoice"
       ]
     },
     "public.transaction_type": {
@@ -2934,14 +3052,6 @@
         "perdu"
       ]
     },
-    "public.message_channel": {
-      "name": "message_channel",
-      "schema": "public",
-      "values": [
-        "whatsapp",
-        "phone"
-      ]
-    },
     "public.lead_activity_type": {
       "name": "lead_activity_type",
       "schema": "public",
@@ -2952,6 +3062,14 @@
         "note_added",
         "reminder_set",
         "created"
+      ]
+    },
+    "public.message_channel": {
+      "name": "message_channel",
+      "schema": "public",
+      "values": [
+        "whatsapp",
+        "phone"
       ]
     },
     "public.message_status": {
@@ -2985,10 +3103,10 @@
     }
   },
   "schemas": {},
-  "views": {},
   "sequences": {},
   "roles": {},
   "policies": {},
+  "views": {},
   "_meta": {
     "columns": {},
     "schemas": {},

@@ -1,1 +1,0 @@
-ALTER TABLE "hunts" ADD COLUMN "daily_pacing_limit" smallint;
