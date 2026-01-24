@@ -1011,12 +1011,12 @@
         "testStrategy": "1. Verify seed data inserts correct default priorities. 2. Confirm helper function returns channels in correct priority order. 3. Test that authenticated users can read but not update. 4. Verify priority changes are reflected in channel selection logic.",
         "priority": "medium",
         "dependencies": [],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [],
         "complexity": 5,
         "recommendedSubtasks": 4,
         "expansionPrompt": "Break down into: (1) Implement getChannelPriorityConfig with default fallback ['ringlessVoice', 'whatsappText', 'sms'], (2) Implement updateChannelPriorityConfig with Zod validation and upsert logic, (3) Add proper RLS enforcement using dbClient.rls() wrapper pattern from existing actions, (4) Implement error handling with French error messages and test RLS access control. Follow patterns from hunt.actions.ts.",
-        "updatedAt": "2026-01-24T17:02:34.930Z"
+        "updatedAt": "2026-01-24T17:03:56.353Z"
       },
       {
         "id": "37",
@@ -1064,11 +1064,12 @@
         "dependencies": [
           "34"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [],
         "complexity": 5,
         "recommendedSubtasks": 4,
-        "expansionPrompt": "Break down into: (1) Create ChannelPrioritySettings component with DndContext setup using @dnd-kit patterns from existing kanban-view.tsx, (2) Implement SortableChannelItem component with drag handle, channel icon/label, and priority number display, (3) Add save functionality with optimistic updates and loading states, (4) Implement error handling with toast notifications and revert logic on failure. Ensure keyboard accessibility for reordering."
+        "expansionPrompt": "Break down into: (1) Create ChannelPrioritySettings component with DndContext setup using @dnd-kit patterns from existing kanban-view.tsx, (2) Implement SortableChannelItem component with drag handle, channel icon/label, and priority number display, (3) Add save functionality with optimistic updates and loading states, (4) Implement error handling with toast notifications and revert logic on failure. Ensure keyboard accessibility for reordering.",
+        "updatedAt": "2026-01-24T17:04:15.220Z"
       },
       {
         "id": "40",
@@ -1159,9 +1160,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-24T17:02:34.931Z",
+      "lastModified": "2026-01-24T17:04:15.221Z",
       "taskCount": 44,
-      "completedCount": 36,
+      "completedCount": 37,
       "tags": [
         "master"
       ]
