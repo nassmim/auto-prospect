@@ -1079,14 +1079,14 @@
         "testStrategy": "1. Test concurrent consumption doesn't cause double-spend. 2. Verify transaction rollback on failure. 3. Test insufficient credits returns error without consuming. 4. Verify credit_transactions log is created for each consumption.",
         "priority": "high",
         "dependencies": [
-          "34",
-          "35"
+          "34"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [],
         "complexity": 8,
         "recommendedSubtasks": 6,
-        "expansionPrompt": "Break down into: (1) Design SQL migration script to convert outreachSettings boolean flags to channelSettings structure with default limits (dailyLimit: 10, totalLimit: 100), (2) Handle null/empty outreachSettings gracefully with COALESCE, (3) Create migration for channel_priority_config defaults for all existing organizations, (4) Document and test rollback procedure, (5) Validate migration on development database with existing data, (6) Document the migration SQL for user execution (AI cannot run migrations per CLAUDE.md). Leave outreachSettings column for future cleanup."
+        "expansionPrompt": "Break down into: (1) Design SQL migration script to convert outreachSettings boolean flags to channelSettings structure with default limits (dailyLimit: 10, totalLimit: 100), (2) Handle null/empty outreachSettings gracefully with COALESCE, (3) Create migration for channel_priority_config defaults for all existing organizations, (4) Document and test rollback procedure, (5) Validate migration on development database with existing data, (6) Document the migration SQL for user execution (AI cannot run migrations per CLAUDE.md). Leave outreachSettings column for future cleanup.",
+        "updatedAt": "2026-01-24T17:14:02.176Z"
       },
       {
         "id": "41",
@@ -1096,7 +1096,6 @@
         "testStrategy": "1. Test allocation respects daily limit. 2. Verify channel priority order is followed. 3. Test allocation stops when credits exhausted. 4. Test disabled channels are skipped. 5. Edge case: no credits available returns empty array.",
         "priority": "high",
         "dependencies": [
-          "35",
           "36",
           "40"
         ],
@@ -1114,7 +1113,6 @@
         "testStrategy": "1. Verify new day creates new row. 2. Test increment on existing day updates correctly. 3. Test concurrent increments are atomic. 4. Verify channel-specific counts update correctly.",
         "priority": "high",
         "dependencies": [
-          "35",
           "40"
         ],
         "status": "pending",
@@ -1151,19 +1149,19 @@
         "dependencies": [
           "37"
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [],
         "complexity": 5,
         "recommendedSubtasks": 4,
         "expansionPrompt": "Break down into: (1) Update settings page data loading to fetch channel priority config via server action, (2) Create new ChannelsTab component receiving initialChannelOrder prop, (3) Integrate ChannelPrioritySettings drag-and-drop component in the new tab, (4) Add 'Canaux' tab to settings-page-client.tsx navigation with icon and implement save handler calling updateChannelPriorityConfig with toast notifications. Style consistently with existing settings tabs.",
-        "updatedAt": "2026-01-24T17:05:48.496Z"
+        "updatedAt": "2026-01-24T17:06:52.148Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-24T17:05:48.557Z",
+      "lastModified": "2026-01-24T17:14:02.177Z",
       "taskCount": 44,
-      "completedCount": 38,
+      "completedCount": 39,
       "tags": [
         "master"
       ]
