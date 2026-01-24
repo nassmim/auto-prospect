@@ -31,15 +31,18 @@ type HuntFormProps = {
     radiusInKm: number;
     adTypeId: number;
     autoRefresh: boolean;
+    dailyPacingLimit?: number | null;
     outreachSettings?: {
       leboncoin?: boolean;
       whatsapp?: boolean;
       sms?: boolean;
+      ringlessVoice?: boolean;
     };
     templateIds?: {
       leboncoin?: string | null;
       whatsapp?: string | null;
       sms?: string | null;
+      ringlessVoice?: string | null;
     };
   };
 };
@@ -78,15 +81,23 @@ export function HuntForm({ hunt }: HuntFormProps) {
     defaultValues: {
       name: hunt?.name ?? "",
       autoRefresh: hunt?.autoRefresh ?? true,
+      dailyPacingLimit: null,
       outreachSettings: hunt?.outreachSettings ?? {
         leboncoin: false,
         whatsapp: false,
         sms: false,
+        ringlessVoice: false,
       },
       templateIds: hunt?.templateIds ?? {
         leboncoin: null,
         whatsapp: null,
         sms: null,
+        ringlessVoice: null,
+      },
+      channelCredits: {
+        sms: 0,
+        whatsapp: 0,
+        ringlessVoice: 0,
       },
     },
   });
@@ -95,13 +106,19 @@ export function HuntForm({ hunt }: HuntFormProps) {
   const outreachSettings = useWatch({
     control: form.control,
     name: "outreachSettings",
-    defaultValue: { leboncoin: false, whatsapp: false, sms: false },
+    defaultValue: { leboncoin: false, whatsapp: false, sms: false, ringlessVoice: false },
   });
 
   const templateIds = useWatch({
     control: form.control,
     name: "templateIds",
-    defaultValue: { leboncoin: null, whatsapp: null, sms: null },
+    defaultValue: { leboncoin: null, whatsapp: null, sms: null, ringlessVoice: null },
+  });
+
+  const channelCredits = useWatch({
+    control: form.control,
+    name: "channelCredits",
+    defaultValue: { sms: 0, whatsapp: 0, ringlessVoice: 0 },
   });
 
   const handleSubmit = async (data: HuntFormData) => {
@@ -225,6 +242,40 @@ export function HuntForm({ hunt }: HuntFormProps) {
           />
         </div>
 
+        {/* Daily Pacing Limit */}
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
+          <FormField
+            control={form.control}
+            name="dailyPacingLimit"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-medium text-zinc-300">
+                  Limite de contacts par jour (optionnel)
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    type="number"
+                    min="1"
+                    max="1000"
+                    value={field.value ?? ""}
+                    onChange={(e) =>
+                      field.onChange(e.target.value ? parseInt(e.target.value) : null)
+                    }
+                    placeholder="Illimité"
+                    className="w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-2 text-zinc-200 placeholder-zinc-500 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                  />
+                </FormControl>
+                <p className="text-xs text-zinc-500 mt-1">
+                  Maximum de contacts à effectuer par jour, tous canaux confondus.
+                  Laissez vide pour aucune limite.
+                </p>
+                <FormMessage className="text-red-400" />
+              </FormItem>
+            )}
+          />
+        </div>
+
         {/* Outreach Settings */}
         <OutreachSettings
           outreachSettings={
@@ -232,13 +283,18 @@ export function HuntForm({ hunt }: HuntFormProps) {
               leboncoin: false,
               whatsapp: false,
               sms: false,
+              ringlessVoice: false,
             }
           }
           templateIds={
-            templateIds ?? { leboncoin: null, whatsapp: null, sms: null }
+            templateIds ?? { leboncoin: null, whatsapp: null, sms: null, ringlessVoice: null }
+          }
+          channelCredits={
+            channelCredits ?? { sms: 0, whatsapp: 0, ringlessVoice: 0 }
           }
           onOutreachChange={(value) => form.setValue("outreachSettings", value)}
           onTemplateChange={(value) => form.setValue("templateIds", value)}
+          onChannelCreditsChange={(value) => form.setValue("channelCredits", value)}
         />
 
         {/* Actions */}

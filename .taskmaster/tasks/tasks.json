@@ -996,12 +996,12 @@
         "dependencies": [
           "33"
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [],
         "complexity": 6,
         "recommendedSubtasks": 4,
         "expansionPrompt": "Break down into: (1) Create channelConfigSchema with dailyLimit/totalLimit/enabled fields and cross-field refinement (dailyLimit <= totalLimit), (2) Create channelSettingsSchema with optional channel configs and 'at least one enabled' refinement, (3) Create channelPriorityConfigSchema for priority array validation, (4) Write comprehensive unit tests for all refinements, edge cases (empty settings, all disabled), and French error messages. Update existing hunt schemas.",
-        "updatedAt": "2026-01-24T16:10:05.923Z"
+        "updatedAt": "2026-01-24T16:11:27.861Z"
       },
       {
         "id": "36",
@@ -1028,11 +1028,12 @@
           "33",
           "34"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [],
         "complexity": 7,
         "recommendedSubtasks": 5,
-        "expansionPrompt": "Break down into: (1) Update createHunt and updateHunt to accept channelSettings in validated schema, (2) Implement conversion helper from old outreachSettings to new channelSettings format with proper defaults, (3) Modify insert logic to handle both new channelSettings and legacy outreachSettings, (4) Implement getChannelUsageToday action querying messages/contactedAds grouped by channel, (5) Write comprehensive tests for backward compatibility, new format, and usage tracking."
+        "expansionPrompt": "Break down into: (1) Update createHunt and updateHunt to accept channelSettings in validated schema, (2) Implement conversion helper from old outreachSettings to new channelSettings format with proper defaults, (3) Modify insert logic to handle both new channelSettings and legacy outreachSettings, (4) Implement getChannelUsageToday action querying messages/contactedAds grouped by channel, (5) Write comprehensive tests for backward compatibility, new format, and usage tracking.",
+        "updatedAt": "2026-01-24T16:11:47.738Z"
       },
       {
         "id": "38",
@@ -1156,9 +1157,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-24T16:10:05.923Z",
+      "lastModified": "2026-01-24T16:11:47.739Z",
       "taskCount": 44,
-      "completedCount": 34,
+      "completedCount": 35,
       "tags": [
         "master"
       ]

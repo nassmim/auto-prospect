@@ -9,14 +9,22 @@ type OutreachSettingsProps = {
     leboncoin?: boolean;
     whatsapp?: boolean;
     sms?: boolean;
+    ringlessVoice?: boolean;
   };
   templateIds: {
     leboncoin?: string | null;
     whatsapp?: string | null;
     sms?: string | null;
+    ringlessVoice?: string | null;
+  };
+  channelCredits?: {
+    sms?: number;
+    whatsapp?: number;
+    ringlessVoice?: number;
   };
   onOutreachChange: (settings: OutreachSettingsProps["outreachSettings"]) => void;
   onTemplateChange: (templateIds: OutreachSettingsProps["templateIds"]) => void;
+  onChannelCreditsChange?: (credits: OutreachSettingsProps["channelCredits"]) => void;
 };
 
 type Template = {
@@ -29,8 +37,10 @@ type Template = {
 export function OutreachSettings({
   outreachSettings,
   templateIds,
+  channelCredits,
   onOutreachChange,
   onTemplateChange,
+  onChannelCreditsChange,
 }: OutreachSettingsProps) {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -49,7 +59,7 @@ export function OutreachSettings({
       });
   }, []);
 
-  const handleToggle = (channel: "leboncoin" | "whatsapp" | "sms") => {
+  const handleToggle = (channel: "leboncoin" | "whatsapp" | "sms" | "ringlessVoice") => {
     onOutreachChange({
       ...outreachSettings,
       [channel]: !outreachSettings[channel],
@@ -57,7 +67,7 @@ export function OutreachSettings({
   };
 
   const handleTemplateChange = (
-    channel: "leboncoin" | "whatsapp" | "sms",
+    channel: "leboncoin" | "whatsapp" | "sms" | "ringlessVoice",
     templateId: string,
   ) => {
     onTemplateChange({
@@ -66,9 +76,21 @@ export function OutreachSettings({
     });
   };
 
+  const handleCreditsChange = (
+    channel: "sms" | "whatsapp" | "ringlessVoice",
+    credits: number,
+  ) => {
+    if (onChannelCreditsChange) {
+      onChannelCreditsChange({
+        ...channelCredits,
+        [channel]: credits,
+      });
+    }
+  };
+
   // Filter templates by channel and type
   const getTemplatesForChannel = (
-    channel: "leboncoin" | "whatsapp" | "sms",
+    channel: "leboncoin" | "whatsapp" | "sms" | "ringlessVoice",
   ) => {
     if (channel === "leboncoin") {
       // Leboncoin uses text templates with leboncoin channel
@@ -81,9 +103,14 @@ export function OutreachSettings({
         (t) => t.type === "text" && t.channel === "whatsapp",
       );
     } else if (channel === "sms") {
-      // SMS can use both text and voice templates with sms channel
+      // SMS can use text templates with sms channel
       return templates.filter(
-        (t) => (t.type === "text" || t.type === "voice") && t.channel === "sms",
+        (t) => t.type === "text" && t.channel === "sms",
+      );
+    } else if (channel === "ringlessVoice") {
+      // Ringless voice uses voice templates with sms channel
+      return templates.filter(
+        (t) => t.type === "voice" && t.channel === "sms",
       );
     }
     return [];
@@ -93,6 +120,7 @@ export function OutreachSettings({
     {
       key: "leboncoin" as const,
       label: "Leboncoin",
+      requiresCredits: false,
       icon: (
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
@@ -108,6 +136,7 @@ export function OutreachSettings({
     {
       key: "whatsapp" as const,
       label: "WhatsApp",
+      requiresCredits: true,
       icon: (
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
@@ -123,6 +152,7 @@ export function OutreachSettings({
     {
       key: "sms" as const,
       label: "SMS",
+      requiresCredits: true,
       icon: (
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
@@ -133,7 +163,23 @@ export function OutreachSettings({
           />
         </svg>
       ),
-      description: "Envoie un SMS au vendeur (nécessite numéro, consomme des crédits)",
+      description: "Envoie un SMS au vendeur (nécessite numéro)",
+    },
+    {
+      key: "ringlessVoice" as const,
+      label: "Message Vocal (Ringless)",
+      requiresCredits: true,
+      icon: (
+        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+          />
+        </svg>
+      ),
+      description: "Dépose un message vocal dans la boîte vocale (nécessite numéro)",
     },
   ];
 
@@ -187,39 +233,72 @@ export function OutreachSettings({
 
                 {/* Template selector */}
                 {isEnabled && (
-                  <div className="mt-3 pl-7">
-                    <label
-                      htmlFor={`template-${config.key}`}
-                      className="mb-2 block text-xs font-medium text-zinc-400"
-                    >
-                      Template à utiliser
-                    </label>
-                    {availableTemplates.length === 0 ? (
-                      <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 text-xs text-zinc-500">
-                        Aucun template disponible pour ce canal.{" "}
-                        <a
-                          href={pages.templates_new}
-                          className="text-amber-500 hover:underline"
-                        >
-                          Créer un template
-                        </a>
-                      </div>
-                    ) : (
-                      <select
-                        id={`template-${config.key}`}
-                        value={templateIds[config.key] || ""}
-                        onChange={(e) =>
-                          handleTemplateChange(config.key, e.target.value)
-                        }
-                        className="w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-200 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                  <div className="mt-3 space-y-3 pl-7">
+                    <div>
+                      <label
+                        htmlFor={`template-${config.key}`}
+                        className="mb-2 block text-xs font-medium text-zinc-400"
                       >
-                        <option value="">Sélectionner un template...</option>
-                        {availableTemplates.map((template) => (
-                          <option key={template.id} value={template.id}>
-                            {template.name} ({template.type === "text" ? "Texte" : "Vocal"})
-                          </option>
-                        ))}
-                      </select>
+                        Template à utiliser
+                      </label>
+                      {availableTemplates.length === 0 ? (
+                        <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 text-xs text-zinc-500">
+                          Aucun template disponible pour ce canal.{" "}
+                          <a
+                            href={pages.templates_new}
+                            className="text-amber-500 hover:underline"
+                          >
+                            Créer un template
+                          </a>
+                        </div>
+                      ) : (
+                        <select
+                          id={`template-${config.key}`}
+                          value={templateIds[config.key] || ""}
+                          onChange={(e) =>
+                            handleTemplateChange(config.key, e.target.value)
+                          }
+                          className="w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-200 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                        >
+                          <option value="">Sélectionner un template...</option>
+                          {availableTemplates.map((template) => (
+                            <option key={template.id} value={template.id}>
+                              {template.name} ({template.type === "text" ? "Texte" : "Vocal"})
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+
+                    {/* Credit allocation input (only for channels that require credits) */}
+                    {config.requiresCredits && config.key !== "leboncoin" && (
+                      <div>
+                        <label
+                          htmlFor={`credits-${config.key}`}
+                          className="mb-2 block text-xs font-medium text-zinc-400"
+                        >
+                          Crédits à allouer
+                        </label>
+                        <input
+                          type="number"
+                          id={`credits-${config.key}`}
+                          min="0"
+                          step="1"
+                          value={channelCredits?.[config.key as "sms" | "whatsapp" | "ringlessVoice"] || 0}
+                          onChange={(e) =>
+                            handleCreditsChange(
+                              config.key as "sms" | "whatsapp" | "ringlessVoice",
+                              parseInt(e.target.value) || 0
+                            )
+                          }
+                          className="w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-200 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                          placeholder="0"
+                        />
+                        <p className="mt-1 text-xs text-zinc-500">
+                          1 crédit = 1 contact. Ces crédits seront déduits de votre solde
+                          d'organisation.
+                        </p>
+                      </div>
                     )}
                   </div>
                 )}

@@ -20,6 +20,15 @@ const templateIdsSchema = z
   })
   .optional();
 
+// Channel credit allocation schema
+const channelCreditsSchema = z
+  .object({
+    sms: z.number().int().min(0, "Les crédits doivent être positifs").optional(),
+    whatsapp: z.number().int().min(0, "Les crédits doivent être positifs").optional(),
+    ringlessVoice: z.number().int().min(0, "Les crédits doivent être positifs").optional(),
+  })
+  .optional();
+
 // Main hunt form schema (client-side)
 export const huntFormSchema = z.object({
   name: z
@@ -35,8 +44,10 @@ export const huntFormSchema = z.object({
     )
     .optional(),
   autoRefresh: z.boolean(),
+  dailyPacingLimit: z.number().int().min(1).max(1000).optional().nullable(),
   outreachSettings: outreachSettingsSchema,
   templateIds: templateIdsSchema,
+  channelCredits: channelCreditsSchema,
 });
 
 // Type inference for form data
