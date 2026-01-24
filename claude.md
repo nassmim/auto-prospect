@@ -225,15 +225,55 @@ If `pnpm db:generate` requires user interaction (e.g., choosing between "create 
 - Tell the user to run `pnpm db:generate` manually and select the appropriate option
 - Document what option should be selected based on the schema changes
 
+**🚨 CRITICAL: Never Mix Drizzle-Generated SQL with Custom SQL**
+
+**The Rule:** Keep Drizzle-generated SQL and custom SQL (triggers, grants, functions) in **separate migration files**.
+
+**Why:** When preparing for production or cleaning up migrations, you need to clearly distinguish:
+- What Drizzle auto-generates (schema structure, RLS policies, indexes, FKs)
+- What you manually added (triggers, grants, custom functions)
+
+**Workflow for new tables:**
+```bash
+# Step 1: Schema changes → Drizzle migration (auto-generated SQL only)
+1. Modify schema: src/schema/*.ts
+2. Generate: pnpm db:generate
+3. Review: supabase/migrations/0005_some_name.sql (contains CREATE TABLE, RLS policy, etc.)
+
+# Step 2: Custom SQL → Separate custom migration
+4. Generate custom file: pnpm db:generate --custom
+5. Add grants/triggers: supabase/migrations/0006_custom_name.sql
+6. Add clear comment linking to the related Drizzle migration
+
+# Example:
+# 0005_living_ultimo.sql (Drizzle-generated)
+CREATE TABLE "hunt_channel_credits" (...);
+ALTER TABLE "hunt_channel_credits" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "enable all for hunt owners" ON "hunt_channel_credits" ...;
+
+# 0006_custom_grants_hunt.sql (Custom)
+-- Custom migration: Grants for hunt_channel_credits table
+-- Related to Drizzle migration: 0005_living_ultimo.sql
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE "public"."hunt_channel_credits" TO "authenticated", "service_role";
+```
+
+**Benefits:**
+- Easy to identify which migrations to keep/delete when consolidating for production
+- Clear separation of concerns
+- Custom migrations have descriptive comments linking to their related tables
+- If you delete a Drizzle migration, you know which custom migration to delete too
+
 ### New Table Checklist
 
 **CRITICAL: Every new table MUST have explicit grants, even if RLS is enabled!**
 
 1. ✅ Define RLS policies in schema (see `src/schema/user.ts`)
-2. ✅ **ALWAYS add explicit grants in migration** (see example in `0009_create_leads_tables.sql`):
+2. ✅ Run `pnpm db:generate` to create Drizzle migration
+3. ✅ Run `pnpm db:generate --custom` to create separate custom migration
+4. ✅ **Add explicit grants in the CUSTOM migration file**:
    ```sql
-   -- Explicit grants for a specific table and for roles
-   -- Adjust the grants for each new table you create
+   -- Custom migration: Grants for my_table
+   -- Related to Drizzle migration: 0XXX_migration_name.sql
    grant select, insert, update, delete on table public.my_table to authenticated, service_role;
    ```
    **Why:** Supabase requires explicit grants even with RLS enabled. Without grants, users cannot access the table even if RLS policies allow it.

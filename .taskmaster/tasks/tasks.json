@@ -989,19 +989,19 @@
       {
         "id": "35",
         "title": "Create Daily Contact Tracking Table",
-        "description": "Create a table to track daily contact counts per hunt, enabling enforcement of the daily pacing limit across all channels.",
-        "details": "To enforce daily pacing limits, we need to track how many contacts were made each day per hunt. This table stores:\n\n- One row per hunt per calendar day\n- Total contact count for that day (used for pacing enforcement)\n- Per-channel breakdown counts (internal analytics only, not exposed to users per PRD)\n\nKey design decisions:\n- Users should be able to read their daily stats but only background jobs/service should write to it\n- The table enables the system to check 'can we contact more leads today?' before processing\n- Unique constraint on (huntId, date) ensures one record per day",
-        "testStrategy": "1. Verify unique constraint on (huntId, date). 2. Test atomic increment of contact counts. 3. Confirm users can read but cannot directly insert. 4. Test date boundary handling (timezone considerations).",
-        "priority": "high",
+        "description": "CANCELLED: This table is no longer needed. The daily pacing limit counter will be maintained in-memory during background job execution rather than persisted to the database. The dailyPacingLimit field on the hunts table (task 33) is sufficient for configuration.",
+        "status": "cancelled",
         "dependencies": [
           "33"
         ],
-        "status": "pending",
+        "priority": "high",
+        "details": "## Cancellation Reason\n\nAfter architectural review, the decision was made to track daily contact counts in-memory during background job execution rather than persisting to a database table.\n\n### Original Design (Cancelled)\n- Dedicated `huntDailyContacts` table with one row per hunt per calendar day\n- Atomic increments via database operations\n- Per-channel breakdown counts for internal analytics\n\n### New Approach\n- The `dailyPacingLimit` field on the `hunts` table (implemented in task 33) stores the configured limit\n- Background jobs maintain an in-memory counter during execution\n- Counter resets naturally when a new job starts on a new day\n- Simpler architecture with no additional table maintenance\n\n### Trade-offs Accepted\n- No persistence of daily counts across job restarts (acceptable for daily-resetting limits)\n- No historical analytics on per-day contact volumes (can be added later if needed)\n- Simpler implementation with fewer moving parts",
+        "testStrategy": "N/A - Task cancelled. No implementation required.",
         "subtasks": [],
         "complexity": 6,
         "recommendedSubtasks": 4,
         "expansionPrompt": "Break down into: (1) Create channelConfigSchema with dailyLimit/totalLimit/enabled fields and cross-field refinement (dailyLimit <= totalLimit), (2) Create channelSettingsSchema with optional channel configs and 'at least one enabled' refinement, (3) Create channelPriorityConfigSchema for priority array validation, (4) Write comprehensive unit tests for all refinements, edge cases (empty settings, all disabled), and French error messages. Update existing hunt schemas.",
-        "updatedAt": "2026-01-24T16:44:39.490Z"
+        "updatedAt": "2026-01-24T16:47:05.022Z"
       },
       {
         "id": "36",
@@ -1011,11 +1011,12 @@
         "testStrategy": "1. Verify seed data inserts correct default priorities. 2. Confirm helper function returns channels in correct priority order. 3. Test that authenticated users can read but not update. 4. Verify priority changes are reflected in channel selection logic.",
         "priority": "medium",
         "dependencies": [],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [],
         "complexity": 5,
         "recommendedSubtasks": 4,
-        "expansionPrompt": "Break down into: (1) Implement getChannelPriorityConfig with default fallback ['ringlessVoice', 'whatsappText', 'sms'], (2) Implement updateChannelPriorityConfig with Zod validation and upsert logic, (3) Add proper RLS enforcement using dbClient.rls() wrapper pattern from existing actions, (4) Implement error handling with French error messages and test RLS access control. Follow patterns from hunt.actions.ts."
+        "expansionPrompt": "Break down into: (1) Implement getChannelPriorityConfig with default fallback ['ringlessVoice', 'whatsappText', 'sms'], (2) Implement updateChannelPriorityConfig with Zod validation and upsert logic, (3) Add proper RLS enforcement using dbClient.rls() wrapper pattern from existing actions, (4) Implement error handling with French error messages and test RLS access control. Follow patterns from hunt.actions.ts.",
+        "updatedAt": "2026-01-24T17:02:34.930Z"
       },
       {
         "id": "37",
@@ -1158,7 +1159,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-24T16:44:39.491Z",
+      "lastModified": "2026-01-24T17:02:34.931Z",
       "taskCount": 44,
       "completedCount": 36,
       "tags": [

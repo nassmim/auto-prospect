@@ -37,3 +37,22 @@ export const messageTypes = pgTable(
     }),
   ],
 );
+
+export const channelPriorities = pgTable(
+  "channel_priorities",
+  {
+    id: smallserial().primaryKey(),
+    channel: MessageTypeDBEnum().notNull(),
+    priority: smallserial().notNull(),
+  },
+  (table) => [
+    unique("channel_priorities_channel_unique").on(table.channel),
+    unique("channel_priorities_priority_unique").on(table.priority),
+    pgPolicy("enable read for authenticated users", {
+      as: "permissive",
+      for: "select",
+      to: authenticatedRole,
+      using: sql`true`,
+    }),
+  ],
+);

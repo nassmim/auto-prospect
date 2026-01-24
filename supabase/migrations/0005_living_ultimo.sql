@@ -22,5 +22,4 @@ CREATE POLICY "enable all for hunt owners" ON "hunt_channel_credits" AS PERMISSI
         join organizations o on o.id = h.organization_id
         where h.id = "hunt_channel_credits"."hunt_id"
         and o.auth_user_id = (select auth.uid())
-      ));--> statement-breakpoint
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE "public"."hunt_channel_credits" TO "authenticated", "service_role";
+      ));

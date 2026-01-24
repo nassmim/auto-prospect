@@ -43,6 +43,34 @@
       "when": 1769270944269,
       "tag": "0005_living_ultimo",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1769273579421,
+      "tag": "0006_glamorous_celestials",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1769273858661,
+      "tag": "0007_mushy_frank_castle",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1769274190340,
+      "tag": "0008_omniscient_prowler",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1769274201668,
+      "tag": "0009_wet_marauders",
+      "breakpoints": true
     }
   ]
 }
