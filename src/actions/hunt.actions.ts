@@ -1,126 +1,247 @@
 "use server";
 
-import { getUserPlan } from "@/actions/account.actions";
-import { getAdsContactedByUser, getMatchingAds } from "@/actions/ad.actions";
-import { createDrizzleSupabaseClient, TDBClient } from "@/lib/drizzle/dbClient";
-import { contactedAds } from "@/schema/ad.schema";
-import { leads } from "@/schema/lead.schema";
-import { THuntWithRelations } from "@/types/hunt.types";
+import { EHuntStatus } from "@/constants/enums";
+import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
+import { createClient } from "@/lib/supabase/server";
+import { formatZodError } from "@/lib/validation";
+import { brandsHunts, hunts, subTypesHunts } from "@/schema/hunt.schema";
+import { createHuntSchema, updateHuntSchema } from "@/validation-schemas";
+import { eq } from "drizzle-orm";
 
-export const runDailyHunts = async () => {
+/**
+ * Fetches all hunts for the current user's organization
+ */
+export async function getOrganizationHunts() {
+  const supabase = await createClient();
+  const { data: userData } = await supabase.auth.getUser();
+
+  if (!userData.user) {
+    throw new Error("Non authentifié");
+  }
+
   const dbClient = await createDrizzleSupabaseClient();
 
-  // Gets the active hunts that search for ads matching user criteria
-  const activeHunts = await fetchAllActiveHunts(dbClient);
-
-  if (activeHunts?.length === 0) return;
-
-  // Send messages to matching ad owners
-  await bulkSend(activeHunts, dbClient);
-};
-
-/**
- * Fetches all active hunts (baseFilters)
- */
-const fetchAllActiveHunts = async (
-  dbClient: TDBClient,
-): Promise<THuntWithRelations[]> => {
-  return await dbClient.admin.query.baseFilters.findMany({
-    where: (table, { eq }) => eq(table.isActive, true),
-    with: {
-      location: true,
-      subTypes: true,
-      brands: true,
-    },
+  // Use RLS wrapper to ensure user can only see their organization's hunts
+  const hunts = await dbClient.rls(async (tx) => {
+    return tx.query.hunts.findMany({
+      orderBy: (table, { desc }) => [desc(table.createdAt)],
+      with: {
+        location: true,
+        brands: {
+          with: {
+            brand: true,
+          },
+        },
+        subTypes: {
+          with: {
+            subType: true,
+          },
+        },
+      },
+    });
   });
-};
 
-/**
- * Processes multiple hunts with controlled concurrency
- * Uses Promise.race pattern to avoid Vercel edge function timeouts
- */
-async function bulkSend(
-  hunts: THuntWithRelations[],
-  dbClient: TDBClient,
-): Promise<void> {
-  const concurrency = 5;
-  const queue = [...hunts]; // Queue of jobs to be processed
-  const inFlight: Promise<void>[] = []; // Currently processing jobs
-
-  // While there's work left or jobs in flight
-  while (queue.length || inFlight.length) {
-    // Start new jobs while we're under capacity and have work
-    while (inFlight.length < concurrency && queue.length) {
-      const hunt = queue.shift()!;
-      const huntJobPromise = contactAdsOwners(hunt, dbClient)
-        .catch(() => {})
-        .finally(() => {
-          // Remove this promise from inFlight when done
-          const idx = inFlight.indexOf(huntJobPromise);
-          if (idx !== -1) inFlight.splice(idx, 1);
-        });
-      inFlight.push(huntJobPromise);
-    }
-    // Wait for at least one job to finish before continuing
-    await Promise.race(inFlight);
-  }
+  return hunts;
 }
 
 /**
- * Processes a single hunt: finds matching ads, sends messages, creates leads
+ * Fetches a single hunt by ID
  */
-async function contactAdsOwners(
-  hunt: THuntWithRelations,
-  dbClient: TDBClient,
-): Promise<void> {
-  const organizationId = hunt.organizationId;
+export async function getHuntById(huntId: string) {
+  const supabase = await createClient();
+  const { data: userData } = await supabase.auth.getUser();
 
-  // Check if organization has an active subscription
-  const plan = await getUserPlan(organizationId, dbClient);
-  if (!plan) return;
+  if (!userData.user) {
+    throw new Error("Non authentifié");
+  }
 
-  // Get ads already contacted by this organization
-  const fetchedContactedAds = await getAdsContactedByUser(organizationId, {
-    dbClient,
-    bypassRLS: true,
+  const dbClient = await createDrizzleSupabaseClient();
+
+  const hunt = await dbClient.rls(async (tx) => {
+    return tx.query.hunts.findFirst({
+      where: (table, { eq }) => eq(table.id, huntId),
+      with: {
+        location: true,
+        brands: {
+          with: {
+            brand: true,
+          },
+        },
+        subTypes: {
+          with: {
+            subType: true,
+          },
+        },
+      },
+    });
   });
-  const contactedAdsIds = fetchedContactedAds.map(({ adId }) => adId);
 
-  // Fetch ads matching hunt criteria
-  const matchingAds = await getMatchingAds(hunt, {
-    contactedAdsIds,
-    dbClient,
-    bypassRLS: true,
-  });
+  if (!hunt) {
+    throw new Error("Recherche introuvable");
+  }
 
-  if (matchingAds.length === 0) return;
+  return hunt;
+}
 
-  // Send messages (whatsapp, audio, sms) to matching ads
-  // TODO: Implement actual message sending
+/**
+ * Creates a new hunt
+ */
+export async function createHunt(data: unknown) {
+  const supabase = await createClient();
+  const { data: userData } = await supabase.auth.getUser();
 
-  // Track contacted ads and create leads for CRM
-  await Promise.all([
-    // Track in contactedAds (lightweight history)
-    dbClient.admin.insert(contactedAds).values(
-      matchingAds.map((ad) => ({
-        adId: ad.id,
-        organizationId: organizationId,
-        messageTypeId: 1, // TODO: Use actual message type based on hunt settings
-      })),
-    ),
+  if (!userData.user) {
+    throw new Error("Non authentifié");
+  }
 
-    // Create leads for CRM pipeline (with duplicate prevention)
-    dbClient.admin
-      .insert(leads)
-      .values(
-        matchingAds.map((ad, index) => ({
-          organizationId: organizationId,
-          huntId: hunt.id,
-          adId: ad.id,
-          stage: "contacte", // Already contacted via message
-          position: index,
+  // Validate input with Zod
+  const parseResult = createHuntSchema.safeParse(data);
+  if (!parseResult.success) {
+    throw new Error(formatZodError(parseResult.error));
+  }
+
+  const validatedData = parseResult.data;
+
+  // Get user's organization
+  const { data: memberData } = await supabase
+    .from("organization_members")
+    .select("organization_id")
+    .eq("account_id", userData.user.id)
+    .single();
+
+  if (!memberData) {
+    throw new Error("L'utilisateur n'est membre d'aucune organisation");
+  }
+
+  const dbClient = await createDrizzleSupabaseClient();
+
+  // Create the hunt with RLS enforcement
+  const hunt = await dbClient.rls(async (tx) => {
+    // Insert the main hunt record
+    const [newHunt] = await tx
+      .insert(hunts)
+      .values({
+        organizationId: memberData.organization_id,
+        name: validatedData.name,
+        locationId: validatedData.locationId,
+        typeId: validatedData.adTypeId,
+        status: "active",
+        radiusInKm: validatedData.radiusInKm,
+        autoRefresh: validatedData.autoRefresh,
+        outreachSettings: validatedData.outreachSettings,
+        templateIds: validatedData.templateIds,
+        priceMin: validatedData.priceMin,
+        priceMax: validatedData.priceMax,
+        mileageMin: validatedData.mileageMin,
+        mileageMax: validatedData.mileageMax,
+        modelYearMin: validatedData.modelYearMin,
+        modelYearMax: validatedData.modelYearMax,
+        hasBeenReposted: validatedData.hasBeenReposted,
+        priceHasDropped: validatedData.priceHasDropped,
+        isUrgent: validatedData.isUrgent,
+        hasBeenBoosted: validatedData.hasBeenBoosted,
+        isLowPrice: validatedData.isLowPrice,
+      })
+      .returning();
+
+    // Insert brand filters if provided
+    if (validatedData.brandIds?.length) {
+      await tx.insert(brandsHunts).values(
+        validatedData.brandIds.map((brandId) => ({
+          huntId: newHunt.id,
+          brandId,
         })),
-      )
-      .onConflictDoNothing(), // Unique constraint on (organizationId, adId)
-  ]);
+      );
+    }
+
+    // Insert subType filters if provided
+    if (validatedData.subTypeIds?.length) {
+      await tx.insert(subTypesHunts).values(
+        validatedData.subTypeIds.map((subTypeId) => ({
+          huntId: newHunt.id,
+          subTypeId,
+        })),
+      );
+    }
+
+    return newHunt;
+  });
+
+  return hunt;
+}
+
+/**
+ * Updates hunt status (active/paused)
+ */
+export async function updateHuntStatus(huntId: string, status: EHuntStatus) {
+  const supabase = await createClient();
+  const { data: userData } = await supabase.auth.getUser();
+
+  if (!userData.user) {
+    throw new Error("Non authentifié");
+  }
+
+  const dbClient = await createDrizzleSupabaseClient();
+
+  const [updatedHunt] = await dbClient.rls(async (tx) => {
+    return tx
+      .update(hunts)
+      .set({ status })
+      .where(eq(hunts.id, huntId))
+      .returning();
+  });
+
+  return updatedHunt;
+}
+
+/**
+ * Updates hunt details
+ */
+export async function updateHunt(huntId: string, data: unknown) {
+  const supabase = await createClient();
+  const { data: userData } = await supabase.auth.getUser();
+
+  if (!userData.user) {
+    throw new Error("Non authentifié");
+  }
+
+  // Validate input with Zod
+  const parseResult = updateHuntSchema.safeParse(data);
+  if (!parseResult.success) {
+    throw new Error(formatZodError(parseResult.error));
+  }
+
+  const validatedData = parseResult.data;
+
+  const dbClient = await createDrizzleSupabaseClient();
+
+  const [updatedHunt] = await dbClient.rls(async (tx) => {
+    return tx
+      .update(hunts)
+      .set(validatedData)
+      .where(eq(hunts.id, huntId))
+      .returning();
+  });
+
+  return updatedHunt;
+}
+
+/**
+ * Deletes a hunt
+ */
+export async function deleteHunt(huntId: string) {
+  const supabase = await createClient();
+  const { data: userData } = await supabase.auth.getUser();
+
+  if (!userData.user) {
+    throw new Error("Non authentifié");
+  }
+
+  const dbClient = await createDrizzleSupabaseClient();
+
+  await dbClient.rls(async (tx) => {
+    return tx.delete(hunts).where(eq(hunts.id, huntId));
+  });
+
+  return { success: true };
 }

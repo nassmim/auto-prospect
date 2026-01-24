@@ -1,6 +1,6 @@
 "use client";
 
-import { createHunt } from "@/actions/hunt-crud.actions";
+import { createHunt } from "@/actions/hunt.actions";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {

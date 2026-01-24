@@ -1,6 +1,6 @@
 "use client";
 
-import { deleteHunt, updateHuntStatus } from "@/actions/hunt-crud.actions";
+import { deleteHunt, updateHuntStatus } from "@/actions/hunt.actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {

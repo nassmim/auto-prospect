@@ -10,8 +10,11 @@ import {
   leads,
   type LeadStage,
 } from "@/schema/lead.schema";
-import { messageTemplates } from "@/schema/message-template.schema";
-import { leadActivities, messages } from "@/schema/message.schema";
+import {
+  leadActivities,
+  messages,
+  messageTemplates,
+} from "@/schema/message.schema";
 import { organizationMembers } from "@/schema/organization.schema";
 import { leadNoteSchema, leadReminderSchema } from "@/validation-schemas";
 import { and, desc, eq, inArray, isNotNull } from "drizzle-orm";

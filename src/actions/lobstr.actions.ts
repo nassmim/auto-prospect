@@ -7,8 +7,8 @@ import {
 import { sendAlertToAdmin } from "@/actions/general.actions";
 import { EPlatformValue } from "@/constants/enums";
 import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
-import { ads as adsTable } from "@/schema";
-import { TAdFromLobstr, TAdInsert, TAdReferenceData } from "@/types/ad.types";
+import { ads as adsTable, TAdInsert } from "@/schema";
+import { TAdFromLobstr, TAdReferenceData } from "@/types/ad.types";
 import { customParseInt } from "@/utils/general.utils";
 import parsePhoneNumber from "libphonenumber-js";
 

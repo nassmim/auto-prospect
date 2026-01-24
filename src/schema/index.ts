@@ -3,7 +3,6 @@ export * from "@/schema/credits.schema";
 export * from "@/schema/general.schema";
 export * from "@/schema/hunt.schema";
 export * from "@/schema/lead.schema";
-export * from "@/schema/message-template.schema";
 export * from "@/schema/message.schema";
 export * from "@/schema/organization.schema";
 export * from "@/schema/whatsapp-session.schema";

@@ -271,7 +271,6 @@ export type {
   GeneralParametersType,
   TAdFromLobstr,
   TAdReferenceData,
-  TContactedAd,
   TextVariableType,
   TSubscription,
 };

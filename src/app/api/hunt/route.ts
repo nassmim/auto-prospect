@@ -1,5 +1,5 @@
 import { sendAlertToAdmin } from "@/actions/general.actions";
-import { runDailyHunts } from "@/actions/hunt.actions";
+import { runDailyHunts } from "@/actions/hunt-background.actions";
 
 export async function POST(): Promise<Response> {
   try {

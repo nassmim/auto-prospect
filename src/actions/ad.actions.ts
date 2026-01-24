@@ -16,16 +16,14 @@ import {
   fuels,
   gearBoxes,
   locations,
+  TAd,
+  TContactedAd,
+  THunt,
+  TLocation,
   vehicleSeats,
   vehicleStates,
 } from "@/schema";
-import {
-  TAd,
-  TAdReferenceData,
-  TContactedAd,
-  TLocation,
-} from "@/types/ad.types";
-import { THuntWithRelations } from "@/types/hunt.types";
+import { TAdReferenceData } from "@/types/ad.types";
 import { BinaryOperator, sql } from "drizzle-orm";
 import { PgColumn } from "drizzle-orm/pg-core";
 
@@ -153,7 +151,7 @@ export const getAdsContactedByUser = async (
  * Fetches ads matching user's automated robot filters
  */
 export const getMatchingAds = async (
-  robot: THuntWithRelations,
+  robot: THunt,
   {
     contactedAdsIds = [],
     excludeContactedAds = true,
@@ -180,7 +178,7 @@ export const getMatchingAds = async (
     priceHasDropped,
     radiusInKm,
     brands,
-    adTypeId,
+    typeId,
     subTypes,
     location,
   } = robot;
@@ -208,9 +206,9 @@ export const getMatchingAds = async (
           // ads whose lat/lng are within the radius
           inArray(table.locationId, nearbyLocationsIds),
 
-          eq(table.typeId, adTypeId),
+          eq(table.typeId, typeId),
 
-          subTypes.length > 0
+          subTypes && subTypes.length > 0
             ? inArray(
                 table.subtypeId,
                 subTypes.map(({ subTypeId }) => subTypeId),
@@ -232,7 +230,7 @@ export const getMatchingAds = async (
           gte(table.mileage, mileageMin),
           mileageMax != null ? lte(table.mileage, mileageMax) : undefined,
 
-          brands.length > 0
+          brands && brands.length > 0
             ? inArray(
                 table.brandId,
                 brands.map(({ brandId }) => brandId),

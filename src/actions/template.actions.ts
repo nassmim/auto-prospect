@@ -6,7 +6,7 @@ import {
 } from "@/lib/drizzle/dbClient";
 import { createClient } from "@/lib/supabase/server";
 import { formatZodError } from "@/lib/validation";
-import { messageTemplates } from "@/schema/message-template.schema";
+import { messageTemplates } from "@/schema/message.schema";
 import { textTemplateSchema, voiceTemplateSchema } from "@/validation-schemas";
 import { and, BinaryOperator, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -145,7 +145,6 @@ export async function createTextTemplate(data: unknown) {
           channel: validatedData.channel,
           content: validatedData.content,
           isDefault: validatedData.isDefault || false,
-          createdById: session.user.id,
         })
         .returning();
     });
@@ -232,7 +231,6 @@ export async function createVoiceTemplate(data: unknown) {
           audioUrl: validatedData.audioUrl,
           audioDuration: validatedData.audioDuration,
           isDefault: validatedData.isDefault || false,
-          createdById: session.user.id,
         })
         .returning();
     });
