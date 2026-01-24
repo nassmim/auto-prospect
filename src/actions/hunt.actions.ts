@@ -1,9 +1,10 @@
 "use server";
 
-import { EHuntStatus } from "@/constants/enums";
+import { ECreditType, EHuntStatus } from "@/constants/enums";
 import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
 import { createClient } from "@/lib/supabase/server";
 import { formatZodError } from "@/lib/validation";
+import { huntChannelCredits } from "@/schema/credits.schema";
 import { brandsHunts, hunts, subTypesHunts } from "@/schema/hunt.schema";
 import { createHuntSchema, updateHuntSchema } from "@/validation-schemas";
 import { eq } from "drizzle-orm";
@@ -45,7 +46,7 @@ export async function getOrganizationHunts() {
 }
 
 /**
- * Fetches a single hunt by ID
+ * Fetches a single hunt by ID with channel credits
  */
 export async function getHuntById(huntId: string) {
   const supabase = await createClient();
@@ -80,7 +81,17 @@ export async function getHuntById(huntId: string) {
     throw new Error("Recherche introuvable");
   }
 
-  return hunt;
+  // Fetch channel credits separately
+  const channelCreditsData = await dbClient.rls(async (tx) => {
+    return tx.query.huntChannelCredits.findMany({
+      where: (table, { eq }) => eq(table.huntId, huntId),
+    });
+  });
+
+  return {
+    ...hunt,
+    channelCredits: channelCreditsData,
+  };
 }
 
 /**
@@ -127,6 +138,7 @@ export async function createHunt(data: unknown) {
         typeId: validatedData.adTypeId,
         status: "active",
         radiusInKm: validatedData.radiusInKm,
+        dailyPacingLimit: validatedData.dailyPacingLimit,
         autoRefresh: validatedData.autoRefresh,
         outreachSettings: validatedData.outreachSettings,
         templateIds: validatedData.templateIds,
@@ -164,6 +176,40 @@ export async function createHunt(data: unknown) {
       );
     }
 
+    // Insert channel credit allocations for enabled channels
+    const channelCreditsToInsert = [];
+
+    if (validatedData.channelCredits?.sms && validatedData.channelCredits.sms > 0) {
+      channelCreditsToInsert.push({
+        huntId: newHunt.id,
+        channel: ECreditType.SMS,
+        creditsAllocated: validatedData.channelCredits.sms,
+        creditsConsumed: 0,
+      });
+    }
+
+    if (validatedData.channelCredits?.whatsapp && validatedData.channelCredits.whatsapp > 0) {
+      channelCreditsToInsert.push({
+        huntId: newHunt.id,
+        channel: ECreditType.WHATSAPP_TEXT,
+        creditsAllocated: validatedData.channelCredits.whatsapp,
+        creditsConsumed: 0,
+      });
+    }
+
+    if (validatedData.channelCredits?.ringlessVoice && validatedData.channelCredits.ringlessVoice > 0) {
+      channelCreditsToInsert.push({
+        huntId: newHunt.id,
+        channel: ECreditType.RINGLESS_VOICE,
+        creditsAllocated: validatedData.channelCredits.ringlessVoice,
+        creditsConsumed: 0,
+      });
+    }
+
+    if (channelCreditsToInsert.length > 0) {
+      await tx.insert(huntChannelCredits).values(channelCreditsToInsert);
+    }
+
     return newHunt;
   });
 
@@ -195,7 +241,7 @@ export async function updateHuntStatus(huntId: string, status: EHuntStatus) {
 }
 
 /**
- * Updates hunt details
+ * Updates hunt details and channel credits
  */
 export async function updateHunt(huntId: string, data: unknown) {
   const supabase = await createClient();
@@ -216,14 +262,123 @@ export async function updateHunt(huntId: string, data: unknown) {
   const dbClient = await createDrizzleSupabaseClient();
 
   const [updatedHunt] = await dbClient.rls(async (tx) => {
-    return tx
+    const result = await tx
       .update(hunts)
       .set(validatedData)
       .where(eq(hunts.id, huntId))
       .returning();
+
+    return result;
   });
 
   return updatedHunt;
+}
+
+/**
+ * Updates or creates hunt channel credit allocations
+ */
+export async function updateHuntChannelCredits(
+  huntId: string,
+  channelCredits: {
+    sms?: number;
+    whatsapp?: number;
+    ringlessVoice?: number;
+  }
+) {
+  const supabase = await createClient();
+  const { data: userData } = await supabase.auth.getUser();
+
+  if (!userData.user) {
+    throw new Error("Non authentifié");
+  }
+
+  const dbClient = await createDrizzleSupabaseClient();
+
+  await dbClient.rls(async (tx) => {
+    // Handle SMS credits
+    if (channelCredits.sms !== undefined) {
+      if (channelCredits.sms > 0) {
+        // Upsert: try to update, if not exists insert
+        const existing = await tx.query.huntChannelCredits.findFirst({
+          where: (table, { and, eq }) =>
+            and(
+              eq(table.huntId, huntId),
+              eq(table.channel, ECreditType.SMS)
+            ),
+        });
+
+        if (existing) {
+          await tx
+            .update(huntChannelCredits)
+            .set({ creditsAllocated: channelCredits.sms })
+            .where(eq(huntChannelCredits.id, existing.id));
+        } else {
+          await tx.insert(huntChannelCredits).values({
+            huntId,
+            channel: ECreditType.SMS,
+            creditsAllocated: channelCredits.sms,
+            creditsConsumed: 0,
+          });
+        }
+      }
+    }
+
+    // Handle WhatsApp credits
+    if (channelCredits.whatsapp !== undefined) {
+      if (channelCredits.whatsapp > 0) {
+        const existing = await tx.query.huntChannelCredits.findFirst({
+          where: (table, { and, eq }) =>
+            and(
+              eq(table.huntId, huntId),
+              eq(table.channel, ECreditType.WHATSAPP_TEXT)
+            ),
+        });
+
+        if (existing) {
+          await tx
+            .update(huntChannelCredits)
+            .set({ creditsAllocated: channelCredits.whatsapp })
+            .where(eq(huntChannelCredits.id, existing.id));
+        } else {
+          await tx.insert(huntChannelCredits).values({
+            huntId,
+            channel: ECreditType.WHATSAPP_TEXT,
+            creditsAllocated: channelCredits.whatsapp,
+            creditsConsumed: 0,
+          });
+        }
+      }
+    }
+
+    // Handle Ringless Voice credits
+    if (channelCredits.ringlessVoice !== undefined) {
+      if (channelCredits.ringlessVoice > 0) {
+        const existing = await tx.query.huntChannelCredits.findFirst({
+          where: (table, { and, eq }) =>
+            and(
+              eq(table.huntId, huntId),
+              eq(table.channel, ECreditType.RINGLESS_VOICE)
+            ),
+        });
+
+        if (existing) {
+          await tx
+            .update(huntChannelCredits)
+            .set({ creditsAllocated: channelCredits.ringlessVoice })
+            .where(eq(huntChannelCredits.id, existing.id));
+        } else {
+          await tx.insert(huntChannelCredits).values({
+            huntId,
+            channel: ECreditType.RINGLESS_VOICE,
+            creditsAllocated: channelCredits.ringlessVoice,
+            creditsConsumed: 0,
+          });
+        }
+      }
+    }
+  });
+
+  return { success: true };
 }
 
 /**

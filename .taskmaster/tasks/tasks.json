@@ -1028,12 +1028,12 @@
           "33",
           "34"
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [],
         "complexity": 7,
         "recommendedSubtasks": 5,
         "expansionPrompt": "Break down into: (1) Update createHunt and updateHunt to accept channelSettings in validated schema, (2) Implement conversion helper from old outreachSettings to new channelSettings format with proper defaults, (3) Modify insert logic to handle both new channelSettings and legacy outreachSettings, (4) Implement getChannelUsageToday action querying messages/contactedAds grouped by channel, (5) Write comprehensive tests for backward compatibility, new format, and usage tracking.",
-        "updatedAt": "2026-01-24T16:11:47.738Z"
+        "updatedAt": "2026-01-24T16:15:16.599Z"
       },
       {
         "id": "38",
@@ -1046,11 +1046,12 @@
           "34",
           "37"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [],
         "complexity": 6,
         "recommendedSubtasks": 5,
-        "expansionPrompt": "Break down into: (1) Create ChannelConfigSection component structure with react-hook-form integration, (2) Build individual channel cards (SMS, WhatsApp, Ringless Voice) with enable toggles, (3) Implement daily/total limit inputs with conditional enabling based on channel toggle, (4) Add visual indicators for dailyLimit <= totalLimit constraint validation, (5) Integrate shadcn components (Checkbox, Input, Label, FormField) and ensure accessibility (keyboard navigation, ARIA labels). Style with existing zinc/amber theme."
+        "expansionPrompt": "Break down into: (1) Create ChannelConfigSection component structure with react-hook-form integration, (2) Build individual channel cards (SMS, WhatsApp, Ringless Voice) with enable toggles, (3) Implement daily/total limit inputs with conditional enabling based on channel toggle, (4) Add visual indicators for dailyLimit <= totalLimit constraint validation, (5) Integrate shadcn components (Checkbox, Input, Label, FormField) and ensure accessibility (keyboard navigation, ARIA labels). Style with existing zinc/amber theme.",
+        "updatedAt": "2026-01-24T16:15:39.453Z"
       },
       {
         "id": "39",
@@ -1157,9 +1158,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-24T16:11:47.739Z",
+      "lastModified": "2026-01-24T16:15:39.455Z",
       "taskCount": 44,
-      "completedCount": 35,
+      "completedCount": 36,
       "tags": [
         "master"
       ]
