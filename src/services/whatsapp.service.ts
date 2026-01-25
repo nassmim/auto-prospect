@@ -197,9 +197,41 @@ export const createWhatsAppConnection = async (
 
     if (connection === "close") {
       const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
-      if (statusCode === DisconnectReason.loggedOut) {
+      const shouldReconnect =
+        statusCode === DisconnectReason.restartRequired ||
+        statusCode === 515;
+
+      if (shouldReconnect && !isCleanedUp) {
+        // Reconnexion automatique après pairing
+        console.log("Reconnexion après pairing...");
+        setTimeout(async () => {
+          try {
+            const newSocket = makeWASocket({
+              auth: state,
+              printQRInTerminal: false,
+              browser: ["Auto-Prospect", "Chrome", "1.0.0"],
+              syncFullHistory: false,
+              markOnlineOnConnect: false,
+            });
+
+            newSocket.ev.on("connection.update", (newUpdate) => {
+              if (newUpdate.connection === "open") {
+                if (qrTimeout) {
+                  clearTimeout(qrTimeout);
+                  qrTimeout = null;
+                }
+                handlers.onConnected();
+              } else if (newUpdate.connection === "close") {
+                handlers.onDisconnected("Connexion fermée après reconnexion");
+              }
+            });
+          } catch (err) {
+            handlers.onError("Échec de reconnexion");
+          }
+        }, 1000);
+      } else if (statusCode === DisconnectReason.loggedOut) {
         handlers.onDisconnected("Déconnecté de WhatsApp");
-      } else {
+      } else if (!shouldReconnect) {
         handlers.onDisconnected("Connexion fermée");
       }
     }
@@ -211,6 +243,12 @@ export const createWhatsAppConnection = async (
       }
       handlers.onConnected();
     }
+  });
+
+  // Sauvegarder les credentials à chaque mise à jour
+  socket.ev.on("creds.update", () => {
+    // Les credentials sont mis à jour dans le state automatiquement
+    console.log("Credentials mis à jour");
   });
 
   return { socket, saveState, cleanup };

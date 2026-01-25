@@ -167,11 +167,13 @@ export const isWhatsAppConnected = async (
 /**
  * Updates the WhatsApp phone number for an account
  * Validates and formats the phone number before saving
+ * Uses admin client to bypass RLS (server action is already authenticated)
+ * Also deletes any existing WhatsApp session since credentials are tied to the old number
  */
 export const updateWhatsAppPhoneNumber = async (
   accountId: string,
   phoneNumber: string,
-  options?: { dbClient?: TDBClient; bypassRLS?: boolean },
+  options?: { dbClient?: TDBClient },
 ): Promise<{ success: boolean; formattedNumber?: string; error?: string }> => {
   // Validate and format the phone number
   const validation = validateWhatsAppNumber(phoneNumber);
@@ -181,18 +183,33 @@ export const updateWhatsAppPhoneNumber = async (
 
   const client = options?.dbClient || (await createDrizzleSupabaseClient());
 
-  const query = (tx: TDBQuery) =>
-    tx
+  try {
+    // Check if the number is different from the current one
+    const currentAccount = await client.admin.query.accounts.findFirst({
+      where: eq(accounts.id, accountId),
+      columns: { whatsappPhoneNumber: true },
+    });
+
+    const numberChanged = currentAccount?.whatsappPhoneNumber !== validation.formatted;
+
+    // Update the phone number
+    const result = await client.admin
       .update(accounts)
       .set({ whatsappPhoneNumber: validation.formatted })
-      .where(eq(accounts.id, accountId));
+      .where(eq(accounts.id, accountId))
+      .returning({ id: accounts.id });
 
-  try {
-    if (options?.bypassRLS) {
-      await query(client.admin);
-    } else {
-      await client.rls(query);
+    if (result.length === 0) {
+      return { success: false, error: "Compte non trouvé" };
     }
+
+    // If number changed, delete the existing WhatsApp session
+    if (numberChanged) {
+      await client.admin
+        .delete(whatsappSessions)
+        .where(eq(whatsappSessions.accountId, accountId));
+    }
+
     return { success: true, formattedNumber: validation.formatted! };
   } catch (error) {
     return {
@@ -240,6 +257,7 @@ export const initiateWhatsAppConnection = async (
 
     return new Promise((resolve) => {
       let resolved = false;
+      let saveStateFn: (() => StoredAuthState) | null = null;
 
       createWhatsAppConnection(storedCredentials, {
         onQRCode: async (qrDataUrl) => {
@@ -249,17 +267,25 @@ export const initiateWhatsAppConnection = async (
           }
         },
         onConnected: async () => {
-          // Connection successful - this will be handled by polling
+          // Save credentials when connected (including after reconnection)
+          if (saveStateFn) {
+            try {
+              const credentials = saveStateFn();
+              await saveWhatsAppSession(accountId, credentials, { bypassRLS: true });
+              await updateWhatsAppConnectionStatus(accountId, true, { bypassRLS: true });
+              console.log("WhatsApp connecté et credentials sauvegardés");
+            } catch (err) {
+              console.error("Erreur sauvegarde credentials:", err);
+            }
+          }
           if (!resolved) {
             resolved = true;
             resolve({ success: true });
           }
         },
         onDisconnected: (reason) => {
-          if (!resolved) {
-            resolved = true;
-            resolve({ success: false, error: reason });
-          }
+          // Ne pas résoudre avec erreur pour les reconnexions (515)
+          console.log("WhatsApp déconnecté:", reason);
         },
         onError: (error) => {
           if (!resolved) {
@@ -267,11 +293,8 @@ export const initiateWhatsAppConnection = async (
             resolve({ success: false, error });
           }
         },
-      }).then(async ({ saveState }) => {
-        // Save credentials after connection is established
-        const credentials = saveState();
-        await saveWhatsAppSession(accountId, credentials);
-        await updateWhatsAppConnectionStatus(accountId, true);
+      }).then(({ saveState }) => {
+        saveStateFn = saveState;
       });
 
       // Timeout after 2 minutes
