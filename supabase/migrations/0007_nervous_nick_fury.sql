@@ -81,7 +81,7 @@ ALTER POLICY "enable read for all users" ON "vehicle_seats" RENAME TO "enable re
 ALTER POLICY "enable read for all users" ON "vehicle_states" RENAME TO "enable read for authenticated users";--> statement-breakpoint
 ALTER POLICY "enable read for all users" ON "locations" RENAME TO "enable read for authenticated users";--> statement-breakpoint
 CREATE POLICY "enable read for authenticated users" ON "contacted_ads" AS PERMISSIVE FOR SELECT TO "authenticated" USING (true);--> statement-breakpoint
-CREATE POLICY "enable update for authenticated users" ON "contacted_ads" AS PERMISSIVE FOR SELECT TO "authenticated" USING (true) WITH CHECK (true);--> statement-breakpoint
-CREATE POLICY "enable insert for authenticated users" ON "contacted_ads" AS PERMISSIVE FOR SELECT TO "authenticated" WITH CHECK (true);--> statement-breakpoint
+CREATE POLICY "enable update for authenticated users" ON "contacted_ads" AS PERMISSIVE FOR UPDATE TO "authenticated" USING (true) WITH CHECK (true);--> statement-breakpoint
+CREATE POLICY "enable insert for authenticated users" ON "contacted_ads" AS PERMISSIVE FOR INSERT TO "authenticated" WITH CHECK (true);--> statement-breakpoint
 CREATE POLICY "enable read for admin users" ON "app_settings" AS PERMISSIVE FOR SELECT TO "service_role" USING (true);--> statement-breakpoint
 CREATE POLICY "enable read for authenticated users" ON "message_types" AS PERMISSIVE FOR SELECT TO "authenticated" USING (true);
