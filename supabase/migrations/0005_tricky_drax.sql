@@ -15,7 +15,7 @@ ALTER TABLE "ad_types_filter" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 CREATE TABLE "base_filters" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"account_id" uuid NOT NULL,
-	"zipcode_id" uuid NOT NULL,
+	"zipcode_id" integer NOT NULL,
 	"lat_center" smallint,
 	"lng_center" smallint,
 	"price_min" real DEFAULT 0,

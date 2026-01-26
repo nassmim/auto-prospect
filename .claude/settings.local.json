@@ -1,0 +1,8 @@
+{
+  "enabledMcpjsonServers": [
+    "filesystem",
+    "next-devtools",
+    "supabase"
+  ],
+  "enableAllProjectMcpServers": true
+}
