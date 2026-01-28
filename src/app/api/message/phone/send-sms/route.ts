@@ -1,24 +1,34 @@
+import { createClient } from "@/lib/supabase/server"
 import { sendSms } from "@/services/messaging.services"
 
 export async function POST(req: Request) {
   try {
+
+    // DO WE WANT TO CHECK IF USER IS CONNECTED
+
     const body = await req.json()
 
     const to = String(body?.to ?? "")
-    const from = String(body?.from ?? "")
     const message = String(body?.message ?? "")
 
-    if (!to || !from || !message) {
+    if (!to || !message) {
       return Response.json(
-        { error: "Champs requis: to, from, message" },
+        { error: "Champs requis: to, message" },
         { status: 400 }
       )
     }
 
-    const provider = await sendSms({ to, from, message })
+    // TODO GET USER.PHONEID from db
+
+        
+    const provider = await sendSms({ 
+      to, 
+      // senderId, 
+      message 
+    })
 
     return Response.json(
-      { success: true, to, from, message, provider },
+      { success: true, to, message, provider },
       { status: 200 }
     )
   } catch (e) {

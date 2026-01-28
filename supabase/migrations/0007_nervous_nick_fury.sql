@@ -62,7 +62,8 @@ ALTER TABLE "ads" ADD CONSTRAINT "ads_location_id_locations_id_fk" FOREIGN KEY (
 ALTER TABLE "ad_sub_types_filter" ADD CONSTRAINT "ad_sub_types_id_fk" FOREIGN KEY ("sub_type_id") REFERENCES "public"."sub_types"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "base_filters" ADD CONSTRAINT "base_filters_ad_type_id_ad_types_id_fk" FOREIGN KEY ("ad_type_id") REFERENCES "public"."ad_types"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "base_filters" ADD CONSTRAINT "base_filters_location_id_locations_id_fk" FOREIGN KEY ("location_id") REFERENCES "public"."locations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-CREATE INDEX "locations_geo_idx" ON "locations" USING gist (ST_MakePoint("lng", "lat")::geography);--> statement-breakpoint
+CREATE EXTENSION IF NOT EXISTS postgis;--> statement-breakpoint
+CREATE INDEX "locations_geo_idx" ON "locations" USING gist ((ST_MakePoint("lng", "lat")::geography));--> statement-breakpoint
 CREATE INDEX "ads_created_at_location_state_flags_idx" ON "ads" USING btree ("created_at","type_id","location_id","accept_salesmen","has_phone","owner_name","subtype_id","vehicle_state_id","model_year","mileage","is_low_price","is_urgent","has_been_reposted","has_been_boosted","price_has_dropped","price","driving_licence_id","gear_box_id","vehicle_seats_id","brand_id","fuel_id","favourite");--> statement-breakpoint
 ALTER TABLE "ads" DROP COLUMN "lat";--> statement-breakpoint
 ALTER TABLE "ads" DROP COLUMN "lng";--> statement-breakpoint
@@ -80,7 +81,7 @@ ALTER POLICY "enable read for all users" ON "vehicle_seats" RENAME TO "enable re
 ALTER POLICY "enable read for all users" ON "vehicle_states" RENAME TO "enable read for authenticated users";--> statement-breakpoint
 ALTER POLICY "enable read for all users" ON "locations" RENAME TO "enable read for authenticated users";--> statement-breakpoint
 CREATE POLICY "enable read for authenticated users" ON "contacted_ads" AS PERMISSIVE FOR SELECT TO "authenticated" USING (true);--> statement-breakpoint
-CREATE POLICY "enable update for authenticated users" ON "contacted_ads" AS PERMISSIVE FOR SELECT TO "authenticated" USING (true) WITH CHECK (true);--> statement-breakpoint
-CREATE POLICY "enable insert for authenticated users" ON "contacted_ads" AS PERMISSIVE FOR SELECT TO "authenticated" WITH CHECK (true);--> statement-breakpoint
+CREATE POLICY "enable update for authenticated users" ON "contacted_ads" AS PERMISSIVE FOR UPDATE TO "authenticated" USING (true) WITH CHECK (true);--> statement-breakpoint
+CREATE POLICY "enable insert for authenticated users" ON "contacted_ads" AS PERMISSIVE FOR INSERT TO "authenticated" WITH CHECK (true);--> statement-breakpoint
 CREATE POLICY "enable read for admin users" ON "app_settings" AS PERMISSIVE FOR SELECT TO "service_role" USING (true);--> statement-breakpoint
 CREATE POLICY "enable read for authenticated users" ON "message_types" AS PERMISSIVE FOR SELECT TO "authenticated" USING (true);
