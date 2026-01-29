@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import {
   getWhatsAppPhoneNumber,
@@ -8,6 +9,9 @@ import {
   initiateWhatsAppConnection,
   isWhatsAppConnected,
 } from "@/actions/whatsapp.actions";
+import { AppToaster } from "@/components/toaster";
+import { PhoneInputField } from "@/components/phone-input";
+import { phoneSchema } from "@/lib/validations/phone";
 
 type User = {
   id: string;
@@ -17,7 +21,6 @@ type User = {
 export default function WhatsAppTestPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   // Auth state
   const [email, setEmail] = useState("");
@@ -26,6 +29,7 @@ export default function WhatsAppTestPage() {
 
   // WhatsApp state
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [phoneError, setPhoneError] = useState<string | undefined>();
   const [savedPhoneNumber, setSavedPhoneNumber] = useState<string | null>(null);
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [connected, setConnected] = useState(false);
@@ -45,7 +49,9 @@ export default function WhatsAppTestPage() {
       if (user) {
         const phone = await getWhatsAppPhoneNumber(user.id);
         setSavedPhoneNumber(phone);
-        setPhoneNumber(phone || "");
+        if (phone) {
+          setPhoneNumber(phone.replace("+", ""));
+        }
 
         const isConnected = await isWhatsAppConnected(user.id);
         setConnected(isConnected);
@@ -67,7 +73,6 @@ export default function WhatsAppTestPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthLoading(true);
-    setError(null);
 
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -75,7 +80,7 @@ export default function WhatsAppTestPage() {
     });
 
     if (error) {
-      setError(error.message);
+      toast.error(error.message);
     }
     setAuthLoading(false);
   };
@@ -83,7 +88,6 @@ export default function WhatsAppTestPage() {
   // Signup handler
   const handleSignup = async () => {
     setAuthLoading(true);
-    setError(null);
 
     const { error } = await supabase.auth.signUp({
       email,
@@ -91,9 +95,9 @@ export default function WhatsAppTestPage() {
     });
 
     if (error) {
-      setError(error.message);
+      toast.error(error.message);
     } else {
-      setError("Vérifiez votre email pour confirmer l'inscription");
+      toast.success("Vérifiez votre email pour confirmer l'inscription");
     }
     setAuthLoading(false);
   };
@@ -110,18 +114,31 @@ export default function WhatsAppTestPage() {
   // Save phone number
   const handleSavePhone = async () => {
     if (!user) return;
-    setWhatsappLoading(true);
-    setError(null);
 
-    const result = await updateWhatsAppPhoneNumber(user.id, phoneNumber);
+    // Validate with zod
+    const phoneWithPlus = phoneNumber.startsWith("+")
+      ? phoneNumber
+      : `+${phoneNumber}`;
+    const validation = phoneSchema.safeParse({ phone: phoneNumber });
+
+    if (!validation.success) {
+      setPhoneError(validation.error.issues[0].message);
+      return;
+    }
+
+    setPhoneError(undefined);
+    setWhatsappLoading(true);
+
+    const result = await updateWhatsAppPhoneNumber(user.id, phoneWithPlus);
 
     if (result.success) {
       setSavedPhoneNumber(result.formattedNumber!);
-      setPhoneNumber(result.formattedNumber!);
+      setPhoneNumber(result.formattedNumber!.replace("+", ""));
       setConnected(false);
       setQrCode(null);
+      toast.success("Numéro enregistré avec succès");
     } else {
-      setError(result.error || "Erreur lors de la sauvegarde");
+      toast.error(result.error || "Erreur lors de la sauvegarde");
     }
     setWhatsappLoading(false);
   };
@@ -130,7 +147,6 @@ export default function WhatsAppTestPage() {
   const handleConnectWhatsApp = async () => {
     if (!user) return;
     setWhatsappLoading(true);
-    setError(null);
     setQrCode(null);
 
     const result = await initiateWhatsAppConnection(user.id);
@@ -140,9 +156,10 @@ export default function WhatsAppTestPage() {
         setQrCode(result.qrCode);
       } else {
         setConnected(true);
+        toast.success("WhatsApp connecté avec succès");
       }
     } else {
-      setError(result.error || "Erreur de connexion WhatsApp");
+      toast.error(result.error || "Erreur de connexion WhatsApp");
     }
     setWhatsappLoading(false);
   };
@@ -157,6 +174,8 @@ export default function WhatsAppTestPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <AppToaster />
+
       {/* Header */}
       <div className="border-b border-gray-200 bg-white px-6 py-4">
         <h1 className="text-xl font-semibold text-gray-900">
@@ -165,12 +184,6 @@ export default function WhatsAppTestPage() {
       </div>
 
       <div className="mx-auto max-w-lg p-6">
-        {error && (
-          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-            {error}
-          </div>
-        )}
-
         {!user ? (
           /* Login Card */
           <div className="rounded-xl border border-gray-200 bg-white p-6">
@@ -252,17 +265,20 @@ export default function WhatsAppTestPage() {
               </div>
 
               <div className="flex gap-3">
-                <input
-                  type="tel"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  placeholder="+33 6 12 34 56 78"
-                  className="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
-                />
+                <div className="flex-1">
+                  <PhoneInputField
+                    value={phoneNumber}
+                    onChange={(val) => {
+                      setPhoneNumber(val);
+                      setPhoneError(undefined);
+                    }}
+                    error={phoneError}
+                  />
+                </div>
                 <button
                   onClick={handleSavePhone}
                   disabled={whatsappLoading || !phoneNumber}
-                  className="rounded-lg bg-gray-900 px-5 py-2.5 font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+                  className="h-[44px] rounded-lg bg-gray-900 px-5 font-medium text-white hover:bg-gray-800 disabled:opacity-50"
                 >
                   {savedPhoneNumber ? "Modifier" : "Enregistrer"}
                 </button>
