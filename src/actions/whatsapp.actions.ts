@@ -3,7 +3,13 @@
 import { createDrizzleSupabaseClient, TDBClient, TDBQuery } from "@/lib/drizzle/dbClient";
 import { accounts } from "@/schema/account.schema";
 import { whatsappSessions } from "@/schema/whatsapp-session.schema";
-import { StoredAuthState, createWhatsAppConnection } from "@/services/whatsapp.service";
+import {
+  StoredAuthState,
+  createWhatsAppConnection,
+  connectWithCredentials,
+  sendWhatsAppMessage,
+} from "@/services/whatsapp.service";
+import { z } from "zod";
 import { validateWhatsAppNumber } from "@/utils/validation.utils";
 import { eq } from "drizzle-orm";
 
@@ -253,13 +259,16 @@ export const initiateWhatsAppConnection = async (
 ): Promise<{ success: boolean; qrCode?: string; error?: string }> => {
   try {
     // Get existing session if any
-    const { credentials: storedCredentials } = await getWhatsAppSession(accountId);
+    const { session, credentials: storedCredentials } = await getWhatsAppSession(accountId);
+
+    // If session is marked as disconnected, ignore old credentials and start fresh
+    const credentialsToUse = session?.isConnected ? storedCredentials : null;
 
     return new Promise((resolve) => {
       let resolved = false;
       let saveStateFn: (() => StoredAuthState) | null = null;
 
-      createWhatsAppConnection(storedCredentials, {
+      createWhatsAppConnection(credentialsToUse, {
         onQRCode: async (qrDataUrl) => {
           if (!resolved) {
             resolved = true;
@@ -309,6 +318,102 @@ export const initiateWhatsAppConnection = async (
     return {
       success: false,
       error: error instanceof Error ? error.message : "Échec de connexion WhatsApp",
+    };
+  }
+};
+
+// =============================================================================
+// SEND WHATSAPP MESSAGE
+// =============================================================================
+
+const sendWhatsAppTextMessageSchema = z.object({
+  recipientPhone: z.string().min(1, "Le numéro du destinataire est requis"),
+  senderPhone: z.string().min(1, "Le numéro de l'expéditeur est requis"),
+  adTitle: z.string().min(1, "Le titre de l'annonce est requis"),
+  message: z.string().min(1, "Le message est requis"),
+});
+
+export type SendWhatsAppTextMessageInput = z.infer<typeof sendWhatsAppTextMessageSchema>;
+
+export type SendWhatsAppTextMessageResult = {
+  success: boolean;
+  error?: string;
+  needsReconnect?: boolean;
+};
+
+/**
+ * Sends a WhatsApp text message to a recipient
+ * Finds the sender account by phone number, connects with stored credentials, and sends the message
+ */
+export const sendWhatsAppTextMessage = async (
+  input: SendWhatsAppTextMessageInput,
+): Promise<SendWhatsAppTextMessageResult> => {
+  // Validate input
+  const validation = sendWhatsAppTextMessageSchema.safeParse(input);
+  if (!validation.success) {
+    return { success: false, error: validation.error.issues[0].message };
+  }
+
+  const { recipientPhone, senderPhone, message } = validation.data;
+
+  // Validate recipient phone number format
+  const recipientValidation = validateWhatsAppNumber(recipientPhone);
+  if (!recipientValidation.isValid) {
+    return { success: false, error: `Numéro destinataire invalide: ${recipientValidation.error}` };
+  }
+
+  const client = await createDrizzleSupabaseClient();
+
+  try {
+    // Find account by sender phone number
+    const account = await client.admin.query.accounts.findFirst({
+      where: eq(accounts.whatsappPhoneNumber, senderPhone),
+    });
+
+    if (!account) {
+      return { success: false, error: "Compte expéditeur non trouvé" };
+    }
+
+    // Get WhatsApp session credentials
+    const { credentials } = await getWhatsAppSession(account.id, { bypassRLS: true });
+
+    if (!credentials) {
+      return { success: false, error: "Session WhatsApp non trouvée. Veuillez vous reconnecter." };
+    }
+
+    // Connect to WhatsApp with stored credentials
+    const { socket, cleanup, waitForConnection } = await connectWithCredentials(credentials);
+
+    try {
+      // Wait for connection to be established
+      const isConnected = await waitForConnection();
+
+      if (!isConnected) {
+        cleanup();
+        // Session expired or disconnected from phone - update DB status
+        await updateWhatsAppConnectionStatus(account.id, false, { bypassRLS: true });
+        return {
+          success: false,
+          error: "Session WhatsApp expirée. Veuillez vous reconnecter.",
+          needsReconnect: true,
+        };
+      }
+
+      // Send the message (use validated & formatted recipient number)
+      const result = await sendWhatsAppMessage(socket, recipientValidation.formatted!, message);
+
+      // Cleanup connection
+      cleanup();
+
+      return result;
+    } catch (error) {
+      cleanup();
+      throw error;
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Échec de l'envoi du message",
     };
   }
 };
