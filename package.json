@@ -23,7 +23,8 @@
     "next": "16.1.1",
     "postgres": "^3.4.8",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "react-hot-toast": "^2.6.0"
   },
   "devDependencies": {
     "@dotenvx/dotenvx": "^1.51.4",
