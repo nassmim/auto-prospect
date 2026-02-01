@@ -26,21 +26,19 @@ export const sendSms = async ({
 }: {
   to: string;
   message: string;
-  senderId?: string; // nullable for now 
+  senderId: string; 
 }) => {
   const apiKey = process.env.SMSMOBILEAPI_API_KEY;
   if (!apiKey) throw new Error("Missing SMSMOBILEAPI_API_KEY");
 
-  // if (!senderId) throw new Error("senderId is required"); // senderID is mandatory else sms mobile api send the sms via the first available device
+  if (!senderId) throw new Error("senderId is required");
 
   const body = new URLSearchParams();
   body.set("apikey", apiKey);
   body.set("recipients", to);
   body.set("message", message);
   body.set("sendsms", "1");
-  if (senderId) {
-    body.set("sIdentifiant", senderId);
-  }
+  body.set("sIdentifiant", senderId);
 
   const res = await fetch("https://api.smsmobileapi.com/sendsms/", {
     method: "POST",

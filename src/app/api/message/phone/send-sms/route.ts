@@ -4,16 +4,17 @@ import { sendSms } from "@/services/messaging.services"
 export async function POST(req: Request) {
   try {
 
-    // DO WE WANT TO CHECK IF USER IS CONNECTED
+    // WE WANT TO CHECK IF USER IS CONNECTED ?
 
     const body = await req.json()
 
     const to = String(body?.to ?? "")
     const message = String(body?.message ?? "")
+    const senderId = body?.senderId ? String(body.senderId) : ""
 
-    if (!to || !message) {
+    if (!to || !message || !senderId) {
       return Response.json(
-        { error: "Champs requis: to, message" },
+        { error: "required: to, message, senderId" },
         { status: 400 }
       )
     }
@@ -23,7 +24,7 @@ export async function POST(req: Request) {
         
     const provider = await sendSms({ 
       to, 
-      // senderId, 
+      senderId, 
       message 
     })
 
