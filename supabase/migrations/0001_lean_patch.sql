@@ -8,21 +8,33 @@ $function$
 ;
 
 CREATE OR REPLACE FUNCTION public.handle_new_user()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$begin
-  insert into public.accounts (id, email)
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $function$
+begin
+  insert into public.accounts (id, name, email)
   values (
     new.id,
+    coalesce(
+      new.raw_user_meta_data->>'name',
+      new.raw_user_meta_data->>'full_name',
+      split_part(new.email, '@', 1),
+      'Nouvel utilisateur'
+    ),
     new.email
   )
   on conflict (id) do update set
+    name = coalesce(
+      excluded.name,
+      public.accounts.name
+    ),
     email = excluded.email;
+
   return new;
-end;$function$
-;
+end;
+$function$;
 
 -- Trigger on new signup
 CREATE TRIGGER on_auth_user_created
