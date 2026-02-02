@@ -335,44 +335,8 @@ co-author like "Co-Authored-By:"
 4. **No SEO required**: Page doesn't need search engine indexing
 
 **Client-Side Fetching Libraries:**
-- **SWR (Recommended)**: For most client-side data fetching needs
-  ```typescript
-  'use client';
-  import useSWR from 'swr';
-
-  const fetcher = (url: string) => fetch(url).then(res => res.json());
-
-  export function LiveStats() {
-    const { data, error, isLoading } = useSWR('/api/stats', fetcher, {
-      refreshInterval: 3000, // Poll every 3 seconds
-    });
-
-    if (error) return <div>Failed to load</div>;
-    if (isLoading) return <div>Loading...</div>;
-    return <div>Stats: {data.count}</div>;
-  }
-  ```
-  **Benefits**: Automatic caching, revalidation, focus tracking, interval refetching, optimistic updates
-
-- **TanStack Query**: For complex client state management needs
-  ```typescript
-  'use client';
-  import { useQuery } from '@tanstack/react-query';
-
-  export function ComplexData() {
-    const { data, error, isLoading } = useQuery({
-      queryKey: ['complex-data'],
-      queryFn: async () => {
-        const res = await fetch('/api/complex');
-        return res.json();
-      },
-      staleTime: 5000,
-    });
-
-    // Similar pattern to SWR
-  }
-  ```
-  **Use when**: You need advanced features like dependent queries, infinite queries, parallel queries, or complex cache invalidation
+- **SWR (Recommended)**: For most client-side data fetching needs. Provides automatic caching, revalidation, focus tracking, interval refetching, optimistic updates.
+- **TanStack Query**: For complex client state management needs (dependent queries, infinite queries, parallel queries, complex cache invalidation)
 
 **Decision Matrix:**
 ```
@@ -401,39 +365,13 @@ Client-side (SWR/TanStack Query):
 - Always marked with `"use server"` directive
 - Invoked from client components via form actions or event handlers
 - Examples: Form submissions, button click handlers, mutations triggered by user interactions
-  ```typescript
-  // src/actions/hunt.actions.ts
-  "use server";
-
-  export async function createHunt(data: unknown) {
-    // Validation, Drizzle queries, etc.
-    // Invoked from client component
-  }
-
-  // Client component
-  const handleSubmit = async (data) => {
-    await createHunt(data); // Direct client → server action call
-  };
-  ```
 
 **Services (`src/services/*.service.ts`):**
 - **Use for** reusable server-side logic that is NOT directly invoked from client
 - Called by server actions, API routes, server components, or other services
 - Can use Drizzle, external APIs, or any server-side libraries
 - Examples: Business logic, data transformations, external API integrations
-  ```typescript
-  // src/services/hunt.service.ts
-  // No "use server" directive needed
-
-  export async function calculateHuntMetrics(huntId: string) {
-    const dbClient = await createDrizzleSupabaseClient();
-    // Drizzle queries, business logic
-    // Called by server actions or server components
-  }
-
-  // Called from server action or server component
-  const metrics = await calculateHuntMetrics(huntId); // Server → service call
-  ```
+- No `"use server"` directive needed
 
 **Decision Tree:**
 1. **Is the function called directly from client-side code?**

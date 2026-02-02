@@ -101,10 +101,11 @@ Migrate to SWR with server actions (no API routes needed):
 'use client';
 import useSWR from 'swr';
 import { getLeadDetails, getteamMembers } from '@/actions/lead.actions';
+import { swrKeys } from '@/config/swr-keys';
 
 export function LeadDrawer({ leadId, onClose }) {
   const { data, error, isLoading } = useSWR(
-    leadId ? ['lead-drawer', leadId] : null,
+    leadId ? swrKeys.leads.drawer(leadId) : null,
     async () => {
       const [lead, members] = await Promise.all([
         getLeadDetails(leadId),
@@ -172,10 +173,11 @@ Keep server-side initial fetch (SEO), add client-side polling with server action
 import useSWR from 'swr';
 import { getDashboardStats } from '@/services/dashboard.service';
 import { getActiveHunts } from '@/services/hunt.service';
+import { swrKeys } from '@/config/swr-keys';
 
 export function DashboardView({ initialStats, initialHunts }) {
   const { data } = useSWR(
-    'dashboard-stats',
+    swrKeys.dashboard.stats,
     async () => {
       const [stats, hunts] = await Promise.all([
         getDashboardStats(),
@@ -236,10 +238,11 @@ Convert to SWR with polling + optimistic updates using server actions:
 import useSWR from 'swr';
 import { getPipelineLeads } from '@/services/lead.service';
 import { updateLeadStage } from '@/actions/lead.actions';
+import { swrKeys } from '@/config/swr-keys';
 
 export function KanbanView({ initialLeads }) {
   const { data, mutate } = useSWR(
-    'pipeline-leads',
+    swrKeys.leads.pipeline,
     () => getPipelineLeads(),
     {
       fallbackData: initialLeads,
@@ -299,10 +302,11 @@ Similar to Dashboard - server-side initial, client-side polling with server acti
 'use client';
 import useSWR from 'swr';
 import { getAccountCredits } from '@/services/credit.service';
+import { swrKeys } from '@/config/swr-keys';
 
 export function CreditsView({ initialCredits }) {
   const { data } = useSWR(
-    'account-credits',
+    swrKeys.credits.balance,
     () => getAccountCredits(),
     {
       fallbackData: initialCredits,
@@ -385,9 +389,9 @@ const [hunt, templates] = await Promise.all([
 
 **How it works:**
 1. **Cache keys are flexible** - Can be strings, arrays, objects, or any serializable value
-   - Example: `useSWR('dashboard-stats', fetcherFn)`
-   - Example: `useSWR(['lead', leadId], fetcherFn)`
-   - Example: `useSWR({ resource: 'lead', id: leadId }, fetcherFn)`
+   - Example: `useSWR(swrKeys.dashboard.stats, fetcherFn)`
+   - Example: `useSWR(swrKeys.leads.drawer(leadId), fetcherFn)`
+   - **IMPORTANT:** Never hardcode keys - use centralized `swrKeys` config
 
 2. **Deduplication is key-based** - Multiple components using the same key share cached data
    - When Component A and Component B both use `['lead', '123']`, only one fetch occurs
@@ -448,11 +452,12 @@ Use **server actions with SWR** because:
 'use client';
 import useSWR from 'swr';
 import { getResourceData } from '@/services/resource.service';
+import { swrKeys } from '@/config/swr-keys';
 // OR import { getResourceData } from '@/actions/resource.actions';
 
 export function Component({ initialData }) {
   const { data, error, isLoading, mutate } = useSWR(
-    'unique-cache-key', // Can be string, array, or object
+    swrKeys.resource.key, // NEVER hardcode - use swrKeys config
     () => getResourceData(),
     {
       fallbackData: initialData, // SSR data from server component
@@ -474,7 +479,8 @@ export function Component({ initialData }) {
 - ✅ RLS enforcement preserved (server actions already use RLS)
 - ✅ Authentication via Supabase session (same as mutations)
 - ✅ Codebase consistency (same pattern as mutations)
-- ✅ Cache key can be any serializable value (not just URLs)
+- ✅ Cache keys centralized in `swrKeys` config (like `routes.ts`)
+- ✅ TypeScript autocomplete for all cache keys
 
 ### Security Model Validation
 
@@ -525,7 +531,37 @@ useSWR(['lead', leadId], () => getLeadDetails(leadId));
 pnpm add swr
 ```
 
-**Step 2:** Test SWR with existing server action (Lead Drawer)
+**Step 2:** Create SWR cache keys configuration (following `routes.ts` pattern)
+```typescript
+// src/config/swr-keys.ts
+/**
+ * Centralized SWR cache keys configuration
+ * Never hardcode cache keys in components - use these exports
+ */
+
+export const swrKeys = {
+  dashboard: {
+    stats: 'dashboard-stats',
+  },
+  leads: {
+    pipeline: 'pipeline-leads',
+    drawer: (leadId: string) => ['lead-drawer', leadId] as const,
+    detail: (leadId: string) => ['lead-detail', leadId] as const,
+  },
+  hunts: {
+    list: 'account-hunts',
+    detail: (huntId: string) => ['hunt-detail', huntId] as const,
+  },
+  credits: {
+    balance: 'account-credits',
+  },
+  templates: {
+    list: 'account-templates',
+  },
+} as const;
+```
+
+**Step 3:** Test SWR with existing server action (Lead Drawer)
 - Lowest risk, highest impact
 - Small component, no complex state interactions
 - No new routes needed
@@ -600,6 +636,7 @@ For each migration, verify:
 ### Architecture
 - [ ] Follows CLAUDE.md decision matrix
 - [ ] Uses `src/config/routes.ts` for URLs
+- [ ] Uses `src/config/swr-keys.ts` for cache keys (no hardcoded strings)
 - [ ] Zod validation on inputs
 - [ ] Service functions reused (no duplication)
 
