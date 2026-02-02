@@ -6,6 +6,8 @@ grant select, insert, update, delete on table public.team_members to authenticat
 -- Lead management tables
 grant select, insert, update, delete on table public.leads to authenticated, service_role;
 grant select, insert, update, delete on table public.lead_activities to authenticated, service_role;
+grant select, insert, update, delete on table public.lead_notes to authenticated, service_role;
+grant select, insert, update, delete on table public.lead_reminders to authenticated, service_role;
 
 -- Message tables
 grant select, insert, update, delete on table public.messages to authenticated, service_role;
@@ -52,4 +54,4 @@ grant select, insert, update, delete on table public.locations to service_role;
 grant select, insert, update, delete on table public.app_settings to service_role;
 
 grant insert, update, delete on table public.channel_priorities to service_role;
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE "public"."hunt_channel_credits" TO "authenticated", "service_role";
+grant select, insert, update, delete on table public.hunt_channel_credits TO authenticated, service_role;

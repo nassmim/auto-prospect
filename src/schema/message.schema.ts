@@ -22,7 +22,7 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
-import { authenticatedRole, authUid } from "drizzle-orm/supabase";
+import { authenticatedRole, authUid, serviceRole } from "drizzle-orm/supabase";
 import { accounts } from "./account.schema";
 import { leads } from "./lead.schema";
 
@@ -55,11 +55,12 @@ export const channelPriorities = pgTable(
   (table) => [
     unique("channel_priorities_channel_unique").on(table.channel),
     unique("channel_priorities_priority_unique").on(table.priority),
-    pgPolicy("enable read for authenticated users", {
+    pgPolicy("enable all for service role", {
       as: "permissive",
-      for: "select",
-      to: authenticatedRole,
+      for: "all",
+      to: serviceRole,
       using: sql`true`,
+      withCheck: sql`true`,
     }),
   ],
 );
@@ -99,16 +100,8 @@ export const messageTemplates = pgTable(
       as: "permissive",
       for: "all",
       to: authenticatedRole,
-      using: sql`exists (
-            select 1 from accounts o
-            where o.id = ${table.accountId}
-            and o.auth_user_id = ${authUid}
-          )`,
-      withCheck: sql`exists (
-            select 1 from accounts o
-            where o.id = ${table.accountId}
-            and o.auth_user_id = ${authUid}
-          )`,
+      using: sql`${table.accountId} = ${authUid}`,
+      withCheck: sql`${table.accountId} = ${authUid}`,
     }),
     // // account members can perform all operations on templates
     // pgPolicy("enable all for account members", {
@@ -187,15 +180,13 @@ export const messages = pgTable(
       to: authenticatedRole,
       using: sql`exists (
         select 1 from leads l
-        join accounts o on o.id = l.account_id
         where l.id = ${table.leadId}
-        and o.auth_user_id = ${authUid}
+        and l.account_id = ${authUid}
       )`,
       withCheck: sql`exists (
         select 1 from leads l
-        join accounts o on o.id = l.account_id
         where l.id = ${table.leadId}
-        and o.auth_user_id = ${authUid}
+        and l.account_id = ${authUid}
       )`,
     }),
     // // RLS: Org members can access messages for leads in their org

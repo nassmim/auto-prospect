@@ -49,9 +49,9 @@ export const accounts = pgTable(
       for: "update",
       to: authenticatedRole,
       using: sql`
-        ${authUid} = auth_user_id`,
+        ${authUid} = ${table.id}`,
       withCheck: sql`
-        ${authUid} = auth_user_id`,
+        ${authUid} = ${table.id}`,
     }),
     // Users can delete their own org
     pgPolicy("enable delete for account owners", {
@@ -68,7 +68,7 @@ export const accounts = pgTable(
       for: "select",
       to: authenticatedRole,
       using: sql`
-        ${authUid} = auth_user_id`,
+        ${authUid} = ${table.id} `,
     }),
   ],
 );

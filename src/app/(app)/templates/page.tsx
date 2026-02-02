@@ -1,7 +1,7 @@
-import { getaccountTemplates } from "@/actions/message.actions";
 import { TemplatesView } from "@/components/templates/templates-view";
 import { pages } from "@/config/routes";
 import { getSEOTags } from "@/lib/seo";
+import { getAccountTemplates } from "@/services/message.service";
 
 export const metadata = getSEOTags({
   title: "Templates de messages",
@@ -11,7 +11,7 @@ export const metadata = getSEOTags({
 });
 
 export default async function TemplatesPage() {
-  const templates = await getaccountTemplates();
+  const templates = await getAccountTemplates();
 
   return <TemplatesView templates={templates} />;
 }

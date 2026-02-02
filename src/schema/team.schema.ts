@@ -58,16 +58,8 @@ export const teamMembers = pgTable(
       as: "permissive",
       for: "all",
       to: authenticatedRole,
-      using: sql`exists (
-        select 1 from accounts o
-        where o.id = ${table.accountId}
-        and o.auth_user_id = ${authUid}
-      )`,
-      withCheck: sql`exists (
-        select 1 from accounts o
-        where o.id = ${table.accountId}
-        and o.auth_user_id = ${authUid}
-      )`,
+      using: sql`${table.accountId} = ${authUid}`,
+      withCheck: sql`${table.accountId} = ${authUid}`,
     }),
     // // Members can read their own membership and other members in their account
     // pgPolicy("enable read for account members", {

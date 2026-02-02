@@ -58,11 +58,7 @@ export const creditBalances = pgTable(
       as: "permissive",
       for: "select",
       to: authenticatedRole,
-      using: sql`exists (
-        select 1 from accounts o
-        where o.id = ${table.accountId}
-        and o.auth_user_id = ${authUid}
-      )`,
+      using: sql`${table.accountId} = ${authUid}`,
     }),
     // // account members can read their balance
     // pgPolicy("enable read for account members", {
@@ -110,11 +106,7 @@ export const creditTransactions = pgTable(
       as: "permissive",
       for: "select",
       to: authenticatedRole,
-      using: sql`exists (
-            select 1 from accounts o
-            where o.id = ${table.accountId}
-            and o.auth_user_id = ${authUid}
-          )`,
+      using: sql`${table.accountId} = ${authUid}`,
     }),
     // // account members can read transaction history
     // pgPolicy("enable read for account members", {
@@ -186,15 +178,13 @@ export const huntChannelCredits = pgTable(
       to: authenticatedRole,
       using: sql`exists (
         select 1 from hunts h
-        join accounts o on o.id = h.account_id
         where h.id = ${table.huntId}
-        and o.auth_user_id = ${authUid}
+        and h.account_id = ${authUid}
       )`,
       withCheck: sql`exists (
         select 1 from hunts h
-        join accounts o on o.id = h.account_id
         where h.id = ${table.huntId}
-        and o.auth_user_id = ${authUid}
+        and h.account_id = ${authUid}
       )`,
     }),
   ],

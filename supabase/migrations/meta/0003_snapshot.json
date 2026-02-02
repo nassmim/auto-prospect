@@ -1,9 +1,102 @@
 {
-  "id": "2b383367-f9aa-4d4f-933e-2fc9b5ed8d26",
-  "prevId": "194f398e-9531-4f2b-a597-90078a1b0608",
+  "id": "bcefddf8-055f-48ce-a188-8ec56df332e3",
+  "prevId": "7cec00d1-d1c9-41a3-8569-099e09f27ca8",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
+    "public.accounts": {
+      "name": "accounts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email": {
+          "name": "email",
+          "type": "varchar(320)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "picture_url": {
+          "name": "picture_url",
+          "type": "varchar(1000)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "phone_number": {
+          "name": "phone_number",
+          "type": "varchar(14)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "type": {
+          "name": "type",
+          "type": "account_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'personal'"
+        },
+        "settings": {
+          "name": "settings",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "enable update for account owners": {
+          "name": "enable update for account owners",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "authenticated"
+          ],
+          "using": "\n        (select auth.uid()) = \"accounts\".\"id\"",
+          "withCheck": "\n        (select auth.uid()) = \"accounts\".\"id\""
+        },
+        "enable delete for account owners": {
+          "name": "enable delete for account owners",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "authenticated"
+          ],
+          "using": "\n        (select auth.uid()) = \"accounts\".\"id\" \n      "
+        },
+        "enable read for account owners": {
+          "name": "enable read for account owners",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "authenticated"
+          ],
+          "using": "\n        (select auth.uid()) = \"accounts\".\"id\" "
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.sub_types": {
       "name": "sub_types",
       "schema": "",
@@ -763,9 +856,9 @@
           "primaryKey": false,
           "notNull": true
         },
-        "message_type": {
-          "name": "message_type",
-          "type": "message_type",
+        "channel": {
+          "name": "channel",
+          "type": "message_channel",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
@@ -1291,7 +1384,7 @@
           "to": [
             "authenticated"
           ],
-          "using": "exists (\n        select 1 from accounts o\n        where o.id = \"credit_balances\".\"account_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
+          "using": "\"credit_balances\".\"account_id\" = (select auth.uid())"
         }
       },
       "checkConstraints": {},
@@ -1307,9 +1400,9 @@
           "primaryKey": true,
           "notNull": true
         },
-        "creditType": {
-          "name": "creditType",
-          "type": "credit_type",
+        "channel": {
+          "name": "channel",
+          "type": "contact_channel",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
@@ -1339,7 +1432,7 @@
           "name": "credit_packs_credit_type_idx",
           "columns": [
             {
-              "expression": "creditType",
+              "expression": "channel",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1392,9 +1485,9 @@
           "primaryKey": false,
           "notNull": true
         },
-        "credit_type": {
-          "name": "credit_type",
-          "type": "credit_type",
+        "channel": {
+          "name": "channel",
+          "type": "contact_channel",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
@@ -1494,7 +1587,7 @@
           "to": [
             "authenticated"
           ],
-          "using": "exists (\n            select 1 from accounts o\n            where o.id = \"credit_transactions\".\"account_id\"\n            and o.auth_user_id = (select auth.uid())\n          )"
+          "using": "\"credit_transactions\".\"account_id\" = (select auth.uid())"
         }
       },
       "checkConstraints": {},
@@ -1519,7 +1612,7 @@
         },
         "channel": {
           "name": "channel",
-          "type": "credit_type",
+          "type": "contact_channel",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
@@ -1604,8 +1697,8 @@
           "to": [
             "authenticated"
           ],
-          "using": "exists (\n        select 1 from hunts h\n        join accounts o on o.id = h.account_id\n        where h.id = \"hunt_channel_credits\".\"hunt_id\"\n        and o.auth_user_id = (select auth.uid())\n      )",
-          "withCheck": "exists (\n        select 1 from hunts h\n        join accounts o on o.id = h.account_id\n        where h.id = \"hunt_channel_credits\".\"hunt_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
+          "using": "exists (\n        select 1 from hunts h\n        where h.id = \"hunt_channel_credits\".\"hunt_id\"\n        and h.account_id = (select auth.uid())\n      )",
+          "withCheck": "exists (\n        select 1 from hunts h\n        where h.id = \"hunt_channel_credits\".\"hunt_id\"\n        and h.account_id = (select auth.uid())\n      )"
         }
       },
       "checkConstraints": {},
@@ -1707,8 +1800,8 @@
           "to": [
             "authenticated"
           ],
-          "using": "exists (\n        select 1 from hunts h\n        join accounts o on o.id = h.account_id\n        where h.id = \"brands_hunts\".\"hunt_id\"\n        and o.auth_user_id = (select auth.uid())\n      )",
-          "withCheck": "exists (\n        select 1 from hunts h\n        join accounts o on o.id = h.account_id\n        where h.id = \"brands_hunts\".\"hunt_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
+          "using": "exists (\n        select 1 from hunts h\n        where h.id = \"brands_hunts\".\"hunt_id\"\n        and h.account_id = (select auth.uid())\n      )",
+          "withCheck": "exists (\n        select 1 from hunts h\n        where h.id = \"brands_hunts\".\"hunt_id\"\n        and h.account_id = (select auth.uid())\n      )"
         }
       },
       "checkConstraints": {},
@@ -1984,8 +2077,8 @@
           "to": [
             "authenticated"
           ],
-          "using": "exists (\n        select 1 from accounts o\n        where o.id = \"hunts\".\"account_id\"\n        and o.auth_user_id = (select auth.uid())\n      )",
-          "withCheck": "exists (\n        select 1 from accounts o\n        where o.id = \"hunts\".\"account_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
+          "using": "\"hunts\".\"account_id\" = (select auth.uid())",
+          "withCheck": "\"hunts\".\"account_id\" = (select auth.uid())"
         }
       },
       "checkConstraints": {},
@@ -2054,8 +2147,312 @@
           "to": [
             "authenticated"
           ],
-          "using": "exists (\n        select 1 from hunts h\n        join accounts o on o.id = h.account_id\n        where h.id = \"sub_types_hunts\".\"hunt_id\"\n        and o.auth_user_id = (select auth.uid())\n      )",
-          "withCheck": "exists (\n        select 1 from hunts h\n        join accounts o on o.id = h.account_id\n        where h.id = \"sub_types_hunts\".\"hunt_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
+          "using": "exists (\n        select 1 from hunts h\n        where h.id = \"sub_types_hunts\".\"hunt_id\"\n        and h.account_id = (select auth.uid())\n      )",
+          "withCheck": "exists (\n        select 1 from hunts h\n        where h.id = \"sub_types_hunts\".\"hunt_id\"\n        and h.account_id = (select auth.uid())\n      )"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.lead_activities": {
+      "name": "lead_activities",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "lead_id": {
+          "name": "lead_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "lead_activity_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "metadata": {
+          "name": "metadata",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "lead_activities_lead_id_created_at_idx": {
+          "name": "lead_activities_lead_id_created_at_idx",
+          "columns": [
+            {
+              "expression": "lead_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "lead_activities_type_idx": {
+          "name": "lead_activities_type_idx",
+          "columns": [
+            {
+              "expression": "type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "lead_activities_lead_id_leads_id_fk": {
+          "name": "lead_activities_lead_id_leads_id_fk",
+          "tableFrom": "lead_activities",
+          "columnsFrom": [
+            "lead_id"
+          ],
+          "tableTo": "leads",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "enable read for account owners": {
+          "name": "enable read for account owners",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "authenticated"
+          ],
+          "using": "exists (\n        select 1 from leads l\n        where l.id = \"lead_activities\".\"lead_id\"\n        and l.account_id = (select auth.uid())\n      )"
+        },
+        "enable insert for account owners": {
+          "name": "enable insert for account owners",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "authenticated"
+          ],
+          "withCheck": "exists (\n              select 1 from leads l\n        where l.id = \"lead_activities\".\"lead_id\"\n        and l.account_id = (select auth.uid())\n      )"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.lead_notes": {
+      "name": "lead_notes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "lead_id": {
+          "name": "lead_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "content": {
+          "name": "content",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "lead_notes_lead_id_idx": {
+          "name": "lead_notes_lead_id_idx",
+          "columns": [
+            {
+              "expression": "lead_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "lead_notes_lead_id_leads_id_fk": {
+          "name": "lead_notes_lead_id_leads_id_fk",
+          "tableFrom": "lead_notes",
+          "columnsFrom": [
+            "lead_id"
+          ],
+          "tableTo": "leads",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "enable all for account members": {
+          "name": "enable all for account members",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "authenticated"
+          ],
+          "using": "exists (\n        select 1 from leads l\n        where l.id = \"lead_notes\".\"lead_id\"\n        and l.account_id = (select auth.uid()))",
+          "withCheck": "exists (\n        select 1 from leads l\n        where l.id = \"lead_notes\".\"lead_id\"\n        and l.account_id = (select auth.uid()))"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.lead_reminders": {
+      "name": "lead_reminders",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "lead_id": {
+          "name": "lead_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "due_at": {
+          "name": "due_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "note": {
+          "name": "note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "completed": {
+          "name": "completed",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "lead_reminders_lead_id_idx": {
+          "name": "lead_reminders_lead_id_idx",
+          "columns": [
+            {
+              "expression": "lead_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "lead_reminders_due_at_idx": {
+          "name": "lead_reminders_due_at_idx",
+          "columns": [
+            {
+              "expression": "due_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "lead_reminders_lead_id_leads_id_fk": {
+          "name": "lead_reminders_lead_id_leads_id_fk",
+          "tableFrom": "lead_reminders",
+          "columnsFrom": [
+            "lead_id"
+          ],
+          "tableTo": "leads",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "enable all for account members": {
+          "name": "enable all for account members",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "authenticated"
+          ],
+          "using": "exists (\n        select 1 from leads l\n        where l.id = \"lead_reminders\".\"lead_id\"\n        and l.account_id = (select auth.uid()))",
+          "withCheck": "exists (\n        select 1 from leads l\n        where l.id = \"lead_reminders\".\"lead_id\"\n        and l.account_id = (select auth.uid()))"
         }
       },
       "checkConstraints": {},
@@ -2246,8 +2643,8 @@
           "onUpdate": "no action",
           "onDelete": "cascade"
         },
-        "leads_assigned_to_id_account_members_id_fk": {
-          "name": "leads_assigned_to_id_account_members_id_fk",
+        "leads_assigned_to_id_team_members_id_fk": {
+          "name": "leads_assigned_to_id_team_members_id_fk",
           "tableFrom": "leads",
           "columnsFrom": [
             "assigned_to_id"
@@ -2279,8 +2676,8 @@
           "to": [
             "authenticated"
           ],
-          "using": "exists (\n            select 1 from accounts o\n            where o.id = \"leads\".\"account_id\"\n            and o.auth_user_id = (select auth.uid())\n          )",
-          "withCheck": "exists (\n            select 1 from accounts o\n            where o.id = \"leads\".\"account_id\"\n            and o.auth_user_id = (select auth.uid())\n          )"
+          "using": "\"leads\".\"account_id\" = (select auth.uid())",
+          "withCheck": "\"leads\".\"account_id\" = (select auth.uid())"
         }
       },
       "checkConstraints": {},
@@ -2298,14 +2695,14 @@
         },
         "channel": {
           "name": "channel",
-          "type": "message_type",
+          "type": "channel",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
         "priority": {
           "name": "priority",
-          "type": "smallserial",
+          "type": "smallint",
           "primaryKey": false,
           "notNull": true
         }
@@ -2330,149 +2727,15 @@
         }
       },
       "policies": {
-        "enable read for authenticated users": {
-          "name": "enable read for authenticated users",
+        "enable all for service role": {
+          "name": "enable all for service role",
           "as": "PERMISSIVE",
-          "for": "SELECT",
+          "for": "ALL",
           "to": [
-            "authenticated"
+            "service_role"
           ],
-          "using": "true"
-        }
-      },
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.lead_activities": {
-      "name": "lead_activities",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "lead_id": {
-          "name": "lead_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "type": {
-          "name": "type",
-          "type": "lead_activity_type",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "metadata": {
-          "name": "metadata",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "created_by_id": {
-          "name": "created_by_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {
-        "lead_activities_lead_id_created_at_idx": {
-          "name": "lead_activities_lead_id_created_at_idx",
-          "columns": [
-            {
-              "expression": "lead_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "with": {},
-          "method": "btree",
-          "concurrently": false
-        },
-        "lead_activities_type_idx": {
-          "name": "lead_activities_type_idx",
-          "columns": [
-            {
-              "expression": "type",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "with": {},
-          "method": "btree",
-          "concurrently": false
-        }
-      },
-      "foreignKeys": {
-        "lead_activities_lead_id_fk": {
-          "name": "lead_activities_lead_id_fk",
-          "tableFrom": "lead_activities",
-          "columnsFrom": [
-            "lead_id"
-          ],
-          "tableTo": "leads",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
-        },
-        "lead_activities_created_by_id_fk": {
-          "name": "lead_activities_created_by_id_fk",
-          "tableFrom": "lead_activities",
-          "columnsFrom": [
-            "created_by_id"
-          ],
-          "tableTo": "accounts",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {
-        "enable read for account owners": {
-          "name": "enable read for account owners",
-          "as": "PERMISSIVE",
-          "for": "SELECT",
-          "to": [
-            "authenticated"
-          ],
-          "using": "exists (\n        select 1 from leads l\n        join accounts o on o.id = l.account_id\n        where l.id = \"lead_activities\".\"lead_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
-        },
-        "enable insert for account owners": {
-          "name": "enable insert for account owners",
-          "as": "PERMISSIVE",
-          "for": "INSERT",
-          "to": [
-            "authenticated"
-          ],
-          "withCheck": "exists (\n              select 1 from leads l\n        join accounts o on o.id = l.account_id\n        where l.id = \"lead_activities\".\"lead_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
+          "using": "true",
+          "withCheck": "true"
         }
       },
       "checkConstraints": {},
@@ -2501,19 +2764,12 @@
           "primaryKey": false,
           "notNull": true
         },
-        "type": {
-          "name": "type",
-          "type": "message_type",
+        "channel": {
+          "name": "channel",
+          "type": "channel",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
-        },
-        "channel": {
-          "name": "channel",
-          "type": "message_channel",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": false
         },
         "content": {
           "name": "content",
@@ -2557,8 +2813,8 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "message_templates_account_id_fk": {
-          "name": "message_templates_account_id_fk",
+        "message_templates_organization_id_fk": {
+          "name": "message_templates_organization_id_fk",
           "tableFrom": "message_templates",
           "columnsFrom": [
             "account_id"
@@ -2581,8 +2837,8 @@
           "to": [
             "authenticated"
           ],
-          "using": "exists (\n            select 1 from accounts o\n            where o.id = \"message_templates\".\"account_id\"\n            and o.auth_user_id = (select auth.uid())\n          )",
-          "withCheck": "exists (\n            select 1 from accounts o\n            where o.id = \"message_templates\".\"account_id\"\n            and o.auth_user_id = (select auth.uid())\n          )"
+          "using": "\"message_templates\".\"account_id\" = (select auth.uid())",
+          "withCheck": "\"message_templates\".\"account_id\" = (select auth.uid())"
         }
       },
       "checkConstraints": {},
@@ -2744,7 +3000,7 @@
           "columnsFrom": [
             "sent_by_id"
           ],
-          "tableTo": "accounts",
+          "tableTo": "team_members",
           "columnsTo": [
             "id"
           ],
@@ -2762,8 +3018,8 @@
           "to": [
             "authenticated"
           ],
-          "using": "exists (\n        select 1 from leads l\n        join accounts o on o.id = l.account_id\n        where l.id = \"messages\".\"lead_id\"\n        and o.auth_user_id = (select auth.uid())\n      )",
-          "withCheck": "exists (\n        select 1 from leads l\n        join accounts o on o.id = l.account_id\n        where l.id = \"messages\".\"lead_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
+          "using": "exists (\n        select 1 from leads l\n        where l.id = \"messages\".\"lead_id\"\n        and l.account_id = (select auth.uid())\n      )",
+          "withCheck": "exists (\n        select 1 from leads l\n        where l.id = \"messages\".\"lead_id\"\n        and l.account_id = (select auth.uid())\n      )"
         }
       },
       "checkConstraints": {},
@@ -2873,131 +3129,8 @@
           "to": [
             "authenticated"
           ],
-          "using": "exists (\n        select 1 from accounts o\n        where o.id = \"team_members\".\"account_id\"\n        and o.auth_user_id = (select auth.uid())\n      )",
-          "withCheck": "exists (\n        select 1 from accounts o\n        where o.id = \"team_members\".\"account_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
-        }
-      },
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.accounts": {
-      "name": "accounts",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "auth_user_id": {
-          "name": "auth_user_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "name": {
-          "name": "name",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "email": {
-          "name": "email",
-          "type": "varchar(320)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "picture_url": {
-          "name": "picture_url",
-          "type": "varchar(1000)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "phone_number": {
-          "name": "phone_number",
-          "type": "varchar(14)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "type": {
-          "name": "type",
-          "type": "account_type",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'personal'"
-        },
-        "settings": {
-          "name": "settings",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "auth_user_id_fk": {
-          "name": "auth_user_id_fk",
-          "tableFrom": "accounts",
-          "columnsFrom": [
-            "auth_user_id"
-          ],
-          "tableTo": "users",
-          "schemaTo": "auth",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "set null"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "auth_user_id_unique": {
-          "name": "auth_user_id_unique",
-          "columns": [
-            "auth_user_id"
-          ],
-          "nullsNotDistinct": false
-        }
-      },
-      "policies": {
-        "enable update for account owners": {
-          "name": "enable update for account owners",
-          "as": "PERMISSIVE",
-          "for": "UPDATE",
-          "to": [
-            "authenticated"
-          ],
-          "using": "\n        (select auth.uid()) = auth_user_id",
-          "withCheck": "\n        (select auth.uid()) = auth_user_id"
-        },
-        "enable delete for account owners": {
-          "name": "enable delete for account owners",
-          "as": "PERMISSIVE",
-          "for": "DELETE",
-          "to": [
-            "authenticated"
-          ],
-          "using": "\n        (select auth.uid()) = \"accounts\".\"auth_user_id\" \n      "
-        },
-        "enable read for account owners": {
-          "name": "enable read for account owners",
-          "as": "PERMISSIVE",
-          "for": "SELECT",
-          "to": [
-            "authenticated"
-          ],
-          "using": "\n        (select auth.uid()) = auth_user_id"
+          "using": "\"team_members\".\"account_id\" = (select auth.uid())",
+          "withCheck": "\"team_members\".\"account_id\" = (select auth.uid())"
         }
       },
       "checkConstraints": {},
@@ -3005,8 +3138,16 @@
     }
   },
   "enums": {
-    "public.credit_type": {
-      "name": "credit_type",
+    "public.account_type": {
+      "name": "account_type",
+      "schema": "public",
+      "values": [
+        "personal",
+        "team"
+      ]
+    },
+    "public.contact_channel": {
+      "name": "contact_channel",
       "schema": "public",
       "values": [
         "whatsappText",
@@ -3024,21 +3165,24 @@
         "adjustment"
       ]
     },
-    "public.message_type": {
-      "name": "message_type",
-      "schema": "public",
-      "values": [
-        "whatsappText",
-        "sms",
-        "ringlessVoice"
-      ]
-    },
     "public.hunt_status": {
       "name": "hunt_status",
       "schema": "public",
       "values": [
         "active",
         "paused"
+      ]
+    },
+    "public.lead_activity_type": {
+      "name": "lead_activity_type",
+      "schema": "public",
+      "values": [
+        "stage_change",
+        "message_sent",
+        "assignment_change",
+        "note_added",
+        "reminder_set",
+        "created"
       ]
     },
     "public.lead_stage": {
@@ -3052,16 +3196,13 @@
         "perdu"
       ]
     },
-    "public.lead_activity_type": {
-      "name": "lead_activity_type",
+    "public.channel": {
+      "name": "channel",
       "schema": "public",
       "values": [
-        "stage_change",
-        "message_sent",
-        "assignment_change",
-        "note_added",
-        "reminder_set",
-        "created"
+        "whatsappText",
+        "sms",
+        "ringlessVoice"
       ]
     },
     "public.message_channel": {
@@ -3082,14 +3223,6 @@
         "failed",
         "read",
         "replied"
-      ]
-    },
-    "public.account_type": {
-      "name": "account_type",
-      "schema": "public",
-      "values": [
-        "personal",
-        "team"
       ]
     },
     "public.role": {

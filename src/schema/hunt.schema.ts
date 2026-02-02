@@ -103,16 +103,8 @@ export const hunts = pgTable(
       as: "permissive",
       for: "all",
       to: authenticatedRole,
-      using: sql`exists (
-        select 1 from accounts o
-        where o.id = ${table.accountId}
-        and o.auth_user_id = ${authUid}
-      )`,
-      withCheck: sql`exists (
-        select 1 from accounts o
-        where o.id = ${table.accountId}
-        and o.auth_user_id = ${authUid}
-      )`,
+      using: sql`${table.accountId} = ${authUid}`,
+      withCheck: sql`${table.accountId} = ${authUid}`,
     }),
     // // RLS: accounters can perform all operations on hunts in their org
     // pgPolicy("enable all for accounters", {
@@ -164,15 +156,13 @@ export const subTypesHunts = pgTable(
       to: authenticatedRole,
       using: sql`exists (
         select 1 from hunts h
-        join accounts o on o.id = h.account_id
         where h.id = ${table.huntId}
-        and o.auth_user_id = ${authUid}
+        and h.account_id = ${authUid}
       )`,
       withCheck: sql`exists (
         select 1 from hunts h
-        join accounts o on o.id = h.account_id
         where h.id = ${table.huntId}
-        and o.auth_user_id = ${authUid}
+        and h.account_id = ${authUid}
       )`,
     }),
   ],
@@ -204,15 +194,13 @@ export const brandsHunts = pgTable(
       to: authenticatedRole,
       using: sql`exists (
         select 1 from hunts h
-        join accounts o on o.id = h.account_id
         where h.id = ${table.huntId}
-        and o.auth_user_id = ${authUid}
+        and h.account_id = ${authUid}
       )`,
       withCheck: sql`exists (
         select 1 from hunts h
-        join accounts o on o.id = h.account_id
         where h.id = ${table.huntId}
-        and o.auth_user_id = ${authUid}
+        and h.account_id = ${authUid}
       )`,
     }),
   ],

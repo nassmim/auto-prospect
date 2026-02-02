@@ -1,7 +1,7 @@
 "use client";
 
-import { getaccountTemplates } from "@/actions/message.actions";
 import { pages } from "@/config/routes";
+import { getAccountTemplates } from "@/services/message.service";
 import { useEffect, useState } from "react";
 
 type OutreachSettingsProps = {
@@ -51,7 +51,7 @@ export function OutreachSettings({
 
   useEffect(() => {
     // Fetch templates on mount
-    getaccountTemplates()
+    getAccountTemplates()
       .then((data) => {
         setTemplates(data as Template[]);
       })

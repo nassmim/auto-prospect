@@ -73,16 +73,8 @@ export const leads = pgTable(
       as: "permissive",
       for: "all",
       to: authenticatedRole,
-      using: sql`exists (
-            select 1 from accounts o
-            where o.id = ${table.accountId}
-            and o.auth_user_id = ${authUid}
-          )`,
-      withCheck: sql`exists (
-            select 1 from accounts o
-            where o.id = ${table.accountId}
-            and o.auth_user_id = ${authUid}
-          )`,
+      using: sql`${table.accountId} = ${authUid}`,
+      withCheck: sql`${table.accountId} = ${authUid}`,
     }),
     // // RLS: account members can access all leads in their org
     // pgPolicy("enable all for account members", {

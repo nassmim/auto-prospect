@@ -4,7 +4,7 @@ import Link from "next/link";
 
 // Type based on action return type
 type Template = Awaited<
-  ReturnType<typeof import("@/actions/message.actions").getaccountTemplates>
+  ReturnType<typeof import("@/services/message.service").getAccountTemplates>
 >[number];
 
 interface TemplatesViewProps {
