@@ -21,6 +21,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { leadStages, type LeadStage } from "@/schema/lead.schema";
+import { pages } from "@/config/routes";
 import {
   extractLeadVariables,
   generateWhatsAppLink,
@@ -870,7 +871,7 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
 
               {/* View Full Details Button */}
               <a
-                href={`/leads/${lead.id}`}
+                href={pages.leads.detail(lead.id)}
                 className="block w-full rounded-lg border border-amber-900/50 bg-amber-950/30 px-4 py-3 text-center font-medium text-amber-400 transition-all hover:border-amber-800 hover:bg-amber-900/40"
               >
                 Voir détails complets

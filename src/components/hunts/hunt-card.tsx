@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import type { HuntStatus } from "@/schema/hunt.schema";
+import { pages } from "@/config/routes";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -95,7 +96,7 @@ export function HuntCard({ hunt }: HuntCardProps) {
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <Link
-              href={`/hunts/${hunt.id}/edit`}
+              href={pages.hunts.edit(hunt.id)}
               className="hover:text-amber-500"
             >
               <CardTitle>{hunt.name}</CardTitle>
@@ -222,7 +223,7 @@ export function HuntCard({ hunt }: HuntCardProps) {
 
       <CardFooter className="flex gap-2">
         <Button variant="outline" size="sm" className="flex-1" asChild>
-          <Link href={`/hunts/${hunt.id}/edit`}>Modifier</Link>
+          <Link href={pages.hunts.edit(hunt.id)}>Modifier</Link>
         </Button>
         <Button
           variant={isActive ? "outline" : "default"}

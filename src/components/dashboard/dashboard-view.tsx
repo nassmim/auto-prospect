@@ -23,7 +23,7 @@ export function DashboardView({ stats, hunts }: DashboardViewProps) {
           </p>
         </div>
         <Link
-          href={pages.hunts_create}
+          href={pages.hunts.new}
           className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-zinc-950 transition-colors hover:bg-amber-400"
         >
           Nouvelle Recherche
@@ -120,7 +120,7 @@ export function DashboardView({ stats, hunts }: DashboardViewProps) {
             Recherches actives
           </h2>
           <Link
-            href={pages.hunts}
+            href={pages.hunts.list}
             className="text-sm text-zinc-400 hover:text-zinc-100"
           >
             Voir tout
@@ -158,7 +158,7 @@ export function DashboardView({ stats, hunts }: DashboardViewProps) {
               Créez votre première recherche pour commencer à trouver des leads
             </p>
             <Link
-              href={pages.hunts_create}
+              href={pages.hunts.new}
               className="mt-4 inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-zinc-950 transition-colors hover:bg-amber-400"
             >
               <svg

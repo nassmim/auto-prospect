@@ -7,7 +7,7 @@ export const metadata = getSEOTags({
   title: "Templates de messages",
   description:
     "Créez et gérez vos templates pour WhatsApp, SMS et appels vocaux",
-  canonical: pages.templates,
+  canonical: pages.templates.list,
 });
 
 export default async function TemplatesPage() {

@@ -24,7 +24,7 @@ export function HuntsView({ hunts }: HuntsViewProps) {
             </p>
           </div>
           <Link
-            href={pages.hunts_new}
+            href={pages.hunts.new}
             className="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 font-medium text-black transition-colors hover:bg-amber-400"
           >
             <svg
@@ -70,7 +70,7 @@ export function HuntsView({ hunts }: HuntsViewProps) {
               automatique
             </p>
             <Link
-              href={pages.hunts_new}
+              href={pages.hunts.new}
               className="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 font-medium text-black transition-colors hover:bg-amber-400"
             >
               <svg

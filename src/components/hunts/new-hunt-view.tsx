@@ -9,7 +9,7 @@ export function NewHuntView() {
         {/* Breadcrumb */}
         <nav className="mb-6 flex items-center gap-2 text-sm">
           <Link
-            href={pages.hunts}
+            href={pages.hunts.list}
             className="text-zinc-400 transition-colors hover:text-zinc-100"
           >
             Recherches

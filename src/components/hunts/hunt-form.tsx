@@ -1,6 +1,6 @@
 "use client";
 
-import { createHunt } from "@/actions/hunt.actions";
+import { createHunt, updateHunt } from "@/actions/hunt.actions";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -124,29 +124,42 @@ export function HuntForm({ hunt }: HuntFormProps) {
   const handleSubmit = async (data: HuntFormData) => {
     setError(null);
 
-    // For MVP, we only support URL paste
-    if (activeTab === "url" && !searchUrl.trim()) {
+    // For MVP, we only support URL paste for new hunts
+    if (!hunt && activeTab === "url" && !searchUrl.trim()) {
       setError("Veuillez coller une URL de recherche Leboncoin");
       return;
     }
 
     try {
-      // For MVP, we'll use hardcoded values for locationId and adTypeId
-      // In Phase 2, these will be parsed from the URL or selected in search builder
-      await createHunt({
-        name: data.name,
-        locationId: 1, // TODO: Parse from URL or get from search builder
-        radiusInKm: 0,
-        adTypeId: 1, // TODO: Parse from URL or get from search builder
-        autoRefresh: data.autoRefresh,
-        outreachSettings: data.outreachSettings,
-        templateIds: data.templateIds,
-      });
+      if (hunt) {
+        // Update existing hunt
+        await updateHunt(hunt.id, {
+          name: data.name,
+          autoRefresh: data.autoRefresh,
+          dailyPacingLimit: data.dailyPacingLimit,
+          outreachSettings: data.outreachSettings,
+          templateIds: data.templateIds,
+        });
+      } else {
+        // Create new hunt
+        // For MVP, we'll use hardcoded values for locationId and adTypeId
+        // In Phase 2, these will be parsed from the URL or selected in search builder
+        await createHunt({
+          name: data.name,
+          locationId: 1, // TODO: Parse from URL or get from search builder
+          radiusInKm: 0,
+          adTypeId: 1, // TODO: Parse from URL or get from search builder
+          autoRefresh: data.autoRefresh,
+          dailyPacingLimit: data.dailyPacingLimit,
+          outreachSettings: data.outreachSettings,
+          templateIds: data.templateIds,
+        });
+      }
 
-      router.push(pages.hunts);
+      router.push(pages.hunts.list);
     } catch (err) {
-      console.error("Failed to create hunt:", err);
-      setError(err instanceof Error ? err.message : "Failed to create hunt");
+      console.error(hunt ? "Failed to update hunt:" : "Failed to create hunt:", err);
+      setError(err instanceof Error ? err.message : hunt ? "Failed to update hunt" : "Failed to create hunt");
     }
   };
 

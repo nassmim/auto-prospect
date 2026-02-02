@@ -95,7 +95,7 @@ export function TextTemplateForm() {
         isDefault: data.isDefault,
       });
 
-      router.push(pages.templates);
+      router.push(pages.templates.list);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to create template",

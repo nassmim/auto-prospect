@@ -17,7 +17,7 @@ export function NewTemplateView({ type }: NewTemplateViewProps) {
         {/* Breadcrumb */}
         <nav className="mb-6 flex items-center gap-2 text-sm">
           <Link
-            href={pages.templates}
+            href={pages.templates.list}
             className="text-zinc-400 transition-colors hover:text-zinc-100"
           >
             Templates
@@ -54,7 +54,7 @@ export function NewTemplateView({ type }: NewTemplateViewProps) {
           {/* Type tabs */}
           <div className="mt-6 flex gap-2">
             <Link
-              href={`${pages.templates_new}?type=text`}
+              href={pages.templates.new("text")}
               className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
                 isTextTemplate
                   ? "border-amber-500 bg-amber-500/10 text-amber-500"
@@ -79,7 +79,7 @@ export function NewTemplateView({ type }: NewTemplateViewProps) {
               </div>
             </Link>
             <Link
-              href={`${pages.templates_new}?type=voice`}
+              href={pages.templates.new("voice")}
               className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
                 isVoiceTemplate
                   ? "border-amber-500 bg-amber-500/10 text-amber-500"

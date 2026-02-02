@@ -268,7 +268,7 @@ export function OutreachSettings({
                         <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 text-xs text-zinc-500">
                           Aucun template disponible pour ce canal.{" "}
                           <a
-                            href={pages.templates_new}
+                            href={pages.templates.new()}
                             className="text-amber-500 hover:underline"
                           >
                             Créer un template

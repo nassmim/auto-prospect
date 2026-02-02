@@ -66,7 +66,7 @@ export function LeadDetailView({
         <div className="mx-auto max-w-7xl">
           <nav className="flex items-center gap-2 text-sm">
             <Link
-              href={pages.leads}
+              href={pages.leads.list}
               className="text-zinc-400 transition-colors hover:text-zinc-100"
             >
               Leads
@@ -92,7 +92,7 @@ export function LeadDetailView({
       <div className="mx-auto max-w-7xl px-6 py-8">
         {/* Back button */}
         <Link
-          href={pages.leads}
+          href={pages.leads.list}
           className="mb-6 inline-flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-2 text-sm font-medium text-zinc-300 transition-colors hover:border-zinc-700 hover:bg-zinc-900"
         >
           <svg

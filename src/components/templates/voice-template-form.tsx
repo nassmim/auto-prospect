@@ -124,7 +124,7 @@ export function VoiceTemplateForm() {
         isDefault: data.isDefault,
       });
 
-      router.push(pages.templates);
+      router.push(pages.templates.list);
     } catch (err) {
       console.error("Failed to create voice template:", err);
       setError(

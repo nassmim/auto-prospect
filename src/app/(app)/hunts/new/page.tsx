@@ -5,7 +5,7 @@ import { pages } from "@/config/routes";
 export const metadata = getSEOTags({
   title: "Créer une recherche",
   description: "Définissez les critères pour trouver automatiquement des véhicules à contacter",
-  canonical: pages.hunts_new,
+  canonical: pages.hunts.new,
 });
 
 export default function NewHuntPage() {

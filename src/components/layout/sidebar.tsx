@@ -15,9 +15,9 @@ import { pages } from "@/config/routes";
 
 const navigation = [
   { name: "Dashboard", href: pages.dashboard, icon: HomeIcon },
-  { name: "Hunts", href: pages.hunts, icon: MagnifyingGlassIcon },
+  { name: "Hunts", href: pages.hunts.list, icon: MagnifyingGlassIcon },
   { name: "Pipeline", href: pages.pipeline, icon: Squares2X2Icon },
-  { name: "Templates", href: pages.templates, icon: ChatBubbleBottomCenterTextIcon },
+  { name: "Templates", href: pages.templates.list, icon: ChatBubbleBottomCenterTextIcon },
   { name: "Settings", href: pages.settings, icon: Cog6ToothIcon },
   { name: "Credits", href: pages.credits, icon: CurrencyDollarIcon },
 ];

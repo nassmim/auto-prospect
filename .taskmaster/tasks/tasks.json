@@ -1226,8 +1226,9 @@
         "dependencies": [
           "45"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-02-02T05:57:30.384Z"
       },
       {
         "id": "47",
@@ -1252,8 +1253,9 @@
         "dependencies": [
           "45"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-02-02T05:59:22.354Z"
       },
       {
         "id": "49",
@@ -1456,11 +1458,12 @@
         "testStrategy": "Verify completeness by running the same grep searches after creating the audit list and confirming every match is documented. Cross-reference with the App Router page structure (`src/app/**/page.tsx`) to ensure no routes are missed.",
         "priority": "high",
         "dependencies": [],
-        "status": "pending",
+        "status": "done",
         "subtasks": [],
         "complexity": 2,
         "recommendedSubtasks": 0,
-        "expansionPrompt": "No expansion needed. This is a straightforward grep/search task with well-defined search patterns already documented in the task details."
+        "expansionPrompt": "No expansion needed. This is a straightforward grep/search task with well-defined search patterns already documented in the task details.",
+        "updatedAt": "2026-02-02T05:56:11.235Z"
       },
       {
         "id": "58",
@@ -1472,11 +1475,12 @@
         "dependencies": [
           "57"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [],
         "complexity": 4,
         "recommendedSubtasks": 0,
-        "expansionPrompt": "No expansion needed. The current routes.ts is only 34 lines with 11 route keys. The redesign is well-specified in the task details with exact target structure."
+        "expansionPrompt": "No expansion needed. The current routes.ts is only 34 lines with 11 route keys. The redesign is well-specified in the task details with exact target structure.",
+        "updatedAt": "2026-02-02T05:59:41.261Z"
       },
       {
         "id": "59",
@@ -1614,9 +1618,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-02-02T05:43:48.818Z",
+      "lastModified": "2026-02-02T05:59:41.263Z",
       "taskCount": 66,
-      "completedCount": 47,
+      "completedCount": 50,
       "tags": [
         "master"
       ]

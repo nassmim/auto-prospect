@@ -1,6 +1,7 @@
 "use client";
 
 import { HuntSummary } from "@/actions/dashboard.actions";
+import { pages } from "@/config/routes";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import Link from "next/link";
@@ -34,7 +35,7 @@ export function HuntListItem({ hunt, onPauseToggle }: HuntListItemProps) {
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <Link
-                  href={`/hunts/${hunt.id}`}
+                  href={pages.hunts.detail(hunt.id)}
                   className="text-sm font-medium text-zinc-100 hover:text-amber-500 hover:underline"
                 >
                   {hunt.name}
@@ -124,7 +125,7 @@ export function HuntListItem({ hunt, onPauseToggle }: HuntListItemProps) {
 
           {/* Edit Link */}
           <Link
-            href={`/hunts/${hunt.id}/edit`}
+            href={pages.hunts.edit(hunt.id)}
             className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-100"
             title="Modifier"
           >

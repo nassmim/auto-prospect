@@ -7,7 +7,7 @@ export const metadata = getSEOTags({
   title: "Recherches",
   description:
     "Gérez vos recherches automatiques de véhicules et suivez la prospection en temps réel",
-  canonical: pages.hunts,
+  canonical: pages.hunts.list,
 });
 
 export default async function HuntsPage() {
