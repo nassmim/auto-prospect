@@ -46,16 +46,3 @@ type ExtractStaticRoutes<T> = T extends string
     : never;
 
 export type StaticRoute = ExtractStaticRoutes<typeof pages>;
-
-/**
- * Backward compatibility aliases
- * @deprecated Use nested structure instead (e.g., pages.hunts.list instead of pages.hunts)
- * These will be removed in the next major version
- */
-export const legacyPages = {
-  hunts: pages.hunts.list,
-  huntsNew: pages.hunts.new,
-  leads: pages.leads.list,
-  templates: pages.templates.list,
-  templatesNew: pages.templates.new(),
-} as const;

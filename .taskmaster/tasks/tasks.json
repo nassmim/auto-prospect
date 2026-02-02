@@ -1582,12 +1582,12 @@
         "dependencies": [
           "58"
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [],
         "complexity": 2,
         "recommendedSubtasks": 0,
         "expansionPrompt": "No expansion needed. Only 2 files (seo.ts, seo-examples.ts) with a handful of hardcoded route strings to replace.",
-        "updatedAt": "2026-02-02T11:39:42.633Z"
+        "updatedAt": "2026-02-02T11:42:01.368Z"
       },
       {
         "id": "65",
@@ -1604,11 +1604,12 @@
           "63",
           "64"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [],
         "complexity": 3,
         "recommendedSubtasks": 0,
-        "expansionPrompt": "No expansion needed. This is a cleanup task: remove old keys from routes.ts, grep to verify zero remaining references, and run build verification."
+        "expansionPrompt": "No expansion needed. This is a cleanup task: remove old keys from routes.ts, grep to verify zero remaining references, and run build verification.",
+        "updatedAt": "2026-02-02T11:42:26.121Z"
       },
       {
         "id": "66",
@@ -1629,9 +1630,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-02-02T11:39:42.634Z",
+      "lastModified": "2026-02-02T11:42:26.124Z",
       "taskCount": 66,
-      "completedCount": 61,
+      "completedCount": 62,
       "tags": [
         "master"
       ]
