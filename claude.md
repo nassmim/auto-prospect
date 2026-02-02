@@ -46,6 +46,7 @@
 - **Auth**: Supabase Auth (JWT, RLS)
 - **Styling**: Tailwind CSS 4 + shadcn/ui components
 - **Forms**: react-hook-form + Zod validation
+- **Data Fetching**: SWR (client-side) + TanStack Query (complex client state)
 - **Env**: dotenvx (multi-file), **pnpm** (not npm)
 
 ## UI/UX Principles
@@ -284,6 +285,15 @@ co-author like "Co-Authored-By:"
 
 ## Key Patterns
 
+### Route Configuration
+- **All routes MUST use `src/config/routes.ts`** — never hardcode route strings
+- Import: `import { pages } from '@/config/routes'`
+- Static routes: `pages.dashboard`, `pages.settings`, `pages.hunts.list`
+- Dynamic routes: `pages.hunts.detail(huntId)`, `pages.leads.detail(leadId)`
+- revalidatePath: `revalidatePath(pages.hunts.list)`, `revalidatePath(pages.leads.detail(id))`
+- When adding a new page/route, add it to `routes.ts` first
+- External URLs (e.g., Chrome Web Store, ad URLs) are exempt
+
 ### Auth Flow
 1. Supabase Auth → JWT token
 2. Middleware (`src/proxy.ts`) → session cookies
@@ -313,6 +323,74 @@ co-author like "Co-Authored-By:"
     // All UI state, handlers, rendering logic here
   }
   ```
+
+#### Data Fetching Strategy
+
+**Server-Side by Default**: Prefer server components for data fetching (better performance, SEO, security).
+
+**Client-Side When Needed**: Use client-side data fetching when:
+1. **Avoiding prop drilling**: Data needed by multiple nested client components (passing through many layers would be cumbersome)
+2. **Frequently updating data**: Content updates regularly at runtime (real-time feeds, live status, polling)
+3. **User-specific interactions**: Data depends on client-side state/actions (filtering, sorting without page reload)
+4. **No SEO required**: Page doesn't need search engine indexing
+
+**Client-Side Fetching Libraries:**
+- **SWR (Recommended)**: For most client-side data fetching needs
+  ```typescript
+  'use client';
+  import useSWR from 'swr';
+
+  const fetcher = (url: string) => fetch(url).then(res => res.json());
+
+  export function LiveStats() {
+    const { data, error, isLoading } = useSWR('/api/stats', fetcher, {
+      refreshInterval: 3000, // Poll every 3 seconds
+    });
+
+    if (error) return <div>Failed to load</div>;
+    if (isLoading) return <div>Loading...</div>;
+    return <div>Stats: {data.count}</div>;
+  }
+  ```
+  **Benefits**: Automatic caching, revalidation, focus tracking, interval refetching, optimistic updates
+
+- **TanStack Query**: For complex client state management needs
+  ```typescript
+  'use client';
+  import { useQuery } from '@tanstack/react-query';
+
+  export function ComplexData() {
+    const { data, error, isLoading } = useQuery({
+      queryKey: ['complex-data'],
+      queryFn: async () => {
+        const res = await fetch('/api/complex');
+        return res.json();
+      },
+      staleTime: 5000,
+    });
+
+    // Similar pattern to SWR
+  }
+  ```
+  **Use when**: You need advanced features like dependent queries, infinite queries, parallel queries, or complex cache invalidation
+
+**Decision Matrix:**
+```
+Server-side (Server Components/Actions):
+  ✓ Initial page load data
+  ✓ SEO-critical content
+  ✓ Static or infrequently changing data
+  ✓ Data requiring authentication (RLS)
+  ✓ Large datasets (better performance)
+
+Client-side (SWR/TanStack Query):
+  ✓ Real-time/frequently updating data
+  ✓ Data needed by multiple nested client components
+  ✓ User-specific filters/sorts without page reload
+  ✓ Polling/interval refetching
+  ✗ Worse initial page load performance
+  ✗ No SEO benefits
+```
 
 #### Server Actions vs Services Pattern
 
