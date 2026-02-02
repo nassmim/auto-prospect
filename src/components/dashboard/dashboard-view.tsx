@@ -1,15 +1,59 @@
+"use client";
+
 import { StatCard } from "@/components/dashboard/stat-card";
 import { HuntListItem } from "@/components/dashboard/hunt-list-item";
-import { type DashboardStats, type HuntSummary } from "@/actions/dashboard.actions";
+import {
+  fetchDashboardStats,
+  fetchActiveHunts,
+  type DashboardStats,
+  type HuntSummary,
+} from "@/actions/dashboard.actions";
 import Link from "next/link";
 import { pages } from "@/config/routes";
+import { swrKeys } from "@/config/swr-keys";
+import { SWR_POLLING } from "@/hooks/use-swr-action";
+import useSWR from "swr";
+import { formatDistance } from "date-fns";
+import { fr } from "date-fns/locale";
+import { useState, useEffect } from "react";
 
 interface DashboardViewProps {
   stats: DashboardStats;
   hunts: HuntSummary[];
 }
 
-export function DashboardView({ stats, hunts }: DashboardViewProps) {
+export function DashboardView({ stats: initialStats, hunts: initialHunts }: DashboardViewProps) {
+  const [lastUpdated, setLastUpdated] = useState(new Date());
+
+  // Fetch dashboard stats with SWR polling
+  const {
+    data: stats = initialStats,
+    isValidating: isStatsValidating,
+  } = useSWR(swrKeys.dashboard.stats, () => fetchDashboardStats(), {
+    fallbackData: initialStats,
+    refreshInterval: SWR_POLLING.DASHBOARD,
+    revalidateOnFocus: true,
+    onSuccess: () => setLastUpdated(new Date()),
+  });
+
+  // Fetch active hunts with SWR polling
+  const {
+    data: hunts = initialHunts,
+    isValidating: isHuntsValidating,
+  } = useSWR(swrKeys.hunts.active, () => fetchActiveHunts(), {
+    fallbackData: initialHunts,
+    refreshInterval: SWR_POLLING.DASHBOARD,
+    revalidateOnFocus: true,
+  });
+
+  // Update timestamp display every 10 seconds
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => setTick((t) => t + 1), 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const isValidating = isStatsValidating || isHuntsValidating;
   return (
     <div className="space-y-6">
       {/* Page header */}
@@ -18,9 +62,24 @@ export function DashboardView({ stats, hunts }: DashboardViewProps) {
           <h1 className="text-3xl font-bold tracking-tight text-zinc-100">
             Dashboard
           </h1>
-          <p className="mt-1 text-sm text-zinc-500">
-            Vue d&apos;ensemble de votre activité
-          </p>
+          <div className="mt-1 flex items-center gap-2 text-sm text-zinc-500">
+            <span>Vue d&apos;ensemble de votre activité</span>
+            {lastUpdated && (
+              <>
+                <span>•</span>
+                <span className="flex items-center gap-1.5">
+                  {isValidating && (
+                    <div className="h-2 w-2 animate-spin rounded-full border border-amber-500 border-t-transparent" />
+                  )}
+                  Mis à jour{" "}
+                  {formatDistance(lastUpdated, new Date(), {
+                    addSuffix: true,
+                    locale: fr,
+                  })}
+                </span>
+              </>
+            )}
+          </div>
         </div>
         <Link
           href={pages.hunts.new}
