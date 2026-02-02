@@ -85,9 +85,14 @@
 ## Critical Paths
 ```
 src/app/              → Next.js pages (App Router)
+src/actions/          → Server actions (client-callable RPC)
+src/services/         → Business logic (server-side only)
 src/lib/drizzle/      → DB client + RLS wrapper
 src/lib/supabase/     → Auth clients (browser/server)
 src/schema/           → Drizzle schemas (source of truth)
+src/config/swr-keys.ts → SWR cache key definitions
+src/hooks/use-swr-action.ts → SWR utilities and polling config
+src/providers/swr-provider.tsx → SWR global configuration
 supabase/migrations/  → Generated SQL (never edit manually)
 src/proxy.ts          → Auth middleware
 ```
@@ -355,6 +360,116 @@ Client-side (SWR/TanStack Query):
   ✗ Worse initial page load performance
   ✗ No SEO benefits
 ```
+
+#### SWR Integration Patterns
+
+**CRITICAL: Always use hybrid server+client pattern to preserve SSR benefits**
+
+**Standard Pattern (Hybrid SSR + SWR)**:
+```typescript
+// 1. Server Component (page.tsx) - Provides initial data
+export default async function DashboardPage() {
+  const stats = await getDashboardStats(); // Server-side fetch
+  return <DashboardView stats={stats} />;  // Pass as props
+}
+
+// 2. Client Component - Uses SWR with fallback
+"use client";
+import useSWR from "swr";
+import { swrKeys } from "@/config/swr-keys";
+import { fetchDashboardStats } from "@/actions/dashboard.actions";
+import { SWR_POLLING } from "@/hooks/use-swr-action";
+
+export function DashboardView({ stats: initialStats }: Props) {
+  const { data: stats = initialStats } = useSWR(
+    swrKeys.dashboard.stats,
+    () => fetchDashboardStats(),
+    {
+      fallbackData: initialStats,      // Prevents loading spinner on mount
+      refreshInterval: SWR_POLLING.DASHBOARD, // Auto-refresh every 60s
+      revalidateOnFocus: true,         // Refresh on tab focus
+    }
+  );
+  // Component renders with initialStats immediately, then SWR takes over
+}
+
+// 3. Server Action Wrapper (src/actions/*.actions.ts)
+"use server";
+export async function fetchDashboardStats() {
+  return getDashboardStats(); // Delegates to service
+}
+```
+
+**SWR Cache Keys (`src/config/swr-keys.ts`)**:
+- **ALWAYS import from `swrKeys`** — never hardcode strings
+- Static keys: `swrKeys.dashboard.stats`, `swrKeys.credits.balance`
+- Parameterized keys: `swrKeys.leads.drawer(leadId)`, `swrKeys.hunts.detail(huntId)`
+- Pattern: `"resource-subresource"` or `["resource", param]` for parameterized
+
+Example:
+```typescript
+// src/config/swr-keys.ts
+export const swrKeys = {
+  dashboard: {
+    stats: "dashboard-stats" as const,
+  },
+  leads: {
+    pipeline: "leads-pipeline" as const,
+    drawer: (id: string) => ["lead-drawer", id] as const,
+  },
+};
+```
+
+**Optimistic Updates Pattern**:
+```typescript
+const { data, mutate } = useSWR(swrKeys.hunts.list, fetchAccountHunts);
+
+async function handleDelete(huntId: string) {
+  // 1. Optimistic update - instant UI feedback
+  await mutate(
+    data?.filter(h => h.id !== huntId),
+    { revalidate: false }
+  );
+
+  try {
+    // 2. Server mutation
+    await deleteHunt(huntId);
+    // 3. Revalidate to sync with server
+    await mutate();
+  } catch {
+    // 4. Rollback on error
+    await mutate();
+  }
+}
+```
+
+**Polling Configuration (`src/hooks/use-swr-action.ts`)**:
+```typescript
+export const SWR_POLLING = {
+  DASHBOARD: 60_000,  // 60 seconds
+  KANBAN: 30_000,     // 30 seconds (faster for real-time)
+  CREDITS: 60_000,    // 60 seconds
+} as const;
+```
+
+**Conditional Polling (Pause During Interactions)**:
+```typescript
+const isDraggingRef = useRef(false);
+
+const { data } = useSWR(key, fetcher, {
+  refreshInterval: isDraggingRef.current ? 0 : SWR_POLLING.KANBAN,
+});
+
+// Pause polling during drag operations to avoid UI jumps
+const handleDragStart = () => { isDraggingRef.current = true; };
+const handleDragEnd = () => { isDraggingRef.current = false; };
+```
+
+**When NOT to use SWR**:
+- ❌ Initial page load only (use server component directly)
+- ❌ SEO-critical content (defeats SSR purpose)
+- ❌ One-time mutations (use server actions directly)
+- ❌ Security-sensitive settings (minimize client-side exposure)
 
 #### Server Actions vs Services Pattern
 

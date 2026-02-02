@@ -1764,9 +1764,9 @@
         "testStrategy": "Measure page load time before and after change (use browser DevTools Performance tab or server-side timing). Verify both valid hunt ID and invalid hunt ID cases work correctly. Verify notFound() still renders 404 page for missing hunts. Verify templates still load correctly alongside hunt data.",
         "priority": "low",
         "dependencies": [],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [],
-        "updatedAt": "2026-02-02T20:43:01.061Z"
+        "updatedAt": "2026-02-02T20:44:13.865Z"
       },
       {
         "id": "77",
@@ -1818,15 +1818,16 @@
           "74",
           "75"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "in-progress",
+        "subtasks": [],
+        "updatedAt": "2026-02-02T20:44:31.097Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-02-02T20:43:01.062Z",
+      "lastModified": "2026-02-02T20:44:31.106Z",
       "taskCount": 79,
-      "completedCount": 74,
+      "completedCount": 75,
       "tags": [
         "master"
       ]
