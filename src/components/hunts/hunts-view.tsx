@@ -1,6 +1,11 @@
+"use client";
+
 import { HuntCard } from "@/components/hunts/hunt-card";
 import { pages } from "@/config/routes";
+import { swrKeys } from "@/config/swr-keys";
+import { fetchAccountHunts } from "@/actions/hunt.actions";
 import Link from "next/link";
+import useSWR from "swr";
 
 // Type based on service return type
 type Hunt = Awaited<
@@ -11,7 +16,16 @@ interface HuntsViewProps {
   hunts: Hunt[];
 }
 
-export function HuntsView({ hunts }: HuntsViewProps) {
+export function HuntsView({ hunts: initialHunts }: HuntsViewProps) {
+  // Fetch hunts with SWR
+  const { data: hunts = initialHunts, mutate } = useSWR(
+    swrKeys.hunts.list,
+    () => fetchAccountHunts(),
+    {
+      fallbackData: initialHunts,
+      revalidateOnFocus: true,
+    },
+  );
   return (
     <div className="min-h-screen bg-zinc-950 p-6">
       <div className="mx-auto max-w-7xl">
@@ -92,7 +106,7 @@ export function HuntsView({ hunts }: HuntsViewProps) {
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {hunts.map((hunt) => (
-              <HuntCard key={hunt.id} hunt={hunt} />
+              <HuntCard key={hunt.id} hunt={hunt} onMutate={mutate} />
             ))}
           </div>
         )}

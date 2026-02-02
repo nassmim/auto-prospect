@@ -1,6 +1,6 @@
 "use client";
 
-import { deleteHunt, updateHuntStatus } from "@/actions/hunt.actions";
+import { deleteHunt, updateHuntStatus, fetchAccountHunts } from "@/actions/hunt.actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,8 +13,8 @@ import {
 import type { HuntStatus } from "@/schema/hunt.schema";
 import { pages } from "@/config/routes";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
+import type { KeyedMutator } from "swr";
 
 type Hunt = {
   id: string;
@@ -40,24 +40,38 @@ type Hunt = {
 
 type HuntCardProps = {
   hunt: Hunt;
+  onMutate: KeyedMutator<Awaited<ReturnType<typeof fetchAccountHunts>>>;
 };
 
-export function HuntCard({ hunt }: HuntCardProps) {
+export function HuntCard({ hunt, onMutate }: HuntCardProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isTogglingStatus, setIsTogglingStatus] = useState(false);
   const [currentStatus, setCurrentStatus] = useState(hunt.status);
-  const router = useRouter();
 
   const handleToggleStatus = async () => {
     setIsTogglingStatus(true);
+    const newStatus: HuntStatus =
+      currentStatus === "active" ? "paused" : "active";
+
+    // Optimistic update
+    setCurrentStatus(newStatus);
+    await onMutate(
+      (currentData) =>
+        currentData?.map((h) =>
+          h.id === hunt.id ? { ...h, status: newStatus } : h,
+        ),
+      { revalidate: false },
+    );
+
     try {
-      const newStatus: HuntStatus =
-        currentStatus === "active" ? "paused" : "active";
       await updateHuntStatus(hunt.id, newStatus);
-      setCurrentStatus(newStatus);
-      router.refresh();
+      // Revalidate after success
+      await onMutate();
     } catch (error) {
       console.error("Failed to toggle hunt status:", error);
+      // Rollback on error
+      setCurrentStatus(hunt.status);
+      await onMutate();
     } finally {
       setIsTogglingStatus(false);
     }
@@ -69,11 +83,21 @@ export function HuntCard({ hunt }: HuntCardProps) {
     }
 
     setIsDeleting(true);
+
+    // Optimistic deletion - remove from list
+    await onMutate(
+      (currentData) => currentData?.filter((h) => h.id !== hunt.id),
+      { revalidate: false },
+    );
+
     try {
       await deleteHunt(hunt.id);
-      router.refresh();
+      // Revalidate after success
+      await onMutate();
     } catch (error) {
       console.error("Failed to delete hunt:", error);
+      // Rollback on error
+      await onMutate();
       setIsDeleting(false);
     }
   };
