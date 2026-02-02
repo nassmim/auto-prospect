@@ -1,24 +1,15 @@
-/**
- * Daily Contact Tracker Service
- * In-memory tracker for daily contact counts during background job execution
- * Resets naturally when job completes (no database persistence needed)
- */
-
-export type DailyContactTracker = {
-  increment: (huntId: string, channel?: string) => number;
-  getCount: (huntId: string) => number;
-  getChannelCount: (huntId: string, channel: string) => number;
-  isAtLimit: (huntId: string, limit: number | null | undefined) => boolean;
-  getAllCounts: () => Map<string, { total: number; channels: Map<string, number> }>;
-};
+import { TDailyContactTracker } from "@/types/message.types";
 
 /**
  * Creates a new daily contact tracker instance
  * Should be instantiated at the start of each background job run
  */
-export function createDailyContactTracker(): DailyContactTracker {
+export function createDailyContactTracker(): TDailyContactTracker {
   // Hunt ID -> { total count, channel-specific counts }
-  const huntCounts = new Map<string, { total: number; channels: Map<string, number> }>();
+  const huntCounts = new Map<
+    string,
+    { total: number; channels: Map<string, number> }
+  >();
 
   return {
     /**
@@ -54,14 +45,6 @@ export function createDailyContactTracker(): DailyContactTracker {
     },
 
     /**
-     * Gets the contact count for a specific channel on a hunt
-     * @returns The count (0 if no contacts on this channel)
-     */
-    getChannelCount(huntId: string, channel: string): number {
-      return huntCounts.get(huntId)?.channels.get(channel) || 0;
-    },
-
-    /**
      * Checks if a hunt has reached its daily pacing limit
      * @param limit - The daily pacing limit (null/undefined means no limit)
      * @returns true if at or above limit, false otherwise
@@ -74,13 +57,6 @@ export function createDailyContactTracker(): DailyContactTracker {
 
       const count = huntCounts.get(huntId)?.total || 0;
       return count >= limit;
-    },
-
-    /**
-     * Gets all hunt counts (useful for debugging/logging)
-     */
-    getAllCounts() {
-      return huntCounts;
     },
   };
 }

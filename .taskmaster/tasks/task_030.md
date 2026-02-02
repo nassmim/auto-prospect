@@ -60,7 +60,7 @@ export default async function LeadDetailPage({ params }: PageProps) {
 ```typescript
 // page.tsx (thin)
 export default async function HuntsPage() {
-  const hunts = await getOrganizationHunts();
+  const hunts = await getaccountHunts();
   return <HuntsView hunts={hunts} />;
 }
 ```
@@ -68,12 +68,12 @@ export default async function HuntsPage() {
 
 ### 4. Templates Page (MEDIUM PRIORITY - 110 lines)
 **File:** `src/app/(app)/templates/page.tsx`
-**Issues:** Contains header, section organization, empty states for both text and voice templates
+**Issues:** Contains header, section account, empty states for both text and voice templates
 **Refactor to:**
 ```typescript
 // page.tsx (thin)
 export default async function TemplatesPage() {
-  const templates = await getOrganizationTemplates();
+  const templates = await getaccountTemplates();
   return <TemplatesView templates={templates} />;
 }
 ```

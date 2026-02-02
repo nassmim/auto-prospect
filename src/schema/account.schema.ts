@@ -1,71 +1,75 @@
-import { relations, sql } from "drizzle-orm";
+import { EaccountType } from "@/constants/enums";
+import { InferSelectModel, sql } from "drizzle-orm";
 import {
-  boolean,
-  foreignKey,
+  jsonb,
+  pgEnum,
   pgPolicy,
   pgTable,
-  unique,
+  timestamp,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
-import { authenticatedRole, authUid, authUsers } from "drizzle-orm/supabase";
-import { contactedAds } from "@/schema/ad.schema";
-import { whatsappSessions } from "@/schema/whatsapp-session.schema";
+import { authenticatedRole, authUid } from "drizzle-orm/supabase";
 
-// Accounts represent individual users (1:1 with Supabase auth.users)
-// Organization-first pattern: Every account MUST belong to at least one organization
-// Solo users get an auto-created personal organization during onboarding
-// isPersonalAccount flag helps identify which org is their "default" personal one
+// account settings type for JSONB field
+export type accountSettings = {
+  allowReassignment?: boolean;
+  restrictVisibility?: boolean;
+  dailyReset?: boolean;
+  ignorePhonesVisible?: boolean;
+};
+
+// Types of accounts
+export const accountType = pgEnum(
+  "account_type",
+  Object.values(EaccountType) as [string, ...string[]],
+);
+
+// accounts table - will have either just one member or several
 export const accounts = pgTable(
   "accounts",
   {
-    id: uuid().primaryKey().notNull(),
-    name: varchar({ length: 255 }).notNull(),
-    email: varchar({ length: 320 }),
-    isPersonalAccount: boolean("is_personal_account").default(true).notNull(),
+    id: uuid().primaryKey(),
+    name: varchar({ length: 255 }),
+    email: varchar({ length: 320 }).notNull(),
     pictureUrl: varchar("picture_url", { length: 1000 }),
     phoneNumber: varchar("phone_number", { length: 14 }),
     whatsappPhoneNumber: varchar("whatsapp_phone_number", { length: 20 }),
     smsApiKey: varchar("sms_api_key", { length: 500 }),
+    // account type discriminator
+    type: accountType("type").notNull().default(EaccountType.PERSONAL),
+    settings: jsonb().$type<accountSettings>(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
-    foreignKey({
-      columns: [table.id],
-	  // reference to the auth table from Supabase
-      foreignColumns: [authUsers.id],
-      name: "accounts_id_fk",
-    }).onDelete("cascade"),    
-    unique("accounts_email_key").on(table.email),
-    pgPolicy("enable update for data owners", {
+    pgPolicy("enable update for account owners", {
       as: "permissive",
       for: "update",
       to: authenticatedRole,
-      using: sql`${authUid} = id`,
-      withCheck: sql`${authUid} = id`,
+      using: sql`
+        ${authUid} = auth_user_id`,
+      withCheck: sql`
+        ${authUid} = auth_user_id`,
     }),
-    // we don't do on self data because organisation can read the team members accounts
-    pgPolicy("enable read for authenticated users", {
-      as: "permissive",
-      for: "select",
-      to: authenticatedRole,
-      using: sql`true`,
-    }),
-    pgPolicy("enable insert for authenticated users", {
-      as: "permissive",
-      for: "insert",
-      to: authenticatedRole,
-      using: sql`true`,
-    }),
-    pgPolicy("enable delete for authenticated users", {
+    // Users can delete their own org
+    pgPolicy("enable delete for account owners", {
       as: "permissive",
       for: "delete",
       to: authenticatedRole,
-      using: sql`true`,
-    })
+      using: sql`
+        ${authUid} = ${table.id} 
+      `,
+    }),
+    // Members can read data for orgs they belong to
+    pgPolicy("enable read for account owners", {
+      as: "permissive",
+      for: "select",
+      to: authenticatedRole,
+      using: sql`
+        ${authUid} = auth_user_id`,
+    }),
   ],
 );
-
-export const accountsRelations = relations(accounts, ({ many, one }) => ({
-  contactedAds: many(contactedAds),
-  whatsappSession: one(whatsappSessions),
-}));
+export type TAccount = InferSelectModel<typeof accounts>;

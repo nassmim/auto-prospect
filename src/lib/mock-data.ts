@@ -48,10 +48,10 @@ export const mockHunts: HuntSummary[] = [
   },
 ];
 
-export const mockOrganizationHunts = [
+export const mockaccountHunts = [
   {
     id: "1",
-    organizationId: "org-1",
+    accountId: "org-1",
     createdById: "user-1",
     name: "SUV Premium Paris",
     locationId: 1, // integer
@@ -129,7 +129,7 @@ export const mockOrganizationHunts = [
   },
   {
     id: "2",
-    organizationId: "org-1",
+    accountId: "org-1",
     createdById: "user-1",
     name: "Berlines BMW/Mercedes Lyon",
     locationId: 2,
@@ -163,7 +163,7 @@ export const mockOrganizationHunts = [
       id: 2,
       zipcode: "69001",
       name: "Lyon",
-      lat: 45.7640,
+      lat: 45.764,
       lng: 4.8357,
     },
     brands: [
@@ -207,7 +207,7 @@ export const mockOrganizationHunts = [
   },
   {
     id: "3",
-    organizationId: "org-1",
+    accountId: "org-1",
     createdById: "user-1",
     name: "Utilitaires Île-de-France",
     locationId: 3,

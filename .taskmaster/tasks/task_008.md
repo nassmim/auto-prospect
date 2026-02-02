@@ -15,13 +15,13 @@
 Create dashboard in `src/app/(app)/dashboard/page.tsx`:
 
 1. **Stats Cards Row (Server Component queries):**
-   - New leads today: COUNT from leads WHERE createdAt >= today AND organizationId = current
+   - New leads today: COUNT from leads WHERE createdAt >= today AND accountId = current
    - Leads contacted: COUNT from leads WHERE stage = 'contacte'
    - Messages sent (by channel): COUNT from messages grouped by channel
    - Cards with icon, value, label, optional trend indicator
 
 2. **Active Hunts List:**
-   - Query hunts WHERE status = 'active' AND organizationId = current
+   - Query hunts WHERE status = 'active' AND accountId = current
    - Each row shows: name, platform badge, lead count, contacted count, last scan time
    - Status indicator (green dot for active)
    - Quick actions: pause/resume button, edit link
@@ -42,7 +42,7 @@ Create dashboard in `src/app/(app)/dashboard/page.tsx`:
    const stats = await db.rls((tx) => 
      tx.select({ count: sql<number>`count(*)` })
        .from(leads)
-       .where(eq(leads.organizationId, orgId))
+       .where(eq(leads.accountId, orgId))
    );
    ```
 

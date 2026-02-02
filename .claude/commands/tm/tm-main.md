@@ -3,7 +3,7 @@ Task Master Main
 
 Comprehensive command structure for Task Master integration with Claude Code.
 
-## Command Organization
+## Command account
 
 Commands are organized hierarchically to match Task Master's CLI structure while providing enhanced Claude Code integration.
 

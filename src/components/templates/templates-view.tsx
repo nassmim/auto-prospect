@@ -1,9 +1,11 @@
-import Link from "next/link";
 import { TemplateCard } from "@/components/templates/template-card";
 import { pages } from "@/config/routes";
+import Link from "next/link";
 
 // Type based on action return type
-type Template = Awaited<ReturnType<typeof import("@/actions/template.actions").getOrganizationTemplates>>[number];
+type Template = Awaited<
+  ReturnType<typeof import("@/actions/message.actions").getaccountTemplates>
+>[number];
 
 interface TemplatesViewProps {
   templates: Template[];

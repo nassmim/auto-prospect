@@ -1,11 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { deleteTemplate } from "@/actions/template.actions";
-import { useRouter } from "next/navigation";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { deleteTemplate } from "@/actions/message.actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+} from "@/components/ui/card";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 type Template = {
   id: string;
@@ -89,7 +94,10 @@ export function TemplateCard({ template }: TemplateCardProps) {
               </svg>
             )}
             {template.isDefault && (
-              <Badge variant="outline" className="bg-amber-900/30 text-amber-500 border-amber-500/20">
+              <Badge
+                variant="outline"
+                className="bg-amber-900/30 text-amber-500 border-amber-500/20"
+              >
                 Défaut
               </Badge>
             )}
@@ -119,7 +127,6 @@ export function TemplateCard({ template }: TemplateCardProps) {
         </div>
 
         <h3 className="mt-3 font-semibold text-zinc-100">{template.name}</h3>
-
       </CardHeader>
 
       <CardContent className="pb-3">

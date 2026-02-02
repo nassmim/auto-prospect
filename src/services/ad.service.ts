@@ -1,6 +1,4 @@
-"use server";
-
-import { DB_COLUMS_TO_UPDATE } from "@/constants/ads.constants";
+import { DB_COLUMS_TO_UPDATE } from "@/constants/ad.constants";
 import { EPlatformValue } from "@/constants/enums";
 import {
   createDrizzleSupabaseClient,
@@ -127,7 +125,7 @@ export const fetchAllReferenceData = async (
  * Gets ads that already received a message from a specific user
  */
 export const getAdsContactedByUser = async (
-  organizationId: string,
+  accountId: string,
   {
     dbClient,
     bypassRLS = false,
@@ -140,7 +138,7 @@ export const getAdsContactedByUser = async (
 
   const query = (tx: TDBQuery) =>
     tx.query.contactedAds.findMany({
-      where: (table, { eq }) => eq(table.organizationId, organizationId),
+      where: (table, { eq }) => eq(table.accountId, accountId),
       columns: { adId: true },
     });
 

@@ -1,25 +1,25 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { createVoiceTemplate } from "@/actions/template.actions";
-import { pages } from "@/config/routes";
+import { createVoiceTemplate } from "@/actions/message.actions";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
+  FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormControl,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Button } from "@/components/ui/button";
-import { AudioRecorder } from "./audio-recorder";
+import { pages } from "@/config/routes";
 import { createClient } from "@/lib/supabase/client";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { AudioRecorder } from "./audio-recorder";
 
 // Form schema without Blob (Blob can't be in react-hook-form)
 const voiceTemplateFormSchema = z.object({
@@ -252,7 +252,9 @@ export function VoiceTemplateForm() {
           </Button>
           <Button
             type="submit"
-            disabled={form.formState.isSubmitting || !audioBlob || !audioDuration}
+            disabled={
+              form.formState.isSubmitting || !audioBlob || !audioDuration
+            }
             className="flex-1 rounded-lg bg-amber-500 px-4 py-2 font-medium text-black transition-colors hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {form.formState.isSubmitting ? "Création..." : "Créer le template"}

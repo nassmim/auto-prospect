@@ -16,7 +16,7 @@ Create `src/schema/lead.schema.ts` (separate from raw ads for clean separation):
 
 1. **leads table:**
    - `id`: uuid, primary key, default random
-   - `organizationId`: uuid, FK to organizations.id
+   - `accountId`: uuid, FK to accounts.id
    - `huntId`: uuid, FK to hunts.id (source hunt)
    - `adId`: uuid, FK to ads.id (the scraped listing data)
    - `stage`: varchar enum ('nouveau', 'contacte', 'relance', 'negociation', 'gagne', 'perdu'), default 'nouveau'
@@ -24,9 +24,9 @@ Create `src/schema/lead.schema.ts` (separate from raw ads for clean separation):
    - `position`: integer (for ordering within stage)
    - `createdAt`: timestamp, default now
    - `updatedAt`: timestamp, default now
-   - Unique constraint on (organizationId, adId) - prevent duplicate leads
-   - Index on (organizationId, stage) for Kanban queries
-   - Index on (organizationId, assignedToId) for user filtering
+   - Unique constraint on (accountId, adId) - prevent duplicate leads
+   - Index on (accountId, stage) for Kanban queries
+   - Index on (accountId, assignedToId) for user filtering
    - RLS: org members can access, with visibility restriction option
 
 2. **lead_notes table:**
@@ -57,7 +57,7 @@ Create `src/schema/lead.schema.ts` (separate from raw ads for clean separation):
 **Status:** done  
 **Dependencies:** None  
 
-Define the leads pgTable in src/schema/lead.schema.ts with all required fields: id, organizationId, huntId, adId, stage enum, assignedToId, position, timestamps, and foreign key relationships to organizations, hunts, ads, and accounts tables.
+Define the leads pgTable in src/schema/lead.schema.ts with all required fields: id, accountId, huntId, adId, stage enum, assignedToId, position, timestamps, and foreign key relationships to accounts, hunts, ads, and accounts tables.
 
 **Details:**
 
@@ -65,7 +65,7 @@ Create `src/schema/lead.schema.ts` with:
 1. Export lead stage enum type: `leadStages = ['nouveau', 'contacte', 'relance', 'negociation', 'gagne', 'perdu'] as const`
 2. Define `leads` pgTable with columns:
    - `id`: uuid().primaryKey().notNull().default(sql`gen_random_uuid()`)
-   - `organizationId`: uuid('organization_id').notNull()
+   - `accountId`: uuid('account_id').notNull()
    - `huntId`: uuid('hunt_id').notNull()
    - `adId`: uuid('ad_id').notNull()
    - `stage`: varchar({ length: 20 }).notNull().default('nouveau')
@@ -73,21 +73,21 @@ Create `src/schema/lead.schema.ts` with:
    - `position`: integer().notNull().default(0)
    - `createdAt`/`updatedAt`: timestamp with timezone, defaults
 3. Add foreign keys using foreignKey() helper with onDelete cascade for org/hunt/ad, set null for assignedTo
-4. Import required dependencies from drizzle-orm/pg-core and reference existing tables from organization.schema, hunt.schema, ad.schema, account.schema
+4. Import required dependencies from drizzle-orm/pg-core and reference existing tables from account.schema, hunt.schema, ad.schema, account.schema
 
 ### 3.2. Add unique constraint and performance indexes to leads table
 
 **Status:** done  
 **Dependencies:** 3.1  
 
-Add the unique constraint on (organizationId, adId) to prevent duplicate leads, plus composite indexes for Kanban stage queries and user assignment filtering.
+Add the unique constraint on (accountId, adId) to prevent duplicate leads, plus composite indexes for Kanban stage queries and user assignment filtering.
 
 **Details:**
 
 In the leads table third argument (constraints/indexes function), add:
-1. `unique('leads_org_ad_unique').on(table.organizationId, table.adId)` - Prevents same ad being added as lead twice in same org
-2. `index('leads_organization_stage_idx').on(table.organizationId, table.stage)` - Critical for Kanban column queries
-3. `index('leads_organization_assigned_idx').on(table.organizationId, table.assignedToId)` - For filtering leads by team member
+1. `unique('leads_org_ad_unique').on(table.accountId, table.adId)` - Prevents same ad being added as lead twice in same org
+2. `index('leads_account_stage_idx').on(table.accountId, table.stage)` - Critical for Kanban column queries
+3. `index('leads_account_assigned_idx').on(table.accountId, table.assignedToId)` - For filtering leads by team member
 4. `index('leads_hunt_id_idx').on(table.huntId)` - For querying leads by source hunt
 5. Consider partial index for active stages if needed later for performance
 
@@ -96,13 +96,13 @@ In the leads table third argument (constraints/indexes function), add:
 **Status:** done  
 **Dependencies:** 3.1  
 
-Add Row Level Security policies to leads table ensuring only organization members can access leads, following the existing pattern from hunts table with joined_at verification.
+Add Row Level Security policies to leads table ensuring only account members can access leads, following the existing pattern from hunts table with joined_at verification.
 
 **Details:**
 
 Add to leads table constraints:
 1. Enable RLS with pgPolicy for 'all' operations to authenticatedRole
-2. Using clause: `sql\`exists (select 1 from organization_members om where om.organization_id = ${table.organizationId} and om.account_id = ${authUid} and om.joined_at is not null)\``
+2. Using clause: `sql\`exists (select 1 from team_members om where om.account_id = ${table.accountId} and om.account_id = ${authUid} and om.joined_at is not null)\``
 3. WithCheck clause: same subquery for insert/update validation
 4. Import authenticatedRole, authUid from drizzle-orm/supabase
 5. After migration generation, manually add to SQL: `grant select, insert, update, delete on table public.leads to authenticated, service_role;`
@@ -125,7 +125,7 @@ In src/schema/lead.schema.ts, add two more pgTables:
 - `content`: text().notNull()
 - `createdById`: uuid('created_by_id').notNull() with FK to accounts.id
 - `createdAt`: timestamp with default now()
-- RLS: org members can CRUD (join through leads to organization_members)
+- RLS: org members can CRUD (join through leads to team_members)
 
 **lead_reminders:**
 - `id`: uuid().primaryKey().default(sql`gen_random_uuid()`)
@@ -149,7 +149,7 @@ Define Drizzle ORM relations for leads, lead_notes, and lead_reminders tables to
 1. Add relations in lead.schema.ts:
 ```typescript
 export const leadsRelations = relations(leads, ({ one, many }) => ({
-  organization: one(organizations, { fields: [leads.organizationId], references: [organizations.id] }),
+  account: one(accounts, { fields: [leads.accountId], references: [accounts.id] }),
   hunt: one(hunts, { fields: [leads.huntId], references: [hunts.id] }),
   ad: one(ads, { fields: [leads.adId], references: [ads.id] }),
   assignedTo: one(accounts, { fields: [leads.assignedToId], references: [accounts.id] }),

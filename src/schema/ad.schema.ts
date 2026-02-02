@@ -1,5 +1,5 @@
-import { MessageTypeDBEnum } from "@/schema/general.schema";
-import { organizations, TOrganization } from "@/schema/organization.schema";
+import { accounts, TAccount } from "@/schema/account.schema";
+import { messageChannel } from "@/schema/message.schema";
 import {
   InferInsertModel,
   InferSelectModel,
@@ -302,10 +302,10 @@ export const contactedAds = pgTable(
     adId: uuid("ad_id")
       .references(() => ads.id, { onDelete: "cascade" })
       .notNull(),
-    organizationId: uuid("organization_id")
-      .references(() => organizations.id, { onDelete: "cascade" })
+    accountId: uuid("account_id")
+      .references(() => accounts.id, { onDelete: "cascade" })
       .notNull(),
-    messageType: MessageTypeDBEnum("message_type").notNull(),
+    channel: messageChannel("channel").notNull(),
     createdAt: date("created_at").defaultNow().notNull(),
   },
   () => [
@@ -432,12 +432,12 @@ export const contactedAdsRelations = relations(contactedAds, ({ one }) => ({
     fields: [contactedAds.adId],
     references: [ads.id],
   }),
-  organization: one(organizations, {
-    fields: [contactedAds.organizationId],
-    references: [organizations.id],
+  account: one(accounts, {
+    fields: [contactedAds.accountId],
+    references: [accounts.id],
   }),
 }));
 export type TContactedAd = InferSelectModel<typeof contactedAds> & {
   ad: TAd;
-  organization: TOrganization;
+  account: TAccount;
 };

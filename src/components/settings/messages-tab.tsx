@@ -1,11 +1,11 @@
 "use client";
 
+import { updateaccountSettings } from "@/actions/account.actions";
+import type { accountSettings } from "@/schema/account.schema";
 import { useState, useTransition } from "react";
-import { updateOrganizationSettings } from "@/actions/organization.actions";
-import type { OrganizationSettings } from "@/schema/organization.schema";
 
 type MessagesTabProps = {
-  settings: OrganizationSettings | null;
+  settings: accountSettings | null;
 };
 
 /**
@@ -29,14 +29,16 @@ export function MessagesTab({ settings }: MessagesTabProps) {
 
     startTransition(async () => {
       try {
-        await updateOrganizationSettings({
+        await updateaccountSettings({
           dailyReset,
           ignorePhonesVisible,
         });
         setSuccess(true);
         setTimeout(() => setSuccess(false), 3000);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Une erreur est survenue");
+        setError(
+          err instanceof Error ? err.message : "Une erreur est survenue",
+        );
       }
     });
   };
@@ -188,9 +190,7 @@ export function MessagesTab({ settings }: MessagesTabProps) {
               </li>
               <li className="flex items-start gap-2">
                 <span className="mt-1.5 h-1 w-1 flex-shrink-0 rounded-full bg-zinc-600" />
-                <span>
-                  Vérifiez régulièrement vos paramètres de connexion
-                </span>
+                <span>Vérifiez régulièrement vos paramètres de connexion</span>
               </li>
             </ul>
           </div>

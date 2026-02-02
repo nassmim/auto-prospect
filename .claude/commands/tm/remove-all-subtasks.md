@@ -58,7 +58,7 @@ Valid reasons for global clear:
 - Project restructuring
 - Major pivot in approach
 - Starting fresh breakdown
-- Switching to different task organization
+- Switching to different task account
 
 ## Process
 

@@ -58,14 +58,14 @@ export const teamInvitationSchema = z.object({
 
 export type TeamInvitationFormData = z.infer<typeof teamInvitationSchema>;
 
-// Organization settings schema (for future use)
-export const organizationSettingsSchema = z.object({
+// account settings schema (for future use)
+export const accountSettingsSchema = z.object({
   name: z.string()
     .min(1, 'Le nom de l\'organisation est requis')
     .max(100, 'Le nom ne peut pas dépasser 100 caractères'),
 });
 
-export type OrganizationSettingsFormData = z.infer<typeof organizationSettingsSchema>;
+export type accountSettingsFormData = z.infer<typeof accountSettingsSchema>;
 ```
 
 Update `src/schemas/validation/index.ts` to export all schemas.

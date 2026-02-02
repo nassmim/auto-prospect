@@ -8,7 +8,7 @@
 
 **Priority:** medium
 
-**Description:** Define schemas for text and voice message templates with support for dynamic variables. Templates are organization-scoped and can be used for WhatsApp, SMS, and platform messaging.
+**Description:** Define schemas for text and voice message templates with support for dynamic variables. Templates are account-scoped and can be used for WhatsApp, SMS, and platform messaging.
 
 **Details:**
 
@@ -16,7 +16,7 @@ Create `src/schema/message-template.schema.ts`:
 
 1. **message_templates table:**
    - `id`: uuid, primary key, default random
-   - `organizationId`: uuid, FK to organizations.id
+   - `accountId`: uuid, FK to accounts.id
    - `name`: varchar(255), required
    - `type`: varchar enum ('text', 'voice')
    - `channel`: varchar enum ('whatsapp', 'sms', 'leboncoin') nullable (null for voice)

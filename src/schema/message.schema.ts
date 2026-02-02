@@ -1,20 +1,20 @@
 import {
-  ELeadActivityType,
+  EContactChannel,
   EMessageChannel,
   EMessageStatus,
-  EMessageType,
 } from "@/constants/enums";
+import { teamMembers } from "@/schema/team.schema";
 import { InferInsertModel, relations, sql } from "drizzle-orm";
 import {
   boolean,
   foreignKey,
   index,
   integer,
-  jsonb,
   pgEnum,
   pgPolicy,
   pgTable,
   serial,
+  smallint,
   smallserial,
   text,
   timestamp,
@@ -23,13 +23,13 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { authenticatedRole, authUid } from "drizzle-orm/supabase";
+import { accounts } from "./account.schema";
 import { leads } from "./lead.schema";
-import { organizations } from "./organization.schema";
 
 // Message type enum
-export const messageType = pgEnum(
-  "message_type",
-  Object.values(EMessageType) as [string, ...string[]],
+export const channel = pgEnum(
+  "channel",
+  Object.values(EContactChannel) as [string, ...string[]],
 );
 
 // Message channels enum
@@ -37,32 +37,20 @@ export const messageChannel = pgEnum(
   "message_channel",
   Object.values(EMessageChannel) as [string, ...string[]],
 );
-export type MessageChannel =
-  (typeof EMessageChannel)[keyof typeof EMessageChannel];
 
 // Message status enum
 export const messageStatus = pgEnum(
   "message_status",
   Object.values(EMessageStatus) as [string, ...string[]],
 );
-export type MessageStatus =
-  (typeof EMessageStatus)[keyof typeof EMessageStatus];
-
-// Lead activity types enum
-export const leadActivityType = pgEnum(
-  "lead_activity_type",
-  Object.values(ELeadActivityType) as [string, ...string[]],
-);
-export type LeadActivityType =
-  (typeof ELeadActivityType)[keyof typeof ELeadActivityType];
 
 // Channel priorities table - defines which channels to try first
 export const channelPriorities = pgTable(
   "channel_priorities",
   {
     id: smallserial().primaryKey(),
-    channel: messageType().notNull(),
-    priority: smallserial().notNull(),
+    channel: channel().notNull(),
+    priority: smallint().notNull(),
   },
   (table) => [
     unique("channel_priorities_channel_unique").on(table.channel),
@@ -76,50 +64,14 @@ export const channelPriorities = pgTable(
   ],
 );
 
-// Metadata types for different activity types
-export type StageChangeMetadata = {
-  fromStage: string;
-  toStage: string;
-};
-
-export type MessageSentMetadata = {
-  channel: MessageChannel;
-  status: MessageStatus;
-  messageId: string;
-};
-
-export type AssignmentChangeMetadata = {
-  fromUserId: string | null;
-  toUserId: string | null;
-};
-
-export type NoteAddedMetadata = {
-  noteId: string;
-  preview: string; // First 100 chars of note
-};
-
-export type ReminderSetMetadata = {
-  reminderId: string;
-  dueAt: Date;
-};
-
-export type ActivityMetadata =
-  | StageChangeMetadata
-  | MessageSentMetadata
-  | AssignmentChangeMetadata
-  | NoteAddedMetadata
-  | ReminderSetMetadata
-  | Record<string, never>; // For 'created' type
-
-// Message templates table - organization-scoped text/voice templates
+// Message templates table - account-scoped text/voice templates
 export const messageTemplates = pgTable(
   "message_templates",
   {
     id: uuid().defaultRandom().primaryKey(),
-    organizationId: uuid("organization_id").notNull(),
+    accountId: uuid("account_id").notNull(),
     name: text().notNull(),
-    type: messageType().notNull(),
-    channel: messageChannel(), // null for voice templates
+    channel: channel().notNull(),
     content: text(), // Template content with variable placeholders like {titre_annonce}
     audioUrl: text("audio_url"), // Supabase Storage URL for voice templates
     audioDuration: integer("audio_duration"), // Duration in seconds (validated 15-55)
@@ -134,48 +86,48 @@ export const messageTemplates = pgTable(
   },
   (table) => [
     foreignKey({
-      columns: [table.organizationId],
-      foreignColumns: [organizations.id],
+      columns: [table.accountId],
+      foreignColumns: [accounts.id],
       name: "message_templates_organization_id_fk",
     }).onDelete("cascade"),
     // foreignKey({
     //   columns: [table.createdById],
-    //   foreignColumns: [organizations.id],
+    //   foreignColumns: [accounts.id],
     //   name: "message_templates_created_by_id_fk",
     // }),
-    pgPolicy("enable all for owners of the associated organization", {
+    pgPolicy("enable all for owners of the associated account", {
       as: "permissive",
       for: "all",
       to: authenticatedRole,
       using: sql`exists (
-            select 1 from organizations o
-            where o.id = ${table.organizationId}
+            select 1 from accounts o
+            where o.id = ${table.accountId}
             and o.auth_user_id = ${authUid}
           )`,
       withCheck: sql`exists (
-            select 1 from organizations o
-            where o.id = ${table.organizationId}
+            select 1 from accounts o
+            where o.id = ${table.accountId}
             and o.auth_user_id = ${authUid}
           )`,
     }),
-    // // Organization members can perform all operations on templates
-    // pgPolicy("enable all for organization members", {
+    // // account members can perform all operations on templates
+    // pgPolicy("enable all for account members", {
     //   as: "permissive",
     //   for: "all",
     //   to: authenticatedRole,
     //   using: sql`exists (
     //     select 1 from organization_members om
-    //     where om.organization_id = ${table.organizationId}
+    //     where om.account_id = ${table.accountId}
     //     and om.member_organization_id in (
-    //       select id from organizations where auth_user_id = ${authUid}
+    //       select id from accounts where auth_user_id = ${authUid}
     //     )
     //     and om.joined_at is not null
     //   )`,
     //   withCheck: sql`exists (
     //     select 1 from organization_members om
-    //     where om.organization_id = ${table.organizationId}
+    //     where om.account_id = ${table.accountId}
     //     and om.member_organization_id in (
-    //       select id from organizations where auth_user_id = ${authUid}
+    //       select id from accounts where auth_user_id = ${authUid}
     //     )
     //     and om.joined_at is not null
     //   )`,
@@ -222,50 +174,50 @@ export const messages = pgTable(
     }).onDelete("set null"),
     foreignKey({
       columns: [table.sentById],
-      foreignColumns: [organizations.id],
+      foreignColumns: [teamMembers.id],
       name: "messages_sent_by_id_fk",
     }).onDelete("cascade"),
     // Index for message history queries
     index("messages_lead_id_created_at_idx").on(table.leadId, table.createdAt),
     index("messages_status_idx").on(table.status),
     index("messages_external_id_idx").on(table.externalId),
-    pgPolicy("enable all for organization owners", {
+    pgPolicy("enable all for account owners", {
       as: "permissive",
       for: "all",
       to: authenticatedRole,
       using: sql`exists (
         select 1 from leads l
-        join organizations o on o.id = l.organization_id
+        join accounts o on o.id = l.account_id
         where l.id = ${table.leadId}
         and o.auth_user_id = ${authUid}
       )`,
       withCheck: sql`exists (
         select 1 from leads l
-        join organizations o on o.id = l.organization_id
+        join accounts o on o.id = l.account_id
         where l.id = ${table.leadId}
         and o.auth_user_id = ${authUid}
       )`,
     }),
     // // RLS: Org members can access messages for leads in their org
-    // pgPolicy("enable all for organization members", {
+    // pgPolicy("enable all for account members", {
     //   as: "permissive",
     //   for: "all",
     //   to: authenticatedRole,
     //   using: sql`exists (
     //     select 1 from leads l
-    //     join organizations_members om on om.organization_id = l.organization_id
+    //     join organizations_members om on om.account_id = l.account_id
     //     where l.id = ${table.leadId}
     //     and om.member_organization_id in (
-    //       select id from organizations where auth_user_id = ${authUid}
+    //       select id from accounts where auth_user_id = ${authUid}
     //     )
     //     and om.joined_at is not null
     //   )`,
     //   withCheck: sql`exists (
     //     select 1 from leads l
-    //     join organizations_members om on om.organization_id = l.organization_id
+    //     join organizations_members om on om.account_id = l.account_id
     //     where l.id = ${table.leadId}
     //     and om.member_organization_id in (
-    //       select id from organizations where auth_user_id = ${authUid}
+    //       select id from accounts where auth_user_id = ${authUid}
     //     )
     //     and om.joined_at is not null
     //   )`,
@@ -274,105 +226,14 @@ export const messages = pgTable(
 );
 export type TMessageInsert = InferInsertModel<typeof messages>;
 
-// Lead activities table - immutable activity log for leads
-export const leadActivities = pgTable(
-  "lead_activities",
-  {
-    id: uuid().defaultRandom().primaryKey(),
-    leadId: uuid("lead_id").notNull(),
-    type: leadActivityType().notNull(),
-    metadata: jsonb().$type<ActivityMetadata>(),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .notNull()
-      .default(sql`now()`),
-    createdById: uuid("created_by_id").notNull(),
-  },
-  (table) => [
-    foreignKey({
-      columns: [table.leadId],
-      foreignColumns: [leads.id],
-      name: "lead_activities_lead_id_fk",
-    }).onDelete("cascade"),
-    foreignKey({
-      columns: [table.createdById],
-      foreignColumns: [organizations.id],
-      name: "lead_activities_created_by_id_fk",
-    }).onDelete("cascade"),
-    // Index for timeline queries (chronological order)
-    index("lead_activities_lead_id_created_at_idx").on(
-      table.leadId,
-      table.createdAt,
-    ),
-    index("lead_activities_type_idx").on(table.type),
-    pgPolicy("enable read for organization owners", {
-      as: "permissive",
-      for: "select",
-      to: authenticatedRole,
-      using: sql`exists (
-        select 1 from leads l
-        join organizations o on o.id = l.organization_id
-        where l.id = ${table.leadId}
-        and o.auth_user_id = ${authUid}
-      )`,
-    }),
-    // Org members can insert activities
-    pgPolicy("enable insert for organization owners", {
-      as: "permissive",
-      for: "insert",
-      to: authenticatedRole,
-      withCheck: sql`exists (
-              select 1 from leads l
-        join organizations o on o.id = l.organization_id
-        where l.id = ${table.leadId}
-        and o.auth_user_id = ${authUid}
-      )`,
-    }),
-    // // RLS: Org members can read activities for leads in their org
-    // pgPolicy("enable read for organization members", {
-    //   as: "permissive",
-    //   for: "select",
-    //   to: authenticatedRole,
-    //   using: sql`exists (
-    //     select 1 from leads l
-    //     join organizations_members om on om.organization_id = l.organization_id
-    //     where l.id = ${table.leadId}
-    //     and om.member_organization_id in (
-    //       select id from organizations where auth_user_id = ${authUid}
-    //     )
-    //     and om.joined_at is not null
-    //   )`,
-    // }),
-    // // Org members can insert activities
-    // pgPolicy("enable insert for organization members", {
-    //   as: "permissive",
-    //   for: "insert",
-    //   to: authenticatedRole,
-    //   withCheck: sql`exists (
-    //     select 1 from leads l
-    //     join organizations_members om on om.organization_id = l.organization_id
-    //     where l.id = ${table.leadId}
-    //     and om.member_organization_id in (
-    //       select id from organizations where auth_user_id = ${authUid}
-    //     )
-    //     and om.joined_at is not null
-    //   )`,
-    // }),
-  ],
-);
-export type TLeadActivityInsert = InferInsertModel<typeof leadActivities>;
-
 // Relations
 export const messageTemplatesRelations = relations(
   messageTemplates,
   ({ one }) => ({
-    organization: one(organizations, {
-      fields: [messageTemplates.organizationId],
-      references: [organizations.id],
+    account: one(accounts, {
+      fields: [messageTemplates.accountId],
+      references: [accounts.id],
     }),
-    // createdBy: one(organizations, {
-    //   fields: [messageTemplates.createdById],
-    //   references: [organizations.id],
-    // }),
   }),
 );
 
@@ -385,19 +246,8 @@ export const messagesRelations = relations(messages, ({ one }) => ({
     fields: [messages.templateId],
     references: [messageTemplates.id],
   }),
-  sentBy: one(organizations, {
+  sentBy: one(teamMembers, {
     fields: [messages.sentById],
-    references: [organizations.id],
-  }),
-}));
-
-export const leadActivitiesRelations = relations(leadActivities, ({ one }) => ({
-  lead: one(leads, {
-    fields: [leadActivities.leadId],
-    references: [leads.id],
-  }),
-  createdBy: one(organizations, {
-    fields: [leadActivities.createdById],
-    references: [organizations.id],
+    references: [teamMembers.id],
   }),
 }));

@@ -16,7 +16,7 @@ Create `src/schema/hunt.schema.ts`:
 
 1. **hunts table:**
    - `id`: uuid, primary key, default random
-   - `organizationId`: uuid, FK to organizations.id, required
+   - `accountId`: uuid, FK to accounts.id, required
    - `name`: varchar(255), required
    - `status`: varchar enum ('active', 'paused'), default 'active'
    - `searchType`: varchar enum ('url', 'builder')
@@ -28,7 +28,7 @@ Create `src/schema/hunt.schema.ts`:
    - `lastScanAt`: timestamp nullable
    - `createdAt`: timestamp, default now
    - `createdById`: uuid, FK to accounts.id
-   - Index on (organizationId, status) for active hunt queries
+   - Index on (accountId, status) for active hunt queries
    - RLS: org members can CRUD
 
 2. Add FK constraints with proper cascade behavior

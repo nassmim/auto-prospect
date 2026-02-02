@@ -4,26 +4,13 @@
  * Database operations delegated to server actions
  */
 
-import { EMessageType } from "@/constants/enums";
-import { DailyContactTracker } from "./daily-contact-tracker.service";
+import { TDBClient } from "@/lib/drizzle/dbClient";
+import { getHuntChannelCreditsMap } from "@/services/channel.service";
+import { getHuntDailyPacingLimit } from "@/services/hunt.service";
 import {
-  getHuntDailyPacingLimit,
-  getChannelPriorities,
-  getHuntChannelCreditsMap,
-} from "@/actions/channel.actions";
-
-export type ChannelAllocation = {
-  adId: string;
-  channel: EMessageType;
-  messageType: EMessageType;
-};
-
-export type AllocateAdsToChannelsParams = {
-  huntId: string;
-  adIds: string[];
-  dailyContactTracker: DailyContactTracker;
-};
-
+  TAllocateAdsToChannelsParams,
+  TChannelAllocation,
+} from "@/types/message.types";
 
 /**
  * Allocates ads to channels based on priority, available credits, and daily pacing limit
@@ -41,27 +28,34 @@ export async function allocateAdsToChannels({
   huntId,
   adIds,
   dailyContactTracker,
-}: AllocateAdsToChannelsParams): Promise<ChannelAllocation[]> {
+  dbClient,
+}: TAllocateAdsToChannelsParams & { dbClient: TDBClient }): Promise<
+  TChannelAllocation[]
+> {
   // Get hunt daily pacing limit from database (bypass RLS for background job)
-  const dailyPacingLimit = await getHuntDailyPacingLimit(huntId, true);
+  const dailyPacingLimit = await getHuntDailyPacingLimit(huntId, dbClient);
 
   // Check if already at daily limit
   if (dailyContactTracker.isAtLimit(huntId, dailyPacingLimit)) {
     return []; // No more contacts allowed today
   }
 
-  // Get channel priorities (ordered by priority ascending, bypass RLS for background job)
-  const priorities = await getChannelPriorities(true);
+  // Get channel priorities (ordered by priority ascending)
+  const priorities = await getChannelPriorities(dbClient);
 
   // Get hunt channel credits with remaining balance (bypass RLS for background job)
-  const channelCreditsMap = await getHuntChannelCreditsMap(huntId, true);
+  const channelCreditsMap = await getHuntChannelCreditsMap(
+    huntId,
+    dbClient,
+    true,
+  );
 
-  const allocations: ChannelAllocation[] = [];
+  const allocations: TChannelAllocation[] = [];
   const adsToAllocate = [...adIds]; // Copy to avoid mutation
   let currentDailyCount = dailyContactTracker.getCount(huntId);
 
   // Process each channel in priority order
-  for (const { channel: messageType } of priorities) {
+  for (const { channel } of priorities) {
     // Skip if no ads left to allocate
     if (adsToAllocate.length === 0) break;
 
@@ -74,8 +68,8 @@ export async function allocateAdsToChannels({
       break; // Stop allocation if daily limit reached
     }
 
-    // Get remaining credits for this channel (messageType now maps 1:1 to credit type)
-    const remainingCredits = channelCreditsMap.get(messageType) || 0;
+    // Get remaining credits for this channel (channel now maps 1:1 to credit type)
+    const remainingCredits = channelCreditsMap.get(channel) || 0;
 
     // Skip if no credits available for this channel
     if (remainingCredits <= 0) continue;
@@ -97,8 +91,7 @@ export async function allocateAdsToChannels({
       const adId = adsToAllocate.shift()!;
       allocations.push({
         adId,
-        channel: messageType as EMessageType,
-        messageType: messageType as EMessageType,
+        channel: channel as TChannelAllocation["channel"],
       });
       currentDailyCount++;
     }
@@ -107,5 +100,12 @@ export async function allocateAdsToChannels({
   return allocations;
 }
 
-// Re-export getChannelPriorities from server actions for convenience
-export { getChannelPriorities } from "@/actions/channel.actions";
+/**
+ * Gets channel priorities ordered by priority (lowest number = highest priority)
+ */
+export async function getChannelPriorities(dbClient: TDBClient) {
+  // Define query once, reuse for both modes
+  return dbClient.admin.query.channelPriorities.findMany({
+    orderBy: (table, { asc }) => [asc(table.priority)],
+  });
+}

@@ -29,9 +29,9 @@ Created a comprehensive SEO metadata system with the following components:
 - Helper functions: `normalizeImages()`, `buildRobotsDirective()`
 
 **2. JSON-LD Schema Support:**
-- Schema type interfaces: `OrganizationSchema`, `WebSiteSchema`, `ProductSchema`, `BreadcrumbSchema`
+- Schema type interfaces: `accountSchema`, `WebSiteSchema`, `ProductSchema`, `BreadcrumbSchema`
 - Schema generators:
-  - `generateOrganizationSchema()` - For site-wide Organization structured data
+  - `generateaccountSchema()` - For site-wide account structured data
   - `generateBreadcrumbSchema(items)` - For navigation breadcrumbs
   - `generateProductSchema(vehicle)` - For vehicle/product listings with EUR currency
 
@@ -42,7 +42,7 @@ Created a comprehensive SEO metadata system with the following components:
 
 **4. Updated Root Layout (`src/app/layout.tsx`):**
 - Default SEO metadata via `getSEOTags()`
-- Organization schema injected for rich search results
+- account schema injected for rich search results
 - HTML lang attribute set to 'fr' for French locale
 
 **5. Reference Examples (`src/lib/seo-examples.ts`):**
@@ -108,13 +108,13 @@ Created src/lib/seo.ts with:
 **Status:** done  
 **Dependencies:** 31.1  
 
-Add OrganizationSchema, WebSiteSchema, ProductSchema, and BreadcrumbSchema interfaces with corresponding generator functions to src/lib/seo.ts
+Add accountSchema, WebSiteSchema, ProductSchema, and BreadcrumbSchema interfaces with corresponding generator functions to src/lib/seo.ts
 
 **Details:**
 
 Added to src/lib/seo.ts:
-- Schema interfaces for Organization, WebSite, Product, BreadcrumbList
-- generateOrganizationSchema() for site-wide structured data
+- Schema interfaces for account, WebSite, Product, BreadcrumbList
+- generateaccountSchema() for site-wide structured data
 - generateBreadcrumbSchema() for navigation
 - generateProductSchema() for vehicle listings with EUR currency and Offer schema
 
@@ -138,15 +138,15 @@ Created src/components/seo/json-ld.tsx:
 **Status:** done  
 **Dependencies:** 31.1, 31.3  
 
-Integrate getSEOTags and JsonLd with Organization schema into src/app/layout.tsx, set HTML lang to 'fr'
+Integrate getSEOTags and JsonLd with account schema into src/app/layout.tsx, set HTML lang to 'fr'
 
 **Details:**
 
 Updated src/app/layout.tsx:
-- Import getSEOTags, siteConfig, generateOrganizationSchema from @/lib/seo
+- Import getSEOTags, siteConfig, generateaccountSchema from @/lib/seo
 - Import JsonLd from @/components/seo/json-ld
 - Set metadata using getSEOTags with site defaults
-- Add JsonLd component with Organization schema to body
+- Add JsonLd component with account schema to body
 - Changed html lang from 'en' to 'fr'
 
 ### 31.5. Create SEO usage examples reference file

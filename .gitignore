@@ -67,3 +67,4 @@ node_modules/
 # Auto-work opt-in flag (per-branch decision)
 .claude/.auto-work-enabled
 
+seed.sql

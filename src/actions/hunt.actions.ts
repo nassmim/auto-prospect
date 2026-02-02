@@ -1,6 +1,6 @@
 "use server";
 
-import { EMessageType, EHuntStatus } from "@/constants/enums";
+import { EContactChannel, EHuntStatus } from "@/constants/enums";
 import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
 import { createClient } from "@/lib/supabase/server";
 import { formatZodError } from "@/lib/validation";
@@ -8,117 +8,6 @@ import { huntChannelCredits } from "@/schema/credits.schema";
 import { brandsHunts, hunts, subTypesHunts } from "@/schema/hunt.schema";
 import { createHuntSchema, updateHuntSchema } from "@/validation-schemas";
 import { eq } from "drizzle-orm";
-
-/**
- * Fetches all hunts for the current user's organization with channel credits
- */
-export async function getOrganizationHunts() {
-  const supabase = await createClient();
-  const { data: userData } = await supabase.auth.getUser();
-
-  if (!userData.user) {
-    throw new Error("Non authentifié");
-  }
-
-  const dbClient = await createDrizzleSupabaseClient();
-
-  // Use RLS wrapper to ensure user can only see their organization's hunts
-  const huntsData = await dbClient.rls(async (tx) => {
-    return tx.query.hunts.findMany({
-      orderBy: (table, { desc }) => [desc(table.createdAt)],
-      with: {
-        location: true,
-        brands: {
-          with: {
-            brand: true,
-          },
-        },
-        subTypes: {
-          with: {
-            subType: true,
-          },
-        },
-      },
-    });
-  });
-
-  // Fetch all channel credits for these hunts
-  const huntIds = huntsData.map(h => h.id);
-
-  if (huntIds.length === 0) {
-    return [];
-  }
-
-  const allChannelCredits = await dbClient.rls(async (tx) => {
-    return tx.query.huntChannelCredits.findMany({
-      where: (table, { inArray }) => inArray(table.huntId, huntIds),
-    });
-  });
-
-  // Group credits by hunt ID
-  const creditsByHuntId = new Map<string, typeof allChannelCredits>();
-  for (const credit of allChannelCredits) {
-    if (!creditsByHuntId.has(credit.huntId)) {
-      creditsByHuntId.set(credit.huntId, []);
-    }
-    creditsByHuntId.get(credit.huntId)!.push(credit);
-  }
-
-  // Attach credits to each hunt
-  return huntsData.map(hunt => ({
-    ...hunt,
-    channelCredits: creditsByHuntId.get(hunt.id) || [],
-  }));
-}
-
-/**
- * Fetches a single hunt by ID with channel credits
- */
-export async function getHuntById(huntId: string) {
-  const supabase = await createClient();
-  const { data: userData } = await supabase.auth.getUser();
-
-  if (!userData.user) {
-    throw new Error("Non authentifié");
-  }
-
-  const dbClient = await createDrizzleSupabaseClient();
-
-  const hunt = await dbClient.rls(async (tx) => {
-    return tx.query.hunts.findFirst({
-      where: (table, { eq }) => eq(table.id, huntId),
-      with: {
-        location: true,
-        brands: {
-          with: {
-            brand: true,
-          },
-        },
-        subTypes: {
-          with: {
-            subType: true,
-          },
-        },
-      },
-    });
-  });
-
-  if (!hunt) {
-    throw new Error("Recherche introuvable");
-  }
-
-  // Fetch channel credits separately
-  const channelCreditsData = await dbClient.rls(async (tx) => {
-    return tx.query.huntChannelCredits.findMany({
-      where: (table, { eq }) => eq(table.huntId, huntId),
-    });
-  });
-
-  return {
-    ...hunt,
-    channelCredits: channelCreditsData,
-  };
-}
 
 /**
  * Creates a new hunt
@@ -139,10 +28,10 @@ export async function createHunt(data: unknown) {
 
   const validatedData = parseResult.data;
 
-  // Get user's organization
+  // Get user's account
   const { data: memberData } = await supabase
-    .from("organization_members")
-    .select("organization_id")
+    .from("team_members")
+    .select("account_id")
     .eq("account_id", userData.user.id)
     .single();
 
@@ -158,7 +47,7 @@ export async function createHunt(data: unknown) {
     const [newHunt] = await tx
       .insert(hunts)
       .values({
-        organizationId: memberData.organization_id,
+        accountId: memberData.account_id,
         name: validatedData.name,
         locationId: validatedData.locationId,
         typeId: validatedData.adTypeId,
@@ -205,28 +94,37 @@ export async function createHunt(data: unknown) {
     // Insert channel credit allocations for enabled channels
     const channelCreditsToInsert = [];
 
-    if (validatedData.channelCredits?.sms && validatedData.channelCredits.sms > 0) {
+    if (
+      validatedData.channelCredits?.sms &&
+      validatedData.channelCredits.sms > 0
+    ) {
       channelCreditsToInsert.push({
         huntId: newHunt.id,
-        channel: EMessageType.SMS,
+        channel: EContactChannel.SMS,
         creditsAllocated: validatedData.channelCredits.sms,
         creditsConsumed: 0,
       });
     }
 
-    if (validatedData.channelCredits?.whatsapp && validatedData.channelCredits.whatsapp > 0) {
+    if (
+      validatedData.channelCredits?.whatsapp &&
+      validatedData.channelCredits.whatsapp > 0
+    ) {
       channelCreditsToInsert.push({
         huntId: newHunt.id,
-        channel: EMessageType.WHATSAPP_TEXT,
+        channel: EContactChannel.WHATSAPP_TEXT,
         creditsAllocated: validatedData.channelCredits.whatsapp,
         creditsConsumed: 0,
       });
     }
 
-    if (validatedData.channelCredits?.ringlessVoice && validatedData.channelCredits.ringlessVoice > 0) {
+    if (
+      validatedData.channelCredits?.ringlessVoice &&
+      validatedData.channelCredits.ringlessVoice > 0
+    ) {
       channelCreditsToInsert.push({
         huntId: newHunt.id,
-        channel: EMessageType.RINGLESS_VOICE,
+        channel: EContactChannel.RINGLESS_VOICE,
         creditsAllocated: validatedData.channelCredits.ringlessVoice,
         creditsConsumed: 0,
       });
@@ -309,7 +207,7 @@ export async function updateHuntChannelCredits(
     sms?: number;
     whatsapp?: number;
     ringlessVoice?: number;
-  }
+  },
 ) {
   const supabase = await createClient();
   const { data: userData } = await supabase.auth.getUser();
@@ -329,7 +227,7 @@ export async function updateHuntChannelCredits(
           where: (table, { and, eq }) =>
             and(
               eq(table.huntId, huntId),
-              eq(table.channel, EMessageType.SMS)
+              eq(table.channel, EContactChannel.SMS),
             ),
         });
 
@@ -341,7 +239,7 @@ export async function updateHuntChannelCredits(
         } else {
           await tx.insert(huntChannelCredits).values({
             huntId,
-            channel: EMessageType.SMS,
+            channel: EContactChannel.SMS,
             creditsAllocated: channelCredits.sms,
             creditsConsumed: 0,
           });
@@ -356,7 +254,7 @@ export async function updateHuntChannelCredits(
           where: (table, { and, eq }) =>
             and(
               eq(table.huntId, huntId),
-              eq(table.channel, EMessageType.WHATSAPP_TEXT)
+              eq(table.channel, EContactChannel.WHATSAPP_TEXT),
             ),
         });
 
@@ -368,7 +266,7 @@ export async function updateHuntChannelCredits(
         } else {
           await tx.insert(huntChannelCredits).values({
             huntId,
-            channel: EMessageType.WHATSAPP_TEXT,
+            channel: EContactChannel.WHATSAPP_TEXT,
             creditsAllocated: channelCredits.whatsapp,
             creditsConsumed: 0,
           });
@@ -383,7 +281,7 @@ export async function updateHuntChannelCredits(
           where: (table, { and, eq }) =>
             and(
               eq(table.huntId, huntId),
-              eq(table.channel, EMessageType.RINGLESS_VOICE)
+              eq(table.channel, EContactChannel.RINGLESS_VOICE),
             ),
         });
 
@@ -395,7 +293,7 @@ export async function updateHuntChannelCredits(
         } else {
           await tx.insert(huntChannelCredits).values({
             huntId,
-            channel: EMessageType.RINGLESS_VOICE,
+            channel: EContactChannel.RINGLESS_VOICE,
             creditsAllocated: channelCredits.ringlessVoice,
             creditsConsumed: 0,
           });

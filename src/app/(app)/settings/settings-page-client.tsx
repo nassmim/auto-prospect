@@ -1,20 +1,20 @@
 "use client";
 
-import { useState } from "react";
 import { ConnectedAccountsTab } from "@/components/settings/connected-accounts-tab";
 import { FiltersTab } from "@/components/settings/filters-tab";
 import { MessagesTab } from "@/components/settings/messages-tab";
 import { TeamTab } from "@/components/settings/team-tab";
-import type { OrganizationSettings } from "@/schema/organization.schema";
+import type { accountSettings } from "@/schema/account.schema";
+import { useState } from "react";
 
 type Tab = "accounts" | "filters" | "messages" | "team";
 
 type SettingsPageClientProps = {
-  organization: {
+  account: {
     id: string;
     name: string;
     ownerId: string;
-    settings: OrganizationSettings | null;
+    settings: accountSettings | null;
     createdAt: Date;
   };
   userRole: "owner" | "admin" | "user";
@@ -23,7 +23,7 @@ type SettingsPageClientProps = {
 };
 
 export function SettingsPageClient({
-  organization,
+  account,
   userRole,
   initialMembers,
   initialInvitations,
@@ -144,15 +144,13 @@ export function SettingsPageClient({
       {/* Tab Content */}
       <div className="py-6">
         {activeTab === "accounts" && <ConnectedAccountsTab />}
-        {activeTab === "filters" && (
-          <FiltersTab settings={organization.settings} />
-        )}
+        {activeTab === "filters" && <FiltersTab settings={account.settings} />}
         {activeTab === "messages" && (
-          <MessagesTab settings={organization.settings} />
+          <MessagesTab settings={account.settings} />
         )}
         {activeTab === "team" && (
           <TeamTab
-            organization={organization}
+            account={account}
             userRole={userRole}
             initialMembers={initialMembers}
             initialInvitations={initialInvitations}

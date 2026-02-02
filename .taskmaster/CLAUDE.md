@@ -28,7 +28,7 @@ task-master analyze-complexity --research          # Analyze task complexity
 task-master complexity-report                      # View complexity analysis
 task-master expand --all --research               # Expand all eligible tasks
 
-# Dependencies & Organization
+# Dependencies & account
 task-master add-dependency --id=<id> --depends-on=<id>       # Add task dependency
 task-master move --from=<id> --to=<id>                       # Reorganize task hierarchy
 task-master validate-dependencies                            # Check for dependency issues

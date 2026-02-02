@@ -1,7 +1,7 @@
 -- Explicit grants for all tables with RLS policies
--- Organization tables
-grant select, insert, update, delete on table public.organizations to authenticated, service_role;
-grant select, insert, update, delete on table public.organization_members to authenticated, service_role;
+-- account tables
+grant select, insert, update, delete on table public.accounts to authenticated, service_role;
+grant select, insert, update, delete on table public.team_members to authenticated, service_role;
 
 -- Lead management tables
 grant select, insert, update, delete on table public.leads to authenticated, service_role;

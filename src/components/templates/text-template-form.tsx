@@ -1,6 +1,6 @@
 "use client";
 
-import { createTextTemplate } from "@/actions/template.actions";
+import { createTextTemplate } from "@/actions/message.actions";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {

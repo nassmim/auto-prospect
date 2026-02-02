@@ -757,8 +757,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "organization_id": {
-          "name": "organization_id",
+        "account_id": {
+          "name": "account_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
@@ -793,13 +793,13 @@
           "onUpdate": "no action",
           "onDelete": "cascade"
         },
-        "contacted_ads_organization_id_organizations_id_fk": {
-          "name": "contacted_ads_organization_id_organizations_id_fk",
+        "contacted_ads_account_id_accounts_id_fk": {
+          "name": "contacted_ads_account_id_accounts_id_fk",
           "tableFrom": "contacted_ads",
           "columnsFrom": [
-            "organization_id"
+            "account_id"
           ],
-          "tableTo": "organizations",
+          "tableTo": "accounts",
           "columnsTo": [
             "id"
           ],
@@ -1206,8 +1206,8 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "organization_id": {
-          "name": "organization_id",
+        "account_id": {
+          "name": "account_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
@@ -1242,11 +1242,11 @@
         }
       },
       "indexes": {
-        "credit_balances_organization_id_idx": {
-          "name": "credit_balances_organization_id_idx",
+        "credit_balances_account_id_idx": {
+          "name": "credit_balances_account_id_idx",
           "columns": [
             {
-              "expression": "organization_id",
+              "expression": "account_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1259,13 +1259,13 @@
         }
       },
       "foreignKeys": {
-        "credit_balances_organization_id_organizations_id_fk": {
-          "name": "credit_balances_organization_id_organizations_id_fk",
+        "credit_balances_account_id_accounts_id_fk": {
+          "name": "credit_balances_account_id_accounts_id_fk",
           "tableFrom": "credit_balances",
           "columnsFrom": [
-            "organization_id"
+            "account_id"
           ],
-          "tableTo": "organizations",
+          "tableTo": "accounts",
           "columnsTo": [
             "id"
           ],
@@ -1275,10 +1275,10 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "credit_balances_organization_id_unique": {
-          "name": "credit_balances_organization_id_unique",
+        "credit_balances_account_id_unique": {
+          "name": "credit_balances_account_id_unique",
           "columns": [
-            "organization_id"
+            "account_id"
           ],
           "nullsNotDistinct": false
         }
@@ -1291,7 +1291,7 @@
           "to": [
             "authenticated"
           ],
-          "using": "exists (\n        select 1 from organizations o\n        where o.id = \"credit_balances\".\"organization_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
+          "using": "exists (\n        select 1 from accounts o\n        where o.id = \"credit_balances\".\"account_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
         }
       },
       "checkConstraints": {},
@@ -1379,8 +1379,8 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "organization_id": {
-          "name": "organization_id",
+        "account_id": {
+          "name": "account_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
@@ -1436,7 +1436,7 @@
           "name": "credit_transactions_org_created_idx",
           "columns": [
             {
-              "expression": "organization_id",
+              "expression": "account_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1470,13 +1470,13 @@
         }
       },
       "foreignKeys": {
-        "credit_transactions_organization_id_organizations_id_fk": {
-          "name": "credit_transactions_organization_id_organizations_id_fk",
+        "credit_transactions_account_id_accounts_id_fk": {
+          "name": "credit_transactions_account_id_accounts_id_fk",
           "tableFrom": "credit_transactions",
           "columnsFrom": [
-            "organization_id"
+            "account_id"
           ],
-          "tableTo": "organizations",
+          "tableTo": "accounts",
           "columnsTo": [
             "id"
           ],
@@ -1494,7 +1494,7 @@
           "to": [
             "authenticated"
           ],
-          "using": "exists (\n            select 1 from organizations o\n            where o.id = \"credit_transactions\".\"organization_id\"\n            and o.auth_user_id = (select auth.uid())\n          )"
+          "using": "exists (\n            select 1 from accounts o\n            where o.id = \"credit_transactions\".\"account_id\"\n            and o.auth_user_id = (select auth.uid())\n          )"
         }
       },
       "checkConstraints": {},
@@ -1604,8 +1604,8 @@
           "to": [
             "authenticated"
           ],
-          "using": "exists (\n        select 1 from hunts h\n        join organizations o on o.id = h.organization_id\n        where h.id = \"hunt_channel_credits\".\"hunt_id\"\n        and o.auth_user_id = (select auth.uid())\n      )",
-          "withCheck": "exists (\n        select 1 from hunts h\n        join organizations o on o.id = h.organization_id\n        where h.id = \"hunt_channel_credits\".\"hunt_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
+          "using": "exists (\n        select 1 from hunts h\n        join accounts o on o.id = h.account_id\n        where h.id = \"hunt_channel_credits\".\"hunt_id\"\n        and o.auth_user_id = (select auth.uid())\n      )",
+          "withCheck": "exists (\n        select 1 from hunts h\n        join accounts o on o.id = h.account_id\n        where h.id = \"hunt_channel_credits\".\"hunt_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
         }
       },
       "checkConstraints": {},
@@ -1707,8 +1707,8 @@
           "to": [
             "authenticated"
           ],
-          "using": "exists (\n        select 1 from hunts h\n        join organizations o on o.id = h.organization_id\n        where h.id = \"brands_hunts\".\"hunt_id\"\n        and o.auth_user_id = (select auth.uid())\n      )",
-          "withCheck": "exists (\n        select 1 from hunts h\n        join organizations o on o.id = h.organization_id\n        where h.id = \"brands_hunts\".\"hunt_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
+          "using": "exists (\n        select 1 from hunts h\n        join accounts o on o.id = h.account_id\n        where h.id = \"brands_hunts\".\"hunt_id\"\n        and o.auth_user_id = (select auth.uid())\n      )",
+          "withCheck": "exists (\n        select 1 from hunts h\n        join accounts o on o.id = h.account_id\n        where h.id = \"brands_hunts\".\"hunt_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
         }
       },
       "checkConstraints": {},
@@ -1725,8 +1725,8 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "organization_id": {
-          "name": "organization_id",
+        "account_id": {
+          "name": "account_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
@@ -1887,11 +1887,11 @@
         }
       },
       "indexes": {
-        "hunt_organization_id_status_idx": {
-          "name": "hunt_organization_id_status_idx",
+        "hunt_account_id_status_idx": {
+          "name": "hunt_account_id_status_idx",
           "columns": [
             {
-              "expression": "organization_id",
+              "expression": "account_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1908,11 +1908,11 @@
           "method": "btree",
           "concurrently": false
         },
-        "hunt_organization_id_idx": {
-          "name": "hunt_organization_id_idx",
+        "hunt_account_id_idx": {
+          "name": "hunt_account_id_idx",
           "columns": [
             {
-              "expression": "organization_id",
+              "expression": "account_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1951,13 +1951,13 @@
           "onUpdate": "no action",
           "onDelete": "no action"
         },
-        "hunt_organization_id_fk": {
-          "name": "hunt_organization_id_fk",
+        "hunt_account_id_fk": {
+          "name": "hunt_account_id_fk",
           "tableFrom": "hunts",
           "columnsFrom": [
-            "organization_id"
+            "account_id"
           ],
-          "tableTo": "organizations",
+          "tableTo": "accounts",
           "columnsTo": [
             "id"
           ],
@@ -1984,8 +1984,8 @@
           "to": [
             "authenticated"
           ],
-          "using": "exists (\n        select 1 from organizations o\n        where o.id = \"hunts\".\"organization_id\"\n        and o.auth_user_id = (select auth.uid())\n      )",
-          "withCheck": "exists (\n        select 1 from organizations o\n        where o.id = \"hunts\".\"organization_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
+          "using": "exists (\n        select 1 from accounts o\n        where o.id = \"hunts\".\"account_id\"\n        and o.auth_user_id = (select auth.uid())\n      )",
+          "withCheck": "exists (\n        select 1 from accounts o\n        where o.id = \"hunts\".\"account_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
         }
       },
       "checkConstraints": {},
@@ -2054,8 +2054,8 @@
           "to": [
             "authenticated"
           ],
-          "using": "exists (\n        select 1 from hunts h\n        join organizations o on o.id = h.organization_id\n        where h.id = \"sub_types_hunts\".\"hunt_id\"\n        and o.auth_user_id = (select auth.uid())\n      )",
-          "withCheck": "exists (\n        select 1 from hunts h\n        join organizations o on o.id = h.organization_id\n        where h.id = \"sub_types_hunts\".\"hunt_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
+          "using": "exists (\n        select 1 from hunts h\n        join accounts o on o.id = h.account_id\n        where h.id = \"sub_types_hunts\".\"hunt_id\"\n        and o.auth_user_id = (select auth.uid())\n      )",
+          "withCheck": "exists (\n        select 1 from hunts h\n        join accounts o on o.id = h.account_id\n        where h.id = \"sub_types_hunts\".\"hunt_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
         }
       },
       "checkConstraints": {},
@@ -2072,8 +2072,8 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "organization_id": {
-          "name": "organization_id",
+        "account_id": {
+          "name": "account_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
@@ -2133,11 +2133,11 @@
         }
       },
       "indexes": {
-        "leads_organization_id_stage_idx": {
-          "name": "leads_organization_id_stage_idx",
+        "leads_account_id_stage_idx": {
+          "name": "leads_account_id_stage_idx",
           "columns": [
             {
-              "expression": "organization_id",
+              "expression": "account_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -2154,11 +2154,11 @@
           "method": "btree",
           "concurrently": false
         },
-        "leads_organization_id_assigned_to_id_idx": {
-          "name": "leads_organization_id_assigned_to_id_idx",
+        "leads_account_id_assigned_to_id_idx": {
+          "name": "leads_account_id_assigned_to_id_idx",
           "columns": [
             {
-              "expression": "organization_id",
+              "expression": "account_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -2207,13 +2207,13 @@
         }
       },
       "foreignKeys": {
-        "leads_organization_id_organizations_id_fk": {
-          "name": "leads_organization_id_organizations_id_fk",
+        "leads_account_id_accounts_id_fk": {
+          "name": "leads_account_id_accounts_id_fk",
           "tableFrom": "leads",
           "columnsFrom": [
-            "organization_id"
+            "account_id"
           ],
-          "tableTo": "organizations",
+          "tableTo": "accounts",
           "columnsTo": [
             "id"
           ],
@@ -2246,13 +2246,13 @@
           "onUpdate": "no action",
           "onDelete": "cascade"
         },
-        "leads_assigned_to_id_organization_members_id_fk": {
-          "name": "leads_assigned_to_id_organization_members_id_fk",
+        "leads_assigned_to_id_account_members_id_fk": {
+          "name": "leads_assigned_to_id_account_members_id_fk",
           "tableFrom": "leads",
           "columnsFrom": [
             "assigned_to_id"
           ],
-          "tableTo": "organization_members",
+          "tableTo": "team_members",
           "columnsTo": [
             "id"
           ],
@@ -2262,25 +2262,25 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "leads_organization_id_ad_id_key": {
-          "name": "leads_organization_id_ad_id_key",
+        "leads_account_id_ad_id_key": {
+          "name": "leads_account_id_ad_id_key",
           "columns": [
-            "organization_id",
+            "account_id",
             "ad_id"
           ],
           "nullsNotDistinct": false
         }
       },
       "policies": {
-        "enable all for owners of the associated organization": {
-          "name": "enable all for owners of the associated organization",
+        "enable all for owners of the associated account": {
+          "name": "enable all for owners of the associated account",
           "as": "PERMISSIVE",
           "for": "ALL",
           "to": [
             "authenticated"
           ],
-          "using": "exists (\n            select 1 from organizations o\n            where o.id = \"leads\".\"organization_id\"\n            and o.auth_user_id = (select auth.uid())\n          )",
-          "withCheck": "exists (\n            select 1 from organizations o\n            where o.id = \"leads\".\"organization_id\"\n            and o.auth_user_id = (select auth.uid())\n          )"
+          "using": "exists (\n            select 1 from accounts o\n            where o.id = \"leads\".\"account_id\"\n            and o.auth_user_id = (select auth.uid())\n          )",
+          "withCheck": "exists (\n            select 1 from accounts o\n            where o.id = \"leads\".\"account_id\"\n            and o.auth_user_id = (select auth.uid())\n          )"
         }
       },
       "checkConstraints": {},
@@ -2445,7 +2445,7 @@
           "columnsFrom": [
             "created_by_id"
           ],
-          "tableTo": "organizations",
+          "tableTo": "accounts",
           "columnsTo": [
             "id"
           ],
@@ -2456,23 +2456,23 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {
-        "enable read for organization owners": {
-          "name": "enable read for organization owners",
+        "enable read for account owners": {
+          "name": "enable read for account owners",
           "as": "PERMISSIVE",
           "for": "SELECT",
           "to": [
             "authenticated"
           ],
-          "using": "exists (\n        select 1 from leads l\n        join organizations o on o.id = l.organization_id\n        where l.id = \"lead_activities\".\"lead_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
+          "using": "exists (\n        select 1 from leads l\n        join accounts o on o.id = l.account_id\n        where l.id = \"lead_activities\".\"lead_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
         },
-        "enable insert for organization owners": {
-          "name": "enable insert for organization owners",
+        "enable insert for account owners": {
+          "name": "enable insert for account owners",
           "as": "PERMISSIVE",
           "for": "INSERT",
           "to": [
             "authenticated"
           ],
-          "withCheck": "exists (\n              select 1 from leads l\n        join organizations o on o.id = l.organization_id\n        where l.id = \"lead_activities\".\"lead_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
+          "withCheck": "exists (\n              select 1 from leads l\n        join accounts o on o.id = l.account_id\n        where l.id = \"lead_activities\".\"lead_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
         }
       },
       "checkConstraints": {},
@@ -2489,8 +2489,8 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "organization_id": {
-          "name": "organization_id",
+        "account_id": {
+          "name": "account_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
@@ -2557,13 +2557,13 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "message_templates_organization_id_fk": {
-          "name": "message_templates_organization_id_fk",
+        "message_templates_account_id_fk": {
+          "name": "message_templates_account_id_fk",
           "tableFrom": "message_templates",
           "columnsFrom": [
-            "organization_id"
+            "account_id"
           ],
-          "tableTo": "organizations",
+          "tableTo": "accounts",
           "columnsTo": [
             "id"
           ],
@@ -2574,15 +2574,15 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {
-        "enable all for owners of the associated organization": {
-          "name": "enable all for owners of the associated organization",
+        "enable all for owners of the associated account": {
+          "name": "enable all for owners of the associated account",
           "as": "PERMISSIVE",
           "for": "ALL",
           "to": [
             "authenticated"
           ],
-          "using": "exists (\n            select 1 from organizations o\n            where o.id = \"message_templates\".\"organization_id\"\n            and o.auth_user_id = (select auth.uid())\n          )",
-          "withCheck": "exists (\n            select 1 from organizations o\n            where o.id = \"message_templates\".\"organization_id\"\n            and o.auth_user_id = (select auth.uid())\n          )"
+          "using": "exists (\n            select 1 from accounts o\n            where o.id = \"message_templates\".\"account_id\"\n            and o.auth_user_id = (select auth.uid())\n          )",
+          "withCheck": "exists (\n            select 1 from accounts o\n            where o.id = \"message_templates\".\"account_id\"\n            and o.auth_user_id = (select auth.uid())\n          )"
         }
       },
       "checkConstraints": {},
@@ -2744,7 +2744,7 @@
           "columnsFrom": [
             "sent_by_id"
           ],
-          "tableTo": "organizations",
+          "tableTo": "accounts",
           "columnsTo": [
             "id"
           ],
@@ -2755,15 +2755,15 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {
-        "enable all for organization owners": {
-          "name": "enable all for organization owners",
+        "enable all for account owners": {
+          "name": "enable all for account owners",
           "as": "PERMISSIVE",
           "for": "ALL",
           "to": [
             "authenticated"
           ],
-          "using": "exists (\n        select 1 from leads l\n        join organizations o on o.id = l.organization_id\n        where l.id = \"messages\".\"lead_id\"\n        and o.auth_user_id = (select auth.uid())\n      )",
-          "withCheck": "exists (\n        select 1 from leads l\n        join organizations o on o.id = l.organization_id\n        where l.id = \"messages\".\"lead_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
+          "using": "exists (\n        select 1 from leads l\n        join accounts o on o.id = l.account_id\n        where l.id = \"messages\".\"lead_id\"\n        and o.auth_user_id = (select auth.uid())\n      )",
+          "withCheck": "exists (\n        select 1 from leads l\n        join accounts o on o.id = l.account_id\n        where l.id = \"messages\".\"lead_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
         }
       },
       "checkConstraints": {},
@@ -2814,8 +2814,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.organization_members": {
-      "name": "organization_members",
+    "public.team_members": {
+      "name": "team_members",
       "schema": "",
       "columns": {
         "id": {
@@ -2825,8 +2825,8 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "organization_id": {
-          "name": "organization_id",
+        "account_id": {
+          "name": "account_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
@@ -2840,13 +2840,13 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "organization_id_fk": {
-          "name": "organization_id_fk",
-          "tableFrom": "organization_members",
+        "account_id_fk": {
+          "name": "account_id_fk",
+          "tableFrom": "team_members",
           "columnsFrom": [
-            "organization_id"
+            "account_id"
           ],
-          "tableTo": "organizations",
+          "tableTo": "accounts",
           "columnsTo": [
             "id"
           ],
@@ -2859,29 +2859,29 @@
         "organisation_id_member_name_unique": {
           "name": "organisation_id_member_name_unique",
           "columns": [
-            "organization_id",
+            "account_id",
             "name"
           ],
           "nullsNotDistinct": false
         }
       },
       "policies": {
-        "enable all for organization owners": {
-          "name": "enable all for organization owners",
+        "enable all for account owners": {
+          "name": "enable all for account owners",
           "as": "PERMISSIVE",
           "for": "ALL",
           "to": [
             "authenticated"
           ],
-          "using": "exists (\n        select 1 from organizations o\n        where o.id = \"organization_members\".\"organization_id\"\n        and o.auth_user_id = (select auth.uid())\n      )",
-          "withCheck": "exists (\n        select 1 from organizations o\n        where o.id = \"organization_members\".\"organization_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
+          "using": "exists (\n        select 1 from accounts o\n        where o.id = \"team_members\".\"account_id\"\n        and o.auth_user_id = (select auth.uid())\n      )",
+          "withCheck": "exists (\n        select 1 from accounts o\n        where o.id = \"team_members\".\"account_id\"\n        and o.auth_user_id = (select auth.uid())\n      )"
         }
       },
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.organizations": {
-      "name": "organizations",
+    "public.accounts": {
+      "name": "accounts",
       "schema": "",
       "columns": {
         "id": {
@@ -2923,7 +2923,7 @@
         },
         "type": {
           "name": "type",
-          "type": "organization_type",
+          "type": "account_type",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true,
@@ -2947,7 +2947,7 @@
       "foreignKeys": {
         "auth_user_id_fk": {
           "name": "auth_user_id_fk",
-          "tableFrom": "organizations",
+          "tableFrom": "accounts",
           "columnsFrom": [
             "auth_user_id"
           ],
@@ -2971,8 +2971,8 @@
         }
       },
       "policies": {
-        "enable update for organization owners": {
-          "name": "enable update for organization owners",
+        "enable update for account owners": {
+          "name": "enable update for account owners",
           "as": "PERMISSIVE",
           "for": "UPDATE",
           "to": [
@@ -2981,17 +2981,17 @@
           "using": "\n        (select auth.uid()) = auth_user_id",
           "withCheck": "\n        (select auth.uid()) = auth_user_id"
         },
-        "enable delete for organization owners": {
-          "name": "enable delete for organization owners",
+        "enable delete for account owners": {
+          "name": "enable delete for account owners",
           "as": "PERMISSIVE",
           "for": "DELETE",
           "to": [
             "authenticated"
           ],
-          "using": "\n        (select auth.uid()) = \"organizations\".\"auth_user_id\" \n      "
+          "using": "\n        (select auth.uid()) = \"accounts\".\"auth_user_id\" \n      "
         },
-        "enable read for organization owners": {
-          "name": "enable read for organization owners",
+        "enable read for account owners": {
+          "name": "enable read for account owners",
           "as": "PERMISSIVE",
           "for": "SELECT",
           "to": [
@@ -3084,8 +3084,8 @@
         "replied"
       ]
     },
-    "public.organization_type": {
-      "name": "organization_type",
+    "public.account_type": {
+      "name": "account_type",
       "schema": "public",
       "values": [
         "personal",

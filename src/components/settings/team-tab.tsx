@@ -1,64 +1,52 @@
 "use client";
 
 import {
-  cancelInvitation,
-  inviteTeamMember,
+  addTeamMember,
   removeTeamMember,
-  updateOrganizationName,
-  updateOrganizationSettings,
-} from "@/actions/organization.actions";
-import type {
-  OrganizationSettings,
-  TOrganizationInvitationSelect,
-  TOrganizationMemberSelect,
-} from "@/schema/organization.schema";
+  updateaccountName,
+  updateaccountSettings,
+} from "@/actions/account.actions";
+import type { accountSettings, TaccountMember } from "@/schema/account.schema";
 import { useState, useTransition } from "react";
 
 type TeamTabProps = {
-  organization: {
+  account: {
     id: string;
     name: string;
     ownerId: string;
-    settings: OrganizationSettings | null;
+    settings: accountSettings | null;
     createdAt: Date;
   };
   userRole: "owner" | "admin" | "user";
-  initialMembers: TOrganizationMemberSelect[];
-  initialInvitations: TOrganizationInvitationSelect[];
+  initialMembers: TaccountMember[];
 };
 
 /**
  * Team Management Tab
- * Manages organization name, team settings, members, and invitations
+ * Manages account name, team settings, and members
  */
-export function TeamTab({
-  organization,
-  userRole,
-  initialMembers,
-  initialInvitations,
-}: TeamTabProps) {
+export function TeamTab({ account, userRole, initialMembers }: TeamTabProps) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Organization name
-  const [orgName, setOrgName] = useState(organization.name);
+  // account name
+  const [orgName, setOrgName] = useState(account.name);
 
   // Team settings
   const [allowReassignment, setAllowReassignment] = useState(
-    organization.settings?.allowReassignment ?? true,
+    account.settings?.allowReassignment ?? true,
   );
   const [restrictVisibility, setRestrictVisibility] = useState(
-    organization.settings?.restrictVisibility ?? false,
+    account.settings?.restrictVisibility ?? false,
   );
 
   // Invitation form
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<"user" | "admin">("user");
 
-  // Local state for members and invitations
+  // Local state for members
   const [members, setMembers] = useState(initialMembers);
-  const [invitations, setInvitations] = useState(initialInvitations);
 
   const canEdit = userRole === "owner" || userRole === "admin";
   const isOwner = userRole === "owner";
@@ -71,7 +59,7 @@ export function TeamTab({
 
     startTransition(async () => {
       try {
-        await updateOrganizationName(orgName);
+        await updateaccountName(orgName);
         setSuccess("Nom de l'organisation mis à jour");
         setTimeout(() => setSuccess(null), 3000);
       } catch (err) {
@@ -90,7 +78,7 @@ export function TeamTab({
 
     startTransition(async () => {
       try {
-        await updateOrganizationSettings({
+        await updateaccountSettings({
           allowReassignment,
           restrictVisibility,
         });
@@ -112,16 +100,7 @@ export function TeamTab({
 
     startTransition(async () => {
       try {
-        const result = await inviteTeamMember(inviteEmail, inviteRole);
-        setInvitations([
-          ...invitations,
-          {
-            id: result.token,
-            email: inviteEmail,
-            role: inviteRole,
-            createdAt: new Date(),
-          },
-        ]);
+        const result = await addTeamMember(inviteEmail, inviteRole);
         setInviteEmail("");
         setSuccess("Invitation envoyée");
         setTimeout(() => setSuccess(null), 3000);
@@ -154,28 +133,9 @@ export function TeamTab({
     });
   };
 
-  const handleCancelInvitation = (invitationId: string) => {
-    if (!canEdit) return;
-
-    setError(null);
-
-    startTransition(async () => {
-      try {
-        await cancelInvitation(invitationId);
-        setInvitations(invitations.filter((i) => i.id !== invitationId));
-        setSuccess("Invitation annulée");
-        setTimeout(() => setSuccess(null), 3000);
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Une erreur est survenue",
-        );
-      }
-    });
-  };
-
   return (
     <div className="space-y-8">
-      {/* Organization Name */}
+      {/* account Name */}
       <div className="space-y-4">
         <div>
           <h2 className="text-lg font-semibold text-zinc-100">Organisation</h2>
@@ -203,7 +163,7 @@ export function TeamTab({
             {isOwner && (
               <button
                 onClick={handleSaveOrgName}
-                disabled={isPending || orgName === organization.name}
+                disabled={isPending || orgName === account.name}
                 className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-zinc-950 transition-colors hover:bg-amber-400 disabled:opacity-50"
               >
                 Enregistrer
@@ -405,39 +365,6 @@ export function TeamTab({
               </button>
             </div>
           </div>
-
-          {/* Pending Invitations */}
-          {invitations.length > 0 && (
-            <div>
-              <h3 className="text-sm font-medium text-zinc-300 mb-2">
-                Invitations en attente
-              </h3>
-              <div className="space-y-2">
-                {invitations.map((invitation) => (
-                  <div
-                    key={invitation.id}
-                    className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-900/30 p-3"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="text-sm text-zinc-300">
-                        {invitation.email}
-                      </div>
-                      <span className="text-xs text-zinc-500">
-                        {invitation.role === "admin" ? "Admin" : "Utilisateur"}
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => handleCancelInvitation(invitation.id)}
-                      disabled={isPending}
-                      className="text-sm text-zinc-500 hover:text-zinc-300 disabled:opacity-50"
-                    >
-                      Annuler
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       )}
 

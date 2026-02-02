@@ -5,7 +5,7 @@ This template teaches you (AI or human) how to create structured, dependency-awa
 
 ## Core Principles
 
-1. **Dual-Semantics**: Think functional (capabilities) AND structural (code organization) separately, then map them
+1. **Dual-Semantics**: Think functional (capabilities) AND structural (code account) separately, then map them
 2. **Explicit Dependencies**: Never assume - always state what depends on what
 3. **Topological Order**: Build foundation first, then layers on top
 4. **Progressive Refinement**: Start broad, refine iteratively
@@ -129,7 +129,7 @@ Capability: Validation
 
 <structural-decomposition>
 <instruction>
-NOW think about code organization. Map capabilities to actual file/folder structure.
+NOW think about code account. Map capabilities to actual file/folder structure.
 
 Rules:
 1. Each capability maps to a module (folder or file)

@@ -1,8 +1,8 @@
+import { JsonLd } from "@/components/seo/json-ld";
+import { generateaccountSchema, getSEOTags, siteConfig } from "@/lib/seo";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { getSEOTags, siteConfig, generateOrganizationSchema } from "@/lib/seo";
-import { JsonLd } from "@/components/seo/json-ld";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,7 +32,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <JsonLd data={generateOrganizationSchema()} />
+        <JsonLd data={generateaccountSchema()} />
         {children}
       </body>
     </html>

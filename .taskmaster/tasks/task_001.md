@@ -1,6 +1,6 @@
 # Task ID: 1
 
-**Title:** Create Organization and Team Schema with RLS
+**Title:** Create account and Team Schema with RLS
 
 **Status:** done
 
@@ -8,13 +8,13 @@
 
 **Priority:** high
 
-**Description:** Define Drizzle schemas for organizations, memberships, and team roles to support multi-tenant team management. This builds on the existing accounts table by adding organization-level grouping.
+**Description:** Define Drizzle schemas for accounts, memberships, and team roles to support multi-tenant team management. This builds on the existing accounts table by adding account-level grouping.
 
 **Details:**
 
-Create schemas in `src/schema/organization.schema.ts`:
+Create schemas in `src/schema/account.schema.ts`:
 
-1. **organizations table:**
+1. **accounts table:**
    - `id`: uuid, primary key, default random
    - `name`: varchar(255), required
    - `ownerId`: uuid, FK to accounts.id, on delete cascade
@@ -22,19 +22,19 @@ Create schemas in `src/schema/organization.schema.ts`:
    - `createdAt`: timestamp, default now
    - RLS policies: owner can update/delete, members can read
 
-2. **organization_members table:**
+2. **team_members table:**
    - `id`: uuid, primary key
-   - `organizationId`: uuid, FK to organizations.id
+   - `accountId`: uuid, FK to accounts.id
    - `accountId`: uuid, FK to accounts.id
    - `role`: varchar enum ('owner', 'admin', 'user')
    - `invitedAt`: timestamp
    - `joinedAt`: timestamp nullable
-   - Unique constraint on (organizationId, accountId)
+   - Unique constraint on (accountId, accountId)
    - RLS: org members can read, owner/admin can write
 
-3. **organization_invitations table:**
+3. **account_invitations table:**
    - `id`: uuid, primary key
-   - `organizationId`: uuid, FK
+   - `accountId`: uuid, FK
    - `email`: varchar(320)
    - `role`: varchar
    - `token`: varchar(64) unique
@@ -45,4 +45,4 @@ Remember to add explicit grants in migration SQL for authenticated and service_r
 
 **Test Strategy:**
 
-1. Generate migration with `pnpm db:generate` and verify SQL output contains RLS policies and grants. 2. After migration applied (by human), write integration tests that verify: owner can CRUD organization, member can only read, non-member cannot access. 3. Test invitation flow creates valid token.
+1. Generate migration with `pnpm db:generate` and verify SQL output contains RLS policies and grants. 2. After migration applied (by human), write integration tests that verify: owner can CRUD account, member can only read, non-member cannot access. 3. Test invitation flow creates valid token.

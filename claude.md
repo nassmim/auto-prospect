@@ -313,12 +313,70 @@ co-author like "Co-Authored-By:"
     // All UI state, handlers, rendering logic here
   }
   ```
-- **Services pattern**: `/src/services/` for reusable logic using external tools
-or running on server but that don't necessarily need to be server actions.
-Whenever Drizzle is needed, then move the part that needs it to server actions
-as Drizzle can't be invoked from client side unless it is within a server action.
-- **Utils pattern**: `/src/utils/` for reusable logic that run client side
-- **Preference order**: Services → Server Actions → API Routes (last resort)
+
+#### Server Actions vs Services Pattern
+
+**CRITICAL: Understand when to use server actions vs services**
+
+**Server Actions (`src/actions/*.actions.ts`):**
+- **MUST use** when the function is invoked directly from client-side code
+- Always marked with `"use server"` directive
+- Invoked from client components via form actions or event handlers
+- Examples: Form submissions, button click handlers, mutations triggered by user interactions
+  ```typescript
+  // src/actions/hunt.actions.ts
+  "use server";
+
+  export async function createHunt(data: unknown) {
+    // Validation, Drizzle queries, etc.
+    // Invoked from client component
+  }
+
+  // Client component
+  const handleSubmit = async (data) => {
+    await createHunt(data); // Direct client → server action call
+  };
+  ```
+
+**Services (`src/services/*.service.ts`):**
+- **Use for** reusable server-side logic that is NOT directly invoked from client
+- Called by server actions, API routes, server components, or other services
+- Can use Drizzle, external APIs, or any server-side libraries
+- Examples: Business logic, data transformations, external API integrations
+  ```typescript
+  // src/services/hunt.service.ts
+  // No "use server" directive needed
+
+  export async function calculateHuntMetrics(huntId: string) {
+    const dbClient = await createDrizzleSupabaseClient();
+    // Drizzle queries, business logic
+    // Called by server actions or server components
+  }
+
+  // Called from server action or server component
+  const metrics = await calculateHuntMetrics(huntId); // Server → service call
+  ```
+
+**Decision Tree:**
+1. **Is the function called directly from client-side code?**
+   - YES → Server Action (`src/actions/`)
+   - NO → Continue to step 2
+
+2. **Is it reusable logic used by multiple server actions or server components?**
+   - YES → Service (`src/services/`)
+   - NO → Continue to step 3
+
+3. **Does it need to expose an endpoint for external services/webhooks?**
+   - YES → API Route (`src/app/api/`)
+   - NO → Default to Service
+
+**Key Points:**
+- Drizzle can be used in BOTH server actions AND services (server-side only)
+- Server actions are just a special type of server function with RPC capabilities
+- Services are for abstracting reusable business logic away from server actions
+- Utils (`src/utils/`) are for client-side or isomorphic logic only
+
+**Preference order**: Services → Server Actions → API Routes (last resort)
 
 ### Code Style
 - **Functional over classes**: Prefer functions, avoid OOP patterns

@@ -4,7 +4,7 @@ import Link from "next/link";
 
 // Type based on action return type
 type Hunt = Awaited<
-  ReturnType<typeof import("@/actions/hunt.actions").getOrganizationHunts>
+  ReturnType<typeof import("@/actions/hunt.actions").getaccountHunts>
 >[number];
 
 interface HuntsViewProps {

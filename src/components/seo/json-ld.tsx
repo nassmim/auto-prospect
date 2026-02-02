@@ -2,7 +2,7 @@
  * JSON-LD (JavaScript Object Notation for Linked Data) Component
  *
  * JSON-LD is a structured data format that helps search engines understand your content
- * by providing explicit semantics about your pages (organizations, products, articles, etc.).
+ * by providing explicit semantics about your pages (accounts, products, articles, etc.).
  *
  * Benefits:
  * - Rich search results (enhanced snippets with images, ratings, prices)
@@ -13,24 +13,24 @@
  * <script type="application/ld+json">
  * {
  *   "@context": "https://schema.org",
- *   "@type": "Organization",
+ *   "@type": "account",
  *   "name": "Auto-Prospect",
  *   "url": "https://auto-prospect.fr"
  * }
  * </script>
  */
 
-import Script from "next/script";
 import type {
-  OrganizationSchema,
-  WebSiteSchema,
-  ProductSchema,
+  accountSchema,
   BreadcrumbSchema,
+  ProductSchema,
+  WebSiteSchema,
 } from "@/lib/seo";
+import Script from "next/script";
 
 // Union type of all supported schema types
 export type JsonLdSchema =
-  | OrganizationSchema
+  | accountSchema
   | WebSiteSchema
   | ProductSchema
   | BreadcrumbSchema;
@@ -44,10 +44,10 @@ export interface JsonLdProps {
  * Renders structured data as JSON-LD script tag in the page <head>
  *
  * Single schema usage:
- * <JsonLd data={generateOrganizationSchema()} />
+ * <JsonLd data={generateaccountSchema()} />
  *
  * Multiple schemas usage (using @graph):
- * <JsonLd data={[organizationSchema, breadcrumbSchema]} />
+ * <JsonLd data={[accountSchema, breadcrumbSchema]} />
  */
 export function JsonLd({ data }: JsonLdProps) {
   // Build the JSON-LD object

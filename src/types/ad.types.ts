@@ -138,7 +138,7 @@ type TAdFromLobstr = {
 
 type AutoSenderPreferencesType = {
   id: string;
-  organizationId: string;
+  accountId: string;
   firstMessage: string;
   secondMessage: string;
   priceMin: number | null;
@@ -230,7 +230,7 @@ type TSubscription =
   | {
       active: boolean;
       id: string;
-      organizationId: string | null;
+      accountId: string | null;
       updatedAt: string;
       createdAt: string;
       billingProvider: "stripe" | "lemon-squeezy" | "paddle";

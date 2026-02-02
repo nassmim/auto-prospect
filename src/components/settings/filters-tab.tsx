@@ -1,11 +1,11 @@
 "use client";
 
+import { updateaccountSettings } from "@/actions/account.actions";
+import type { accountSettings } from "@/schema/account.schema";
 import { useState, useTransition } from "react";
-import { updateOrganizationSettings } from "@/actions/organization.actions";
-import type { OrganizationSettings } from "@/schema/organization.schema";
 
 type FiltersTabProps = {
-  settings: OrganizationSettings | null;
+  settings: accountSettings | null;
 };
 
 /**
@@ -27,13 +27,15 @@ export function FiltersTab({ settings }: FiltersTabProps) {
 
     startTransition(async () => {
       try {
-        await updateOrganizationSettings({
+        await updateaccountSettings({
           // Store filter preferences (to be implemented in schema)
         });
         setSuccess(true);
         setTimeout(() => setSuccess(false), 3000);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Une erreur est survenue");
+        setError(
+          err instanceof Error ? err.message : "Une erreur est survenue",
+        );
       }
     });
   };
@@ -68,8 +70,8 @@ export function FiltersTab({ settings }: FiltersTabProps) {
               </label>
             </div>
             <p className="mt-2 text-sm text-zinc-500">
-              Filtre automatiquement les annonces contenant des termes
-              indiquant un vendeur professionnel
+              Filtre automatiquement les annonces contenant des termes indiquant
+              un vendeur professionnel
             </p>
 
             {/* Examples */}

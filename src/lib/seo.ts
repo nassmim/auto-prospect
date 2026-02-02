@@ -175,7 +175,7 @@ export function getSEOTags(options: SEOTagsOptions): Metadata {
 export type MetadataGenerator<T> = (data: T) => SEOTagsOptions;
 
 export function createMetadataGenerator<T>(
-  generator: MetadataGenerator<T>
+  generator: MetadataGenerator<T>,
 ): (data: T) => Metadata {
   return (data: T) => getSEOTags(generator(data));
 }
@@ -190,9 +190,9 @@ export function createMetadataGenerator<T>(
  * your content and display it as rich results (enhanced search listings).
  */
 
-// Organization schema - identifies your business/website
-export interface OrganizationSchema {
-  "@type": "Organization";
+// account schema - identifies your business/website
+export interface accountSchema {
+  "@type": "account";
   name: string; // Business name
   url: string; // Business website URL
   logo?: string; // Logo URL (helps Google Knowledge Panel)
@@ -243,12 +243,12 @@ export interface BreadcrumbSchema {
  */
 
 /**
- * Generates Organization schema using site config
+ * Generates account schema using site config
  * Use this in root layout to identify your business to search engines
  */
-export function generateOrganizationSchema(): OrganizationSchema {
+export function generateaccountSchema(): accountSchema {
   return {
-    "@type": "Organization",
+    "@type": "account",
     name: siteConfig.name,
     url: siteConfig.url,
     logo: `${siteConfig.url}/logo.png`,
@@ -267,7 +267,7 @@ export function generateOrganizationSchema(): OrganizationSchema {
  * ])
  */
 export function generateBreadcrumbSchema(
-  items: Array<{ name: string; url?: string }>
+  items: Array<{ name: string; url?: string }>,
 ): BreadcrumbSchema {
   return {
     "@type": "BreadcrumbList",

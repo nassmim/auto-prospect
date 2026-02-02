@@ -15,7 +15,7 @@
 Create hunt forms in `src/app/(app)/hunts/`:
 
 1. **Hunt List Page (`page.tsx`):**
-   - Grid/list of all organization hunts
+   - Grid/list of all account hunts
    - Each card shows: name, status badge, stats (leads, contacted), platform, last scan
    - Actions: Edit, Pause/Resume toggle, Delete with confirmation
    - "Nouvelle Recherche" primary CTA button

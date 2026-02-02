@@ -16,7 +16,7 @@ Create `src/schema/credits.schema.ts`:
 
 1. **credit_balances table:**
    - `id`: uuid, primary key, default random
-   - `organizationId`: uuid, FK to organizations.id, unique
+   - `accountId`: uuid, FK to accounts.id, unique
    - `smsCredits`: integer, default 0
    - `voiceCredits`: integer, default 0
    - `updatedAt`: timestamp, default now
@@ -24,7 +24,7 @@ Create `src/schema/credits.schema.ts`:
 
 2. **credit_transactions table:**
    - `id`: uuid, primary key, default random
-   - `organizationId`: uuid, FK to organizations.id
+   - `accountId`: uuid, FK to accounts.id
    - `type`: varchar enum ('purchase', 'usage', 'refund', 'adjustment')
    - `creditType`: varchar enum ('sms', 'voice')
    - `amount`: integer (positive for purchase, negative for usage)
@@ -33,7 +33,7 @@ Create `src/schema/credits.schema.ts`:
    - `metadata`: jsonb nullable (pack details, pricing info)
    - `createdAt`: timestamp, default now
    - `createdById`: uuid, FK to accounts.id nullable (null for system)
-   - Index on (organizationId, createdAt) for transaction history
+   - Index on (accountId, createdAt) for transaction history
    - RLS: org members can read, service_role can insert
 
 3. Define credit packs as constants (from PRD):

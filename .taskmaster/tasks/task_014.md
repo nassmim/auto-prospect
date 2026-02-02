@@ -51,11 +51,11 @@ export async function processHuntMatches(huntId: string): Promise<{ created: num
   // Reuse existing getMatchingAds from ad.actions.ts:155-247
   const matchingAds = await getMatchingAds(hunt, { dbClient, bypassRLS: true });
   
-  // Check for existing leads (unique constraint: organizationId + adId)
+  // Check for existing leads (unique constraint: accountId + adId)
   const existingLeads = await dbClient.admin.select({ adId: leads.adId })
     .from(leads)
     .where(and(
-      eq(leads.organizationId, hunt.organizationId),
+      eq(leads.accountId, hunt.accountId),
       inArray(leads.adId, matchingAds.map(a => a.id))
     ));
   
@@ -66,7 +66,7 @@ export async function processHuntMatches(huntId: string): Promise<{ created: num
   if (newAds.length > 0) {
     await dbClient.admin.insert(leads).values(
       newAds.map(ad => ({
-        organizationId: hunt.organizationId,
+        accountId: hunt.accountId,
         huntId: huntId,
         adId: ad.id,
         stage: 'nouveau',
@@ -139,8 +139,8 @@ export async function GET(request: Request) {
 - `src/schema/filter.schema.ts` - Hunt schema (`baseFilters` table)
 - `src/schema/lead.schema.ts:76-79` - Unique constraint prevents duplicates
 
-**Duplicate Prevention:** The `leads` table has a unique constraint on `(organizationId, adId)` - same ad for same org = lead creation skipped
+**Duplicate Prevention:** The `leads` table has a unique constraint on `(accountId, adId)` - same ad for same org = lead creation skipped
 
 **Test Strategy:**
 
-1. Create active hunt with specific filters. 2. Add matching ads to ads table. 3. Trigger POST /api/prospecting. 4. Verify both contactedAds and leads tables populated. 5. Run again - verify no duplicate leads (unique constraint on organizationId+adId). 6. Check leads appear in Kanban with stage='contacte'.
+1. Create active hunt with specific filters. 2. Add matching ads to ads table. 3. Trigger POST /api/prospecting. 4. Verify both contactedAds and leads tables populated. 5. Run again - verify no duplicate leads (unique constraint on accountId+adId). 6. Check leads appear in Kanban with stage='contacte'.

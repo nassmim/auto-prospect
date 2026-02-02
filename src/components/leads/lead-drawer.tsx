@@ -7,7 +7,7 @@ import {
   deleteLeadReminder,
   getDefaultWhatsAppTemplate,
   getLeadDetails,
-  getOrganizationMembers,
+  getteamMembers,
   logWhatsAppMessage,
   updateLeadStage,
 } from "@/actions/lead.actions";
@@ -45,7 +45,7 @@ type LeadDrawerProps = {
 };
 
 type LeadDetails = Awaited<ReturnType<typeof getLeadDetails>>;
-type OrgMember = Awaited<ReturnType<typeof getOrganizationMembers>>[number];
+type OrgMember = Awaited<ReturnType<typeof getteamMembers>>[number];
 
 const STAGE_LABELS: Record<LeadStage, string> = {
   nouveau: "Nouveau",
@@ -104,7 +104,7 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
       try {
         const [data, members] = await Promise.all([
           getLeadDetails(leadId),
-          getOrganizationMembers(leadId),
+          getteamMembers(leadId),
         ]);
         setLead(data);
         setOrgMembers(members);

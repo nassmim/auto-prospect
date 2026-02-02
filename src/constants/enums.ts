@@ -2,10 +2,16 @@ export enum EPlatformValue {
   LOBSTR = "lobstrValue",
 }
 
-export enum EMessageType {
+export enum EContactChannel {
   WHATSAPP_TEXT = "whatsappText",
   SMS = "sms",
   RINGLESS_VOICE = "ringlessVoice",
+}
+
+export enum EContactChannelDisplayedName {
+  WHATSAPP_TEXT = "Message whatsapp",
+  SMS = "SMS",
+  RINGLESS_VOICE = "Message Vocal",
 }
 
 export enum ERole {
@@ -14,7 +20,7 @@ export enum ERole {
   MEMBER = "member",
 }
 
-export enum EOrganizationType {
+export enum EaccountType {
   PERSONAL = "personal",
   TEAM = "team",
 }

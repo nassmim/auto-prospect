@@ -1,7 +1,7 @@
 "use client";
 
 import { Progress } from "@/components/ui/progress";
-import { EMessageType } from "@/constants/enums";
+import { EContactChannel } from "@/constants/enums";
 import type { THuntChannelCredit } from "@/schema/credits.schema";
 
 type CreditUsageDisplayProps = {
@@ -10,10 +10,10 @@ type CreditUsageDisplayProps = {
   dailyContactsCount?: number;
 };
 
-const channelLabels: Record<EMessageType, string> = {
-  [EMessageType.SMS]: "SMS",
-  [EMessageType.RINGLESS_VOICE]: "Voix sans sonnerie",
-  [EMessageType.WHATSAPP_TEXT]: "WhatsApp",
+const channelLabels: Record<EContactChannel, string> = {
+  [EContactChannel.SMS]: "SMS",
+  [EContactChannel.RINGLESS_VOICE]: "Voix sans sonnerie",
+  [EContactChannel.WHATSAPP_TEXT]: "WhatsApp",
 };
 
 export function CreditUsageDisplay({
@@ -37,7 +37,8 @@ export function CreditUsageDisplay({
   const dailyProgress = dailyPacingLimit
     ? Math.min((dailyContactsCount / dailyPacingLimit) * 100, 100)
     : 0;
-  const dailyLimitExceeded = dailyPacingLimit && dailyContactsCount > dailyPacingLimit;
+  const dailyLimitExceeded =
+    dailyPacingLimit && dailyContactsCount > dailyPacingLimit;
 
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
@@ -48,25 +49,23 @@ export function CreditUsageDisplay({
       <div className="space-y-4">
         {channelCredits.map((credit) => {
           const remaining = credit.creditsAllocated - credit.creditsConsumed;
-          const progress = credit.creditsAllocated > 0
-            ? (credit.creditsConsumed / credit.creditsAllocated) * 100
-            : 0;
+          const progress =
+            credit.creditsAllocated > 0
+              ? (credit.creditsConsumed / credit.creditsAllocated) * 100
+              : 0;
 
           return (
             <div key={credit.id} className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-zinc-300">
-                  {channelLabels[credit.channel as EMessageType]}
+                  {channelLabels[credit.channel as EContactChannel]}
                 </span>
                 <span className="text-xs text-zinc-500">
                   {credit.creditsConsumed} / {credit.creditsAllocated} utilisés
                 </span>
               </div>
 
-              <Progress
-                value={progress}
-                className="h-2"
-              />
+              <Progress value={progress} className="h-2" />
 
               <div className="flex items-center justify-between">
                 <span className="text-xs text-zinc-500">
@@ -98,10 +97,7 @@ export function CreditUsageDisplay({
               </span>
             </div>
 
-            <Progress
-              value={dailyProgress}
-              className="h-2"
-            />
+            <Progress value={dailyProgress} className="h-2" />
 
             <div className="flex items-center justify-between">
               <span className="text-xs text-zinc-500">

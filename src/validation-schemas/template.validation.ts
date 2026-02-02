@@ -1,3 +1,4 @@
+import { EContactChannel } from "@/constants/enums";
 import { z } from "zod";
 
 // Text template validation schema
@@ -6,7 +7,7 @@ export const textTemplateSchema = z.object({
     .string()
     .min(1, "Le nom est requis")
     .max(100, "Le nom ne peut pas dépasser 100 caractères"),
-  channel: z.enum(["whatsapp", "sms", "leboncoin"] as const, {
+  channel: z.enum(Object.values(EContactChannel), {
     message: "Canal invalide",
   }),
   content: z
@@ -50,6 +51,4 @@ export const voiceTemplateClientSchema = z.object({
   isDefault: z.boolean(),
 });
 
-export type VoiceTemplateClientData = z.infer<
-  typeof voiceTemplateClientSchema
->;
+export type VoiceTemplateClientData = z.infer<typeof voiceTemplateClientSchema>;

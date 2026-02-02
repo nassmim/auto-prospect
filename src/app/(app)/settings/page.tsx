@@ -1,21 +1,21 @@
-import { SettingsPageClient } from "./settings-page-client";
 import {
-  getCurrentOrganization,
-  getOrganizationMembers,
-  getOrganizationInvitations,
-} from "@/actions/organization.actions";
+  getCurrentaccount,
+  getaccountInvitations,
+  getteamMembers,
+} from "@/actions/account.actions";
+import { SettingsPageClient } from "./settings-page-client";
 
 export default async function SettingsPage() {
   // Fetch initial data for settings page
   const [orgData, members, invitations] = await Promise.all([
-    getCurrentOrganization(),
-    getOrganizationMembers(),
-    getOrganizationInvitations(),
+    getCurrentaccount(),
+    getteamMembers(),
+    getaccountInvitations(),
   ]);
 
   return (
     <SettingsPageClient
-      organization={orgData.organization}
+      account={orgData.account}
       userRole={orgData.role}
       initialMembers={members}
       initialInvitations={invitations}

@@ -3,16 +3,16 @@ CREATE OR REPLACE FUNCTION public.delete_user()
  LANGUAGE sql
  SECURITY DEFINER
 AS $function$
-   -- Delete the auth user (cascade will handle personal organization deletion)
+   -- Delete the auth user (cascade will handle personal account deletion)
    delete from auth.users where id = auth.uid();
 $function$;
 
 
--- Create personal organization for new auth users
--- This implements the organization-first architecture where:
--- - Every user has exactly ONE personal organization (type='personal')
--- - All user data belongs to organizations, not individual auth users
-CREATE OR REPLACE FUNCTION public.handle_new_user_organization()
+-- Create personal account for new auth users
+-- This implements the account-first architecture where:
+-- - Every user has exactly ONE personal account (type='personal')
+-- - All user data belongs to accounts, not individual auth users
+CREATE OR REPLACE FUNCTION public.handle_new_user_account()
  RETURNS trigger
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -20,37 +20,37 @@ CREATE OR REPLACE FUNCTION public.handle_new_user_organization()
 AS $function$
 declare
   user_email text;
-  new_org_id uuid;
+  new_account_id uuid;
 begin
   user_email := new.email;
 
-  -- Create personal organization (1:1 with auth.users)
-  insert into public.organizations (
-    auth_user_id,
+  -- Create personal account (1:1 with auth.users)
+  insert into public.accounts (
+    id,
     email
   )
   values (
     new.id,                    -- Link to auth.users.id
     user_email                -- User's email
   )
-  on conflict (auth_user_id) do update set
+  on conflict (id) do update set
     email = excluded.email
-  returning id into new_org_id;
+  returning id into new_account_id;
 
   return new;
 end;
 $function$;
 
 -- Trigger on new user signup
--- Automatically creates a personal organization when user signs up
-CREATE TRIGGER on_auth_user_created_organization
+-- Automatically creates a personal account when user signs up
+CREATE TRIGGER on_auth_user_created_account
   AFTER INSERT ON auth.users
   FOR EACH ROW
-  EXECUTE FUNCTION public.handle_new_user_organization();
+  EXECUTE FUNCTION public.handle_new_user_account();
 
 -- Trigger on user profile update
--- Updates personal organization when user metadata changes
-CREATE TRIGGER on_auth_user_updated_organization
+-- Updates personal account when user metadata changes
+CREATE TRIGGER on_auth_user_updated_account
   AFTER UPDATE ON auth.users
   FOR EACH ROW
-  EXECUTE FUNCTION public.handle_new_user_organization();
+  EXECUTE FUNCTION public.handle_new_user_account();

@@ -1,15 +1,40 @@
 "use server";
 
-import { createDrizzleSupabaseClient, TDBClient } from "@/lib/drizzle/dbClient";
+import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
+import { accounts, type accountSettings } from "@/schema/account.schema";
+import { getUseraccount } from "@/services/account.service";
+import { eq } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 
 /**
- * Gets the user's current plan
- * We mock the function so far until we truly implement it
+ * Updates account settings (partial update)
  */
-export const getUserPlan = async (
-  organizationId: string,
-  dbClient: TDBClient,
-) => {
-  const client = dbClient || (await createDrizzleSupabaseClient());
-  return organizationId ? 1 : null;
-};
+export async function updateaccountSettings(
+  settings: Partial<accountSettings>,
+) {
+  const dbClient = await createDrizzleSupabaseClient();
+
+  try {
+    const account = await getUseraccount(dbClient, {
+      columnsToKeep: { id: true, settings: true },
+    });
+
+    // Merge with existing settings
+    const currentSettings = account.settings || {};
+    const newSettings = { ...currentSettings, ...settings };
+
+    await dbClient.rls(async (tx) => {
+      await tx
+        .update(accounts)
+        .set({ settings: newSettings })
+        .where(eq(accounts.id, account.id));
+    });
+
+    revalidatePath("/settings");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating account settings:", error);
+    throw error;
+  }
+}

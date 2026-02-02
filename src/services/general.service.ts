@@ -1,5 +1,3 @@
-"use server";
-
 import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
 import { sendSlackMessage } from "@/services/message.service";
 

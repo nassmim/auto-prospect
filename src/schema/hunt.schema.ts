@@ -1,4 +1,5 @@
 import { EHuntStatus } from "@/constants/enums";
+import { accounts } from "@/schema/account.schema";
 import {
   adSubTypes,
   adTypes,
@@ -7,7 +8,6 @@ import {
   TAdType,
   TLocation,
 } from "@/schema/ad.schema";
-import { organizations } from "@/schema/organization.schema";
 import { TMessageTemplateIds, TOutreachSettings } from "@/types/hunt.types";
 import {
   InferInsertModel,
@@ -42,7 +42,7 @@ export const hunts = pgTable(
   {
     id: uuid().defaultRandom().primaryKey(),
     // Hunt metadata
-    organizationId: uuid("organization_id").notNull(),
+    accountId: uuid("account_id").notNull(),
     // createdById: uuid("created_by_id").notNull(), // Who created it (for audit trail)
     typeId: smallint("type_id")
       .references(() => adTypes.id)
@@ -81,20 +81,17 @@ export const hunts = pgTable(
   },
   (table) => [
     foreignKey({
-      columns: [table.organizationId],
-      foreignColumns: [organizations.id],
-      name: "hunt_organization_id_fk",
+      columns: [table.accountId],
+      foreignColumns: [accounts.id],
+      name: "hunt_account_id_fk",
     }).onDelete("cascade"),
     // foreignKey({
     //   columns: [table.createdById],
-    //   foreignColumns: [organizations.id],
+    //   foreignColumns: [accounts.id],
     //   name: "hunt_created_by_id_fk",
     // }).onDelete("cascade"),
-    index("hunt_organization_id_status_idx").on(
-      table.organizationId,
-      table.status,
-    ),
-    index("hunt_organization_id_idx").on(table.organizationId),
+    index("hunt_account_id_status_idx").on(table.accountId, table.status),
+    index("hunt_account_id_idx").on(table.accountId),
     // index("hunt_created_by_id_idx").on(table.createdById),
     pgPolicy("enable insert for authenticated roles", {
       as: "permissive",
@@ -107,34 +104,34 @@ export const hunts = pgTable(
       for: "all",
       to: authenticatedRole,
       using: sql`exists (
-        select 1 from organizations o
-        where o.id = ${table.organizationId}
+        select 1 from accounts o
+        where o.id = ${table.accountId}
         and o.auth_user_id = ${authUid}
       )`,
       withCheck: sql`exists (
-        select 1 from organizations o
-        where o.id = ${table.organizationId}
+        select 1 from accounts o
+        where o.id = ${table.accountId}
         and o.auth_user_id = ${authUid}
       )`,
     }),
-    // // RLS: Organization members can perform all operations on hunts in their org
-    // pgPolicy("enable all for organization members", {
+    // // RLS: accounters can perform all operations on hunts in their org
+    // pgPolicy("enable all for accounters", {
     //   as: "permissive",
     //   for: "all",
     //   to: authenticatedRole,
     //   using: sql`exists (
-    //   select 1 from organization_members om
-    //   where om.organization_id = ${table.organizationId}
-    //   and om.member_organization_id in (
-    //     select id from organizations where auth_user_id = ${authUid}
+    //   select 1 from team_members om
+    //   where om.account_id = ${table.accountId}
+    //   and om.member_account_id in (
+    //     select id from accounts where auth_user_id = ${authUid}
     //   )
     //   and om.joined_at is not null
     // )`,
     //   withCheck: sql`exists (
-    //   select 1 from organization_members om
-    //   where om.organization_id = ${table.organizationId}
-    //   and om.member_organization_id in (
-    //     select id from organizations where auth_user_id = ${authUid}
+    //   select 1 from team_members om
+    //   where om.account_id = ${table.accountId}
+    //   and om.member_account_id in (
+    //     select id from accounts where auth_user_id = ${authUid}
     //   )
     //   and om.joined_at is not null
     // )`,
@@ -167,13 +164,13 @@ export const subTypesHunts = pgTable(
       to: authenticatedRole,
       using: sql`exists (
         select 1 from hunts h
-        join organizations o on o.id = h.organization_id
+        join accounts o on o.id = h.account_id
         where h.id = ${table.huntId}
         and o.auth_user_id = ${authUid}
       )`,
       withCheck: sql`exists (
         select 1 from hunts h
-        join organizations o on o.id = h.organization_id
+        join accounts o on o.id = h.account_id
         where h.id = ${table.huntId}
         and o.auth_user_id = ${authUid}
       )`,
@@ -207,13 +204,13 @@ export const brandsHunts = pgTable(
       to: authenticatedRole,
       using: sql`exists (
         select 1 from hunts h
-        join organizations o on o.id = h.organization_id
+        join accounts o on o.id = h.account_id
         where h.id = ${table.huntId}
         and o.auth_user_id = ${authUid}
       )`,
       withCheck: sql`exists (
         select 1 from hunts h
-        join organizations o on o.id = h.organization_id
+        join accounts o on o.id = h.account_id
         where h.id = ${table.huntId}
         and o.auth_user_id = ${authUid}
       )`,
@@ -364,14 +361,10 @@ export type TBrandsHunt = InferSelectModel<typeof brandsHunts>;
 // );
 // Relations
 export const huntsRelations = relations(hunts, ({ one, many }) => ({
-  organization: one(organizations, {
-    fields: [hunts.organizationId],
-    references: [organizations.id],
+  account: one(accounts, {
+    fields: [hunts.accountId],
+    references: [accounts.id],
   }),
-  // createdBy: one(organizations, {
-  //   fields: [hunts.createdById],
-  //   references: [organizations.id],
-  // }),
   location: one(locations, {
     fields: [hunts.locationId],
     references: [locations.id],

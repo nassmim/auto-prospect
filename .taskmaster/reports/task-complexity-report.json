@@ -14,8 +14,8 @@
 			"taskTitle": "Create channel_priority_config database table and schema",
 			"complexityScore": 4,
 			"recommendedSubtasks": 3,
-			"expansionPrompt": "Break down the channel_priority_config schema creation into: (1) Define Drizzle table schema with proper types and constraints, (2) Implement RLS policies following existing organization-based access patterns, (3) Generate and validate migration SQL. Focus on proper JSONB typing for channelOrder array and unique constraint on organizationId.",
-			"reasoning": "This is a straightforward database schema task following established patterns in the codebase (similar to organization.schema.ts). The task details are comprehensive and specify exact field types. Complexity comes from ensuring proper RLS policies (using existing auth.uid() patterns), JSONB array typing for channelOrder, and unique constraint validation. The migration generation is mechanical. Score: 4/10 because it's well-defined with clear examples."
+			"expansionPrompt": "Break down the channel_priority_config schema creation into: (1) Define Drizzle table schema with proper types and constraints, (2) Implement RLS policies following existing account-based access patterns, (3) Generate and validate migration SQL. Focus on proper JSONB typing for channelOrder array and unique constraint on accountId.",
+			"reasoning": "This is a straightforward database schema task following established patterns in the codebase (similar to account.schema.ts). The task details are comprehensive and specify exact field types. Complexity comes from ensuring proper RLS policies (using existing auth.uid() patterns), JSONB array typing for channelOrder, and unique constraint validation. The migration generation is mechanical. Score: 4/10 because it's well-defined with clear examples."
 		},
 		{
 			"taskId": 34,
@@ -70,8 +70,8 @@
 			"taskTitle": "Create database migration for existing hunts to channelSettings",
 			"complexityScore": 8,
 			"recommendedSubtasks": 6,
-			"expansionPrompt": "Break down into: (1) Design SQL migration script to convert outreachSettings boolean flags to channelSettings structure with default limits (dailyLimit: 10, totalLimit: 100), (2) Handle null/empty outreachSettings gracefully with COALESCE, (3) Create migration for channel_priority_config defaults for all existing organizations, (4) Document and test rollback procedure, (5) Validate migration on development database with existing data, (6) Document the migration SQL for user execution (AI cannot run migrations per CLAUDE.md). Leave outreachSettings column for future cleanup.",
-			"reasoning": "High complexity data migration task with significant risk. The task involves transforming existing JSONB data (outreachSettings) into a new structure (channelSettings) across potentially many records. The migration must handle null values, set appropriate defaults, and ensure no data loss. Additional complexity from needing to initialize channel_priority_config for all existing organizations. Per CLAUDE.md guidelines, AI cannot run migrations (pnpm db:migrate-only is forbidden), so proper SQL documentation is critical. Rollback strategy adds planning overhead. Score: 8/10 due to data migration risk and multiple table transformations."
+			"expansionPrompt": "Break down into: (1) Design SQL migration script to convert outreachSettings boolean flags to channelSettings structure with default limits (dailyLimit: 10, totalLimit: 100), (2) Handle null/empty outreachSettings gracefully with COALESCE, (3) Create migration for channel_priority_config defaults for all existing accounts, (4) Document and test rollback procedure, (5) Validate migration on development database with existing data, (6) Document the migration SQL for user execution (AI cannot run migrations per CLAUDE.md). Leave outreachSettings column for future cleanup.",
+			"reasoning": "High complexity data migration task with significant risk. The task involves transforming existing JSONB data (outreachSettings) into a new structure (channelSettings) across potentially many records. The migration must handle null values, set appropriate defaults, and ensure no data loss. Additional complexity from needing to initialize channel_priority_config for all existing accounts. Per CLAUDE.md guidelines, AI cannot run migrations (pnpm db:migrate-only is forbidden), so proper SQL documentation is critical. Rollback strategy adds planning overhead. Score: 8/10 due to data migration risk and multiple table transformations."
 		},
 		{
 			"taskId": 41,
@@ -99,7 +99,7 @@
 		},
 		{
 			"taskId": 44,
-			"taskTitle": "Add channel priority settings tab to organization settings page",
+			"taskTitle": "Add channel priority settings tab to account settings page",
 			"complexityScore": 5,
 			"recommendedSubtasks": 4,
 			"expansionPrompt": "Break down into: (1) Update settings page data loading to fetch channel priority config via server action, (2) Create new ChannelsTab component receiving initialChannelOrder prop, (3) Integrate ChannelPrioritySettings drag-and-drop component in the new tab, (4) Add 'Canaux' tab to settings-page-client.tsx navigation with icon and implement save handler calling updateChannelPriorityConfig with toast notifications. Style consistently with existing settings tabs.",

@@ -68,9 +68,9 @@ export {
 // Settings schemas
 export {
   teamInvitationSchema,
-  organizationSettingsSchema,
+  accountSettingsSchema,
   type TeamInvitationFormData,
-  type OrganizationSettingsFormData,
+  type accountSettingsFormData,
 } from './settings.validation';
 ```
 

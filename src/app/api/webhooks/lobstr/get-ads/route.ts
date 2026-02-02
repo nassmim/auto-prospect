@@ -1,4 +1,4 @@
-import { handleLobstrWebhook } from "@/actions/lobstr.actions";
+import { handleLobstrWebhook } from "@/services/lobstr.service";
 
 /* 
   Once a run has finished, Lobstr sends us a webhook from which we can get 

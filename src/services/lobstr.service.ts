@@ -1,13 +1,11 @@
-"use server";
-
-import {
-  fetchAllReferenceData,
-  setAdUpdateOnConflict,
-} from "@/actions/ad.actions";
-import { sendAlertToAdmin } from "@/actions/general.actions";
 import { EPlatformValue } from "@/constants/enums";
 import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
 import { ads as adsTable, TAdInsert } from "@/schema";
+import {
+  fetchAllReferenceData,
+  setAdUpdateOnConflict,
+} from "@/services/ad.service";
+import { sendAlertToAdmin } from "@/services/general.service";
 import { TAdFromLobstr, TAdReferenceData } from "@/types/ad.types";
 import { customParseInt } from "@/utils/general.utils";
 import parsePhoneNumber from "libphonenumber-js";

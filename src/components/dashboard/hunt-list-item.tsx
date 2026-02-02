@@ -1,9 +1,9 @@
 "use client";
 
 import { HuntSummary } from "@/actions/dashboard.actions";
-import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
+import Link from "next/link";
 
 export type HuntListItemProps = {
   hunt: HuntSummary;
@@ -51,13 +51,6 @@ export function HuntListItem({ hunt, onPauseToggle }: HuntListItemProps) {
                 >
                   {hunt.name}
                 </Link>
-
-                {/* Platform Badge */}
-                <span
-                  className={`rounded-full border px-2 py-0.5 text-xs font-medium ${platformColor}`}
-                >
-                  {hunt.platform}
-                </span>
               </div>
 
               {/* Metrics Row */}

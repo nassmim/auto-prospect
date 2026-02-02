@@ -1,40 +1,33 @@
-"use server";
-
-import { EMessageType, ETransactionType } from "@/constants/enums";
-import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
+import { ETransactionType } from "@/constants/enums";
+import { createDrizzleSupabaseClient, TDBQuery } from "@/lib/drizzle/dbClient";
 import {
   creditTransactions,
   huntChannelCredits,
-  TCreditTransaction,
 } from "@/schema/credits.schema";
+import {
+  TConsumeCreditsParams,
+  TConsumeCreditsResult,
+} from "@/types/payment.types";
 import { eq, sql } from "drizzle-orm";
-
-export type ConsumeCreditsParams = {
-  huntId: string;
-  channel: EMessageType;
-  messageId?: string;
-  recipient?: string;
-};
-
-export type ConsumeCreditsResult =
-  | { success: true; transaction: TCreditTransaction }
-  | { success: false; error: string };
 
 /**
  * Consumes one credit for a successful message send
  * Uses database transaction with row-level locking to prevent race conditions
+ *
+ * @param bypassRLS - If true, uses admin mode (for background jobs). If false, uses RLS mode (for user-triggered actions). Defaults to false.
  */
 export async function consumeCredit({
   huntId,
   channel,
   messageId,
   recipient,
-}: ConsumeCreditsParams): Promise<ConsumeCreditsResult> {
+  bypassRLS = false,
+}: TConsumeCreditsParams): Promise<TConsumeCreditsResult> {
   const dbClient = await createDrizzleSupabaseClient();
 
   try {
-    // Use admin mode for background job operations
-    const result = await dbClient.admin.transaction(async (tx) => {
+    // Define transaction logic once
+    const transactionLogic = async (tx: TDBQuery) => {
       // Lock the hunt channel credits row to prevent concurrent modifications
       const channelCredit = await tx.query.huntChannelCredits.findFirst({
         where: (table, { and, eq }) =>
@@ -68,10 +61,10 @@ export async function consumeCredit({
         })
         .where(eq(huntChannelCredits.id, channelCredit.id));
 
-      // Get hunt organization ID for transaction logging
+      // Get hunt account ID for transaction logging
       const hunt = await tx.query.hunts.findFirst({
         where: (table, { eq }) => eq(table.id, huntId),
-        columns: { organizationId: true },
+        columns: { accountId: true },
       });
 
       if (!hunt) {
@@ -82,9 +75,9 @@ export async function consumeCredit({
       const [transaction] = await tx
         .insert(creditTransactions)
         .values({
-          organizationId: hunt.organizationId,
+          accountId: hunt.accountId,
           type: ETransactionType.USAGE,
-          creditType: channel,
+          channel,
           amount: -1, // Negative for consumption
           balanceAfter: remainingCredits - 1,
           referenceId: messageId ? messageId : undefined,
@@ -96,7 +89,12 @@ export async function consumeCredit({
         .returning();
 
       return transaction;
-    });
+    };
+
+    // Execute with transaction for atomicity, choosing admin vs RLS mode (CLAUDE.md Pattern 1)
+    const result = bypassRLS
+      ? await dbClient.admin.transaction(transactionLogic)
+      : await dbClient.rls(transactionLogic);
 
     return { success: true, transaction: result };
   } catch (error) {
@@ -109,41 +107,22 @@ export async function consumeCredit({
 }
 
 /**
- * Gets remaining credits for a specific hunt channel
- */
-export async function getRemainingCredits(
-  huntId: string,
-  channel: EMessageType,
-): Promise<number | null> {
-  const dbClient = await createDrizzleSupabaseClient();
-
-  const channelCredit = await dbClient.admin.query.huntChannelCredits.findFirst(
-    {
-      where: (table, { and, eq }) =>
-        and(eq(table.huntId, huntId), eq(table.channel, channel)),
-      columns: {
-        creditsAllocated: true,
-        creditsConsumed: true,
-      },
-    },
-  );
-
-  if (!channelCredit) {
-    return null;
-  }
-
-  return channelCredit.creditsAllocated - channelCredit.creditsConsumed;
-}
-
-/**
  * Gets all channel credits for a hunt
  */
-export async function getHuntChannelCredits(huntId: string) {
+export async function getHuntChannelCredits(
+  huntId: string,
+  bypassRLS: boolean = false,
+) {
   const dbClient = await createDrizzleSupabaseClient();
 
-  const credits = await dbClient.admin.query.huntChannelCredits.findMany({
-    where: (table, { eq }) => eq(table.huntId, huntId),
-  });
+  const query = (tx: TDBQuery) =>
+    tx.query.huntChannelCredits.findMany({
+      where: (table, { eq }) => eq(table.huntId, huntId),
+    });
+
+  const credits = bypassRLS
+    ? await query(dbClient.admin)
+    : await dbClient.rls(query);
 
   return credits.map((credit) => ({
     channel: credit.channel,

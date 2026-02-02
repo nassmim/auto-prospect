@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { getOrganizationTemplates } from "@/actions/template.actions";
+import { getaccountTemplates } from "@/actions/message.actions";
 import { pages } from "@/config/routes";
+import { useEffect, useState } from "react";
 
 type OutreachSettingsProps = {
   outreachSettings: {
@@ -22,9 +22,13 @@ type OutreachSettingsProps = {
     whatsapp?: number;
     ringlessVoice?: number;
   };
-  onOutreachChange: (settings: OutreachSettingsProps["outreachSettings"]) => void;
+  onOutreachChange: (
+    settings: OutreachSettingsProps["outreachSettings"],
+  ) => void;
   onTemplateChange: (templateIds: OutreachSettingsProps["templateIds"]) => void;
-  onChannelCreditsChange?: (credits: OutreachSettingsProps["channelCredits"]) => void;
+  onChannelCreditsChange?: (
+    credits: OutreachSettingsProps["channelCredits"],
+  ) => void;
 };
 
 type Template = {
@@ -47,7 +51,7 @@ export function OutreachSettings({
 
   useEffect(() => {
     // Fetch templates on mount
-    getOrganizationTemplates()
+    getaccountTemplates()
       .then((data) => {
         setTemplates(data as Template[]);
       })
@@ -59,7 +63,9 @@ export function OutreachSettings({
       });
   }, []);
 
-  const handleToggle = (channel: "leboncoin" | "whatsapp" | "sms" | "ringlessVoice") => {
+  const handleToggle = (
+    channel: "leboncoin" | "whatsapp" | "sms" | "ringlessVoice",
+  ) => {
     onOutreachChange({
       ...outreachSettings,
       [channel]: !outreachSettings[channel],
@@ -104,14 +110,10 @@ export function OutreachSettings({
       );
     } else if (channel === "sms") {
       // SMS can use text templates with sms channel
-      return templates.filter(
-        (t) => t.type === "text" && t.channel === "sms",
-      );
+      return templates.filter((t) => t.type === "text" && t.channel === "sms");
     } else if (channel === "ringlessVoice") {
       // Ringless voice uses voice templates with sms channel
-      return templates.filter(
-        (t) => t.type === "voice" && t.channel === "sms",
-      );
+      return templates.filter((t) => t.type === "voice" && t.channel === "sms");
     }
     return [];
   };
@@ -122,7 +124,12 @@ export function OutreachSettings({
       label: "Leboncoin",
       requiresCredits: false,
       icon: (
-        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg
+          className="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -138,7 +145,12 @@ export function OutreachSettings({
       label: "WhatsApp",
       requiresCredits: true,
       icon: (
-        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg
+          className="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -154,7 +166,12 @@ export function OutreachSettings({
       label: "SMS",
       requiresCredits: true,
       icon: (
-        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg
+          className="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -170,7 +187,12 @@ export function OutreachSettings({
       label: "Message Vocal (Ringless)",
       requiresCredits: true,
       icon: (
-        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg
+          className="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -179,7 +201,8 @@ export function OutreachSettings({
           />
         </svg>
       ),
-      description: "Dépose un message vocal dans la boîte vocale (nécessite numéro)",
+      description:
+        "Dépose un message vocal dans la boîte vocale (nécessite numéro)",
     },
   ];
 
@@ -263,7 +286,8 @@ export function OutreachSettings({
                           <option value="">Sélectionner un template...</option>
                           {availableTemplates.map((template) => (
                             <option key={template.id} value={template.id}>
-                              {template.name} ({template.type === "text" ? "Texte" : "Vocal"})
+                              {template.name} (
+                              {template.type === "text" ? "Texte" : "Vocal"})
                             </option>
                           ))}
                         </select>
@@ -284,19 +308,26 @@ export function OutreachSettings({
                           id={`credits-${config.key}`}
                           min="0"
                           step="1"
-                          value={channelCredits?.[config.key as "sms" | "whatsapp" | "ringlessVoice"] || 0}
+                          value={
+                            channelCredits?.[
+                              config.key as "sms" | "whatsapp" | "ringlessVoice"
+                            ] || 0
+                          }
                           onChange={(e) =>
                             handleCreditsChange(
-                              config.key as "sms" | "whatsapp" | "ringlessVoice",
-                              parseInt(e.target.value) || 0
+                              config.key as
+                                | "sms"
+                                | "whatsapp"
+                                | "ringlessVoice",
+                              parseInt(e.target.value) || 0,
                             )
                           }
                           className="w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-200 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
                           placeholder="0"
                         />
                         <p className="mt-1 text-xs text-zinc-500">
-                          1 crédit = 1 contact. Ces crédits seront déduits de votre solde
-                          d'organisation.
+                          1 crédit = 1 contact. Ces crédits seront déduits de
+                          votre solde d'organisation.
                         </p>
                       </div>
                     )}
