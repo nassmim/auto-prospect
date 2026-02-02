@@ -2,9 +2,9 @@
 
 import { pages } from "@/config/routes";
 import { getAccountTemplates } from "@/services/message.service";
-import { useEffect, useState } from "react";
 
 type OutreachSettingsProps = {
+  templates: Awaited<ReturnType<typeof getAccountTemplates>>;
   outreachSettings: {
     leboncoin?: boolean;
     whatsapp?: boolean;
@@ -31,14 +31,8 @@ type OutreachSettingsProps = {
   ) => void;
 };
 
-type Template = {
-  id: string;
-  name: string;
-  type: "text" | "voice";
-  channel?: "whatsapp" | "sms" | "leboncoin" | null;
-};
-
 export function OutreachSettings({
+  templates,
   outreachSettings,
   templateIds,
   channelCredits,
@@ -46,22 +40,6 @@ export function OutreachSettings({
   onTemplateChange,
   onChannelCreditsChange,
 }: OutreachSettingsProps) {
-  const [templates, setTemplates] = useState<Template[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    // Fetch templates on mount
-    getAccountTemplates()
-      .then((data) => {
-        setTemplates(data as Template[]);
-      })
-      .catch((error) => {
-        console.error("Failed to fetch templates:", error);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-  }, []);
 
   const handleToggle = (
     channel: "leboncoin" | "whatsapp" | "sms" | "ringlessVoice",
@@ -99,21 +77,21 @@ export function OutreachSettings({
     channel: "leboncoin" | "whatsapp" | "sms" | "ringlessVoice",
   ) => {
     if (channel === "leboncoin") {
-      // Leboncoin uses text templates with leboncoin channel
-      return templates.filter(
-        (t) => t.type === "text" && t.channel === "leboncoin",
-      );
+      // Leboncoin doesn't have templates in the current schema - return empty
+      return [];
     } else if (channel === "whatsapp") {
-      // WhatsApp can use text templates with whatsapp channel
+      // WhatsApp text templates (channel === "whatsappText" and no audioUrl)
       return templates.filter(
-        (t) => t.type === "text" && t.channel === "whatsapp",
+        (t) => t.channel === "whatsappText" && !t.audioUrl,
       );
     } else if (channel === "sms") {
-      // SMS can use text templates with sms channel
-      return templates.filter((t) => t.type === "text" && t.channel === "sms");
+      // SMS text templates (channel === "sms" and no audioUrl)
+      return templates.filter((t) => t.channel === "sms" && !t.audioUrl);
     } else if (channel === "ringlessVoice") {
-      // Ringless voice uses voice templates with sms channel
-      return templates.filter((t) => t.type === "voice" && t.channel === "sms");
+      // Ringless voice templates (channel === "ringlessVoice" and has audioUrl)
+      return templates.filter(
+        (t) => t.channel === "ringlessVoice" && t.audioUrl,
+      );
     }
     return [];
   };
@@ -212,12 +190,7 @@ export function OutreachSettings({
         Paramètres de prise de contact
       </h3>
 
-      {isLoading ? (
-        <div className="py-8 text-center text-sm text-zinc-500">
-          Chargement des templates...
-        </div>
-      ) : (
-        <div className="space-y-6">
+      <div className="space-y-6">
           {channelConfig.map((config) => {
             const isEnabled = outreachSettings[config.key];
             const availableTemplates = getTemplatesForChannel(config.key);
@@ -287,7 +260,7 @@ export function OutreachSettings({
                           {availableTemplates.map((template) => (
                             <option key={template.id} value={template.id}>
                               {template.name} (
-                              {template.type === "text" ? "Texte" : "Vocal"})
+                              {template.audioUrl ? "Vocal" : "Texte"})
                             </option>
                           ))}
                         </select>
@@ -336,8 +309,7 @@ export function OutreachSettings({
               </div>
             );
           })}
-        </div>
-      )}
+      </div>
     </div>
   );
 }

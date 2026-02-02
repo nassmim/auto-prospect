@@ -2,12 +2,14 @@ import Link from "next/link";
 import { HuntForm } from "@/components/hunts/hunt-form";
 import { pages } from "@/config/routes";
 import { getHuntById } from "@/services/hunt.service";
+import { getAccountTemplates } from "@/services/message.service";
 
 type EditHuntViewProps = {
   hunt: Awaited<ReturnType<typeof getHuntById>>;
+  templates: Awaited<ReturnType<typeof getAccountTemplates>>;
 };
 
-export function EditHuntView({ hunt }: EditHuntViewProps) {
+export function EditHuntView({ hunt, templates }: EditHuntViewProps) {
   return (
     <div className="min-h-screen bg-zinc-950 p-6">
       <div className="mx-auto max-w-4xl">
@@ -61,6 +63,7 @@ export function EditHuntView({ hunt }: EditHuntViewProps) {
 
         {/* Form */}
         <HuntForm
+          templates={templates}
           hunt={{
             id: hunt.id,
             name: hunt.name,

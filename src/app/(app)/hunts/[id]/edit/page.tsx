@@ -1,5 +1,6 @@
 import { EditHuntView } from "@/components/hunts/edit-hunt-view";
 import { getHuntById } from "@/services/hunt.service";
+import { getAccountTemplates } from "@/services/message.service";
 import { getSEOTags } from "@/lib/seo";
 import { notFound } from "next/navigation";
 
@@ -31,5 +32,7 @@ export default async function EditHuntPage({
     notFound();
   }
 
-  return <EditHuntView hunt={hunt} />;
+  const templates = await getAccountTemplates();
+
+  return <EditHuntView hunt={hunt} templates={templates} />;
 }

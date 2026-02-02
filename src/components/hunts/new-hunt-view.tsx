@@ -1,8 +1,13 @@
 import Link from "next/link";
 import { HuntForm } from "@/components/hunts/hunt-form";
 import { pages } from "@/config/routes";
+import { getAccountTemplates } from "@/services/message.service";
 
-export function NewHuntView() {
+type NewHuntViewProps = {
+  templates: Awaited<ReturnType<typeof getAccountTemplates>>;
+};
+
+export function NewHuntView({ templates }: NewHuntViewProps) {
   return (
     <div className="min-h-screen bg-zinc-950 p-6">
       <div className="mx-auto max-w-4xl">
@@ -41,7 +46,7 @@ export function NewHuntView() {
         </div>
 
         {/* Form */}
-        <HuntForm />
+        <HuntForm templates={templates} />
       </div>
     </div>
   );

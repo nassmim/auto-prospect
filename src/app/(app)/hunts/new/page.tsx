@@ -1,6 +1,7 @@
 import { NewHuntView } from "@/components/hunts/new-hunt-view";
 import { getSEOTags } from "@/lib/seo";
 import { pages } from "@/config/routes";
+import { getAccountTemplates } from "@/services/message.service";
 
 export const metadata = getSEOTags({
   title: "Créer une recherche",
@@ -8,6 +9,7 @@ export const metadata = getSEOTags({
   canonical: pages.hunts.new,
 });
 
-export default function NewHuntPage() {
-  return <NewHuntView />;
+export default async function NewHuntPage() {
+  const templates = await getAccountTemplates();
+  return <NewHuntView templates={templates} />;
 }

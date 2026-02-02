@@ -22,8 +22,10 @@ import { useForm, useWatch } from "react-hook-form";
 import { OutreachSettings } from "./outreach-settings";
 import { SearchBuilderTab } from "./search-builder-tab";
 import { UrlPasteTab } from "./url-paste-tab";
+import { getAccountTemplates } from "@/services/message.service";
 
 type HuntFormProps = {
+  templates: Awaited<ReturnType<typeof getAccountTemplates>>;
   hunt?: {
     id: string;
     name: string;
@@ -47,7 +49,7 @@ type HuntFormProps = {
   };
 };
 
-export function HuntForm({ hunt }: HuntFormProps) {
+export function HuntForm({ templates, hunt }: HuntFormProps) {
   const [activeTab, setActiveTab] = useState<"url" | "builder">("url");
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -291,6 +293,7 @@ export function HuntForm({ hunt }: HuntFormProps) {
 
         {/* Outreach Settings */}
         <OutreachSettings
+          templates={templates}
           outreachSettings={
             outreachSettings ?? {
               leboncoin: false,

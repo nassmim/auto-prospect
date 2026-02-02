@@ -1240,8 +1240,9 @@
         "dependencies": [
           "45"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-02-02T11:23:00.707Z"
       },
       {
         "id": "48",
@@ -1267,8 +1268,9 @@
         "dependencies": [
           "45"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-02-02T11:24:14.916Z"
       },
       {
         "id": "50",
@@ -1396,8 +1398,9 @@
           "48",
           "52"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "in-progress",
+        "subtasks": [],
+        "updatedAt": "2026-02-02T11:25:33.154Z"
       },
       {
         "id": "54",
@@ -1543,11 +1546,12 @@
         "dependencies": [
           "58"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [],
         "complexity": 2,
         "recommendedSubtasks": 0,
-        "expansionPrompt": "No expansion needed. Only 1-3 files with simple key renames."
+        "expansionPrompt": "No expansion needed. Only 1-3 files with simple key renames.",
+        "updatedAt": "2026-02-02T11:25:15.937Z"
       },
       {
         "id": "63",
@@ -1559,12 +1563,12 @@
         "dependencies": [
           "58"
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [],
         "complexity": 3,
         "recommendedSubtasks": 0,
         "expansionPrompt": "No expansion needed. 5 files with 14 total revalidatePath replacements, all well-documented.",
-        "updatedAt": "2026-02-02T06:07:02.139Z"
+        "updatedAt": "2026-02-02T06:09:02.204Z"
       },
       {
         "id": "64",
@@ -1622,9 +1626,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-02-02T06:07:02.140Z",
+      "lastModified": "2026-02-02T11:25:33.154Z",
       "taskCount": 66,
-      "completedCount": 54,
+      "completedCount": 58,
       "tags": [
         "master"
       ]
