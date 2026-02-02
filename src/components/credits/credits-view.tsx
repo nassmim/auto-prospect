@@ -13,6 +13,11 @@ import {
 import { EContactChannel, ETransactionType } from "@/constants/enums";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
+import { swrKeys } from "@/config/swr-keys";
+import { SWR_POLLING } from "@/hooks/use-swr-action";
+import { fetchAccountCredits } from "@/actions/credit.actions";
+import useSWR from "swr";
+import { useState, useEffect } from "react";
 
 type CreditData = {
   balance: {
@@ -57,7 +62,33 @@ const transactionTypeLabels: Record<ETransactionType, string> = {
   [ETransactionType.ADJUSTMENT]: "Ajustement",
 };
 
-export function CreditsView({ data }: CreditsViewProps) {
+export function CreditsView({ data: initialData }: CreditsViewProps) {
+  const [prevBalance, setPrevBalance] = useState<number | null>(null);
+  const [balanceChanged, setBalanceChanged] = useState(false);
+
+  // Fetch account credits with SWR polling
+  const { data = initialData, isValidating } = useSWR(
+    swrKeys.credits.balance,
+    () => fetchAccountCredits(),
+    {
+      fallbackData: initialData,
+      refreshInterval: SWR_POLLING.CREDITS,
+      revalidateOnFocus: true,
+      onSuccess: (newData) => {
+        const newTotal =
+          newData.balance.sms +
+          newData.balance.ringlessVoice +
+          newData.balance.whatsappText;
+
+        if (prevBalance !== null && newTotal !== prevBalance) {
+          setBalanceChanged(true);
+          setTimeout(() => setBalanceChanged(false), 2000);
+        }
+        setPrevBalance(newTotal);
+      },
+    },
+  );
+
   const totalCredits =
     data.balance.sms +
     data.balance.ringlessVoice +
@@ -66,11 +97,19 @@ export function CreditsView({ data }: CreditsViewProps) {
   return (
     <div className="space-y-6 p-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-zinc-100">Crédits</h1>
-        <p className="text-zinc-400">
-          Gérez vos crédits de contact pour SMS, WhatsApp et appels
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-zinc-100">Crédits</h1>
+          <p className="text-zinc-400">
+            Gérez vos crédits de contact pour SMS, WhatsApp et appels
+          </p>
+        </div>
+        {isValidating && (
+          <div className="flex items-center gap-2 text-sm text-zinc-500">
+            <div className="h-3 w-3 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
+            Actualisation...
+          </div>
+        )}
       </div>
 
       {/* Credit Balance Summary */}
@@ -82,7 +121,11 @@ export function CreditsView({ data }: CreditsViewProps) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-zinc-100">
+            <div
+              className={`text-2xl font-bold text-zinc-100 transition-all duration-500 ${
+                balanceChanged ? "scale-110 text-amber-500" : ""
+              }`}
+            >
               {totalCredits.toLocaleString("fr-FR")}
             </div>
           </CardContent>
