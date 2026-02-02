@@ -17,18 +17,6 @@ export type HuntListItemProps = {
 export function HuntListItem({ hunt, onPauseToggle }: HuntListItemProps) {
   const isPaused = hunt.status === "paused";
 
-  // Platform badge colors
-  const platformColors = {
-    leboncoin: "bg-orange-500/10 text-orange-500 border-orange-500/20",
-    whatsapp: "bg-green-500/10 text-green-500 border-green-500/20",
-    sms: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-    unknown: "bg-zinc-500/10 text-zinc-500 border-zinc-500/20",
-  };
-
-  const platformColor =
-    platformColors[hunt.platform as keyof typeof platformColors] ||
-    platformColors.unknown;
-
   return (
     <div className="group rounded-lg border border-zinc-800 bg-zinc-900/30 p-4 transition-colors hover:border-zinc-700 hover:bg-zinc-900/50">
       <div className="flex items-center justify-between">

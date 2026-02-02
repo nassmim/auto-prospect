@@ -1203,13 +1203,413 @@
         "recommendedSubtasks": 4,
         "expansionPrompt": "Break down into: (1) Update settings page data loading to fetch channel priority config via server action, (2) Create new ChannelsTab component receiving initialChannelOrder prop, (3) Integrate ChannelPrioritySettings drag-and-drop component in the new tab, (4) Add 'Canaux' tab to settings-page-client.tsx navigation with icon and implement save handler calling updateChannelPriorityConfig with toast notifications. Style consistently with existing settings tabs.",
         "updatedAt": "2026-01-24T17:06:52.148Z"
+      },
+      {
+        "id": "45",
+        "title": "Audit All Navigation Links and Create Missing Route Inventory",
+        "description": "Comprehensively audit every navigation link, button, and route reference in the application. Produce a verified inventory of all missing pages and broken links.",
+        "details": "Audit all navigation references across the codebase:\n\n1. **Sidebar navigation** (`src/components/layout/sidebar.tsx`): Currently references 6 routes - `/dashboard`, `/hunts`, `/pipeline`, `/templates`, `/settings`, `/credits`. Of these, `/pipeline` and `/credits` have NO page.tsx.\n\n2. **Routes config** (`src/config/routes.ts`): Defines `login`, `hunts_create` routes that have no corresponding pages.\n\n3. **In-component links**:\n   - `hunt-card.tsx` and `hunt-list-item.tsx` link to `/hunts/${id}/edit` — no edit page exists\n   - `dashboard-view.tsx` links to `/hunts/create` — this is an alias of `/hunts/new` but no redirect or page exists at `/hunts/create`\n   - `lead-drawer.tsx` links to `/leads/${id}` — this page EXISTS at `src/app/(app)/leads/[id]/page.tsx`\n\n4. **Missing pages confirmed**:\n   - `/pipeline` — no `src/app/(app)/pipeline/page.tsx`\n   - `/credits` — no `src/app/(app)/credits/page.tsx`\n   - `/hunts/[id]/edit` — no `src/app/(app)/hunts/[id]/edit/page.tsx`\n   - `/login` — no `src/app/login/page.tsx` (auth disabled currently)\n   - `/hunts/create` — no page (should redirect to `/hunts/new` or be removed)\n\n5. Create a markdown checklist document at `.taskmaster/docs/app-audit-fixes.md` listing all missing pages, broken links, and their locations in the codebase with file:line references.\n\n6. For each missing page, note whether it needs a full implementation or a simple redirect/placeholder.",
+        "testStrategy": "Manually navigate every link in the sidebar. Click every Link/button in hunt cards, dashboard, lead drawer, and template views. Verify no 404 errors appear. Cross-reference routes.ts entries against actual page.tsx files in the app directory.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-02-02T05:36:51.474Z"
+      },
+      {
+        "id": "46",
+        "title": "Create Missing Pipeline Page (Redirect to Leads)",
+        "description": "The sidebar references /pipeline but no page exists. The leads page at /leads already implements the pipeline concept (Kanban + List views). Create a redirect from /pipeline to /leads to eliminate the 404.",
+        "details": "The `/pipeline` route in the sidebar is conceptually the same as `/leads` (which already has a Kanban/List view with pipeline stages). Rather than duplicating the page:\n\n1. Create `src/app/(app)/pipeline/page.tsx` that redirects to `/leads`:\n```typescript\nimport { redirect } from 'next/navigation';\nimport { pages } from '@/config/routes';\n\nexport default function PipelinePage() {\n  redirect(pages.leads);\n}\n```\n\n2. **Alternative approach**: If the team prefers, update the sidebar to point directly to `/leads` instead of `/pipeline`, removing the `/pipeline` route entirely. This avoids a redirect hop.\n\n3. Decide whether to keep both routes or consolidate. If consolidating, update `src/config/routes.ts` to remove the `pipeline` entry and update `sidebar.tsx` to use `pages.leads`.\n\n4. Update SEO metadata if needed.",
+        "testStrategy": "Click the Pipeline link in the sidebar. Verify it either redirects to /leads or directly navigates there. Verify the active state in the sidebar highlights correctly. Test on both desktop and mobile views.",
+        "priority": "high",
+        "dependencies": [
+          "45"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "47",
+        "title": "Create Missing Credits Page",
+        "description": "The sidebar references /credits but no page exists. Create a credits page that displays the account's credit balance, transaction history, and channel credit allocations using real data from the credits schema.",
+        "details": "Create the credits page using existing schema and services:\n\n1. **Schema exists**: `src/schema/credits.schema.ts` defines `creditTransactions` and `huntChannelCredits` tables.\n\n2. **Service exists**: `src/services/credit.service.ts` has credit consumption logic.\n\n3. Create the page structure:\n   - `src/app/(app)/credits/page.tsx` — Server Component that fetches credit data\n   - `src/components/credits/credits-view.tsx` — Client component for UI\n\n4. **Page content**:\n   - Current credit balance summary (total remaining credits)\n   - Credit allocation per hunt/channel breakdown\n   - Transaction history table (credit purchases, consumption)\n   - Link to purchase more credits (placeholder if billing not implemented)\n\n5. **Data fetching**: Create a service function `getAccountCredits()` in `credit.service.ts` if not already present. Use `dbClient.rls()` pattern for user-context queries.\n\n6. Follow thin page.tsx pattern:\n```typescript\n// page.tsx\nexport default async function CreditsPage() {\n  const creditData = await getAccountCredits();\n  return <CreditsView data={creditData} />;\n}\n```\n\n7. Use shadcn/ui components (Table, Card, Badge) for consistent styling.",
+        "testStrategy": "Navigate to /credits from sidebar. Verify the page renders without errors. Check that credit data displays correctly from the database. Test with accounts that have credits and accounts with zero credits. Verify RLS policies work (user can only see their own credits).",
+        "priority": "medium",
+        "dependencies": [
+          "45"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "48",
+        "title": "Create Missing Hunt Edit Page",
+        "description": "Multiple components link to /hunts/[id]/edit but no page exists. Create the hunt edit page reusing the existing hunt-form component with pre-populated data.",
+        "details": "The hunt edit route is referenced in `hunt-card.tsx` and `hunt-list-item.tsx` but has no page:\n\n1. Create `src/app/(app)/hunts/[id]/edit/page.tsx` as a Server Component:\n```typescript\nimport { getHuntById } from '@/services/hunt.service';\nimport { notFound } from 'next/navigation';\n\nexport default async function EditHuntPage({ params }: { params: Promise<{ id: string }> }) {\n  const { id } = await params;\n  const hunt = await getHuntById(id);\n  if (!hunt) notFound();\n  return <EditHuntView hunt={hunt} />;\n}\n```\n\n2. **Service already exists**: `getHuntById(huntId)` in `src/services/hunt.service.ts` fetches a hunt with all relations (brands, subtypes, location).\n\n3. **Action already exists**: `updateHunt(huntId, data)` in `src/actions/hunt.actions.ts` handles the update.\n\n4. Create `src/components/hunts/edit-hunt-view.tsx` that reuses `HuntForm` component in edit mode. Pass existing hunt data as `defaultValues` to the form.\n\n5. The existing `HuntForm` (`src/components/hunts/hunt-form.tsx`) likely needs a minor update to accept `initialData` prop and distinguish between create/edit modes.\n\n6. After successful edit, redirect back to `/hunts` using `router.push(pages.hunts)`.\n\n7. Handle the case where the hunt ID doesn't exist with Next.js `notFound()`.",
+        "testStrategy": "Click the edit button on a hunt card. Verify the edit page loads with pre-populated hunt data. Modify a field and submit. Verify the update persists in the database. Test with invalid hunt IDs to verify 404 handling. Test form validation on edit.",
+        "priority": "high",
+        "dependencies": [
+          "45"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "49",
+        "title": "Fix /hunts/create Route (Redirect or Remove)",
+        "description": "Dashboard links to /hunts/create but the actual create page is at /hunts/new. Either create a redirect or update the reference to use the correct path.",
+        "details": "The `routes.ts` config defines both `hunts_new: '/hunts/new'` and `hunts_create: '/hunts/create'`. The actual page exists at `/hunts/new`. The dashboard view (`dashboard-view.tsx`) links to `/hunts/create`.\n\n1. **Option A (Preferred — Simplify)**: Remove the `hunts_create` entry from `routes.ts` and update `dashboard-view.tsx` to use `pages.hunts_new` instead. This eliminates the duplicate route.\n\n2. **Option B (Redirect)**: Create `src/app/(app)/hunts/create/page.tsx` that redirects to `/hunts/new`.\n\n3. Search the entire codebase for any other references to `/hunts/create` or `hunts_create` and update them.\n\n4. After fixing, verify `routes.ts` has a single, unambiguous route for creating a hunt.",
+        "testStrategy": "Click the 'create hunt' button on the dashboard. Verify it navigates to the hunt creation form at /hunts/new. Search codebase for any remaining references to /hunts/create. Verify no 404 occurs.",
+        "priority": "medium",
+        "dependencies": [
+          "45"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "50",
+        "title": "Replace Mock Data with Real Database Queries on Dashboard Page",
+        "description": "The dashboard page (src/app/(app)/dashboard/page.tsx) uses mockDashboardStats and mockHunts from mock-data.ts. Replace with real data fetching using existing services.",
+        "details": "The dashboard imports `mockDashboardStats` and `mockHunts` instead of querying the database:\n\n1. **Dashboard stats**: Create a `getDashboardStats()` function. Relevant services already exist:\n   - `getTodayNewLeads()` in `lead.service.ts` — for new leads count\n   - `getContactedLeads()` in `lead.service.ts` — for contacted leads count\n   - `getLeadsSummaryStats()` in `lead.service.ts` — may already aggregate what's needed\n   - Message counts by channel need a service function (check `message.service.ts`)\n\n2. **Active hunts**: `getActiveHunts()` already exists in `hunt.service.ts` at line 271. This returns `THuntSummary[]` which matches the `HuntSummary` type used by the mock.\n\n3. Create `src/services/dashboard.service.ts` (or add to existing services) with:\n```typescript\nexport async function getDashboardStats(): Promise<DashboardStats> {\n  const dbClient = await createDrizzleSupabaseClient();\n  // Use dbClient.rls() for user-scoped queries\n  // Aggregate: today's new leads, contacted leads, messages by channel\n}\n```\n\n4. Update `dashboard/page.tsx`:\n```typescript\nexport default async function DashboardPage() {\n  const [stats, hunts] = await Promise.all([\n    getDashboardStats(),\n    getActiveHunts(),\n  ]);\n  return <DashboardView stats={stats} hunts={hunts} />;\n}\n```\n\n5. Ensure the `DashboardStats` and `HuntSummary` types (currently defined in the commented-out `dashboard.actions.ts` import) are properly exported from the service or a shared types file.\n\n6. Remove the mock data imports from dashboard/page.tsx.",
+        "testStrategy": "Load the dashboard page. Verify stats display real data from the database (check against direct DB queries). Verify active hunts list shows real hunts. Test with empty database (no hunts, no leads) to ensure graceful handling of zero states. Verify loading states work correctly.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "in-progress",
+        "subtasks": [],
+        "updatedAt": "2026-02-02T05:37:08.330Z"
+      },
+      {
+        "id": "51",
+        "title": "Replace Mock Data with Real Database Queries on Hunts Page",
+        "description": "The hunts page (src/app/(app)/hunts/page.tsx) uses mockaccountHunts from mock-data.ts. Replace with real data fetching using the existing getAccountHunts() service.",
+        "details": "The hunts page uses `mockaccountHunts` instead of querying the database:\n\n1. **Service already exists**: `getAccountHunts()` in `src/services/hunt.service.ts` (line 198) fetches real hunts with all relations.\n\n2. The commented-out import references `getaccountHunts` from `@/actions/hunt-crud.actions` which doesn't exist. The actual function is in `hunt.service.ts`.\n\n3. **Decision**: Either:\n   - Call the service directly from the Server Component page (Pattern 3: RLS Only), OR\n   - Create a thin server action wrapper if needed for revalidation\n\n4. Update `hunts/page.tsx`:\n```typescript\nimport { getAccountHunts } from '@/services/hunt.service';\nimport { HuntsView } from '@/components/hunts/hunts-view';\n\nexport default async function HuntsPage() {\n  const hunts = await getAccountHunts();\n  return <HuntsView hunts={hunts} />;\n}\n```\n\n5. Verify the return type of `getAccountHunts()` matches what `HuntsView` expects. The mock data structure includes `location`, `brands`, `subTypes` relations — confirm the service returns these.\n\n6. Update the `HuntsView` type annotation (`src/components/hunts/hunts-view.tsx` line 7) to reference the correct service function instead of the non-existent `hunt.actions.getaccountHunts`.\n\n7. Remove `mockaccountHunts` import from hunts/page.tsx.",
+        "testStrategy": "Load the hunts page. Verify it displays real hunts from the database with correct data (name, location, brands, status). Test with zero hunts (empty state). Create a new hunt via /hunts/new and verify it appears in the list. Verify hunt status badges and credit info display correctly.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "52",
+        "title": "Migrate Leads Page from Client-Side Placeholder to Server Component Data Fetching",
+        "description": "The leads page renders a client component (LeadsPageClient) with TODO placeholders instead of real data. Refactor to fetch leads server-side and pass to the view components.",
+        "details": "The leads page currently delegates everything to `LeadsPageClient` which shows placeholder text:\n\n1. **Current state**: `leads/page.tsx` just renders `<LeadsPageClient />` which is a client component with TODO placeholders for both Kanban and List views.\n\n2. **Services exist**: `lead.service.ts` has functions for fetching leads but no function to get all leads for the pipeline view. Need to create one.\n\n3. **Refactor approach**:\n   a. Create `getLeadsByStage()` or `getPipelineLeads()` in `lead.service.ts` that fetches leads grouped by pipeline stage for the account.\n   b. Update `leads/page.tsx` to be a proper Server Component:\n   ```typescript\n   export default async function LeadsPage() {\n     const leads = await getPipelineLeads();\n     return <LeadsPageView leads={leads} />;\n   }\n   ```\n   c. Refactor `LeadsPageClient` to accept leads as props instead of fetching them.\n   d. Pass leads data down to existing `KanbanView` and `ListView` components.\n\n4. **Lead schema reference**: Check `src/schema/lead.schema.ts` for the lead pipeline stages enum to understand grouping.\n\n5. The `KanbanView` and `ListView` components in `src/components/leads/` likely expect typed lead arrays — match the service return type to their props.\n\n6. Implement proper URL-based filtering using `searchParams` in the Server Component for the filter state (currently `LeadsFilters` uses `useRouter` for client-side filtering).",
+        "testStrategy": "Load the leads page. Verify the Kanban view shows real leads grouped by pipeline stage. Switch to List view and verify leads display in a table format. Test filtering with the LeadsFilters component. Verify lead cards are clickable and open the lead drawer. Test with zero leads (empty state).",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Analyze lead schema pipeline stages and design getPipelineLeads service query",
+            "description": "Study the lead.schema.ts pipeline stages enum (ELeadStage in constants/enums.ts: nouveau, contacte, relance, gagne, perdu) and design the getPipelineLeads service function signature and return type that groups leads by stage for both KanbanView and ListView consumption.",
+            "dependencies": [],
+            "details": "1. Review `src/constants/enums.ts` for `ELeadStage` enum values (nouveau, contacte, relance, gagne, perdu). Note KanbanView also uses 'negociation' column — verify if this is in the enum or hardcoded.\n2. Ensure `leadStages` array and `LeadStage` type are properly exported from `src/schema/lead.schema.ts` — multiple components import these but they may not exist yet.\n3. Design the return type to satisfy BOTH component prop interfaces:\n   - KanbanView expects: `{ id, stage, position, ad: { title, price, picture, phoneNumber, isWhatsappPhone, zipcode: { name } } }`\n   - ListView expects: `{ id, stage, assignedToId, createdAt, ad: { title, price, phoneNumber, zipcode: { name } }, assignedTo: { name } | null }`\n4. Design a unified `PipelineLead` type that covers both views' needs (superset of both interfaces).\n5. Plan the query shape: fetch from `leads` table with relations to `ads` (including `zipcode`), `assignedTo` user, filtered by accountId, ordered by position within each stage.\n6. Define the filter parameters the service should accept: `huntId?: string`, `assignedToId?: string | 'unassigned'`, `searchQuery?: string`.",
+            "status": "pending",
+            "testStrategy": "Verify the designed type satisfies both KanbanView and ListView prop interfaces with TypeScript compilation. Check that all ELeadStage values are accounted for in the query grouping.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implement getPipelineLeads service with Drizzle ORM and RLS wrapper",
+            "description": "Create the getPipelineLeads function in lead.service.ts that fetches leads with related ad data, assignee info, and zipcode using Drizzle relational queries through the RLS client wrapper.",
+            "dependencies": [
+              1
+            ],
+            "details": "1. Add `getPipelineLeads(filters?)` to `src/services/lead.service.ts` using Pattern 3 (RLS Only) from CLAUDE.md since this is always user-triggered.\n2. Use Drizzle relational query API (`dbClient.rls((tx) => tx.query.leads.findMany({...}))`) with:\n   - `with: { ad: { with: { zipcode: true } }, assignedTo: true }` for relations\n   - `where` clause filtering by accountId (from auth), optional huntId, optional assignedToId\n   - `orderBy: [asc(leads.stage), asc(leads.position)]` for Kanban ordering\n3. For search filter (`q` param), add a `like` condition on the related ad title field — this may require a subquery or post-filter depending on Drizzle's relational query capabilities.\n4. Handle the 'unassigned' filter case: `isNull(leads.assignedToId)` when assignedToId === 'unassigned', or `eq(leads.assignedToId, userId)` for specific user.\n5. Export the return type: `export type PipelineLead = Awaited<ReturnType<typeof getPipelineLeads>>[number]`.\n6. Verify the query respects RLS by using the rls wrapper — user's JWT auth.uid() ensures they only see their account's leads.",
+            "status": "pending",
+            "testStrategy": "Call getPipelineLeads with no filters and verify it returns leads with populated ad, zipcode, and assignedTo relations. Test with each filter parameter individually. Verify RLS blocks cross-account access by checking query goes through rls wrapper.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Refactor LeadsPageClient to accept leads as props instead of placeholder",
+            "description": "Transform LeadsPageClient from a standalone client component with TODO placeholders into a presentational component (LeadsPageView) that receives leads data as props and passes them to KanbanView and ListView.",
+            "dependencies": [
+              1
+            ],
+            "details": "1. Rename or refactor `src/app/(app)/leads/leads-page-client.tsx` to become a view component that accepts props.\n2. Update the component signature:\n   ```typescript\n   type LeadsPageViewProps = {\n     initialLeads: PipelineLead[];\n   };\n   export function LeadsPageView({ initialLeads }: LeadsPageViewProps) { ... }\n   ```\n3. Replace the placeholder text blocks (lines 53-56 for Kanban, lines 59-64 for List) with actual component rendering:\n   - Kanban mode: `<KanbanView initialLeads={initialLeads} />`\n   - List mode: `<ListView initialLeads={initialLeads} />`\n4. Keep the view mode toggle (Kanban/List) state management — this is client-side UI state and belongs here.\n5. Keep the `LeadsFilters` component rendering as-is (it already uses URL searchParams).\n6. Remove any unused imports and the TODO comment placeholders.\n7. The component should remain a client component (`'use client'`) since it manages view toggle state and renders interactive children.",
+            "status": "pending",
+            "testStrategy": "Verify the component renders without errors when passed an empty array (empty state). Verify it renders KanbanView when in kanban mode and ListView when in list mode. Confirm TypeScript compiles with the new prop types.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Update leads/page.tsx Server Component to fetch and pass data",
+            "description": "Convert the leads page.tsx into a proper async Server Component that calls getPipelineLeads with searchParams-based filters and passes the result to LeadsPageView.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "1. Update `src/app/(app)/leads/page.tsx` to be an async Server Component:\n   ```typescript\n   import { getPipelineLeads } from '@/services/lead.service';\n   import { LeadsPageView } from './leads-page-view'; // or updated name\n\n   type LeadsPageProps = {\n     searchParams: Promise<{ hunt?: string; assigned?: string; q?: string }>;\n   };\n\n   export default async function LeadsPage({ searchParams }: LeadsPageProps) {\n     const params = await searchParams; // Next.js 16 async searchParams\n     const leads = await getPipelineLeads({\n       huntId: params.hunt,\n       assignedToId: params.assigned,\n       searchQuery: params.q,\n     });\n     return <LeadsPageView initialLeads={leads} />;\n   }\n   ```\n2. Note: In Next.js 15+, `searchParams` is a Promise that must be awaited.\n3. Pass the resolved filter params to `getPipelineLeads` service.\n4. Keep the page thin — only data fetching and delegation to view component per project conventions.\n5. Remove the direct `<LeadsPageClient />` import if it was renamed.",
+            "status": "pending",
+            "testStrategy": "Navigate to /leads and verify the page loads with real data from the database. Test with URL params like /leads?hunt=xxx&assigned=me&q=search to verify server-side filtering works. Verify the page renders without errors when no leads exist.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Wire leads data into KanbanView and ListView with proper TypeScript types",
+            "description": "Ensure KanbanView and ListView components correctly receive and render the PipelineLead data from the service, updating type definitions if the service return shape differs from current inline types.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "1. Compare the `PipelineLead` type from the service with KanbanView's expected `Lead` type:\n   - KanbanView needs: `id, stage, position, ad.title, ad.price, ad.picture, ad.phoneNumber, ad.isWhatsappPhone, ad.zipcode.name`\n   - If the service returns more fields, that's fine (superset). If it returns fewer or differently named fields, update the service query.\n2. Compare with ListView's expected `Lead` type:\n   - ListView needs: `id, stage, assignedToId, createdAt, ad.title, ad.price, ad.phoneNumber, ad.zipcode.name, assignedTo.name`\n3. Update component type imports to use `PipelineLead` from the service instead of inline types, OR keep inline types if they serve as a narrower contract.\n4. Verify KanbanView's stage columns match the actual enum values — it currently renders 6 columns including 'negociation' which may not be in ELeadStage.\n5. Test that drag-and-drop in KanbanView still works with the new data shape (calls `updateLeadStage` action).\n6. Test that ListView's sorting and bulk selection work with the new data shape.",
+            "status": "pending",
+            "testStrategy": "Render KanbanView with sample PipelineLead data and verify leads appear in correct stage columns. Render ListView and verify all columns populate correctly. Test drag-and-drop moves a lead between stages. Test bulk selection and stage update in ListView.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 6,
+            "title": "Implement URL searchParams-based filtering in Server Component replacing client-side approach",
+            "description": "Ensure the LeadsFilters component's URL parameter updates trigger server-side re-fetching via Next.js searchParams, replacing any client-side-only filtering with the server-driven approach where filters flow through page.tsx searchParams to the service query.",
+            "dependencies": [
+              4,
+              5
+            ],
+            "details": "1. Review `src/components/leads/leads-filters.tsx` — it already uses `useSearchParams` and `useRouter` to update URL params. This is the correct pattern for triggering server re-renders in Next.js App Router.\n2. Verify the filter parameter names match what page.tsx reads: `hunt`, `assigned`, `q`.\n3. The flow should be: LeadsFilters updates URL → Next.js re-renders page.tsx Server Component → new searchParams → getPipelineLeads called with new filters → fresh data passed to view.\n4. Populate the hunt dropdown in LeadsFilters with real hunt data. This may require:\n   - Fetching hunts in page.tsx and passing them as a prop to LeadsPageView/LeadsFilters\n   - Or creating a lightweight `getAccountHunts()` call in the page\n5. Populate the assigned user dropdown with real team members (may need a `getTeamMembers()` service call in page.tsx).\n6. Test that applying/clearing filters updates the URL and the page re-renders with filtered data.\n7. Ensure `router.replace` (not `router.push`) is used in LeadsFilters to avoid polluting browser history with filter changes.\n8. Handle the 'me' filter value for assigned — the server needs to resolve 'me' to the current user's ID in getPipelineLeads or in page.tsx before calling the service.",
+            "status": "pending",
+            "testStrategy": "Apply hunt filter and verify only leads from that hunt display. Apply assigned=me filter and verify only leads assigned to current user show. Apply search query and verify leads are filtered by ad title. Clear all filters and verify all leads return. Test that browser back/forward with filter URL params works correctly.",
+            "parentId": "undefined"
+          }
+        ]
+      },
+      {
+        "id": "53",
+        "title": "Migrate OutreachSettings and LeadDrawer from useEffect Data Fetching to Server-Passed Props",
+        "description": "Two client components (outreach-settings.tsx and lead-drawer.tsx) fetch data via useEffect. Refactor to receive data from parent Server Components via props.",
+        "details": "Two components use the useEffect anti-pattern for data fetching:\n\n### 1. OutreachSettings (`src/components/hunts/outreach-settings.tsx`)\n- **Current**: Calls `getAccountTemplates()` service in useEffect on mount (line 52-64)\n- **Fix**: The parent page (hunt edit or hunt create) should fetch templates server-side and pass them as props:\n  ```typescript\n  // In parent Server Component (edit-hunt page or new-hunt page)\n  const templates = await getAccountTemplates();\n  return <HuntForm templates={templates} ... />;\n  ```\n  Then `HuntForm` passes `templates` to `OutreachSettings` as a prop.\n- Remove the useEffect, useState for templates, and isLoading state.\n- The `getAccountTemplates()` import from `message.service.ts` should move to the parent server component.\n\n### 2. LeadDrawer (`src/components/leads/lead-drawer.tsx`)\n- **Current**: Calls `getLeadDetails(leadId)` and `getteamMembers()` in useEffect (lines 94-130)\n- **This is more nuanced**: The drawer opens dynamically when a user clicks a lead card. The lead ID changes at runtime.\n- **Fix options**:\n  a. **Server Action approach**: Keep client component but use server actions with `useTransition` instead of raw useEffect + service calls.\n  b. **Parallel route/intercepting route**: Use Next.js intercepting routes for the drawer pattern.\n  c. **Accept current pattern**: If the drawer is truly dynamic (opens on click, different leads), client-side fetching via server actions is acceptable. Refactor to use proper server actions instead of directly calling service functions.\n- Ensure `getLeadDetails` and `getteamMembers` are called through server actions, not imported service functions directly in client code.\n\n**Important**: The lead drawer's pattern is a legitimate case for client-triggered server calls since the data depends on user interaction. Refactor to use server actions properly rather than forcing all data to be pre-fetched.",
+        "testStrategy": "Open the hunt creation/edit form. Verify outreach settings load templates without a loading spinner (since data is pre-fetched). Open a lead drawer by clicking a lead card. Verify lead details load correctly. Test switching between different leads in the drawer. Verify no useEffect imports remain for data fetching purposes.",
+        "priority": "medium",
+        "dependencies": [
+          "48",
+          "52"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "54",
+        "title": "Remove Mock Data File and All Mock Data References",
+        "description": "After all pages use real data, remove src/lib/mock-data.ts and verify no remaining imports or references to mock data exist anywhere in the codebase.",
+        "details": "Clean up all mock data after real data fetching is in place:\n\n1. **Primary file to delete**: `src/lib/mock-data.ts` — contains `mockDashboardStats`, `mockHunts`, `mockaccountHunts`.\n\n2. **Files that import mock data** (must be updated first by tasks 50 and 51):\n   - `src/app/(app)/dashboard/page.tsx` — imports `mockDashboardStats`, `mockHunts`\n   - `src/app/(app)/hunts/page.tsx` — imports `mockaccountHunts`\n\n3. **Other mock/placeholder references to audit**:\n   - `src/services/subscription.service.ts` — `getUserPlan()` returns a hardcoded `1` (line 9). This is a known placeholder but not part of mock-data.ts. Document it but don't change it (subscription system isn't implemented yet).\n   - `text-template-form.tsx` has a comment about \"Sample data for preview\" — check if this is actual mock data or just preview placeholder text for the form.\n\n4. **Cleanup steps**:\n   ```bash\n   # After tasks 50 and 51 are done:\n   # 1. Search for any remaining references\n   grep -r 'mock-data' src/\n   grep -r 'mockDashboard\\|mockHunts\\|mockaccount' src/\n   # 2. Delete the file\n   rm src/lib/mock-data.ts\n   # 3. Verify build succeeds\n   pnpm build\n   ```\n\n5. Also check if `DashboardStats` and `HuntSummary` types were only defined in mock-data.ts — if so, ensure they're properly defined in the service or types file before deletion.",
+        "testStrategy": "Run `pnpm build` after deletion to verify no import errors. Search the entire codebase for 'mock' references. Load every page (dashboard, hunts, leads, templates, settings) and verify no errors. Verify TypeScript compilation passes with no type errors related to removed mock types.",
+        "priority": "medium",
+        "dependencies": [
+          "50",
+          "51"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "55",
+        "title": "Add Proper Loading and Error States Using Next.js Conventions",
+        "description": "Implement loading.tsx and error.tsx files for key routes to provide proper UX during data fetching and error scenarios, following Next.js App Router conventions.",
+        "details": "Now that pages fetch real data server-side, add proper loading and error boundaries:\n\n1. **Loading states** — Create `loading.tsx` files for routes that fetch data:\n   - `src/app/(app)/dashboard/loading.tsx` — skeleton for dashboard stats and hunt list\n   - `src/app/(app)/hunts/loading.tsx` — skeleton for hunt cards grid\n   - `src/app/(app)/leads/loading.tsx` — skeleton for Kanban/List pipeline\n   - `src/app/(app)/credits/loading.tsx` — skeleton for credits view\n   - `src/app/(app)/hunts/[id]/edit/loading.tsx` — skeleton for edit form\n\n2. **Error states** — Create `error.tsx` files (must be client components):\n   - `src/app/(app)/error.tsx` — catch-all error boundary for the app layout\n   - Optionally per-route error.tsx for specific error handling\n\n3. **Loading skeleton pattern** using shadcn/ui:\n```typescript\n// loading.tsx example\nimport { Skeleton } from '@/components/ui/skeleton';\n\nexport default function DashboardLoading() {\n  return (\n    <div className=\"space-y-6 p-6\">\n      <div className=\"grid grid-cols-3 gap-4\">\n        {[1, 2, 3].map(i => <Skeleton key={i} className=\"h-24 rounded-xl\" />)}\n      </div>\n      <Skeleton className=\"h-64 rounded-xl\" />\n    </div>\n  );\n}\n```\n\n4. **Error boundary pattern**:\n```typescript\n'use client';\nexport default function Error({ error, reset }: { error: Error; reset: () => void }) {\n  return (\n    <div className=\"flex flex-col items-center justify-center p-8\">\n      <h2>Something went wrong</h2>\n      <button onClick={reset}>Try again</button>\n    </div>\n  );\n}\n```\n\n5. Check if a `Skeleton` component exists in `src/components/ui/`. If not, add it via `pnpm dlx shadcn@latest add skeleton`.",
+        "testStrategy": "Simulate slow database responses (add artificial delay) to verify loading states appear. Trigger error conditions (e.g., database down, invalid data) to verify error boundaries catch and display properly. Verify the reset button in error boundary re-attempts the data fetch. Test that loading skeletons match the layout of the actual content.",
+        "priority": "medium",
+        "dependencies": [
+          "50",
+          "51",
+          "52"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "56",
+        "title": "End-to-End Functionality Verification and Test Checklist",
+        "description": "Create and execute a comprehensive test checklist verifying all features work end-to-end with real data. Document all issues found.",
+        "details": "Final verification pass across all application features:\n\n### Navigation Tests\n- [ ] All sidebar links navigate to existing pages (no 404s)\n- [ ] Pipeline link resolves correctly (redirect or direct to leads)\n- [ ] Credits page loads\n- [ ] All hunt card buttons (edit, view) navigate correctly\n- [ ] All lead card/drawer links work\n- [ ] Template creation links work (text and voice)\n- [ ] Back buttons navigate correctly on all detail pages\n- [ ] Browser back/forward navigation works\n\n### Data Fetching Tests\n- [ ] Dashboard loads real stats from database\n- [ ] Dashboard active hunts list shows real data\n- [ ] Hunts page lists all account hunts from database\n- [ ] Leads page shows real leads in both Kanban and List views\n- [ ] Lead detail page loads real lead data\n- [ ] Credits page shows real credit data\n- [ ] Templates page lists real templates\n- [ ] Settings page loads real team and account data\n\n### CRUD Operations\n- [ ] Create a new hunt — verify it appears in the hunts list\n- [ ] Edit an existing hunt — verify changes persist\n- [ ] Delete a hunt — verify removal\n- [ ] Create text template — verify it appears in templates list\n- [ ] Create voice template — verify it appears\n- [ ] Delete template — verify removal\n- [ ] Move a lead between Kanban stages — verify persistence\n- [ ] Add a note to a lead — verify it saves\n- [ ] Add a reminder to a lead — verify it saves\n\n### Form Validation\n- [ ] Hunt creation form validates required fields\n- [ ] Template forms validate required fields\n- [ ] Server-side validation rejects invalid data\n\n### Error Handling\n- [ ] Loading states display during data fetch\n- [ ] Error boundaries catch and display errors gracefully\n- [ ] Empty states show appropriate messages (no hunts, no leads, etc.)\n\n### Security\n- [ ] RLS policies prevent cross-account data access\n- [ ] All database queries use RLS-wrapped client\n\nDocument all issues found in a report with severity levels (critical, major, minor).",
+        "testStrategy": "Execute every item in the checklist above manually. For each item, record pass/fail status and any error details. Run `pnpm build` to verify no build errors. Run `pnpm lint` if available. Test in multiple browsers if possible. Document results in a structured format for tracking resolution.",
+        "priority": "high",
+        "dependencies": [
+          "46",
+          "47",
+          "48",
+          "49",
+          "50",
+          "51",
+          "52",
+          "53",
+          "54",
+          "55"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "57",
+        "title": "Audit all hardcoded route strings in codebase",
+        "description": "Perform a comprehensive search of the entire codebase to catalog every hardcoded route string, documenting the file, line number, and current usage pattern for each occurrence.",
+        "details": "Use grep/ripgrep to search for all route patterns:\n1. Search for `href=\"/` and `href={\\`/` patterns in all TSX/TS files\n2. Search for `redirect(` calls with string literals\n3. Search for `router.push(` calls with string literals\n4. Search for `revalidatePath(` calls with string literals\n5. Search for template literals containing route segments like `/hunts/`, `/leads/`, `/templates/`, `/settings`, `/dashboard`, `/login`\n6. Check `src/lib/seo.ts` and `src/lib/seo-examples.ts` for hardcoded routes\n7. Check proxy/middleware (`src/lib/supabase/proxy.ts`) for commented-out route references\n\nKnown hardcoded locations from initial scan:\n- `src/components/dashboard/hunt-list-item.tsx:49,139` — `/hunts/${hunt.id}` and `/hunts/${hunt.id}/edit`\n- `src/components/leads/lead-drawer.tsx:873` — `/leads/${lead.id}`\n- `src/components/hunts/hunt-card.tsx:98,225` — `/hunts/${hunt.id}/edit`\n- `src/actions/team.actions.ts:31,62` — `revalidatePath(\"/settings\")`\n- `src/actions/message.actions.ts:86,126,214` — `revalidatePath(\"/templates\")`\n- `src/actions/lead.actions.ts:47,89,160,201,246,296,325` — `revalidatePath(\"/leads\")` and `revalidatePath(\"/leads/${leadId}\")`\n- `src/actions/account.actions.ts:33` — `revalidatePath(\"/settings\")`\n- `src/services/message.service.ts:222` — `revalidatePath(\"/leads/${leadId}\")`\n- `src/lib/seo-examples.ts` — various hardcoded routes\n\nCreate a checklist document or tracking list of all occurrences to guide replacement in subsequent tasks.",
+        "testStrategy": "Verify completeness by running the same grep searches after creating the audit list and confirming every match is documented. Cross-reference with the App Router page structure (`src/app/**/page.tsx`) to ensure no routes are missed.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [],
+        "complexity": 2,
+        "recommendedSubtasks": 0,
+        "expansionPrompt": "No expansion needed. This is a straightforward grep/search task with well-defined search patterns already documented in the task details."
+      },
+      {
+        "id": "58",
+        "title": "Redesign routes.ts with nested structure and dynamic route helpers",
+        "description": "Refactor `src/config/routes.ts` from a flat key-value structure to a nested object with logical grouping and add type-safe helper functions for dynamic routes (routes with parameters).",
+        "details": "Refactor `src/config/routes.ts` from the current flat structure:\n```typescript\nexport const pages = {\n  login: \"/login\",\n  hunts: \"/hunts\",\n  hunts_new: \"/hunts/new\",\n  // ...\n} as const;\n```\n\nTo a nested structure with dynamic route helpers:\n```typescript\nexport const pages = {\n  login: \"/login\",\n  dashboard: \"/dashboard\",\n  hunts: {\n    list: \"/hunts\",\n    new: \"/hunts/new\",\n    create: \"/hunts/create\",\n    detail: (huntId: string) => `/hunts/${huntId}` as const,\n    edit: (huntId: string) => `/hunts/${huntId}/edit` as const,\n  },\n  leads: {\n    list: \"/leads\",\n    detail: (leadId: string) => `/leads/${leadId}` as const,\n  },\n  templates: {\n    list: \"/templates\",\n    new: \"/templates/new\",\n  },\n  pipeline: \"/pipeline\",\n  settings: \"/settings\",\n  credits: \"/credits\",\n} as const;\n```\n\nKey design decisions:\n- Static routes remain string literals for simplicity (e.g., `pages.settings`)\n- Grouped routes use nested objects (e.g., `pages.hunts.list`, `pages.hunts.edit(id)`)\n- Dynamic routes are functions returning template literal types for type safety\n- Use `as const` to preserve literal types throughout\n- Update `PageKey` and `PageValue` types to reflect the new structure, or remove them if they're no longer needed\n- Keep backward compatibility temporarily by exporting old flat keys as aliases (to be removed after migration)\n\nConsider adding a `StaticRoute` type that extracts all non-function route values for use in contexts that only accept strings (like `revalidatePath`).",
+        "testStrategy": "1. Verify TypeScript compilation passes with no errors\n2. Test that `pages.hunts.detail('abc')` returns `'/hunts/abc'`\n3. Test that `pages.hunts.edit('abc')` returns `'/hunts/abc/edit'`\n4. Test that `pages.leads.detail('xyz')` returns `'/leads/xyz'`\n5. Verify all static routes resolve to correct string values\n6. Run `pnpm build` to catch any type errors",
+        "priority": "high",
+        "dependencies": [
+          "57"
+        ],
+        "status": "pending",
+        "subtasks": [],
+        "complexity": 4,
+        "recommendedSubtasks": 0,
+        "expansionPrompt": "No expansion needed. The current routes.ts is only 34 lines with 11 route keys. The redesign is well-specified in the task details with exact target structure."
+      },
+      {
+        "id": "59",
+        "title": "Update sidebar and layout components to use new route structure",
+        "description": "Migrate the sidebar navigation config and app layout to use the new nested `pages` structure (e.g., `pages.hunts` → `pages.hunts.list`).",
+        "details": "Files to update:\n\n1. **`src/components/layout/sidebar.tsx`** (line 17-22):\n   - Change `pages.hunts` → `pages.hunts.list`\n   - Change `pages.templates` → `pages.templates.list`\n   - Change `pages.leads` → `pages.leads.list` (if leads is added to sidebar)\n   - `pages.dashboard`, `pages.pipeline`, `pages.settings`, `pages.credits` remain unchanged (flat keys)\n\n2. **`src/app/(app)/layout.tsx`** (line 18, commented out):\n   - Update commented redirect to use new structure if it references routes\n\n3. **`src/components/layout/user-menu.tsx`** (line 13):\n   - `pages.login` remains unchanged (flat key)\n\nPseudo-code for sidebar update:\n```typescript\nconst navigation = [\n  { name: \"Dashboard\", href: pages.dashboard, icon: HomeIcon },\n  { name: \"Hunts\", href: pages.hunts.list, icon: MagnifyingGlassIcon },\n  { name: \"Pipeline\", href: pages.pipeline, icon: Squares2X2Icon },\n  { name: \"Templates\", href: pages.templates.list, icon: ChatBubbleBottomCenterTextIcon },\n  { name: \"Settings\", href: pages.settings, icon: Cog6ToothIcon },\n  { name: \"Credits\", href: pages.credits, icon: CurrencyDollarIcon },\n];\n```",
+        "testStrategy": "1. Verify sidebar renders correctly with all navigation items\n2. Click each sidebar link and verify correct page loads\n3. Verify active state highlighting still works (pathname matching)\n4. Run `pnpm build` to verify no type errors",
+        "priority": "high",
+        "dependencies": [
+          "58"
+        ],
+        "status": "pending",
+        "subtasks": [],
+        "complexity": 1,
+        "recommendedSubtasks": 0,
+        "expansionPrompt": "No expansion needed. Only 2-3 files need trivial key renames (e.g., pages.hunts → pages.hunts.list)."
+      },
+      {
+        "id": "60",
+        "title": "Replace hardcoded routes in hunt components",
+        "description": "Replace all hardcoded route strings in hunt-related components (`hunts-view`, `new-hunt-view`, `hunt-card`, `hunt-list-item`, `hunt-form`, `outreach-settings`) with `pages` config references.",
+        "details": "Files and changes:\n\n1. **`src/components/hunts/hunts-view.tsx`** (lines 27, 73):\n   - `pages.hunts_new` → `pages.hunts.new`\n\n2. **`src/components/hunts/new-hunt-view.tsx`** (line 12):\n   - `pages.hunts` → `pages.hunts.list`\n\n3. **`src/components/hunts/hunt-card.tsx`** (lines 98, 225):\n   - `` href={`/hunts/${hunt.id}/edit`} `` → `href={pages.hunts.edit(hunt.id)}`\n   - Import `pages` from `@/config/routes`\n\n4. **`src/components/dashboard/hunt-list-item.tsx`** (lines 49, 139):\n   - `` href={`/hunts/${hunt.id}`} `` → `href={pages.hunts.detail(hunt.id)}`\n   - `` href={`/hunts/${hunt.id}/edit`} `` → `href={pages.hunts.edit(hunt.id)}`\n   - Import `pages` from `@/config/routes`\n\n5. **`src/components/hunts/hunt-form.tsx`** (line 146):\n   - `router.push(pages.hunts)` → `router.push(pages.hunts.list)`\n\n6. **`src/components/hunts/outreach-settings.tsx`** (line 271):\n   - `pages.templates_new` → `pages.templates.new`\n\n7. **`src/app/(app)/hunts/page.tsx`** and **`src/app/(app)/hunts/new/page.tsx`**:\n   - Update any references to old flat keys",
+        "testStrategy": "1. Navigate to hunts list page — verify all links work\n2. Click hunt cards — verify detail page loads\n3. Click edit buttons — verify edit page loads\n4. Create a new hunt — verify redirect to hunts list after save\n5. Verify outreach settings link to templates works\n6. Run `pnpm build` for type checking",
+        "priority": "high",
+        "dependencies": [
+          "58"
+        ],
+        "status": "pending",
+        "subtasks": [],
+        "complexity": 3,
+        "recommendedSubtasks": 0,
+        "expansionPrompt": "No expansion needed. 7 files with well-documented line-by-line changes. Each change is a simple string replacement."
+      },
+      {
+        "id": "61",
+        "title": "Replace hardcoded routes in lead and template components",
+        "description": "Replace all hardcoded route strings in lead components (`lead-drawer`, `lead-detail-view`) and template components (`templates-view`, `new-template-view`, `text-template-form`, `voice-template-form`) with `pages` config references.",
+        "details": "Files and changes:\n\n**Lead components:**\n1. **`src/components/leads/lead-drawer.tsx`** (line 873):\n   - `` href={`/leads/${lead.id}`} `` → `href={pages.leads.detail(lead.id)}`\n   - Import `pages` from `@/config/routes`\n   - Note: `href={lead.ad.url}` (line 539) is an external URL — leave as-is\n\n2. **`src/components/leads/lead-detail-view.tsx`** (lines 69, 95):\n   - Already imports `pages` and uses `pages.leads` → update to `pages.leads.list`\n   - External URLs (`tel:`, `ad.url`) — leave as-is\n\n**Template components:**\n3. **`src/components/templates/templates-view.tsx`** (lines 34, 50, 63, 85, 98):\n   - `pages.templates_new` → `pages.templates.new` (all occurrences)\n   - Template literal `` `${pages.templates_new}?type=text` `` → `` `${pages.templates.new}?type=text` ``\n\n4. **`src/components/templates/new-template-view.tsx`** (lines 20, 57, 82):\n   - `pages.templates` → `pages.templates.list`\n   - `pages.templates_new` → `pages.templates.new`\n\n5. **`src/components/templates/text-template-form.tsx`** (line 98):\n   - `router.push(pages.templates)` → `router.push(pages.templates.list)`\n\n6. **`src/components/templates/voice-template-form.tsx`** (line 127):\n   - `router.push(pages.templates)` → `router.push(pages.templates.list)`",
+        "testStrategy": "1. Open leads list — verify lead drawer links work\n2. Open lead detail — verify back link to leads list works\n3. Open templates list — verify new template links (text and voice) work\n4. Create text template — verify redirect to templates list\n5. Create voice template — verify redirect to templates list\n6. Run `pnpm build` for type checking",
+        "priority": "high",
+        "dependencies": [
+          "58"
+        ],
+        "status": "pending",
+        "subtasks": [],
+        "complexity": 3,
+        "recommendedSubtasks": 0,
+        "expansionPrompt": "No expansion needed. 6 files with well-documented replacements. Similar mechanical changes to task 60."
+      },
+      {
+        "id": "62",
+        "title": "Replace hardcoded routes in dashboard components",
+        "description": "Replace remaining hardcoded routes in dashboard components and page files with `pages` config references.",
+        "details": "Files and changes:\n\n1. **`src/components/dashboard/dashboard-view.tsx`** (lines 26, 123, 161):\n   - `pages.hunts_create` → `pages.hunts.create`\n   - `pages.hunts` → `pages.hunts.list`\n\n2. **`src/app/(app)/dashboard/page.tsx`**:\n   - Update any references to old flat keys (verify current usage)\n\n3. **`src/app/(app)/templates/page.tsx`**:\n   - Update any references to old flat keys (verify current usage)",
+        "testStrategy": "1. Load dashboard page — verify all links render correctly\n2. Click 'create hunt' button — verify navigation to hunt creation\n3. Click 'view all hunts' link — verify navigation to hunts list\n4. Run `pnpm build` for type checking",
+        "priority": "medium",
+        "dependencies": [
+          "58"
+        ],
+        "status": "pending",
+        "subtasks": [],
+        "complexity": 2,
+        "recommendedSubtasks": 0,
+        "expansionPrompt": "No expansion needed. Only 1-3 files with simple key renames."
+      },
+      {
+        "id": "63",
+        "title": "Replace hardcoded revalidatePath calls in server actions and services",
+        "description": "Replace all hardcoded route strings in `revalidatePath()` calls across server actions and services with `pages` config references.",
+        "details": "Files and changes:\n\n1. **`src/actions/team.actions.ts`** (lines 31, 62):\n   - `revalidatePath(\"/settings\")` → `revalidatePath(pages.settings)`\n   - Add import: `import { pages } from \"@/config/routes\"`\n\n2. **`src/actions/account.actions.ts`** (line 33):\n   - `revalidatePath(\"/settings\")` → `revalidatePath(pages.settings)`\n   - Add import\n\n3. **`src/actions/message.actions.ts`** (lines 86, 126, 214):\n   - `revalidatePath(\"/templates\")` → `revalidatePath(pages.templates.list)`\n   - Add import\n\n4. **`src/actions/lead.actions.ts`** (lines 47, 89, 160, 201, 325):\n   - `revalidatePath(\"/leads\")` → `revalidatePath(pages.leads.list)`\n   - Lines 246, 296: `revalidatePath(\\`/leads/${leadId}\\`)` → `revalidatePath(pages.leads.detail(leadId))`\n   - Add import\n\n5. **`src/services/message.service.ts`** (line 222):\n   - `revalidatePath(\\`/leads/${leadId}\\`)` → `revalidatePath(pages.leads.detail(leadId))`\n   - Add import\n\nNote: `revalidatePath` accepts a string, and `pages.leads.detail(leadId)` returns a string, so this works directly.",
+        "testStrategy": "1. Trigger each server action that calls revalidatePath and verify the page revalidates correctly:\n   - Update team settings → settings page revalidates\n   - Create/update/delete template → templates page revalidates\n   - Create/update/delete lead → leads list and detail pages revalidate\n2. Run `pnpm build` to verify no type errors\n3. Grep for remaining hardcoded `revalidatePath` calls to confirm none remain",
+        "priority": "high",
+        "dependencies": [
+          "58"
+        ],
+        "status": "pending",
+        "subtasks": [],
+        "complexity": 3,
+        "recommendedSubtasks": 0,
+        "expansionPrompt": "No expansion needed. 5 files with 14 total revalidatePath replacements, all well-documented."
+      },
+      {
+        "id": "64",
+        "title": "Update SEO utility files to use route config",
+        "description": "Replace hardcoded route strings in `src/lib/seo.ts` and `src/lib/seo-examples.ts` with references to the `pages` config.",
+        "details": "Files to update:\n\n1. **`src/lib/seo-examples.ts`** (lines 15, 31, 50, 66, 82):\n   - `canonical: \"/dashboard\"` → `canonical: pages.dashboard`\n   - `canonical: \\`/leads/${lead.id}\\`` → `canonical: pages.leads.detail(lead.id)`\n   - `canonical: \\`/hunts/${hunt.id}\\`` → `canonical: pages.hunts.detail(hunt.id)`\n   - `url: \"/hunts/123\"` → `url: pages.hunts.detail(\"123\")`\n   - `canonical: \\`/leads/${id}\\`` → `canonical: pages.leads.detail(id)`\n   - Add import: `import { pages } from \"@/config/routes\"`\n\n2. **`src/lib/seo.ts`** (line 92, if applicable):\n   - Check if there are hardcoded route examples in comments/documentation and update\n\nNote: `seo-examples.ts` may be a documentation/example file. If it's not imported anywhere, consider whether it even needs updating (it's still good practice for consistency).",
+        "testStrategy": "1. Run `pnpm build` to verify no type errors\n2. Verify SEO utility functions still produce correct canonical URLs\n3. If seo-examples.ts is used in tests, verify tests pass",
+        "priority": "low",
+        "dependencies": [
+          "58"
+        ],
+        "status": "pending",
+        "subtasks": [],
+        "complexity": 2,
+        "recommendedSubtasks": 0,
+        "expansionPrompt": "No expansion needed. Only 2 files (seo.ts, seo-examples.ts) with a handful of hardcoded route strings to replace."
+      },
+      {
+        "id": "65",
+        "title": "Remove backward-compatible aliases and clean up old route keys",
+        "description": "Remove any temporary backward-compatible aliases (flat keys like `hunts_new`, `hunts_create`, `templates_new`) from routes.ts and fix any remaining references to the old structure.",
+        "details": "After all components and actions have been migrated:\n\n1. **Remove old flat keys from `src/config/routes.ts`**:\n   - Remove `hunts_new`, `hunts_create`, `templates_new` if they were kept as aliases\n   - Remove old `PageKey` and `PageValue` types if no longer applicable\n   - Create new utility types if needed:\n     ```typescript\n     // Helper type to extract all static route strings\n     type ExtractStaticRoutes<T> = {\n       [K in keyof T]: T[K] extends string ? T[K] : never;\n     }[keyof T];\n     ```\n\n2. **Final grep verification** — search for any remaining references to old keys:\n   - `pages.hunts_new` → should be 0 results\n   - `pages.hunts_create` → should be 0 results\n   - `pages.templates_new` → should be 0 results\n   - `pages.hunts` used as a string (not `pages.hunts.list`) → should be 0 results\n   - `pages.templates` used as a string (not `pages.templates.list`) → should be 0 results\n   - `pages.leads` used as a string (not `pages.leads.list`) → should be 0 results\n\n3. **Search for any remaining hardcoded route strings**:\n   - Grep for `\"/hunts`, `\"/leads`, `\"/templates`, `\"/settings`, `\"/dashboard`, `\"/login`, `\"/credits`, `\"/pipeline`\n   - Exclude `routes.ts` itself from the search\n   - Any remaining matches should be external URLs, comments, or the proxy file's commented-out code",
+        "testStrategy": "1. Run `pnpm build` — zero type errors\n2. Run full grep audit to confirm zero hardcoded route strings outside of `routes.ts`\n3. Test all major navigation flows end-to-end:\n   - Login → Dashboard → Hunts → Hunt Detail → Hunt Edit\n   - Dashboard → Create Hunt → Hunts List\n   - Leads List → Lead Detail → Back to Leads\n   - Templates List → New Template (text/voice) → Back to Templates\n   - Settings page navigation\n4. Test all server action revalidations work",
+        "priority": "medium",
+        "dependencies": [
+          "59",
+          "60",
+          "61",
+          "62",
+          "63",
+          "64"
+        ],
+        "status": "pending",
+        "subtasks": [],
+        "complexity": 3,
+        "recommendedSubtasks": 0,
+        "expansionPrompt": "No expansion needed. This is a cleanup task: remove old keys from routes.ts, grep to verify zero remaining references, and run build verification."
+      },
+      {
+        "id": "66",
+        "title": "Update CLAUDE.md with route configuration guidelines",
+        "description": "Add documentation to CLAUDE.md about the centralized route configuration pattern, including usage examples and the convention that no hardcoded route strings should be introduced.",
+        "details": "Add a new section to `CLAUDE.md` under the existing patterns/conventions:\n\n```markdown\n### Route Configuration\n- **All routes MUST use `src/config/routes.ts`** — never hardcode route strings\n- Import: `import { pages } from '@/config/routes'`\n- Static routes: `pages.dashboard`, `pages.settings`, `pages.hunts.list`\n- Dynamic routes: `pages.hunts.detail(huntId)`, `pages.leads.detail(leadId)`\n- revalidatePath: `revalidatePath(pages.hunts.list)`, `revalidatePath(pages.leads.detail(id))`\n- When adding a new page/route, add it to `routes.ts` first\n- External URLs (e.g., Chrome Web Store, ad URLs) are exempt\n```\n\nPlacement: Add under the '## Key Patterns' or '## Code Standards' section, near the existing architecture guidelines.\n\nKeep it concise — just the essential rules and examples. Don't over-document.",
+        "testStrategy": "1. Review the updated CLAUDE.md for accuracy and clarity\n2. Verify the examples in the documentation match the actual routes.ts structure\n3. Confirm the guidelines are consistent with the implementation",
+        "priority": "medium",
+        "dependencies": [
+          "65"
+        ],
+        "status": "pending",
+        "subtasks": [],
+        "complexity": 1,
+        "recommendedSubtasks": 0,
+        "expansionPrompt": "No expansion needed. This is adding a single documentation section to an existing file."
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-25T13:34:36.544Z",
-      "taskCount": 44,
-      "completedCount": 43,
+      "lastModified": "2026-02-02T05:37:08.331Z",
+      "taskCount": 66,
+      "completedCount": 44,
       "tags": [
         "master"
       ]

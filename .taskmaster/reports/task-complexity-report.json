@@ -1,117 +1,93 @@
 {
 	"meta": {
-		"generatedAt": "2026-01-24T14:36:23.321Z",
-		"tasksAnalyzed": 13,
-		"totalTasks": 45,
-		"analysisCount": 13,
+		"generatedAt": "2026-02-02T05:32:47.229Z",
+		"tasksAnalyzed": 10,
+		"totalTasks": 66,
+		"analysisCount": 10,
 		"thresholdScore": 5,
 		"projectName": "Task Master",
-		"usedResearch": true
+		"usedResearch": false
 	},
 	"complexityAnalysis": [
 		{
-			"taskId": 33,
-			"taskTitle": "Create channel_priority_config database table and schema",
+			"taskId": 57,
+			"taskTitle": "Audit all hardcoded route strings in codebase",
+			"complexityScore": 2,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "No expansion needed. This is a straightforward grep/search task with well-defined search patterns already documented in the task details.",
+			"reasoning": "This is purely a search-and-document task with no code changes. The task details already contain most of the audit results (known hardcoded locations). My codebase analysis confirms: 12 template literal route occurrences + 14 revalidatePath calls across ~6 files. The grep patterns are well-defined. A single pass with ripgrep covers everything. No subtasks needed — this can be done in one focused session."
+		},
+		{
+			"taskId": 58,
+			"taskTitle": "Redesign routes.ts with nested structure and dynamic route helpers",
 			"complexityScore": 4,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Break down the channel_priority_config schema creation into: (1) Define Drizzle table schema with proper types and constraints, (2) Implement RLS policies following existing account-based access patterns, (3) Generate and validate migration SQL. Focus on proper JSONB typing for channelOrder array and unique constraint on accountId.",
-			"reasoning": "This is a straightforward database schema task following established patterns in the codebase (similar to account.schema.ts). The task details are comprehensive and specify exact field types. Complexity comes from ensuring proper RLS policies (using existing auth.uid() patterns), JSONB array typing for channelOrder, and unique constraint validation. The migration generation is mechanical. Score: 4/10 because it's well-defined with clear examples."
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "No expansion needed. The current routes.ts is only 34 lines with 11 route keys. The redesign is well-specified in the task details with exact target structure.",
+			"reasoning": "The current routes.ts is a small 34-line file with a flat object of 11 keys. The target nested structure is fully specified in the task. The main work is: (1) restructure the object to nest hunts/leads/templates with list/detail/edit helpers, (2) add dynamic route helper functions, (3) update or remove PageKey/PageValue types. This is a single-file change with clear requirements. Only mild complexity from ensuring TypeScript types work correctly with the mixed string/function/nested structure."
 		},
 		{
-			"taskId": 34,
-			"taskTitle": "Extend hunts table with channelSettings JSONB field",
-			"complexityScore": 5,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "Break down into: (1) Update hunt.schema.ts with new channelSettings JSONB field and proper TypeScript typing, (2) Create TChannelSettings and TChannelConfig type definitions in hunt.types.ts, (3) Generate migration ensuring backward compatibility with existing outreachSettings field, (4) Validate default JSONB value syntax and test schema compilation. Ensure the migration doesn't break existing hunt queries.",
-			"reasoning": "Higher complexity due to data migration concerns and backward compatibility requirements. The task adds a new JSONB field alongside the existing outreachSettings (line 58-60 in hunt.schema.ts), requiring careful handling to avoid breaking existing code. The JSONB default value syntax needs validation, and TypeScript types must be properly inferred. The task explicitly mentions keeping outreachSettings for compatibility during migration (detail #3), adding migration planning overhead. Score: 5/10 due to backward compatibility risks."
+			"taskId": 59,
+			"taskTitle": "Update sidebar and layout components to use new route structure",
+			"complexityScore": 1,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "No expansion needed. Only 2-3 files need trivial key renames (e.g., pages.hunts → pages.hunts.list).",
+			"reasoning": "The sidebar has 6 navigation items, of which only 2 need updating (hunts → hunts.list, templates → templates.list). The layout file has a commented-out redirect. user-menu.tsx uses pages.login which stays flat. This is ~3 lines changed across 2-3 files. Trivial find-and-replace."
 		},
 		{
-			"taskId": 35,
-			"taskTitle": "Create Zod validation schemas for channel configuration",
-			"complexityScore": 6,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "Break down into: (1) Create channelConfigSchema with dailyLimit/totalLimit/enabled fields and cross-field refinement (dailyLimit <= totalLimit), (2) Create channelSettingsSchema with optional channel configs and 'at least one enabled' refinement, (3) Create channelPriorityConfigSchema for priority array validation, (4) Write comprehensive unit tests for all refinements, edge cases (empty settings, all disabled), and French error messages. Update existing hunt schemas.",
-			"reasoning": "Moderate complexity with multiple validation layers and custom refinements. The task requires creating three interconnected schemas with complex validation logic: dailyLimit <= totalLimit refinement, at least one channel enabled refinement, and channel order array validation. Following existing patterns from hunt.validation.ts (lines 1-94), but the cross-field validation refinements add complexity. French error messages requirement adds I18n consideration. Unit tests are explicitly required. Score: 6/10 due to multiple interdependent validation rules and testing requirements."
+			"taskId": 60,
+			"taskTitle": "Replace hardcoded routes in hunt components",
+			"complexityScore": 3,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "No expansion needed. 7 files with well-documented line-by-line changes. Each change is a simple string replacement.",
+			"reasoning": "Confirmed from codebase: hunt-card.tsx has 2 hardcoded template literals, hunt-list-item.tsx has 2, plus 4-5 flat key renames in hunts-view, new-hunt-view, hunt-form, outreach-settings. All changes are mechanical replacements — import pages, swap string. 7 files total but each change is 1-2 lines. The task details document every file and line number precisely."
 		},
 		{
-			"taskId": 36,
-			"taskTitle": "Implement server actions for channel priority configuration",
-			"complexityScore": 5,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "Break down into: (1) Implement getChannelPriorityConfig with default fallback ['ringlessVoice', 'whatsappText', 'sms'], (2) Implement updateChannelPriorityConfig with Zod validation and upsert logic, (3) Add proper RLS enforcement using dbClient.rls() wrapper pattern from existing actions, (4) Implement error handling with French error messages and test RLS access control. Follow patterns from hunt.actions.ts.",
-			"reasoning": "Standard server action implementation following established patterns from hunt.actions.ts (lines 14-247). The task requires implementing two CRUD operations (get/update) with RLS enforcement using the existing createDrizzleSupabaseClient() pattern. Complexity includes upsert logic (insert or update based on existing config), default value handling, and Zod validation integration. The codebase has clear patterns to follow (e.g., hunt.actions.ts:89-171 for validation, 119-168 for RLS wrapper). Score: 5/10 - well-defined with existing patterns but requires careful upsert implementation."
+			"taskId": 61,
+			"taskTitle": "Replace hardcoded routes in lead and template components",
+			"complexityScore": 3,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "No expansion needed. 6 files with well-documented replacements. Similar mechanical changes to task 60.",
+			"reasoning": "Confirmed from codebase: lead-drawer.tsx has 1 hardcoded template literal, lead-detail-view.tsx needs pages.leads → pages.leads.list. Template components (templates-view, new-template-view, text-template-form, voice-template-form) need pages.templates → pages.templates.list and pages.templates_new → pages.templates.new. All mechanical replacements across 6 files with clear documentation."
 		},
 		{
-			"taskId": 37,
-			"taskTitle": "Update hunt server actions to support channel settings",
-			"complexityScore": 7,
-			"recommendedSubtasks": 5,
-			"expansionPrompt": "Break down into: (1) Update createHunt and updateHunt to accept channelSettings in validated schema, (2) Implement conversion helper from old outreachSettings to new channelSettings format with proper defaults, (3) Modify insert logic to handle both new channelSettings and legacy outreachSettings, (4) Implement getChannelUsageToday action querying messages/contactedAds grouped by channel, (5) Write comprehensive tests for backward compatibility, new format, and usage tracking.",
-			"reasoning": "Higher complexity due to backward compatibility requirements and new usage tracking functionality. The task modifies critical hunt creation/update logic (hunt.actions.ts:89-227) to support dual formats during migration. Requires careful handling of both channelSettings and outreachSettings, with conversion logic between formats. The new getChannelUsageToday action adds database query complexity (grouping by channel, date filtering). Data integrity risk is high as hunts are central to the application. Score: 7/10 due to migration complexity and dual-format support requirements."
+			"taskId": 62,
+			"taskTitle": "Replace hardcoded routes in dashboard components",
+			"complexityScore": 2,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "No expansion needed. Only 1-3 files with simple key renames.",
+			"reasoning": "dashboard-view.tsx needs pages.hunts_create → pages.hunts.create and pages.hunts → pages.hunts.list. The page files (dashboard/page.tsx, templates/page.tsx) may have minor references. This is the smallest of the replacement tasks — at most 3 files with 2-3 line changes each."
 		},
 		{
-			"taskId": 38,
-			"taskTitle": "Build ChannelConfigSection UI component for hunt forms",
-			"complexityScore": 6,
-			"recommendedSubtasks": 5,
-			"expansionPrompt": "Break down into: (1) Create ChannelConfigSection component structure with react-hook-form integration, (2) Build individual channel cards (SMS, WhatsApp, Ringless Voice) with enable toggles, (3) Implement daily/total limit inputs with conditional enabling based on channel toggle, (4) Add visual indicators for dailyLimit <= totalLimit constraint validation, (5) Integrate shadcn components (Checkbox, Input, Label, FormField) and ensure accessibility (keyboard navigation, ARIA labels). Style with existing zinc/amber theme.",
-			"reasoning": "Moderate-high complexity React component with form integration and validation feedback. The component must integrate with react-hook-form (following patterns from existing forms), render three channel cards with conditional inputs, and provide visual feedback for validation constraints. The existing OutreachSettings component (outreach-settings.tsx:1-233) provides a reference pattern but this adds more complexity with numeric inputs and constraint visualization. Accessibility requirements add testing overhead. Score: 6/10 due to form integration complexity and validation UI feedback."
+			"taskId": 63,
+			"taskTitle": "Replace hardcoded revalidatePath calls in server actions and services",
+			"complexityScore": 3,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "No expansion needed. 5 files with 14 total revalidatePath replacements, all well-documented.",
+			"reasoning": "Confirmed from codebase: 14 revalidatePath calls across 5 files (team.actions.ts:2, account.actions.ts:1, message.actions.ts:3, lead.actions.ts:7, message.service.ts:1). Each needs an import added and the string replaced. The dynamic ones (lead.actions.ts lines 246/296 and message.service.ts line 222) use template literals that map directly to pages.leads.detail(leadId). Mechanical but slightly more files than other replacement tasks."
 		},
 		{
-			"taskId": 39,
-			"taskTitle": "Build ChannelPrioritySettings drag-and-drop component",
-			"complexityScore": 5,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "Break down into: (1) Create ChannelPrioritySettings component with DndContext setup using @dnd-kit patterns from existing kanban-view.tsx, (2) Implement SortableChannelItem component with drag handle, channel icon/label, and priority number display, (3) Add save functionality with optimistic updates and loading states, (4) Implement error handling with toast notifications and revert logic on failure. Ensure keyboard accessibility for reordering.",
-			"reasoning": "Moderate complexity leveraging existing @dnd-kit library already in package.json (line 18-20). The project already uses @dnd-kit for kanban-view.tsx, so patterns are established. Task requires creating a simpler drag-and-drop interface (linear list vs kanban columns) with save/cancel logic. Optimistic updates and error rollback add state management complexity. Accessibility for keyboard reordering requires additional handling. Score: 5/10 - benefits from existing library integration but requires careful state management."
+			"taskId": 64,
+			"taskTitle": "Update SEO utility files to use route config",
+			"complexityScore": 2,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "No expansion needed. Only 2 files (seo.ts, seo-examples.ts) with a handful of hardcoded route strings to replace.",
+			"reasoning": "seo-examples.ts has ~5 hardcoded route references (confirmed via grep: lines 31, 50, 82 with template literals, plus static strings). seo.ts may have minor references. This is a small, well-scoped task. seo-examples.ts appears to be a reference/documentation file (107 lines) so changes are low-risk."
 		},
 		{
-			"taskId": 40,
-			"taskTitle": "Create database migration for existing hunts to channelSettings",
-			"complexityScore": 8,
-			"recommendedSubtasks": 6,
-			"expansionPrompt": "Break down into: (1) Design SQL migration script to convert outreachSettings boolean flags to channelSettings structure with default limits (dailyLimit: 10, totalLimit: 100), (2) Handle null/empty outreachSettings gracefully with COALESCE, (3) Create migration for channel_priority_config defaults for all existing accounts, (4) Document and test rollback procedure, (5) Validate migration on development database with existing data, (6) Document the migration SQL for user execution (AI cannot run migrations per CLAUDE.md). Leave outreachSettings column for future cleanup.",
-			"reasoning": "High complexity data migration task with significant risk. The task involves transforming existing JSONB data (outreachSettings) into a new structure (channelSettings) across potentially many records. The migration must handle null values, set appropriate defaults, and ensure no data loss. Additional complexity from needing to initialize channel_priority_config for all existing accounts. Per CLAUDE.md guidelines, AI cannot run migrations (pnpm db:migrate-only is forbidden), so proper SQL documentation is critical. Rollback strategy adds planning overhead. Score: 8/10 due to data migration risk and multiple table transformations."
+			"taskId": 65,
+			"taskTitle": "Remove backward-compatible aliases and clean up old route keys",
+			"complexityScore": 3,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "No expansion needed. This is a cleanup task: remove old keys from routes.ts, grep to verify zero remaining references, and run build verification.",
+			"reasoning": "After all migration tasks (59-64) are done, this task removes the old flat keys (hunts_new, hunts_create, templates_new) and updates types. The verification grep is important but straightforward. The main risk is missing a reference, but the build will catch type errors. Complexity is low since all the hard migration work is already done in prior tasks."
 		},
 		{
-			"taskId": 41,
-			"taskTitle": "Update background hunt process with channel-aware allocation",
-			"complexityScore": 9,
-			"recommendedSubtasks": 7,
-			"expansionPrompt": "Break down into: (1) Add channel priority config fetch to contactAdsOwners function, (2) Implement allocateAdsToChannels algorithm with priority queue logic (iterate channels in order, check limits, allocate first available), (3) Create channel usage tracking table or extend contactedAds with channel information, (4) Implement getChannelUsageToday query with date filtering and grouping, (5) Update bulkSend to use allocated channel assignments, (6) Implement daily limit reset logic with timezone handling, (7) Write comprehensive tests for allocation edge cases (all channels at limit, disabled channels, priority ordering). Update hunt-background.actions.ts core logic.",
-			"reasoning": "Highest complexity task involving sophisticated allocation logic and critical background process modification. The current hunt-background.actions.ts (lines 68-122) implements ad matching and bulk sending - this task adds multi-dimensional constraint solving (channel priority × daily limits × total limits). The allocation algorithm must handle: priority ordering, limit checking, fallback to next channel, and edge cases like all channels exhausted. Requires new database tracking (channel usage per day/total), timezone-aware reset logic (midnight in org timezone), and integration with existing concurrency control (lines 41-63). High risk as background processes are critical to application function. Score: 9/10 due to algorithmic complexity and critical path impact."
-		},
-		{
-			"taskId": 42,
-			"taskTitle": "Build ChannelUsageDisplay component for hunt details",
-			"complexityScore": 5,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "Break down into: (1) Create ChannelUsageDisplay component with props for channelSettings, todayUsage, totalUsage, and channelOrder, (2) Build UI for each enabled channel showing progress bars for daily and total limits with visual indicators, (3) Implement 'At Limit' badge display when daily limit reached and 'next channel' indicator logic, (4) Style with shadcn Card/Progress/Badge components using zinc/amber theme and ensure responsive design. Add color coding (amber=active, zinc=at-limit, green=available).",
-			"reasoning": "Moderate complexity read-only display component. The component receives pre-computed data and renders progress bars and badges using existing shadcn components. Complexity includes calculating progress percentages, determining 'next channel' logic based on current state, and color-coding based on status. No form state or complex interactions - purely presentational. Responsive design adds some layout complexity. Score: 5/10 - straightforward UI component with some calculation logic."
-		},
-		{
-			"taskId": 43,
-			"taskTitle": "Integrate channel settings into hunt creation/edit forms",
-			"complexityScore": 6,
-			"recommendedSubtasks": 5,
-			"expansionPrompt": "Break down into: (1) Update new-hunt-view.tsx to import and integrate ChannelConfigSection component, (2) Modify useForm setup to include channelSettings in defaultValues and schema, (3) Update form layout to include Channel Configuration section (replace/supplement OutreachSettings), (4) Update form submission handler to include channelSettings in server action call, (5) Implement edit mode with existing channelSettings population and backward compatibility for old hunts. Test validation error display per channel.",
-			"reasoning": "Moderate-high complexity form integration task touching existing hunt creation flow. The new-hunt-view.tsx component must integrate the new ChannelConfigSection while handling backward compatibility (old hunts have outreachSettings, new hunts have channelSettings). Requires updating form schema, default values, submission logic, and layout. Risk of breaking existing hunt creation flow. The task mentions 'removing or deprecating OutreachSettings' which requires careful transition planning. Edit mode complexity adds to the testing burden. Score: 6/10 due to form integration complexity and backward compatibility requirements."
-		},
-		{
-			"taskId": 44,
-			"taskTitle": "Add channel priority settings tab to account settings page",
-			"complexityScore": 5,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "Break down into: (1) Update settings page data loading to fetch channel priority config via server action, (2) Create new ChannelsTab component receiving initialChannelOrder prop, (3) Integrate ChannelPrioritySettings drag-and-drop component in the new tab, (4) Add 'Canaux' tab to settings-page-client.tsx navigation with icon and implement save handler calling updateChannelPriorityConfig with toast notifications. Style consistently with existing settings tabs.",
-			"reasoning": "Standard integration task following existing settings page patterns. The settings-page-client.tsx (lines 1-164) already has a tab system (lines 33-109) - this task adds a new tab following the same pattern. Requires fetching data in page.tsx (server component), passing to client component, and wiring up the ChannelPrioritySettings component from task 39. Toast notifications for save success/error add minor complexity. Score: 5/10 - straightforward integration following established patterns."
-		},
-		{
-			"taskId": 45,
-			"taskTitle": "Add channel usage display to hunt details view",
-			"complexityScore": 4,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Break down into: (1) Identify or create hunt detail view location (hunt card expanded view or modal), (2) Implement data fetching for channel usage (getChannelUsageToday, total usage, channel priority order) with loading/error states, (3) Integrate ChannelUsageDisplay component with refresh functionality. Add to hunt details layout (sidebar or stats section).",
-			"reasoning": "Low-moderate complexity integration task. The main uncertainty is where the hunt detail view exists or should be created - the codebase has hunt-card.tsx but unclear if there's a full detail view. Once location is determined, the task is straightforward: fetch data via server action, pass to ChannelUsageDisplay component, add refresh button. No complex state management or validation. The task is marked low priority which aligns with its simpler nature. Score: 4/10 - mostly integration work with some UX design decisions needed."
+			"taskId": 66,
+			"taskTitle": "Update CLAUDE.md with route configuration guidelines",
+			"complexityScore": 1,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "No expansion needed. This is adding a single documentation section to an existing file.",
+			"reasoning": "Adding ~10 lines of markdown documentation to CLAUDE.md under an existing section. The content is already specified in the task details. No code changes, no risk, purely documentation. The CLAUDE.md structure is well-organized with clear sections to insert into."
 		}
 	]
 }
