@@ -8,6 +8,23 @@ import { huntChannelCredits } from "@/schema/credits.schema";
 import { brandsHunts, hunts, subTypesHunts } from "@/schema/hunt.schema";
 import { createHuntSchema, updateHuntSchema } from "@/validation-schemas";
 import { eq } from "drizzle-orm";
+import { getAccountHunts, getHuntById } from "@/services/hunt.service";
+
+/**
+ * Fetches all hunts for the current user's account
+ * Server action wrapper for SWR client-side fetching
+ */
+export async function fetchAccountHunts() {
+  return getAccountHunts();
+}
+
+/**
+ * Fetches a single hunt by ID
+ * Server action wrapper for SWR client-side fetching
+ */
+export async function fetchHuntById(huntId: string) {
+  return getHuntById(huntId);
+}
 
 /**
  * Creates a new hunt

@@ -9,6 +9,53 @@ import { leadNoteSchema, leadReminderSchema } from "@/validation-schemas";
 import { pages } from "@/config/routes";
 import { eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import {
+  getLeadDetails,
+  getLeadAssociatedTeamMembers,
+  getLeadMessages,
+  getLeadActivities,
+  getPipelineLeads,
+} from "@/services/lead.service";
+
+/**
+ * Fetches complete lead details with all relations
+ * Server action wrapper for SWR client-side fetching
+ */
+export async function fetchLeadDetails(leadId: string) {
+  return getLeadDetails(leadId);
+}
+
+/**
+ * Fetches all members of the lead's account for assignment dropdown
+ * Server action wrapper for SWR client-side fetching
+ */
+export async function fetchLeadTeamMembers(leadId: string) {
+  return getLeadAssociatedTeamMembers(leadId);
+}
+
+/**
+ * Fetches message history for a lead
+ * Server action wrapper for SWR client-side fetching
+ */
+export async function fetchLeadMessages(leadId: string) {
+  return getLeadMessages(leadId);
+}
+
+/**
+ * Fetches activity timeline for a lead
+ * Server action wrapper for SWR client-side fetching
+ */
+export async function fetchLeadActivities(leadId: string) {
+  return getLeadActivities(leadId);
+}
+
+/**
+ * Fetches all leads for the pipeline/kanban view
+ * Server action wrapper for SWR client-side fetching
+ */
+export async function fetchPipelineLeads() {
+  return getPipelineLeads();
+}
 
 /**
  * Updates a lead's stage and logs the activity
