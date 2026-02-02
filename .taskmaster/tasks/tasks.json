@@ -1640,12 +1640,182 @@
         "priority": "high",
         "subtasks": [],
         "updatedAt": "2026-02-02T12:37:34.759Z"
+      },
+      {
+        "id": "68",
+        "title": "Install SWR and Create SWR Provider",
+        "description": "Install the SWR dependency and create a global SWRConfig provider with sensible defaults for the application.",
+        "details": "1. Run `pnpm add swr` to install SWR (~5KB gzipped).\n2. `src/config/swr-keys.ts` already exists with all cache keys defined — no changes needed there.\n3. Create `src/providers/swr-provider.tsx` as a client component wrapping `<SWRConfig>` with global defaults:\n   - `dedupingInterval: 5000` (5s dedup to prevent rapid duplicate requests)\n   - `revalidateOnFocus: true` (refresh when user returns to tab)\n   - `revalidateOnReconnect: true` (refresh after network recovery)\n   - `errorRetryCount: 3`\n   - `shouldRetryOnError: true`\n4. Wrap the app layout in `src/app/(app)/layout.tsx` with `<SWRProvider>` inside existing providers.\n5. Ensure the provider is a client component (`'use client'`) but the layout remains a server component — pass `<SWRProvider>` as a wrapper around `{children}`.",
+        "testStrategy": "Verify SWR is in package.json dependencies. Confirm the provider renders without errors by loading any app page. Check React DevTools for SWRConfig context. Verify no hydration mismatches in browser console.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "in-progress",
+        "subtasks": [],
+        "updatedAt": "2026-02-02T14:10:36.051Z"
+      },
+      {
+        "id": "69",
+        "title": "Create Server Action Fetcher Wrappers for SWR",
+        "description": "Create thin 'use server' wrapper functions that expose service-layer read operations as server actions callable from client-side SWR hooks.",
+        "details": "Current services (e.g., `lead.service.ts`, `dashboard.service.ts`) are NOT marked with `\"use server\"` — they cannot be called directly from client components via SWR. Create server action wrappers:\n\n1. Create or update `src/actions/dashboard.actions.ts`:\n   - `fetchDashboardStats()` → calls `getDashboardStats()` from service\n   - `fetchActiveHunts()` → calls `getActiveHunts()` from service\n\n2. Create or update `src/actions/lead.actions.ts` (add fetcher exports):\n   - `fetchLeadDetails(leadId: string)` → calls `getLeadDetails(leadId)` from service\n   - `fetchTeamMembers()` → calls `getLeadAssociatedTeamMembers()` from service\n   - `fetchPipelineLeads()` → calls `getPipelineLeads()` from service\n\n3. Create or update `src/actions/credit.actions.ts`:\n   - `fetchAccountCredits()` → calls `getAccountCredits()` from service\n\n4. Create or update `src/actions/hunt.actions.ts` (add fetcher exports):\n   - `fetchAccountHunts()` → calls `getAccountHunts()` from service\n\nEach wrapper: marked `\"use server\"`, no additional logic beyond delegation, preserves return types via `Awaited<ReturnType<typeof serviceFunction>>`.\n\nIMPORTANT: Keep existing action exports untouched — only ADD new fetcher functions alongside existing mutations.",
+        "testStrategy": "Call each new server action from a temporary test component or script. Verify they return the same data shape as the underlying services. Confirm RLS is enforced by checking that unauthenticated calls throw 'Unauthorized'. Verify TypeScript types match between service return types and action return types.",
+        "priority": "high",
+        "dependencies": [
+          "68"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "70",
+        "title": "Create Reusable SWR Hook Utilities",
+        "description": "Create shared custom hooks and utilities for common SWR patterns used across the migration (fetcher helpers, optimistic update utilities, polling configuration).",
+        "details": "Create `src/hooks/use-swr-action.ts` with reusable SWR utilities:\n\n1. **Generic fetcher wrapper** for server actions:\n```typescript\n// Wraps a server action into an SWR-compatible fetcher\nexport function createActionFetcher<T>(action: () => Promise<T>) {\n  return () => action();\n}\n\n// For parameterized fetchers\nexport function createParamFetcher<T, P extends unknown[]>(\n  action: (...params: P) => Promise<T>\n) {\n  return (_key: string | readonly unknown[], ...params: P) => action(...params);\n}\n```\n\n2. **Optimistic update helper**:\n```typescript\nexport function useOptimisticMutation<T>(\n  key: string | readonly unknown[],\n  mutationFn: () => Promise<void>,\n  optimisticData: T | ((current: T) => T)\n) {\n  // Uses useSWRMutation or manual mutate() with rollback\n}\n```\n\n3. **Polling configuration constants**:\n```typescript\nexport const SWR_POLLING = {\n  DASHBOARD: 60_000,  // 60s\n  KANBAN: 30_000,     // 30s\n  CREDITS: 60_000,    // 60s\n} as const;\n```\n\nKeep it minimal — only add utilities that are actually used by 2+ components. Avoid premature abstraction.",
+        "testStrategy": "Write unit tests for createActionFetcher and createParamFetcher to verify they correctly invoke the wrapped server action and return its result. Test optimistic update helper with mock mutate function. Verify TypeScript inference works correctly for generic types.",
+        "priority": "medium",
+        "dependencies": [
+          "68"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "71",
+        "title": "Migrate Lead Drawer to SWR with Caching",
+        "description": "Replace the useEffect + useTransition data fetching pattern in lead-drawer.tsx with useSWR hooks for automatic caching, deduplication, and revalidation.",
+        "details": "File: `src/components/leads/lead-drawer.tsx`\n\nCurrent pattern (to replace):\n- `useEffect` triggers fetch on `leadId` change\n- `useTransition` wraps async calls\n- `useState` manages lead data, loading, error states\n- Re-fetches on every drawer open (no caching)\n\nMigration steps:\n1. Replace `useState` + `useEffect` + `useTransition` for lead data with:\n```typescript\nconst { data: lead, error, isLoading, mutate } = useSWR(\n  leadId ? swrKeys.leads.drawer(leadId) : null,\n  () => fetchLeadDetails(leadId!),\n  { dedupingInterval: 5000, revalidateOnFocus: true }\n);\n```\n\n2. Replace team members fetch similarly:\n```typescript\nconst { data: teamMembers } = useSWR(\n  leadId ? swrKeys.settings.members : null,\n  () => fetchTeamMembers()\n);\n```\n\n3. After mutations (stage change, assignment), call `mutate()` to revalidate instead of manual re-fetch.\n4. Remove manual loading/error state management — use SWR's `isLoading`, `isValidating`, `error`.\n5. Keep the `leadId ? key : null` pattern so SWR doesn't fetch when drawer is closed.\n6. Preserve existing optimistic update logic for stage changes and assignments — use `mutate(optimisticData, false)` followed by server action, then `mutate()` to revalidate.\n7. Update imports: remove unused `useEffect`/`useTransition` if no longer needed, add `useSWR` from 'swr' and fetcher actions.",
+        "testStrategy": "Open/close same lead drawer 5 times rapidly — verify only 1-2 server requests (check Network tab). Verify cached data appears instantly on re-open. Change lead stage in drawer → verify UI updates optimistically. Close and reopen drawer → verify latest data shows. Test error state by simulating network failure. Verify no hydration errors.",
+        "priority": "high",
+        "dependencies": [
+          "69",
+          "70"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "72",
+        "title": "Add SWR Polling to Dashboard Stats",
+        "description": "Convert the Dashboard page to use SWR with polling for automatic stats refresh while preserving server-side initial render for SEO.",
+        "details": "Files: `src/app/(app)/dashboard/page.tsx`, `src/components/dashboard/dashboard-view.tsx`\n\nCurrent pattern:\n- `page.tsx` fetches `getDashboardStats()` and `getActiveHunts()` server-side\n- Passes data as props to `DashboardView` client component\n- Stats never refresh without full page reload\n\nMigration steps:\n1. Keep server-side fetch in `page.tsx` — this provides initial data for SEO and fast first paint.\n2. In `DashboardView` (already a client component), add SWR hooks:\n```typescript\nconst { data: stats } = useSWR(\n  swrKeys.dashboard.stats,\n  () => fetchDashboardStats(),\n  {\n    fallbackData: initialStats, // from server-rendered props\n    refreshInterval: SWR_POLLING.DASHBOARD, // 60s\n    revalidateOnFocus: true,\n  }\n);\n\nconst { data: activeHunts } = useSWR(\n  swrKeys.hunts.active,\n  () => fetchActiveHunts(),\n  {\n    fallbackData: initialActiveHunts,\n    refreshInterval: SWR_POLLING.DASHBOARD,\n  }\n);\n```\n3. Replace direct prop usage with SWR data (which falls back to props on first render).\n4. Add an 'Updated X seconds ago' text indicator using `useSWR`'s `isValidating` state and a simple timestamp.\n5. Ensure `page.tsx` still passes `initialStats` and `initialActiveHunts` as props — these become `fallbackData`.\n6. The component type signature changes: props become initial/fallback data rather than the only data source.",
+        "testStrategy": "Load dashboard → verify initial data renders immediately (no loading spinner). Wait 60+ seconds → verify stats update automatically in Network tab. Switch to another tab and back → verify revalidation fires (revalidateOnFocus). Verify 'Updated X ago' indicator updates. Check that server-side HTML includes initial stats (view source for SEO verification).",
+        "priority": "high",
+        "dependencies": [
+          "69",
+          "70"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "73",
+        "title": "Migrate Kanban View to SWR with Polling and Optimistic DnD",
+        "description": "Convert the Kanban pipeline view to use SWR with polling for multi-user synchronization while preserving optimistic drag-and-drop updates.",
+        "details": "Files: `src/app/(app)/leads/page.tsx`, `src/components/leads/kanban-view.tsx`\n\nCurrent pattern:\n- `page.tsx` fetches `getPipelineLeads()` server-side\n- `KanbanView` manages state with `useState(initialLeads)`\n- `useTransition` wraps drag-and-drop mutations\n- No polling — changes from other users invisible without refresh\n\nMigration steps:\n1. Keep server-side fetch in `page.tsx` for initial data.\n2. In `KanbanView`, replace `useState(initialLeads)` with SWR:\n```typescript\nconst { data: leads, mutate } = useSWR(\n  swrKeys.leads.pipeline,\n  () => fetchPipelineLeads(),\n  {\n    fallbackData: initialLeads,\n    refreshInterval: SWR_POLLING.KANBAN, // 30s\n    revalidateOnFocus: true,\n  }\n);\n```\n3. For drag-and-drop, implement optimistic updates:\n```typescript\nasync function handleDragEnd(result: DropResult) {\n  const optimisticLeads = computeNewLeadPositions(leads, result);\n  // Optimistic update — instant UI feedback\n  await mutate(optimisticLeads, { revalidate: false });\n  try {\n    await updateLeadStage(leadId, newStage);\n    // Revalidate to get server truth\n    await mutate();\n  } catch {\n    // Rollback on failure\n    await mutate();\n  }\n}\n```\n4. Remove `useState` for leads data — SWR manages the cache.\n5. Keep `useTransition` only if needed for isPending UI states during mutations.\n6. Ensure polling doesn't disrupt active drag operations — use a `isDragging` ref to conditionally pause polling via `refreshInterval: isDragging ? 0 : SWR_POLLING.KANBAN`.",
+        "testStrategy": "Drag a lead between columns → verify instant UI update (optimistic). Check Network tab → verify server action fires. Simulate server error → verify rollback to previous state. Open page in 2 browser tabs → move a lead in tab A → wait 30s → verify tab B shows updated position. Verify drag operations are not interrupted by polling. Test rapid successive drags.",
+        "priority": "high",
+        "dependencies": [
+          "69",
+          "70"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "74",
+        "title": "Add SWR Polling to Credits Page",
+        "description": "Convert the Credits page to use SWR with polling so users see real-time balance updates as hunts consume credits.",
+        "details": "Files: `src/app/(app)/credits/page.tsx`, `src/components/credits/credits-view.tsx`\n\nCurrent pattern:\n- `page.tsx` fetches `getAccountCredits()` server-side\n- Passes data to `CreditsView` client component\n- No polling — balance changes invisible during active hunts\n\nMigration steps:\n1. Keep server-side fetch in `page.tsx` for initial data and SEO.\n2. In `CreditsView`, add SWR hook:\n```typescript\nconst { data: credits, isValidating } = useSWR(\n  swrKeys.credits.balance,\n  () => fetchAccountCredits(),\n  {\n    fallbackData: initialCredits,\n    refreshInterval: SWR_POLLING.CREDITS, // 60s\n    revalidateOnFocus: true,\n  }\n);\n```\n3. Add a subtle visual indicator when balance changes (e.g., brief highlight animation on the balance number using CSS transition).\n4. Update `page.tsx` props to pass `initialCredits` as fallback.\n5. Optionally show a small `isValidating` spinner near the balance to indicate refresh is happening.",
+        "testStrategy": "Load credits page → verify initial data renders immediately. Start a hunt that consumes credits → wait 60s on credits page → verify balance decrements. Switch tabs and return → verify revalidation. Verify visual change indicator appears when balance updates. Check that server-rendered HTML includes initial balance (SEO).",
+        "priority": "medium",
+        "dependencies": [
+          "69",
+          "70"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "75",
+        "title": "Migrate Hunt List to SWR with Optimistic Updates",
+        "description": "Convert the Hunts list page to use SWR with optimistic updates for instant pause/resume/delete feedback.",
+        "details": "Files: `src/app/(app)/hunts/page.tsx`, `src/components/hunts/hunts-view.tsx`\n\nCurrent pattern:\n- `page.tsx` fetches `getAccountHunts()` server-side\n- Status changes trigger `revalidatePath()` causing full page data refetch\n- Perceived delay between action and UI update\n\nMigration steps:\n1. Keep server-side fetch in `page.tsx`.\n2. In `HuntsView`, add SWR:\n```typescript\nconst { data: hunts, mutate } = useSWR(\n  swrKeys.hunts.list,\n  () => fetchAccountHunts(),\n  {\n    fallbackData: initialHunts,\n    revalidateOnFocus: true,\n  }\n);\n```\n3. Implement optimistic updates for pause/resume:\n```typescript\nasync function handleStatusChange(huntId: string, newStatus: string) {\n  const optimisticHunts = hunts.map(h =>\n    h.id === huntId ? { ...h, status: newStatus } : h\n  );\n  await mutate(optimisticHunts, { revalidate: false });\n  try {\n    await updateHuntStatus(huntId, newStatus);\n    await mutate(); // Revalidate\n  } catch {\n    await mutate(); // Rollback\n  }\n}\n```\n4. For delete: optimistically remove from list, rollback on failure.\n5. No polling needed — hunts list doesn't change frequently enough to justify it.",
+        "testStrategy": "Click pause on a hunt → verify instant UI update (no loading delay). Verify server action fires in Network tab. Simulate server error → verify hunt status rolls back. Delete a hunt → verify instant removal from list. Verify initial server-rendered data shows without loading state.",
+        "priority": "medium",
+        "dependencies": [
+          "69",
+          "70"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "76",
+        "title": "Parallelize Hunt Edit Page Data Fetching",
+        "description": "Replace sequential awaits in the hunt edit page with Promise.all() for faster page load.",
+        "details": "File: `src/app/(app)/hunts/[id]/edit/page.tsx` (lines 30-35)\n\nCurrent pattern (sequential):\n```typescript\nconst hunt = await getHuntById(id);\nconst templates = await getAccountTemplates();\n```\n\nMigration:\n```typescript\nconst [huntResult, templates] = await Promise.all([\n  getHuntById(id).catch(() => null),\n  getAccountTemplates(),\n]);\n\nif (!huntResult) {\n  notFound();\n}\n\nconst hunt = huntResult;\n```\n\nKey considerations:\n- `getHuntById` may return null/throw for invalid IDs → handle with `.catch(() => null)` and `notFound()`\n- `getAccountTemplates` should not fail due to hunt not found\n- Both are independent queries that can run in parallel\n- This is a pure server-side optimization — no SWR involved\n- Measure timing with `console.time`/`console.timeEnd` during development to verify improvement",
+        "testStrategy": "Measure page load time before and after change (use browser DevTools Performance tab or server-side timing). Verify both valid hunt ID and invalid hunt ID cases work correctly. Verify notFound() still renders 404 page for missing hunts. Verify templates still load correctly alongside hunt data.",
+        "priority": "low",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "77",
+        "title": "Validate Security Model for All SWR Migrations",
+        "description": "Audit all new server action fetcher wrappers and SWR-powered client components to ensure RLS enforcement, authentication checks, and no data leakage.",
+        "details": "Security audit checklist for every migrated component:\n\n1. **Server Action Authentication**: Verify every fetcher wrapper in `src/actions/` calls `createClient()` → `getSession()` and throws 'Unauthorized' if no session. Check: `fetchDashboardStats`, `fetchActiveHunts`, `fetchLeadDetails`, `fetchTeamMembers`, `fetchPipelineLeads`, `fetchAccountCredits`, `fetchAccountHunts`.\n\n2. **RLS Enforcement**: Verify all underlying services use `dbClient.rls()` wrapper (not `dbClient.admin`). Cross-reference each service function called by the new action wrappers.\n\n3. **No Admin Data Exposure**: Ensure no server action wrapper uses `dbClient.admin` mode. Grep for `.admin` usage in all action files.\n\n4. **Input Validation**: Verify parameterized fetchers validate inputs (e.g., `fetchLeadDetails(leadId)` should validate leadId is a valid UUID format via Zod before querying).\n\n5. **Client-Side Data Handling**: Ensure no sensitive fields are exposed in SWR cached data that shouldn't be visible to the current user. Check that RLS policies filter correctly.\n\n6. **Cross-User Test**: Attempt to fetch another user's lead details, dashboard stats, etc. via the server actions — verify RLS blocks access.\n\n7. **No Credential Leakage**: Ensure no API keys, tokens, or internal IDs leak through SWR error messages or cached data.",
+        "testStrategy": "For each server action fetcher: (1) Call without auth session → expect 'Unauthorized' error. (2) Call with valid session but requesting another account's data → expect empty result or RLS error. (3) Verify dbClient.rls() is used in all underlying service calls (grep for .admin usage). (4) Test with browser DevTools Network tab that no sensitive data appears in client responses. Document findings in a security checklist.",
+        "priority": "high",
+        "dependencies": [
+          "71",
+          "72",
+          "73",
+          "74",
+          "75"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "78",
+        "title": "Performance Testing and Bundle Size Validation",
+        "description": "Measure and validate performance metrics across all SWR migrations: request deduplication, polling behavior, no infinite loops, and acceptable bundle size increase.",
+        "details": "Performance validation checklist:\n\n1. **Bundle Size**: Run `pnpm build` and compare total bundle size before/after. SWR should add ~5KB gzipped. Total increase should be <10KB. Check with `npx @next/bundle-analyzer` or build output.\n\n2. **Request Deduplication** (Lead Drawer): Open/close same drawer 5x within 5 seconds. Count server requests in Network tab — should see 1-2 requests max (dedupingInterval: 5000ms).\n\n3. **Polling Intervals**: Leave dashboard open 5+ minutes. Count polling requests — should see ~5 requests (one per 60s). Leave kanban open 2+ minutes — should see ~4 requests (one per 30s).\n\n4. **No Infinite Loops**: Monitor Network tab on all migrated pages for 2 minutes. Verify no rapid-fire repeated requests. Check for: SWR key instability (new object reference on each render), missing dedupingInterval, fetcher function recreated on each render.\n\n5. **Server Load**: Compare server logs before/after migration. Polling adds predictable load — verify it's within acceptable bounds.\n\n6. **Hydration**: Check browser console for hydration mismatch warnings on all pages with fallbackData pattern.\n\n7. **Memory**: Monitor React DevTools for memory leaks from SWR cache growth over extended sessions.",
+        "testStrategy": "Create a performance test script or manual checklist: (1) `pnpm build` → record bundle sizes. (2) Chrome DevTools Network tab → count requests per page over 5 minutes. (3) React DevTools Profiler → check for unnecessary re-renders. (4) Console → check for hydration warnings. (5) Memory tab → verify no cache memory leaks after 10+ minutes. Document all metrics in a report.",
+        "priority": "medium",
+        "dependencies": [
+          "71",
+          "72",
+          "73",
+          "74",
+          "75"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "79",
+        "title": "Update CLAUDE.md Documentation with SWR Patterns",
+        "description": "Update CLAUDE.md data fetching guidelines and document SWR cache key usage, server action + SWR integration patterns, and decision matrix for when to use each approach.",
+        "details": "Files to update: `CLAUDE.md`\n\nAdd documentation covering:\n\n1. **Update Data Fetching Strategy section** in CLAUDE.md:\n   - Add SWR as the primary client-side data fetching library\n   - Update the decision matrix to include SWR-specific guidance\n   - Document the `fallbackData` pattern for preserving SSR\n\n2. **SWR Cache Keys**: Document `src/config/swr-keys.ts` usage:\n   - Always import cache keys from `swrKeys` — never hardcode strings\n   - Pattern for static keys (`swrKeys.dashboard.stats`) vs parameterized keys (`swrKeys.leads.drawer(leadId)`)\n   - Key naming conventions\n\n3. **Server Action + SWR Integration Pattern**:\n   - Document the pattern: server action wrapper → SWR fetcher\n   - Show example of `fallbackData` from server component → client SWR\n   - Document optimistic update pattern with `mutate()`\n   - Show polling configuration pattern\n\n4. **When NOT to use SWR** (Non-Goals):\n   - Settings page (security-sensitive)\n   - Templates page (static)\n   - Lead detail initial load (SEO-critical)\n   - Server action mutations (already optimal)\n\nKeep additions concise — add to existing sections rather than creating large new sections.",
+        "testStrategy": "Review updated CLAUDE.md for accuracy against implemented patterns. Verify all code examples compile (spot-check TypeScript syntax). Ensure new documentation is consistent with existing style and conventions. Have another developer read the docs and attempt to implement an SWR migration following the guide.",
+        "priority": "low",
+        "dependencies": [
+          "71",
+          "72",
+          "73",
+          "74",
+          "75"
+        ],
+        "status": "pending",
+        "subtasks": []
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-02-02T12:37:34.761Z",
-      "taskCount": 67,
+      "lastModified": "2026-02-02T14:10:36.052Z",
+      "taskCount": 79,
       "completedCount": 65,
       "tags": [
         "master"

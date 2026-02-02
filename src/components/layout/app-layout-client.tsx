@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { Sidebar } from "./sidebar";
 import { Header } from "./header";
+import { SWRProvider } from "@/providers/swr-provider";
 
 export function AppLayoutClient({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-zinc-950">
+    <SWRProvider>
+      <div className="flex h-screen overflow-hidden bg-zinc-950">
       {/* Sidebar */}
       <Sidebar
         isOpen={isMobileMenuOpen}
@@ -69,6 +71,7 @@ export function AppLayoutClient({ children }: { children: React.ReactNode }) {
           animation: fadeIn 0.4s ease-out;
         }
       `}</style>
-    </div>
+      </div>
+    </SWRProvider>
   );
 }
