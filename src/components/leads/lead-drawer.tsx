@@ -5,12 +5,14 @@ import {
   addLeadReminder,
   assignLead,
   deleteLeadReminder,
-  getDefaultWhatsAppTemplate,
-  getLeadDetails,
-  getteamMembers,
-  logWhatsAppMessage,
+  fetchLeadDetails,
+  fetchLeadTeamMembers,
   updateLeadStage,
 } from "@/actions/lead.actions";
+import {
+  getDefaultWhatsAppTemplate,
+  logWhatsAppMessage,
+} from "@/actions/message.actions";
 import { Dropdown } from "@/components/ui/dropdown";
 import {
   Form,
@@ -22,6 +24,7 @@ import {
 } from "@/components/ui/form";
 import { leadStages, type LeadStage } from "@/schema/lead.schema";
 import { pages } from "@/config/routes";
+import { swrKeys } from "@/config/swr-keys";
 import {
   extractLeadVariables,
   generateWhatsAppLink,
@@ -37,16 +40,17 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { format, formatDistance } from "date-fns";
 import { fr } from "date-fns/locale";
 import Image from "next/image";
-import { useEffect, useState, useTransition } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
+import useSWR from "swr";
 
 type LeadDrawerProps = {
   leadId: string | null;
   onClose: () => void;
 };
 
-type LeadDetails = Awaited<ReturnType<typeof getLeadDetails>>;
-type OrgMember = Awaited<ReturnType<typeof getteamMembers>>[number];
+type LeadDetails = Awaited<ReturnType<typeof fetchLeadDetails>>;
+type OrgMember = Awaited<ReturnType<typeof fetchLeadTeamMembers>>[number];
 
 const STAGE_LABELS: Record<LeadStage, string> = {
   nouveau: "Nouveau",
@@ -67,13 +71,32 @@ const STAGE_COLORS: Record<LeadStage, string> = {
 };
 
 export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
-  const [lead, setLead] = useState<LeadDetails | null>(null);
-  const [orgMembers, setOrgMembers] = useState<OrgMember[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // Fetch lead details with SWR
+  const {
+    data: lead,
+    error,
+    isLoading,
+    mutate,
+  } = useSWR(
+    leadId ? swrKeys.leads.drawer(leadId) : null,
+    () => fetchLeadDetails(leadId!),
+    {
+      dedupingInterval: 5000,
+      revalidateOnFocus: true,
+    },
+  );
+
+  // Fetch team members with SWR
+  const { data: orgMembers = [] } = useSWR(
+    leadId ? swrKeys.settings.members : null,
+    () => fetchLeadTeamMembers(leadId!),
+    {
+      dedupingInterval: 10000,
+    },
+  );
+
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isSendingWhatsApp, setIsSendingWhatsApp] = useState(false);
-  const [, startTransition] = useTransition();
 
   // Notes form
   const noteForm = useForm<LeadNoteFormData>({
@@ -92,43 +115,25 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
     },
   });
 
-  useEffect(() => {
-    if (!leadId) {
-      setLead(null);
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    startTransition(async () => {
-      try {
-        const [data, members] = await Promise.all([
-          getLeadDetails(leadId),
-          getteamMembers(leadId),
-        ]);
-        setLead(data);
-        setOrgMembers(members);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load lead");
-      } finally {
-        setIsLoading(false);
-      }
-    });
-  }, [leadId]);
-
   const handleStageChange = async (newStage: string | null) => {
     if (!lead || !newStage) return;
 
-    const previousStage = lead.stage;
-    // Optimistic update
-    setLead({ ...lead, stage: newStage });
+    // Optimistic update with SWR mutate
+    mutate(
+      { ...lead, stage: newStage },
+      {
+        revalidate: false,
+        optimisticData: { ...lead, stage: newStage },
+      },
+    );
 
     try {
       await updateLeadStage(lead.id, newStage as LeadStage);
+      // Revalidate after success
+      mutate();
     } catch (err) {
-      // Revert on error
-      setLead({ ...lead, stage: previousStage });
+      // Revalidate on error to restore correct state
+      mutate();
       console.error("Failed to update stage:", err);
     }
   };
@@ -136,21 +141,27 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
   const handleAssignmentChange = async (userId: string | null) => {
     if (!lead) return;
 
-    const previousAssignee = lead.assignedTo;
-    // Optimistic update
+    // Optimistic update with SWR mutate
     const newAssignee = userId ? orgMembers.find((m) => m.id === userId) : null;
-    setLead({
+    const optimisticLead = {
       ...lead,
       assignedTo: newAssignee
         ? { id: newAssignee.id, name: newAssignee.name }
         : null,
+    };
+
+    mutate(optimisticLead, {
+      revalidate: false,
+      optimisticData: optimisticLead,
     });
 
     try {
       await assignLead(lead.id, userId);
+      // Revalidate after success
+      mutate();
     } catch (err) {
-      // Revert on error
-      setLead({ ...lead, assignedTo: previousAssignee });
+      // Revalidate on error to restore correct state
+      mutate();
       console.error("Failed to update assignment:", err);
     }
   };
@@ -198,9 +209,8 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
     try {
       await addLeadNote(lead.id, data.content);
 
-      // Reload lead details to get updated notes
-      const updatedLead = await getLeadDetails(lead.id);
-      setLead(updatedLead);
+      // Revalidate lead details to get updated notes
+      mutate();
 
       // Reset form
       noteForm.reset();
@@ -217,9 +227,8 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
     try {
       await addLeadReminder(lead.id, data.dueAt, data.note);
 
-      // Reload lead details to get updated reminders
-      const updatedLead = await getLeadDetails(lead.id);
-      setLead(updatedLead);
+      // Revalidate lead details to get updated reminders
+      mutate();
 
       // Reset form
       reminderForm.reset();
@@ -233,19 +242,25 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
   const handleDeleteReminder = async (reminderId: string) => {
     if (!lead) return;
 
+    // Optimistic update - remove from UI
+    const optimisticLead = {
+      ...lead,
+      reminders: lead.reminders.filter((r) => r.id !== reminderId),
+    };
+
+    mutate(optimisticLead, {
+      revalidate: false,
+      optimisticData: optimisticLead,
+    });
+
     try {
       await deleteLeadReminder(reminderId);
-
-      // Optimistic update - remove from UI
-      setLead({
-        ...lead,
-        reminders: lead.reminders.filter((r) => r.id !== reminderId),
-      });
+      // Revalidate after success
+      mutate();
     } catch (err) {
       console.error("Failed to delete reminder:", err);
-      // Reload on error
-      const updatedLead = await getLeadDetails(lead.id);
-      setLead(updatedLead);
+      // Revalidate on error to restore correct state
+      mutate();
     }
   };
 
@@ -310,7 +325,9 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
           {error && (
             <div className="flex h-full items-center justify-center px-6">
               <div className="rounded-lg border border-red-900/50 bg-red-950/30 p-4 text-center">
-                <p className="text-sm text-red-400">{error}</p>
+                <p className="text-sm text-red-400">
+                  {error instanceof Error ? error.message : "Failed to load lead"}
+                </p>
               </div>
             </div>
           )}

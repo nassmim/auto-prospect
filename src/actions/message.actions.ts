@@ -8,6 +8,10 @@ import {
 import { formatZodError } from "@/lib/validation";
 import { messageTemplates } from "@/schema/message.schema";
 import { getUseraccount, getUserSession } from "@/services/account.service";
+import {
+  getDefaultWhatsAppTemplate as getDefaultWhatsAppTemplateService,
+  logWhatsAppMessage as logWhatsAppMessageService,
+} from "@/services/message.service";
 import { textTemplateSchema, voiceTemplateSchema } from "@/validation-schemas";
 import { pages } from "@/config/routes";
 import { and, BinaryOperator, eq } from "drizzle-orm";
@@ -219,4 +223,24 @@ export async function updateTemplate(
     console.error("Error updating template:", error);
     throw new Error("Failed to update template");
   }
+}
+
+/**
+ * Get the default WhatsApp template for a lead's account
+ * Server action wrapper for client-side calls
+ */
+export async function getDefaultWhatsAppTemplate(leadId: string) {
+  return getDefaultWhatsAppTemplateService(leadId);
+}
+
+/**
+ * Log a WhatsApp message attempt
+ * Server action wrapper for client-side calls
+ */
+export async function logWhatsAppMessage(
+  leadId: string,
+  renderedMessage: string,
+  templateId?: string,
+) {
+  return logWhatsAppMessageService(leadId, renderedMessage, templateId);
 }
