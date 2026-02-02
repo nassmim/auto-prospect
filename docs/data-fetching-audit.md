@@ -19,8 +19,12 @@ The Auto-Prospect codebase currently uses **100% server-side data fetching** via
 
 **Architecture Status:**
 - **SWR/TanStack Query installed:** ❌ No (neither dependency exists in `package.json`)
-- **API routes for client fetching:** ❌ No (only 2 API routes exist, both for webhooks/cron)
 - **Client-side data patterns:** Limited to `useTransition()` with server actions (no caching)
+
+**Recommended Approach:**
+- **Use SWR with existing server actions** (no API routes needed)
+- Server actions work perfectly as SWR fetchers via cache keys
+- Maintains codebase consistency and security model
 
 ---
 
@@ -60,7 +64,7 @@ All service functions use Drizzle ORM with RLS enforcement (`dbClient.rls()`) or
 - `api/hunt/route.ts` - Cron trigger (not a data endpoint)
 - `api/webhooks/lobstr/get-ads/route.ts` - External webhook (not a data endpoint)
 
-**No client-facing API routes exist**. Recommendations below require creating new API routes.
+**No client-facing API routes exist**, and none are needed. SWR works directly with server actions via cache keys.
 
 ---
 
@@ -90,41 +94,52 @@ useEffect(() => {
 - Wastes server resources and causes loading flicker
 
 **Recommendation:**
-Migrate to SWR with automatic caching:
+Migrate to SWR with server actions (no API routes needed):
 
 ```typescript
-// New API route: src/app/api/leads/[id]/route.ts
-export async function GET(req: Request, { params }: { params: { id: string } }) {
-  const supabase = await createClient();
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
-  const dbClient = await createDrizzleSupabaseClient();
-  const [lead, members] = await Promise.all([
-    dbClient.rls((tx) => tx.query.leads.findFirst({ where: eq(leads.id, params.id) })),
-    getteamMembers(params.id)
-  ]);
-
-  return Response.json({ lead, members });
-}
-
 // Component update:
+'use client';
 import useSWR from 'swr';
+import { getLeadDetails, getteamMembers } from '@/actions/lead.actions';
 
-const { data, error } = useSWR(
-  leadId ? `/api/leads/${leadId}` : null,
-  fetcher,
-  { revalidateOnFocus: true, dedupingInterval: 5000 }
-);
+export function LeadDrawer({ leadId, onClose }) {
+  const { data, error, isLoading } = useSWR(
+    leadId ? ['lead-drawer', leadId] : null,
+    async () => {
+      const [lead, members] = await Promise.all([
+        getLeadDetails(leadId),
+        getteamMembers(leadId),
+      ]);
+      return { lead, members };
+    },
+    {
+      revalidateOnFocus: true,
+      dedupingInterval: 5000,
+    }
+  );
+
+  if (isLoading) return <LoadingState />;
+  if (error) return <ErrorState error={error} />;
+  if (!data) return null;
+
+  // Use data.lead, data.members
+}
 ```
 
+**Why this works:**
+- SWR caches based on the key `['lead-drawer', leadId]`, not the URL
+- Multiple components using same key share cache (deduplication)
+- Server actions enforce RLS just like they do for mutations
+- No API routes = less code, same security model
+
 **Impact:**
-- ✅ Opening the same lead 3x = 1 network request instead of 3
+- ✅ Opening the same lead 3x = 1 server action call instead of 3
 - ✅ Automatic background revalidation
 - ✅ Faster perceived performance (instant cache hits)
 - ✅ Reduced server load
+- ✅ Maintains codebase consistency (reuses existing server actions)
 
-**Effort:** Medium (1 API route + component refactor)
+**Effort:** Low (component refactor only, no new routes)
 
 ---
 
@@ -149,30 +164,30 @@ return <DashboardView stats={stats} hunts={hunts} />;
 - No way to see updates without manual page refresh
 
 **Recommendation:**
-Keep server-side initial fetch (SEO), add client-side polling:
+Keep server-side initial fetch (SEO), add client-side polling with server actions:
 
 ```typescript
-// New API route: src/app/api/dashboard/stats/route.ts
-export async function GET() {
-  const supabase = await createClient();
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
-  const stats = await getDashboardStats();
-  const hunts = await getActiveHunts();
-
-  return Response.json({ stats, hunts });
-}
-
 // Component update:
 'use client';
 import useSWR from 'swr';
+import { getDashboardStats } from '@/services/dashboard.service';
+import { getActiveHunts } from '@/services/hunt.service';
 
 export function DashboardView({ initialStats, initialHunts }) {
-  const { data } = useSWR('/api/dashboard/stats', fetcher, {
-    fallbackData: { stats: initialStats, hunts: initialHunts },
-    refreshInterval: 60000, // Poll every 60 seconds
-  });
+  const { data } = useSWR(
+    'dashboard-stats',
+    async () => {
+      const [stats, hunts] = await Promise.all([
+        getDashboardStats(),
+        getActiveHunts(),
+      ]);
+      return { stats, hunts };
+    },
+    {
+      fallbackData: { stats: initialStats, hunts: initialHunts },
+      refreshInterval: 60000, // Poll every 60 seconds
+    }
+  );
 
   return (
     // Render with data.stats, data.hunts
@@ -185,8 +200,9 @@ export function DashboardView({ initialStats, initialHunts }) {
 - ✅ Users see new leads arrive in real-time
 - ✅ Better engagement (users stay on dashboard longer)
 - ✅ Still SEO-friendly (server-rendered initial HTML)
+- ✅ Reuses existing service functions
 
-**Effort:** Medium (1 API route + component refactor)
+**Effort:** Low (component refactor only)
 
 ---
 
@@ -212,37 +228,45 @@ const [leads, setLeads] = useState(initialLeads);
 - Optimistic updates work, but no revalidation from server
 
 **Recommendation:**
-Convert to SWR with polling + optimistic updates:
+Convert to SWR with polling + optimistic updates using server actions:
 
 ```typescript
-// New API route: src/app/api/leads/pipeline/route.ts
-export async function GET() {
-  const supabase = await createClient();
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
-  const leads = await getPipelineLeads();
-  return Response.json({ leads });
-}
-
 // Component update:
+'use client';
 import useSWR from 'swr';
+import { getPipelineLeads } from '@/services/lead.service';
+import { updateLeadStage } from '@/actions/lead.actions';
 
-const { data, mutate } = useSWR('/api/leads/pipeline', fetcher, {
-  fallbackData: { leads: initialLeads },
-  refreshInterval: 30000, // Poll every 30s
-});
+export function KanbanView({ initialLeads }) {
+  const { data, mutate } = useSWR(
+    'pipeline-leads',
+    () => getPipelineLeads(),
+    {
+      fallbackData: initialLeads,
+      refreshInterval: 30000, // Poll every 30s
+    }
+  );
 
-const handleDragEnd = async (event) => {
-  // Optimistic update
-  mutate({ leads: updatedLeads }, false);
+  const handleDragEnd = async (event) => {
+    const { leadId, newStage } = extractDragData(event);
 
-  // Server mutation
-  await updateLeadStage(leadId, newStage);
+    // Optimistic update
+    const updatedLeads = data.map(lead =>
+      lead.id === leadId ? { ...lead, stage: newStage } : lead
+    );
+    mutate(updatedLeads, false);
 
-  // Revalidate from server
-  mutate();
-};
+    // Server mutation (server action)
+    try {
+      await updateLeadStage(leadId, newStage);
+      // Revalidate from server
+      mutate();
+    } catch (error) {
+      // Rollback on error
+      mutate();
+    }
+  };
+}
 ```
 
 **Impact:**
@@ -250,8 +274,9 @@ const handleDragEnd = async (event) => {
 - ✅ New leads appear automatically
 - ✅ Optimistic DnD still works
 - ✅ Automatic rollback on server errors
+- ✅ Reuses existing server actions
 
-**Effort:** High (1 API route + complex component refactor with DnD state)
+**Effort:** Medium (component refactor with DnD state, no new routes)
 
 ---
 
@@ -267,18 +292,30 @@ const handleDragEnd = async (event) => {
 - Critical for users to know when they're running low
 
 **Recommendation:**
-Similar to Dashboard - server-side initial, client-side polling:
+Similar to Dashboard - server-side initial, client-side polling with server actions:
 
 ```typescript
-// API route: src/app/api/credits/route.ts
-const { data } = useSWR('/api/credits', fetcher, {
-  fallbackData: { credits: initialCredits },
-  refreshInterval: 60000,
-});
+// Component update:
+'use client';
+import useSWR from 'swr';
+import { getAccountCredits } from '@/services/credit.service';
+
+export function CreditsView({ initialCredits }) {
+  const { data } = useSWR(
+    'account-credits',
+    () => getAccountCredits(),
+    {
+      fallbackData: initialCredits,
+      refreshInterval: 60000,
+    }
+  );
+
+  // Render with data
+}
 ```
 
 **Impact:** ✅ Users see real-time credit deductions
-**Effort:** Low (1 API route + simple component refactor)
+**Effort:** Low (simple component refactor)
 
 ---
 
@@ -340,6 +377,53 @@ const [hunt, templates] = await Promise.all([
 
 ## Architecture Decisions
 
+### Why Server Actions Work with SWR (Corrected Understanding)
+
+**Initial misconception:** SWR requires HTTP endpoints (URLs) for caching and deduplication.
+
+**Reality:** SWR works with **any serializable cache key** and **any async function**.
+
+**How it works:**
+1. **Cache keys are flexible** - Can be strings, arrays, objects, or any serializable value
+   - Example: `useSWR('dashboard-stats', fetcherFn)`
+   - Example: `useSWR(['lead', leadId], fetcherFn)`
+   - Example: `useSWR({ resource: 'lead', id: leadId }, fetcherFn)`
+
+2. **Deduplication is key-based** - Multiple components using the same key share cached data
+   - When Component A and Component B both use `['lead', '123']`, only one fetch occurs
+   - [Source: SWR deduplication docs](https://dev.to/andykao1213/how-to-understand-the-request-deduplication-in-swr-28bb)
+
+3. **Fetcher can be any async function** - Not limited to `fetch()`
+   - Works with server actions: `() => getLeadDetails(id)`
+   - Works with services: `() => getPipelineLeads()`
+   - Works with GraphQL, Firebase, or any data source
+
+**Benefits of server actions over API routes:**
+- ✅ **Consistency** - Same pattern as mutations (server actions throughout)
+- ✅ **Less code** - No API route boilerplate
+- ✅ **Same security model** - RLS already enforced in server actions
+- ✅ **Type safety** - Direct TypeScript imports, no fetch typing
+- ✅ **Easier refactoring** - Change service signature, TypeScript errors guide you
+
+**Tradeoffs vs API routes:**
+- ❌ **No HTTP caching** - Server actions use POST (no browser/CDN cache)
+- ❌ **No network tab visibility** - Harder to debug in DevTools
+- ❌ **No external access** - Can't be called from outside the app
+
+**Recommendation for this project:**
+Use **server actions with SWR** because:
+- Data is user-specific (no CDN benefit anyway)
+- Not a public API (no external access needed)
+- Consistency > minor debugging convenience
+
+**Sources:**
+- [SWR with server actions - Next.js Forum](https://nextjs-forum.com/post/1237619082174660608)
+- [SWR cache key flexibility](https://swr.vercel.app/docs/advanced/cache)
+- [Request deduplication explained](https://dev.to/andykao1213/how-to-understand-the-request-deduplication-in-swr-28bb)
+- [TanStack Query + Server Actions guide](https://reetesh.in/blog/server-action-with-tanstack-query-in-next.js-explained)
+
+---
+
 ### SWR vs TanStack Query
 
 **Recommendation:** Use **SWR** (per CLAUDE.md guidelines)
@@ -355,37 +439,42 @@ const [hunt, templates] = await Promise.all([
 - Complex dependent query chains emerge
 - Advanced cache invalidation patterns required
 
-### API Route Strategy
+### Server Actions with SWR Strategy
 
-**Pattern for all client-fetched endpoints:**
+**Pattern for all SWR-cached data fetching:**
 
 ```typescript
-// src/app/api/[resource]/route.ts
-export async function GET(req: Request) {
-  // 1. Auth check (Supabase session)
-  const supabase = await createClient();
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) {
-    return Response.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+// In client component:
+'use client';
+import useSWR from 'swr';
+import { getResourceData } from '@/services/resource.service';
+// OR import { getResourceData } from '@/actions/resource.actions';
 
-  // 2. Use existing service with RLS
-  const dbClient = await createDrizzleSupabaseClient();
-  const data = await dbClient.rls((tx) => {
-    // RLS automatically enforces user's account access
-    return getServiceData(tx);
-  });
+export function Component({ initialData }) {
+  const { data, error, isLoading, mutate } = useSWR(
+    'unique-cache-key', // Can be string, array, or object
+    () => getResourceData(),
+    {
+      fallbackData: initialData, // SSR data from server component
+      revalidateOnFocus: true,
+      dedupingInterval: 5000,
+      // Add refreshInterval for polling if needed
+    }
+  );
 
-  // 3. Return JSON
-  return Response.json({ data });
+  if (isLoading) return <Loading />;
+  if (error) return <Error />;
+
+  return <UI data={data} />;
 }
 ```
 
 **Key Points:**
-- ✅ Reuse existing service functions (no duplication)
-- ✅ RLS enforcement via `dbClient.rls()` wrapper
-- ✅ Authentication via Supabase session (same as server actions)
-- ✅ No admin access in client-facing routes
+- ✅ Reuse existing server actions/services (no new routes)
+- ✅ RLS enforcement preserved (server actions already use RLS)
+- ✅ Authentication via Supabase session (same as mutations)
+- ✅ Codebase consistency (same pattern as mutations)
+- ✅ Cache key can be any serializable value (not just URLs)
 
 ### Security Model Validation
 
@@ -393,21 +482,36 @@ export async function GET(req: Request) {
 
 | Security Check | Implementation |
 |---------------|----------------|
-| Authentication | `createClient().auth.getSession()` |
-| Authorization | `dbClient.rls()` wrapper enforces RLS policies |
-| Data access | Service functions already use RLS |
-| Admin operations | Never exposed to client (use `dbClient.admin` only in server actions/cron) |
-| Input validation | Zod schemas on API route inputs |
+| Authentication | Server actions already check session via `createClient()` |
+| Authorization | `dbClient.rls()` wrapper enforces RLS policies (already in services) |
+| Data access | Service functions/server actions already use RLS |
+| Admin operations | Never exposed to client (use `dbClient.admin` only in cron jobs) |
+| Input validation | Zod schemas already in server actions |
 
-**Example (Lead Drawer API route):**
+**Security is preserved because:**
+- Server actions run server-side (not exposed to client)
+- RLS policies are enforced in service layer
+- Authentication is checked in server actions
+- No changes to security model needed
+
+**Example (existing server action):**
 ```typescript
-// ✅ GOOD: RLS enforced, user can only access their account's leads
-const lead = await dbClient.rls((tx) =>
-  tx.query.leads.findFirst({ where: eq(leads.id, params.id) })
-);
+// src/actions/lead.actions.ts
+export async function getLeadDetails(leadId: string) {
+  const supabase = await createClient();
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error('Unauthorized');
 
-// ❌ BAD: Bypasses RLS, user could access any account's leads
-const lead = await dbClient.admin.query.leads.findFirst({ where: eq(leads.id, params.id) });
+  const dbClient = await createDrizzleSupabaseClient();
+
+  // ✅ RLS enforced - user can only access their account's leads
+  return dbClient.rls((tx) =>
+    tx.query.leads.findFirst({ where: eq(leads.id, leadId) })
+  );
+}
+
+// When called from SWR, security is maintained
+useSWR(['lead', leadId], () => getLeadDetails(leadId));
 ```
 
 ---
@@ -421,15 +525,10 @@ const lead = await dbClient.admin.query.leads.findFirst({ where: eq(leads.id, pa
 pnpm add swr
 ```
 
-**Step 2:** Create SWR provider and fetcher utility
-```typescript
-// src/lib/swr.ts
-export const fetcher = (url: string) => fetch(url).then(r => r.json());
-```
-
-**Step 3:** Create first API route (Lead Drawer)
+**Step 2:** Test SWR with existing server action (Lead Drawer)
 - Lowest risk, highest impact
 - Small component, no complex state interactions
+- No new routes needed
 
 ---
 
@@ -517,9 +616,15 @@ For each migration, verify:
 
 ### Do NOT create API routes for:
 
-❌ Mutations that use server actions (already optimal)
-❌ Cron jobs (use server-side admin access)
-❌ Webhooks (external triggers, not user-facing)
+❌ **Client-side data fetching** - Server actions work directly with SWR
+❌ **Mutations** - Server actions are already optimal
+❌ **Cron jobs** - Use server-side admin access
+❌ **Webhooks** - External triggers, not user-facing
+
+**API routes are only needed for:**
+- ✅ Public endpoints (no authentication)
+- ✅ External integrations (third-party services)
+- ✅ Webhooks (external triggers)
 
 ---
 
@@ -573,7 +678,13 @@ The current architecture is **solid and secure**. The recommended migrations are
 2. **Reduced server load** (Lead Drawer caching)
 3. **Better multi-user UX** (Kanban sync)
 
+**Key architectural decision:**
+- ✅ **Use SWR with existing server actions** (no API routes needed)
+- ✅ **Maintains codebase consistency** (server actions for both reads and writes)
+- ✅ **Preserves security model** (RLS enforcement unchanged)
+- ✅ **Less code to maintain** (no API route layer)
+
 **No breaking changes required.** All migrations can be done incrementally with backward compatibility.
 
-**Estimated total effort:** 3-4 weeks (1 developer)
-**Estimated ROI:** High (improved UX, reduced server costs, better multi-user support)
+**Estimated total effort:** 2-3 weeks (1 developer) - Reduced from 3-4 weeks due to no API routes
+**Estimated ROI:** High (improved UX, reduced server costs, better multi-user support, cleaner architecture)
