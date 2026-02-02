@@ -3,6 +3,7 @@
 import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
 import { accounts, type accountSettings } from "@/schema/account.schema";
 import { getUseraccount } from "@/services/account.service";
+import { pages } from "@/config/routes";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
@@ -30,7 +31,7 @@ export async function updateaccountSettings(
         .where(eq(accounts.id, account.id));
     });
 
-    revalidatePath("/settings");
+    revalidatePath(pages.settings);
 
     return { success: true };
   } catch (error) {

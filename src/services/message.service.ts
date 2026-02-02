@@ -10,6 +10,7 @@ import { leadNotes } from "@/schema/lead.schema";
 import { messages } from "@/schema/message.schema";
 import { getUseraccount } from "@/services/account.service";
 import { consumeCredit } from "@/services/credit.service";
+import { pages } from "@/config/routes";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
@@ -219,7 +220,7 @@ export async function logWhatsAppMessage(
         .where(eq(creditTransactions.id, creditResult.transaction.id));
     }
 
-    revalidatePath(`/leads/${leadId}`);
+    revalidatePath(pages.leads.detail(leadId));
 
     return { success: true };
   } catch (error) {

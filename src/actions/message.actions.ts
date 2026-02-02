@@ -9,6 +9,7 @@ import { formatZodError } from "@/lib/validation";
 import { messageTemplates } from "@/schema/message.schema";
 import { getUseraccount, getUserSession } from "@/services/account.service";
 import { textTemplateSchema, voiceTemplateSchema } from "@/validation-schemas";
+import { pages } from "@/config/routes";
 import { and, BinaryOperator, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -83,7 +84,7 @@ async function createTemplate<
       return tx.insert(messageTemplates).values(templateValues).returning();
     });
 
-    revalidatePath("/templates");
+    revalidatePath(pages.templates.list);
 
     return { success: true, template };
   } catch (error) {
@@ -123,7 +124,7 @@ export async function deleteTemplate(templateId: string) {
         .where(eq(messageTemplates.id, templateId));
     });
 
-    revalidatePath("/templates");
+    revalidatePath(pages.templates.list);
 
     return { success: true };
   } catch (error) {
@@ -211,7 +212,7 @@ export async function updateTemplate(
         .where(eq(messageTemplates.id, templateId));
     });
 
-    revalidatePath("/templates");
+    revalidatePath(pages.templates.list);
 
     return { success: true };
   } catch (error) {

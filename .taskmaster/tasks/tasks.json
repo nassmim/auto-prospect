@@ -1475,12 +1475,12 @@
         "dependencies": [
           "57"
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [],
         "complexity": 4,
         "recommendedSubtasks": 0,
         "expansionPrompt": "No expansion needed. The current routes.ts is only 34 lines with 11 route keys. The redesign is well-specified in the task details with exact target structure.",
-        "updatedAt": "2026-02-02T05:59:41.261Z"
+        "updatedAt": "2026-02-02T06:05:07.424Z"
       },
       {
         "id": "59",
@@ -1492,11 +1492,12 @@
         "dependencies": [
           "58"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [],
         "complexity": 1,
         "recommendedSubtasks": 0,
-        "expansionPrompt": "No expansion needed. Only 2-3 files need trivial key renames (e.g., pages.hunts → pages.hunts.list)."
+        "expansionPrompt": "No expansion needed. Only 2-3 files need trivial key renames (e.g., pages.hunts → pages.hunts.list).",
+        "updatedAt": "2026-02-02T06:05:52.760Z"
       },
       {
         "id": "60",
@@ -1508,11 +1509,12 @@
         "dependencies": [
           "58"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [],
         "complexity": 3,
         "recommendedSubtasks": 0,
-        "expansionPrompt": "No expansion needed. 7 files with well-documented line-by-line changes. Each change is a simple string replacement."
+        "expansionPrompt": "No expansion needed. 7 files with well-documented line-by-line changes. Each change is a simple string replacement.",
+        "updatedAt": "2026-02-02T06:06:14.707Z"
       },
       {
         "id": "61",
@@ -1524,11 +1526,12 @@
         "dependencies": [
           "58"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [],
         "complexity": 3,
         "recommendedSubtasks": 0,
-        "expansionPrompt": "No expansion needed. 6 files with well-documented replacements. Similar mechanical changes to task 60."
+        "expansionPrompt": "No expansion needed. 6 files with well-documented replacements. Similar mechanical changes to task 60.",
+        "updatedAt": "2026-02-02T06:06:38.401Z"
       },
       {
         "id": "62",
@@ -1556,11 +1559,12 @@
         "dependencies": [
           "58"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [],
         "complexity": 3,
         "recommendedSubtasks": 0,
-        "expansionPrompt": "No expansion needed. 5 files with 14 total revalidatePath replacements, all well-documented."
+        "expansionPrompt": "No expansion needed. 5 files with 14 total revalidatePath replacements, all well-documented.",
+        "updatedAt": "2026-02-02T06:07:02.139Z"
       },
       {
         "id": "64",
@@ -1618,9 +1622,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-02-02T05:59:41.263Z",
+      "lastModified": "2026-02-02T06:07:02.140Z",
       "taskCount": 66,
-      "completedCount": 50,
+      "completedCount": 54,
       "tags": [
         "master"
       ]

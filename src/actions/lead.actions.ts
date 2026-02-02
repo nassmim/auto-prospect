@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatZodError } from "@/lib/validation";
 import { leadNotes, leadReminders, leads } from "@/schema/lead.schema";
 import { leadNoteSchema, leadReminderSchema } from "@/validation-schemas";
+import { pages } from "@/config/routes";
 import { eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
@@ -44,7 +45,7 @@ export async function updateLeadStage(leadId: string, newStage: ELeadStage) {
       });
     });
 
-    revalidatePath("/leads");
+    revalidatePath(pages.leads.list);
 
     return { success: true };
   } catch (error) {
@@ -86,7 +87,7 @@ export async function updateLeadPosition(
       await tx.update(leads).set(updateData).where(eq(leads.id, leadId));
     });
 
-    revalidatePath("/leads");
+    revalidatePath(pages.leads.list);
 
     return { success: true };
   } catch (error) {
@@ -157,7 +158,7 @@ export async function bulkUpdateLeads(
       }
     });
 
-    revalidatePath("/leads");
+    revalidatePath(pages.leads.list);
 
     return { success: true, count: leadIds.length };
   } catch (error) {
@@ -198,7 +199,7 @@ export async function assignLead(leadId: string, userId: string | null) {
       });
     });
 
-    revalidatePath("/leads");
+    revalidatePath(pages.leads.list);
 
     return { success: true };
   } catch (error) {
@@ -243,7 +244,7 @@ export async function addLeadNote(leadId: string, content: unknown) {
       return newNote;
     });
 
-    revalidatePath(`/leads/${leadId}`);
+    revalidatePath(pages.leads.detail(leadId));
 
     return { success: true, note };
   } catch (error) {
@@ -293,7 +294,7 @@ export async function addLeadReminder(
       return newReminder;
     });
 
-    revalidatePath(`/leads/${leadId}`);
+    revalidatePath(pages.leads.detail(leadId));
 
     return { success: true, reminder };
   } catch (error) {
@@ -322,7 +323,7 @@ export async function deleteLeadReminder(reminderId: string) {
       await tx.delete(leadReminders).where(eq(leadReminders.id, reminderId));
     });
 
-    revalidatePath("/leads");
+    revalidatePath(pages.leads.list);
 
     return { success: true };
   } catch (error) {
