@@ -6,13 +6,14 @@
  */
 
 import { getSEOTags, generateProductSchema, generateBreadcrumbSchema } from "@/lib/seo";
+import { pages } from "@/config/routes";
 import type { Metadata } from "next";
 
 // Example 1: Simple static page metadata
 export const dashboardMetadata: Metadata = getSEOTags({
   title: "Tableau de bord",
   description: "Gérez vos campagnes de prospection et suivez vos résultats",
-  canonical: "/dashboard",
+  canonical: pages.dashboard,
 });
 
 // Example 2: Dynamic page with lead details
@@ -28,7 +29,7 @@ export function generateLeadMetadata(lead: {
   return getSEOTags({
     title: lead.ad.title,
     description: lead.ad.description?.slice(0, 160),
-    canonical: `/leads/${lead.id}`,
+    canonical: pages.leads.detail(lead.id),
     openGraph: {
       images: lead.ad.picture ? [lead.ad.picture] : undefined,
     },
@@ -47,7 +48,7 @@ export function generateHuntMetadata(hunt: {
     title: hunt.name,
     description: hunt.description,
     keywords: ["prospection", "automobile", "hunt", "leboncoin"],
-    canonical: `/hunts/${hunt.id}`,
+    canonical: pages.hunts.detail(hunt.id),
   });
 }
 
@@ -62,8 +63,8 @@ export const exampleProductSchema = generateProductSchema({
 // Example 5: Breadcrumb schema for navigation
 export const exampleBreadcrumbSchema = generateBreadcrumbSchema([
   { name: "Accueil", url: "/" },
-  { name: "Chasses", url: "/hunts" },
-  { name: "Ma chasse", url: "/hunts/123" },
+  { name: "Chasses", url: pages.hunts.list },
+  { name: "Ma chasse", url: pages.hunts.detail("123") },
 ]);
 
 // Example 6: Using in a page.tsx file (copy this pattern)
@@ -79,7 +80,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return getSEOTags({
     title: lead.ad.title,
     description: lead.ad.description?.slice(0, 160),
-    canonical: `/leads/${id}`,
+    canonical: pages.leads.detail(id),
     openGraph: {
       images: lead.ad.picture ? [lead.ad.picture] : undefined,
     },

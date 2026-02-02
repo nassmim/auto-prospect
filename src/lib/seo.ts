@@ -89,7 +89,7 @@ function buildRobotsDirective(noIndex: boolean, noFollow: boolean) {
  * export const metadata = getSEOTags({
  *   title: "Dashboard",
  *   description: "User dashboard",
- *   canonical: "/dashboard",
+ *   canonical: pages.dashboard,
  * }); // noIndex: true by default
  *
  * Usage (public page):
@@ -262,7 +262,7 @@ export function generateaccountSchema(): accountSchema {
  * Example:
  * generateBreadcrumbSchema([
  *   { name: "Accueil", url: "/" },
- *   { name: "Chasses", url: "/hunts" },
+ *   { name: "Chasses", url: pages.hunts.list },
  *   { name: "Ma chasse" } // Last item typically has no URL
  * ])
  */
