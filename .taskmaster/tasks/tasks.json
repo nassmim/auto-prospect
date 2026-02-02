@@ -1288,9 +1288,9 @@
         "testStrategy": "Load the hunts page. Verify it displays real hunts from the database with correct data (name, location, brands, status). Test with zero hunts (empty state). Create a new hunt via /hunts/new and verify it appears in the list. Verify hunt status badges and credit info display correctly.",
         "priority": "high",
         "dependencies": [],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [],
-        "updatedAt": "2026-02-02T05:39:53.591Z"
+        "updatedAt": "2026-02-02T05:40:34.377Z"
       },
       {
         "id": "52",
@@ -1300,7 +1300,7 @@
         "testStrategy": "Load the leads page. Verify the Kanban view shows real leads grouped by pipeline stage. Switch to List view and verify leads display in a table format. Test filtering with the LeadsFilters component. Verify lead cards are clickable and open the lead drawer. Test with zero leads (empty state).",
         "priority": "high",
         "dependencies": [],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -1308,9 +1308,10 @@
             "description": "Study the lead.schema.ts pipeline stages enum (ELeadStage in constants/enums.ts: nouveau, contacte, relance, gagne, perdu) and design the getPipelineLeads service function signature and return type that groups leads by stage for both KanbanView and ListView consumption.",
             "dependencies": [],
             "details": "1. Review `src/constants/enums.ts` for `ELeadStage` enum values (nouveau, contacte, relance, gagne, perdu). Note KanbanView also uses 'negociation' column — verify if this is in the enum or hardcoded.\n2. Ensure `leadStages` array and `LeadStage` type are properly exported from `src/schema/lead.schema.ts` — multiple components import these but they may not exist yet.\n3. Design the return type to satisfy BOTH component prop interfaces:\n   - KanbanView expects: `{ id, stage, position, ad: { title, price, picture, phoneNumber, isWhatsappPhone, zipcode: { name } } }`\n   - ListView expects: `{ id, stage, assignedToId, createdAt, ad: { title, price, phoneNumber, zipcode: { name } }, assignedTo: { name } | null }`\n4. Design a unified `PipelineLead` type that covers both views' needs (superset of both interfaces).\n5. Plan the query shape: fetch from `leads` table with relations to `ads` (including `zipcode`), `assignedTo` user, filtered by accountId, ordered by position within each stage.\n6. Define the filter parameters the service should accept: `huntId?: string`, `assignedToId?: string | 'unassigned'`, `searchQuery?: string`.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Verify the designed type satisfies both KanbanView and ListView prop interfaces with TypeScript compilation. Check that all ELeadStage values are accounted for in the query grouping.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-02-02T05:41:31.537Z"
           },
           {
             "id": 2,
@@ -1320,9 +1321,10 @@
               1
             ],
             "details": "1. Add `getPipelineLeads(filters?)` to `src/services/lead.service.ts` using Pattern 3 (RLS Only) from CLAUDE.md since this is always user-triggered.\n2. Use Drizzle relational query API (`dbClient.rls((tx) => tx.query.leads.findMany({...}))`) with:\n   - `with: { ad: { with: { zipcode: true } }, assignedTo: true }` for relations\n   - `where` clause filtering by accountId (from auth), optional huntId, optional assignedToId\n   - `orderBy: [asc(leads.stage), asc(leads.position)]` for Kanban ordering\n3. For search filter (`q` param), add a `like` condition on the related ad title field — this may require a subquery or post-filter depending on Drizzle's relational query capabilities.\n4. Handle the 'unassigned' filter case: `isNull(leads.assignedToId)` when assignedToId === 'unassigned', or `eq(leads.assignedToId, userId)` for specific user.\n5. Export the return type: `export type PipelineLead = Awaited<ReturnType<typeof getPipelineLeads>>[number]`.\n6. Verify the query respects RLS by using the rls wrapper — user's JWT auth.uid() ensures they only see their account's leads.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Call getPipelineLeads with no filters and verify it returns leads with populated ad, zipcode, and assignedTo relations. Test with each filter parameter individually. Verify RLS blocks cross-account access by checking query goes through rls wrapper.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-02-02T05:42:10.642Z"
           },
           {
             "id": 3,
@@ -1332,9 +1334,10 @@
               1
             ],
             "details": "1. Rename or refactor `src/app/(app)/leads/leads-page-client.tsx` to become a view component that accepts props.\n2. Update the component signature:\n   ```typescript\n   type LeadsPageViewProps = {\n     initialLeads: PipelineLead[];\n   };\n   export function LeadsPageView({ initialLeads }: LeadsPageViewProps) { ... }\n   ```\n3. Replace the placeholder text blocks (lines 53-56 for Kanban, lines 59-64 for List) with actual component rendering:\n   - Kanban mode: `<KanbanView initialLeads={initialLeads} />`\n   - List mode: `<ListView initialLeads={initialLeads} />`\n4. Keep the view mode toggle (Kanban/List) state management — this is client-side UI state and belongs here.\n5. Keep the `LeadsFilters` component rendering as-is (it already uses URL searchParams).\n6. Remove any unused imports and the TODO comment placeholders.\n7. The component should remain a client component (`'use client'`) since it manages view toggle state and renders interactive children.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Verify the component renders without errors when passed an empty array (empty state). Verify it renders KanbanView when in kanban mode and ListView when in list mode. Confirm TypeScript compiles with the new prop types.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-02-02T05:42:49.105Z"
           },
           {
             "id": 4,
@@ -1345,9 +1348,10 @@
               3
             ],
             "details": "1. Update `src/app/(app)/leads/page.tsx` to be an async Server Component:\n   ```typescript\n   import { getPipelineLeads } from '@/services/lead.service';\n   import { LeadsPageView } from './leads-page-view'; // or updated name\n\n   type LeadsPageProps = {\n     searchParams: Promise<{ hunt?: string; assigned?: string; q?: string }>;\n   };\n\n   export default async function LeadsPage({ searchParams }: LeadsPageProps) {\n     const params = await searchParams; // Next.js 16 async searchParams\n     const leads = await getPipelineLeads({\n       huntId: params.hunt,\n       assignedToId: params.assigned,\n       searchQuery: params.q,\n     });\n     return <LeadsPageView initialLeads={leads} />;\n   }\n   ```\n2. Note: In Next.js 15+, `searchParams` is a Promise that must be awaited.\n3. Pass the resolved filter params to `getPipelineLeads` service.\n4. Keep the page thin — only data fetching and delegation to view component per project conventions.\n5. Remove the direct `<LeadsPageClient />` import if it was renamed.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Navigate to /leads and verify the page loads with real data from the database. Test with URL params like /leads?hunt=xxx&assigned=me&q=search to verify server-side filtering works. Verify the page renders without errors when no leads exist.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-02-02T05:43:34.996Z"
           },
           {
             "id": 5,
@@ -1358,9 +1362,10 @@
               3
             ],
             "details": "1. Compare the `PipelineLead` type from the service with KanbanView's expected `Lead` type:\n   - KanbanView needs: `id, stage, position, ad.title, ad.price, ad.picture, ad.phoneNumber, ad.isWhatsappPhone, ad.zipcode.name`\n   - If the service returns more fields, that's fine (superset). If it returns fewer or differently named fields, update the service query.\n2. Compare with ListView's expected `Lead` type:\n   - ListView needs: `id, stage, assignedToId, createdAt, ad.title, ad.price, ad.phoneNumber, ad.zipcode.name, assignedTo.name`\n3. Update component type imports to use `PipelineLead` from the service instead of inline types, OR keep inline types if they serve as a narrower contract.\n4. Verify KanbanView's stage columns match the actual enum values — it currently renders 6 columns including 'negociation' which may not be in ELeadStage.\n5. Test that drag-and-drop in KanbanView still works with the new data shape (calls `updateLeadStage` action).\n6. Test that ListView's sorting and bulk selection work with the new data shape.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Render KanbanView with sample PipelineLead data and verify leads appear in correct stage columns. Render ListView and verify all columns populate correctly. Test drag-and-drop moves a lead between stages. Test bulk selection and stage update in ListView.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-02-02T05:43:37.007Z"
           },
           {
             "id": 6,
@@ -1375,7 +1380,8 @@
             "testStrategy": "Apply hunt filter and verify only leads from that hunt display. Apply assigned=me filter and verify only leads assigned to current user show. Apply search query and verify leads are filtered by ad title. Clear all filters and verify all leads return. Test that browser back/forward with filter URL params works correctly.",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2026-02-02T05:43:48.818Z"
       },
       {
         "id": "53",
@@ -1608,9 +1614,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-02-02T05:39:53.592Z",
+      "lastModified": "2026-02-02T05:43:48.818Z",
       "taskCount": 66,
-      "completedCount": 45,
+      "completedCount": 47,
       "tags": [
         "master"
       ]

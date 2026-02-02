@@ -320,3 +320,55 @@ export async function getLeadsSummaryStats(
     totalLeads: summaryStats[2].totalLeads,
   };
 }
+
+/**
+ * Fetches all leads for the pipeline/kanban view with minimal ad details
+ * Returns leads grouped for easy rendering in Kanban columns
+ */
+export async function getPipelineLeads() {
+  const dbClient = await createDrizzleSupabaseClient();
+
+  const pipelineLeads = await dbClient.rls(async (tx) => {
+    const rawLeads = await tx.query.leads.findMany({
+      orderBy: (table, { asc }) => [asc(table.stage), asc(table.position)],
+      with: {
+        ad: {
+          columns: {
+            id: true,
+            title: true,
+            price: true,
+            picture: true,
+            phoneNumber: true,
+            isWhatsappPhone: true,
+          },
+          with: {
+            location: {
+              columns: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // Transform to match KanbanView expected structure
+    return rawLeads.map((lead) => ({
+      id: lead.id,
+      stage: lead.stage,
+      position: lead.position,
+      ad: {
+        title: lead.ad.title,
+        price: lead.ad.price,
+        picture: lead.ad.picture,
+        phoneNumber: lead.ad.phoneNumber,
+        isWhatsappPhone: lead.ad.isWhatsappPhone,
+        zipcode: {
+          name: lead.ad.location.name,
+        },
+      },
+    }));
+  });
+
+  return pipelineLeads;
+}

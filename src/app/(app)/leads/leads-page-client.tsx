@@ -2,10 +2,19 @@
 
 import { useState } from "react";
 import { LeadsFilters } from "@/components/leads/leads-filters";
+import { KanbanView } from "@/components/leads/kanban-view";
 
 type ViewMode = "kanban" | "list";
 
-export function LeadsPageClient() {
+type Lead = Awaited<
+  ReturnType<typeof import("@/services/lead.service").getPipelineLeads>
+>[number];
+
+interface LeadsPageClientProps {
+  leads: Lead[];
+}
+
+export function LeadsPageClient({ leads }: LeadsPageClientProps) {
   const [viewMode, setViewMode] = useState<ViewMode>("kanban");
 
   return (
@@ -49,17 +58,12 @@ export function LeadsPageClient() {
       {/* Content Area */}
       <div className="flex-1 overflow-auto bg-zinc-950 p-4">
         {viewMode === "kanban" ? (
-          <div className="h-full">
-            {/* TODO: Fetch real leads data and pass to KanbanView */}
-            <p className="text-center text-zinc-400">
-              Kanban view implemented. Connect to data source.
-            </p>
-          </div>
+          <KanbanView initialLeads={leads} />
         ) : (
           <div className="h-full">
-            {/* TODO: Fetch real leads data and pass to ListView */}
+            {/* TODO: Implement ListView component */}
             <p className="text-center text-zinc-400">
-              List view implemented. Connect to data source.
+              List view coming soon.
             </p>
           </div>
         )}
