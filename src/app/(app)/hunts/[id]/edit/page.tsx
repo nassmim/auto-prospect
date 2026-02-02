@@ -25,14 +25,15 @@ export default async function EditHuntPage({
 }) {
   const { id } = await params;
 
-  let hunt;
-  try {
-    hunt = await getHuntById(id);
-  } catch (error) {
+  // Parallelize independent data fetches for faster page load
+  const [huntResult, templates] = await Promise.all([
+    getHuntById(id).catch(() => null),
+    getAccountTemplates(),
+  ]);
+
+  if (!huntResult) {
     notFound();
   }
 
-  const templates = await getAccountTemplates();
-
-  return <EditHuntView hunt={hunt} templates={templates} />;
+  return <EditHuntView hunt={huntResult} templates={templates} />;
 }
