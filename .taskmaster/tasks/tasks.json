@@ -1276,9 +1276,9 @@
         "testStrategy": "Load the dashboard page. Verify stats display real data from the database (check against direct DB queries). Verify active hunts list shows real hunts. Test with empty database (no hunts, no leads) to ensure graceful handling of zero states. Verify loading states work correctly.",
         "priority": "high",
         "dependencies": [],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [],
-        "updatedAt": "2026-02-02T05:37:08.330Z"
+        "updatedAt": "2026-02-02T05:39:35.425Z"
       },
       {
         "id": "51",
@@ -1288,8 +1288,9 @@
         "testStrategy": "Load the hunts page. Verify it displays real hunts from the database with correct data (name, location, brands, status). Test with zero hunts (empty state). Create a new hunt via /hunts/new and verify it appears in the list. Verify hunt status badges and credit info display correctly.",
         "priority": "high",
         "dependencies": [],
-        "status": "pending",
-        "subtasks": []
+        "status": "in-progress",
+        "subtasks": [],
+        "updatedAt": "2026-02-02T05:39:53.591Z"
       },
       {
         "id": "52",
@@ -1607,9 +1608,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-02-02T05:37:08.331Z",
+      "lastModified": "2026-02-02T05:39:53.592Z",
       "taskCount": 66,
-      "completedCount": 44,
+      "completedCount": 45,
       "tags": [
         "master"
       ]

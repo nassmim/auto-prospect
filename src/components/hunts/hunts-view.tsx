@@ -2,9 +2,9 @@ import { HuntCard } from "@/components/hunts/hunt-card";
 import { pages } from "@/config/routes";
 import Link from "next/link";
 
-// Type based on action return type
+// Type based on service return type
 type Hunt = Awaited<
-  ReturnType<typeof import("@/actions/hunt.actions").getaccountHunts>
+  ReturnType<typeof import("@/services/hunt.service").getAccountHunts>
 >[number];
 
 interface HuntsViewProps {
