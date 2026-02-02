@@ -1,6 +1,6 @@
 {
-  "id": "bcefddf8-055f-48ce-a188-8ec56df332e3",
-  "prevId": "7cec00d1-d1c9-41a3-8569-099e09f27ca8",
+  "id": "d6daeacc-e101-4026-ae60-794ec6dd5ded",
+  "prevId": "b9f0d439-e80b-4988-9d6e-d2f0985abce2",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1836,8 +1836,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "radiusInKm": {
-          "name": "radiusInKm",
+        "radius_in_km": {
+          "name": "radius_in_km",
           "type": "smallint",
           "primaryKey": false,
           "notNull": true,

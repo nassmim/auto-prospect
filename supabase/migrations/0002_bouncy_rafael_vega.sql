@@ -219,7 +219,7 @@ CREATE TABLE "hunts" (
 	"account_id" uuid NOT NULL,
 	"type_id" smallint NOT NULL,
 	"location_id" integer NOT NULL,
-	"radiusInKm" smallint DEFAULT 0 NOT NULL,
+	"radius_in_km" smallint DEFAULT 0 NOT NULL,
 	"name" varchar(255) NOT NULL,
 	"status" "hunt_status" DEFAULT 'paused' NOT NULL,
 	"auto_refresh" boolean DEFAULT true NOT NULL,

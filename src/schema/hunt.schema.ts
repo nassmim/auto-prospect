@@ -51,7 +51,7 @@ export const hunts = pgTable(
     locationId: integer("location_id")
       .references(() => locations.id)
       .notNull(),
-    radiusInKm: smallint().default(0).notNull(),
+    radiusInKm: smallint("radius_in_km").default(0).notNull(),
     name: varchar({ length: 255 }).notNull(),
     status: huntStatus().notNull().default(EHuntStatus.PAUSED),
     autoRefresh: boolean("auto_refresh").notNull().default(true),

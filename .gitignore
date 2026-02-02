@@ -68,3 +68,4 @@ node_modules/
 .claude/.auto-work-enabled
 
 seed.sql
+_seed.sql
