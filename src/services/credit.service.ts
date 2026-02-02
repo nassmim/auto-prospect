@@ -1,4 +1,4 @@
-import { ETransactionType } from "@/constants/enums";
+import { EContactChannel, ETransactionType } from "@/constants/enums";
 import { createDrizzleSupabaseClient, TDBQuery } from "@/lib/drizzle/dbClient";
 import {
   creditTransactions,
@@ -8,7 +8,8 @@ import {
   TConsumeCreditsParams,
   TConsumeCreditsResult,
 } from "@/types/payment.types";
-import { eq, sql } from "drizzle-orm";
+import { createClient } from "@/lib/supabase/server";
+import { eq, sql, desc } from "drizzle-orm";
 
 /**
  * Consumes one credit for a successful message send
@@ -130,4 +131,80 @@ export async function getHuntChannelCredits(
     consumed: credit.creditsConsumed,
     remaining: credit.creditsAllocated - credit.creditsConsumed,
   }));
+}
+
+/**
+ * Gets complete credit data for the authenticated user's account
+ * Used by the credits page to display balances, allocations, and transaction history
+ */
+export async function getAccountCredits() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("User not authenticated");
+  }
+
+  const dbClient = await createDrizzleSupabaseClient();
+
+  // Fetch credit balance, hunt allocations, and transaction history in parallel
+  const [balance, huntAllocations, transactions] = await Promise.all([
+    // Get account credit balance
+    dbClient.rls((tx: TDBQuery) =>
+      tx.query.creditBalances.findFirst({
+        where: (table, { eq }) => eq(table.accountId, user.id),
+      }),
+    ),
+
+    // Get hunt channel credit allocations with hunt names
+    dbClient.rls((tx: TDBQuery) =>
+      tx.query.huntChannelCredits.findMany({
+        with: {
+          hunt: {
+            columns: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      }),
+    ),
+
+    // Get recent credit transactions (last 50)
+    dbClient.rls((tx: TDBQuery) =>
+      tx.query.creditTransactions.findMany({
+        where: (table, { eq }) => eq(table.accountId, user.id),
+        orderBy: (table) => [desc(table.createdAt)],
+        limit: 50,
+      }),
+    ),
+  ]);
+
+  return {
+    balance: balance || {
+      sms: 0,
+      ringlessVoice: 0,
+      whatsappText: 0,
+      updatedAt: new Date(),
+    },
+    huntAllocations: huntAllocations.map((allocation) => ({
+      huntId: allocation.huntId,
+      huntName: allocation.hunt.name,
+      channel: allocation.channel as EContactChannel,
+      allocated: allocation.creditsAllocated,
+      consumed: allocation.creditsConsumed,
+      remaining: allocation.creditsAllocated - allocation.creditsConsumed,
+    })),
+    transactions: transactions.map((tx) => ({
+      id: tx.id,
+      type: tx.type as ETransactionType,
+      channel: tx.channel as EContactChannel,
+      amount: tx.amount,
+      balanceAfter: tx.balanceAfter,
+      createdAt: tx.createdAt,
+      metadata: tx.metadata,
+    })),
+  };
 }
