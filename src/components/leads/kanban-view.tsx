@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -17,7 +17,10 @@ import { LeadCard } from "./lead-card";
 import { LeadDrawer } from "./lead-drawer";
 import { KanbanColumn } from "./kanban-column";
 import { leadStages, type LeadStage } from "@/schema/lead.schema";
-import { updateLeadStage } from "@/actions/lead.actions";
+import { updateLeadStage, fetchPipelineLeads } from "@/actions/lead.actions";
+import { swrKeys } from "@/config/swr-keys";
+import { SWR_POLLING } from "@/hooks/use-swr-action";
+import useSWR from "swr";
 
 type Lead = {
   id: string;
@@ -49,10 +52,22 @@ const STAGE_LABELS: Record<LeadStage, string> = {
 };
 
 export function KanbanView({ initialLeads }: KanbanViewProps) {
-  const [leads, setLeads] = useState(initialLeads);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const isDraggingRef = useRef(false);
+
+  // Fetch pipeline leads with SWR polling
+  // Pause polling during drag operations to avoid UI jumps
+  const { data: leads = initialLeads, mutate } = useSWR(
+    swrKeys.leads.pipeline,
+    () => fetchPipelineLeads(),
+    {
+      fallbackData: initialLeads,
+      refreshInterval: isDraggingRef.current ? 0 : SWR_POLLING.KANBAN,
+      revalidateOnFocus: true,
+    },
+  );
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -60,10 +75,12 @@ export function KanbanView({ initialLeads }: KanbanViewProps) {
   );
 
   const handleDragStart = (event: DragStartEvent) => {
+    isDraggingRef.current = true;
     setActiveId(event.active.id as string);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
+    isDraggingRef.current = false;
     const { active, over } = event;
 
     if (!over) {
@@ -74,21 +91,26 @@ export function KanbanView({ initialLeads }: KanbanViewProps) {
     const leadId = active.id as string;
     const newStage = over.id as LeadStage;
 
-    // Optimistic update
-    setLeads((currentLeads) =>
-      currentLeads.map((lead) =>
-        lead.id === leadId ? { ...lead, stage: newStage } : lead,
-      ),
+    // Optimistic update with SWR
+    const optimisticLeads = leads.map((lead) =>
+      lead.id === leadId ? { ...lead, stage: newStage } : lead,
     );
+
+    mutate(optimisticLeads, {
+      revalidate: false,
+      optimisticData: optimisticLeads,
+    });
 
     // Server update
     startTransition(async () => {
       try {
         await updateLeadStage(leadId, newStage);
+        // Revalidate to get server truth
+        mutate();
       } catch (error) {
         console.error("Failed to update lead stage:", error);
-        // Revert optimistic update on error
-        setLeads(initialLeads);
+        // Rollback on error
+        mutate();
       }
     });
 
@@ -96,6 +118,7 @@ export function KanbanView({ initialLeads }: KanbanViewProps) {
   };
 
   const handleDragCancel = () => {
+    isDraggingRef.current = false;
     setActiveId(null);
   };
 
