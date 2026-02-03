@@ -1,11 +1,11 @@
 "use client";
 
 import { updateaccountSettings } from "@/actions/account.actions";
-import type { accountSettings } from "@/schema/account.schema";
+import { TAccountSettings } from "@/types/account.types";
 import { useState, useTransition } from "react";
 
 type MessagesTabProps = {
-  settings: accountSettings | null;
+  settings: TAccountSettings | null;
 };
 
 /**

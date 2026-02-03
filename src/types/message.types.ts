@@ -56,3 +56,13 @@ export type TActivityMetadata =
   | TNoteAddedMetadata
   | TReminderSetMetadata
   | Record<string, never>; // For 'created' type
+
+export type TTemplateVariables = {
+  titre_annonce?: string;
+  prix?: string;
+  marque?: string;
+  modele?: string;
+  annee?: string;
+  ville?: string;
+  vendeur_nom?: string;
+};

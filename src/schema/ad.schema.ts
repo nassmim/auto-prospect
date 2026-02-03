@@ -1,4 +1,4 @@
-import { accounts, TAccount } from "@/schema/account.schema";
+import { accounts, TAccountServer } from "@/schema/account.schema";
 import { messageChannel } from "@/schema/message.schema";
 import {
   InferInsertModel,
@@ -439,5 +439,5 @@ export const contactedAdsRelations = relations(contactedAds, ({ one }) => ({
 }));
 export type TContactedAd = InferSelectModel<typeof contactedAds> & {
   ad: TAd;
-  account: TAccount;
+  account: TAccountServer;
 };

@@ -3,6 +3,7 @@
  * Handles variable replacement and message formatting
  */
 
+import { pages } from "@/config/routes";
 import { EContactChannel } from "@/constants/enums";
 import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
 import { creditTransactions } from "@/schema/credits.schema";
@@ -10,19 +11,9 @@ import { leadNotes } from "@/schema/lead.schema";
 import { messages } from "@/schema/message.schema";
 import { getUseraccount } from "@/services/account.service";
 import { consumeCredit } from "@/services/credit.service";
-import { pages } from "@/config/routes";
+import { TTemplateVariables } from "@/types/message.types";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-
-type TemplateVariables = {
-  titre_annonce?: string;
-  prix?: string;
-  marque?: string;
-  modele?: string;
-  annee?: string;
-  ville?: string;
-  vendeur_nom?: string;
-};
 
 /**
  * Renders a message template by replacing variable placeholders
@@ -30,7 +21,7 @@ type TemplateVariables = {
  */
 export function renderTemplate(
   template: string,
-  variables: TemplateVariables,
+  variables: TTemplateVariables,
 ): string {
   let rendered = template;
 
@@ -71,7 +62,7 @@ export function extractLeadVariables(lead: {
     brand?: { name: string } | null;
     location: { name: string };
   };
-}): TemplateVariables {
+}): TTemplateVariables {
   return {
     titre_annonce: lead.ad.title,
     prix: lead.ad.price ? `${lead.ad.price.toLocaleString("fr-FR")} €` : "",
@@ -174,7 +165,6 @@ export async function logWhatsAppMessage(
     const creditResult = await consumeCredit({
       huntId: lead.huntId,
       channel: EContactChannel.WHATSAPP_TEXT,
-      bypassRLS: false, // User-triggered context - enforce RLS
     });
 
     if (!creditResult.success) {

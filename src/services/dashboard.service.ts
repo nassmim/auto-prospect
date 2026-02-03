@@ -1,8 +1,9 @@
+import { EContactChannel } from "@/constants/enums";
 import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
 import { messages } from "@/schema/message.schema";
-import { getTodayNewLeads, getContactedLeads } from "@/services/lead.service";
+import { getContactedLeads, getTodayNewLeads } from "@/services/lead.service";
 import { TDashboardStats } from "@/types/general.types";
-import { and, eq, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 /**
  * Fetches dashboard statistics for the current user's account
@@ -23,24 +24,24 @@ export async function getDashboardStats(): Promise<TDashboardStats> {
     const whatsappResult = await tx
       .select({ count: sql<number>`cast(count(*) as integer)` })
       .from(messages)
-      .where(eq(messages.channel, "whatsapp"));
+      .where(eq(messages.channel, EContactChannel.WHATSAPP_TEXT));
 
     // Get SMS messages count
     const smsResult = await tx
       .select({ count: sql<number>`cast(count(*) as integer)` })
       .from(messages)
-      .where(eq(messages.channel, "sms"));
+      .where(eq(messages.channel, EContactChannel.SMS));
 
-    // Get LeBonCoin messages count (if tracked)
-    const leboncoinResult = await tx
+    // Get Ringless Voice messages count
+    const ringlessVoiceResult = await tx
       .select({ count: sql<number>`cast(count(*) as integer)` })
       .from(messages)
-      .where(eq(messages.channel, "leboncoin"));
+      .where(eq(messages.channel, EContactChannel.RINGLESS_VOICE));
 
     return {
-      whatsapp: whatsappResult[0]?.count ?? 0,
-      sms: smsResult[0]?.count ?? 0,
-      leboncoin: leboncoinResult[0]?.count ?? 0,
+      [EContactChannel.WHATSAPP_TEXT]: whatsappResult[0]?.count ?? 0,
+      [EContactChannel.SMS]: smsResult[0]?.count ?? 0,
+      [EContactChannel.RINGLESS_VOICE]: ringlessVoiceResult[0]?.count ?? 0,
     };
   });
 

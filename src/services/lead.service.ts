@@ -3,24 +3,14 @@ import { createDrizzleSupabaseClient, TDBClient } from "@/lib/drizzle/dbClient";
 import { createClient } from "@/lib/supabase/server";
 import { leads } from "@/schema/lead.schema";
 import { messages } from "@/schema/message.schema";
-import { getUseraccount } from "@/services/account.service";
 import { TLeadsSummaryStats } from "@/types/hunt.types";
-import { and, eq, gte, sql } from "drizzle-orm";
+import { and, eq, gte, SQL, sql } from "drizzle-orm";
 
 /**
  * Fetch complete lead details with all relations
  * Used by lead drawer and full page view
  */
 export async function getLeadDetails(leadId: string) {
-  const supabase = await createClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (!session) {
-    throw new Error("Unauthorized");
-  }
-
   const dbClient = await createDrizzleSupabaseClient();
 
   try {
@@ -115,15 +105,6 @@ export async function getLeadAssociatedTeamMembers(leadId: string) {
  * Fetch message history for a lead
  */
 export async function getLeadMessages(leadId: string) {
-  const supabase = await createClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (!session) {
-    throw new Error("Unauthorized");
-  }
-
   const dbClient = await createDrizzleSupabaseClient();
 
   try {
@@ -153,15 +134,6 @@ export async function getLeadMessages(leadId: string) {
  * Fetch activity timeline for a lead
  */
 export async function getLeadActivities(leadId: string) {
-  const supabase = await createClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (!session) {
-    throw new Error("Unauthorized");
-  }
-
   const dbClient = await createDrizzleSupabaseClient();
 
   try {
@@ -235,17 +207,8 @@ export async function getContactedLeads(
 ): Promise<{ contactedLeadsCount: number }> {
   const client = dbClient || (await createDrizzleSupabaseClient());
 
-  const account = await getUseraccount(client, { columnsToKeep: { id: true } });
-  const accountId = account?.id;
-  if (!accountId) {
-    throw new Error("No account found for user");
-  }
-
   // Build where conditions dynamically based on whether huntId is provided
-  const whereConditions = [
-    eq(leads.accountId, accountId),
-    eq(leads.stage, ELeadStage.CONTACTE),
-  ];
+  const whereConditions = [eq(leads.stage, ELeadStage.CONTACTE)];
 
   if (huntId) {
     whereConditions.push(eq(leads.huntId, huntId));
@@ -274,24 +237,15 @@ export async function getTotalLeads(
 ): Promise<{ totalLeads: number }> {
   const client = dbClient || (await createDrizzleSupabaseClient());
 
-  const account = await getUseraccount(client, { columnsToKeep: { id: true } });
-  const accountId = account?.id;
-  if (!accountId) {
-    throw new Error("No account found for user");
-  }
-
   // Build where conditions dynamically based on whether huntId is provided
-  const whereConditions = [eq(leads.accountId, accountId)];
-
-  if (huntId) {
-    whereConditions.push(eq(leads.huntId, huntId));
-  }
+  let whereConditions: SQL<unknown>;
+  if (huntId) whereConditions = eq(leads.huntId, huntId);
 
   const totalLeads = await client.rls(async (tx) =>
     tx
       .select({ count: sql<number>`cast(count(*) as integer)` })
       .from(leads)
-      .where(and(...whereConditions)),
+      .where(whereConditions),
   );
 
   return {

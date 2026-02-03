@@ -1,50 +1,49 @@
 "use client";
 
-import { StatCard } from "@/components/dashboard/stat-card";
-import { HuntListItem } from "@/components/dashboard/hunt-list-item";
 import {
-  fetchDashboardStats,
   fetchActiveHunts,
-  type DashboardStats,
-  type HuntSummary,
+  fetchDashboardStats,
 } from "@/actions/dashboard.actions";
-import Link from "next/link";
+import { HuntListItem } from "@/components/dashboard/hunt-list-item";
+import { StatCard } from "@/components/dashboard/stat-card";
 import { pages } from "@/config/routes";
 import { swrKeys } from "@/config/swr-keys";
 import { SWR_POLLING } from "@/hooks/use-swr-action";
-import useSWR from "swr";
+import { TDashboardStats } from "@/types/general.types";
+import { THuntSummary } from "@/types/hunt.types";
 import { formatDistance } from "date-fns";
 import { fr } from "date-fns/locale";
-import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import useSWR from "swr";
 
 interface DashboardViewProps {
-  stats: DashboardStats;
-  hunts: HuntSummary[];
+  stats: TDashboardStats;
+  hunts: THuntSummary[];
 }
 
-export function DashboardView({ stats: initialStats, hunts: initialHunts }: DashboardViewProps) {
+export function DashboardView({
+  stats: initialStats,
+  hunts: initialHunts,
+}: DashboardViewProps) {
   const [lastUpdated, setLastUpdated] = useState(new Date());
 
   // Fetch dashboard stats with SWR polling
-  const {
-    data: stats = initialStats,
-    isValidating: isStatsValidating,
-  } = useSWR(swrKeys.dashboard.stats, () => fetchDashboardStats(), {
-    fallbackData: initialStats,
-    refreshInterval: SWR_POLLING.DASHBOARD,
-    revalidateOnFocus: true,
-    onSuccess: () => setLastUpdated(new Date()),
-  });
+  const { data: stats = initialStats, isValidating: isStatsValidating } =
+    useSWR(swrKeys.dashboard.stats, () => fetchDashboardStats(), {
+      fallbackData: initialStats,
+      refreshInterval: SWR_POLLING.DASHBOARD,
+      revalidateOnFocus: true,
+      onSuccess: () => setLastUpdated(new Date()),
+    });
 
   // Fetch active hunts with SWR polling
-  const {
-    data: hunts = initialHunts,
-    isValidating: isHuntsValidating,
-  } = useSWR(swrKeys.hunts.active, () => fetchActiveHunts(), {
-    fallbackData: initialHunts,
-    refreshInterval: SWR_POLLING.DASHBOARD,
-    revalidateOnFocus: true,
-  });
+  const { data: hunts = initialHunts, isValidating: isHuntsValidating } =
+    useSWR(swrKeys.hunts.active, () => fetchActiveHunts(), {
+      fallbackData: initialHunts,
+      refreshInterval: SWR_POLLING.DASHBOARD,
+      revalidateOnFocus: true,
+    });
 
   // Update timestamp display every 10 seconds
   const [, setTick] = useState(0);

@@ -30,7 +30,6 @@ export type TConsumeCreditsParams = {
   channel: EContactChannel;
   messageId?: string;
   recipient?: string;
-  bypassRLS?: boolean;
 };
 
 export type TConsumeCreditsResult =

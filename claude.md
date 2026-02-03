@@ -1,549 +1,103 @@
 # Auto-Prospect: AI Context
 
-**Automated prospection tool for professional resellers**
+**CRITICAL: Always examine existing codebase patterns and follow the same structure, naming, and organization. When in doubt, find similar code and replicate its approach.**
 
-## ⚠️ CRITICAL: Task Scope Discipline
+## Task Discipline
 
-**MANDATORY: Start EVERY task response with this acknowledgment:**
+**Start each task with:** `"I will focus ONLY on: [task]. Nothing more."`
 
-```
-"I will focus ONLY on: [brief restatement of the exact task requested]. Nothing more."
-```
+- Do ONLY what is requested - no extras, refactoring, or improvements
+- Ask for clarification if unclear BEFORE starting
+- Complete and stop
 
-**Rules:**
-- Do ONLY what is explicitly requested - no extra improvements, refactoring, or "while I'm here" changes
-- If the task is unclear, ask for clarification BEFORE starting
-- Resist the urge to add "helpful" extras unless explicitly requested
-- Complete the specific task, then stop and wait for next instruction
+## AUTO-WORK MODE (when active)
 
-## ⚡ AUTO-WORK MODE: Context Management
+**Start each task/subtask with:** `"🤖 AUTO-WORK MODE: [task]" + "Context: [X]% - will compact at 70%+"`
 
-**WHEN IN AUTO-WORK MODE ONLY:**
-
-**MANDATORY: Start EVERY task/subtask with:**
-```
-"🤖 AUTO-WORK MODE: Working on [task/subtask description]"
-"Context: [current]% used - will compact at 70%+"
-```
-
-**Context Window Rules:**
-- **Monitor context usage at the start of each task/subtask**
-- **At 70%+ context usage**: IMMEDIATELY run `/compact` before continuing
-- **Never** let context exceed 80% without compacting
-- **Always** compact between major task transitions
-- This applies ONLY in auto-work mode, not regular interactive sessions
-
-**Output Optimization (AUTO-WORK MODE ONLY):**
-- **DO NOT** announce what you will do or describe your plan before executing
-- **DO NOT** output verbose logs of tool calls or changes made
-- **Execute silently**: Run tools, make changes, update task status without commentary
-- **Only output**: Critical errors, questions requiring user input, or task completion confirmations
-- **Purpose**: Minimize context window usage and maximize efficiency in automated workflows
+- Monitor context at task start
+- At 70%+: run `/compact` immediately
+- Execute silently: no announcements, verbose logs, or commentary
+- Output only: errors, user questions, completion confirmations
 
 ## Tech Stack
-- **Next.js 16.1.1** (App Router) + React 19 + TypeScript
-- **Database**: Supabase (PostgreSQL) + Drizzle ORM
-- **Auth**: Supabase Auth (JWT, RLS)
-- **Styling**: Tailwind CSS 4 + shadcn/ui components
-- **Forms**: react-hook-form + Zod validation
-- **Data Fetching**: SWR (client-side) + TanStack Query (complex client state)
-- **Env**: dotenvx (multi-file), **pnpm** (not npm)
-
-## UI/UX Principles
-
-### Component Library
-- **shadcn/ui**: Use shadcn components for all UI elements
-- Components located in `src/components/ui/`
-- Follow shadcn styling patterns and conventions
-- Maintain consistent design system across the app
-
-### Form Validation (MANDATORY)
-- **ALWAYS use react-hook-form + Zod** for ALL forms
-- **Client-side validation**: Zod schema with react-hook-form
-- **Server-side validation**: Reuse same Zod schema in server actions
-- Never skip validation on either side
-- Pattern:
-  ```typescript
-  // schemas/validation.ts
-  export const huntFormSchema = z.object({
-    name: z.string().min(1, "Name is required"),
-    // ...
-  });
-
-  // Component
-  const form = useForm<z.infer<typeof huntFormSchema>>({
-    resolver: zodResolver(huntFormSchema),
-  });
-
-  // Server action
-  export async function createHunt(data: unknown) {
-    const validated = huntFormSchema.parse(data); // Throws if invalid
-    // ...
-  }
-  ```
-
-## Critical Paths
-```
-src/app/              → Next.js pages (App Router)
-src/actions/          → Server actions (client-callable RPC)
-src/services/         → Business logic (server-side only)
-src/lib/drizzle/      → DB client + RLS wrapper
-src/lib/supabase/     → Auth clients (browser/server)
-src/schema/           → Drizzle schemas (source of truth)
-src/config/swr-keys.ts → SWR cache key definitions
-src/hooks/use-swr-action.ts → SWR utilities and polling config
-src/providers/swr-provider.tsx → SWR global configuration
-supabase/migrations/  → Generated SQL (never edit manually)
-src/proxy.ts          → Auth middleware
-```
-
-## Data Architecture and Definition
-
-### Schema definition
-Always prefer drizzle-first built-in features when possible.
-For instance use:
-```typescript
-// Not good
-id: uuid()
-  .primaryKey()
-  .default(sql`gen_random_uuid()`)
-
-foreignKey({
-  columns: [table.typeId],
-  foreignColumns: [adTypes.id],
-  // But if you did need another name than the one automatically generated, then 
-  // it would make sense adopting this method to write the FK
-  name: "table_type_id_ad_types_id_fk", 
-}).onDelete("cascade")
-
-// Good
-id: uuid()
-  .primaryKey()
-  .defaultRandom()
-    
-typeId: smallint("type_id")
-  .references(() => adTypes.id)
-  .notNull()
-```
-
-## Database: Zero-Trust Security Model
-
-### RLS Architecture
-- **All tables MUST have RLS enabled** (automatic with `pgPolicy`)
-- JWT decoded → `auth.uid()` / `auth.jwt()` injected into Postgres session
-- Client wrapper: `src/lib/drizzle/rls/client-wrapper.ts`
-- Two modes: `admin` (bypasses RLS), `client` (enforces RLS)
-- **Auth always server-side**: Never handle auth or sensitive data on client
-
-### Database Drizzle Access
-
-**Choose the right pattern based on your use case:**
-
-#### Pattern 1: Dynamic (Both Admin and RLS Needed)
-Use when a function needs to run in **both** contexts (e.g., server action callable by users OR cron jobs).
-
-```typescript
-import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
+Next.js 16.1.1 (App Router) • React 19 • TypeScript • Supabase (PostgreSQL + Auth) • Drizzle ORM • Tailwind CSS 4 • shadcn/ui • react-hook-form + Zod • SWR • pnpm (not npm)
 
-async function getContactedAds(accountId: string, bypassRLS: boolean = false) {
-  const dbClient = await createDrizzleSupabaseClient();
+## UI/UX
+- **shadcn/ui**: All UI components from `src/components/ui/`
+- **Forms**: react-hook-form + Zod (client AND server validation - reuse same schema)
 
-  // Define query once, reuse for both modes
-  const query = (tx: TDBQuery) =>
-    tx.query.contactedAds.findMany({
-      where: (table, { eq }) => eq(table.accountId, accountId),
-      columns: { adId: true },
-    });
-
-  if (bypassRLS) return query(dbClient.admin); // Admin mode (bypasses RLS)
-  return dbClient.rls(query); // User mode (enforces RLS)
-}
-```
-
-**When to use:** Mixed-context functions (user-facing actions that admins/cron jobs may also call).
-
----
-
-#### Pattern 2: Admin Only (Bypass RLS)
-Use when the function **always** runs with admin privileges (e.g., cron jobs, system tasks, migrations).
-
-```typescript
-import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
-
-async function cronCleanupOldAds() {
-  const dbClient = await createDrizzleSupabaseClient();
-
-  // Direct admin access - no RLS wrapper needed
-  return dbClient.admin.query.contactedAds.findMany({
-    where: (table, { lt }) => lt(table.createdAt, new Date('2024-01-01')),
-  });
-}
-```
-
-**When to use:** Background jobs, system operations, data migrations, admin scripts.
-
----
-
-#### Pattern 3: RLS Only (User Context)
-Use when the function **always** runs in user context (e.g., user-triggered server actions, API routes).
-
-```typescript
-import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
-
-async function getUserContactedAds(accountId: string) {
-  const dbClient = await createDrizzleSupabaseClient();
-
-  // RLS enforced - user can only access their own data
-  return dbClient.rls((tx: TDBQuery) =>
-    tx.query.contactedAds.findMany({
-      where: (table, { eq }) => eq(table.accountId, accountId),
-      columns: { adId: true },
-    })
-  );
-}
-```
-
-**When to use:** Server actions, API routes, any user-triggered database operations.
-
-### Migration Workflow (STRICT)
-
-#### Development Phase (Pre-Production)
-**Current Status:** Migrations not yet applied to production database.
-
-```bash
-1. Modify schema:     src/schema/*.ts
-2. Generate:          pnpm db:generate
-3. Review SQL:        supabase/migrations/*.sql
-4. Commit:            schema + migration files
-```
-
-**❌ AI FORBIDDEN:**
-- `pnpm db:migrate-only` / `pnpm db:migrate` (apply migrations)
-- `pnpm db:dump` (dump seed data)
-- `drizzle-kit push` or `supabase db push`
-- `supabase stop`or `supabase stop --backup`
-- UI changes on Supabase dashboard
-- Manual SQL outside migrations
-
-**⚠️ INTERACTIVE MIGRATION GENERATION:**
-If `pnpm db:generate` requires user interaction (e.g., choosing between "create column" vs "rename column"), **STOP immediately** and inform the user:
-- Do NOT attempt to provide input programmatically
-- Tell the user to run `pnpm db:generate` manually and select the appropriate option
-- Document what option should be selected based on the schema changes
-
-**🚨 CRITICAL: Never Mix Drizzle-Generated SQL with Custom SQL**
-
-**The Rule:** Keep Drizzle-generated SQL and custom SQL (triggers, grants, functions) in **separate migration files**.
-
-**Why:** When preparing for production or cleaning up migrations, you need to clearly distinguish:
-- What Drizzle auto-generates (schema structure, RLS policies, indexes, FKs)
-- What you manually added (triggers, grants, custom functions)
-
-**Workflow for new tables:**
-```bash
-# Step 1: Schema changes → Drizzle migration (auto-generated SQL only)
-1. Modify schema: src/schema/*.ts
-2. Generate: pnpm db:generate
-3. Review: supabase/migrations/0005_some_name.sql (contains CREATE TABLE, RLS policy, etc.)
-
-# Step 2: Custom SQL → Separate custom migration
-4. Generate custom file: pnpm db:generate --custom
-5. Add grants/triggers: supabase/migrations/0006_custom_name.sql
-6. Add clear comment linking to the related Drizzle migration
-
-# Example:
-# 0005_living_ultimo.sql (Drizzle-generated)
-CREATE TABLE "hunt_channel_credits" (...);
-ALTER TABLE "hunt_channel_credits" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "enable all for hunt owners" ON "hunt_channel_credits" ...;
-
-# 0006_custom_grants_hunt.sql (Custom)
--- Custom migration: Grants for hunt_channel_credits table
--- Related to Drizzle migration: 0005_living_ultimo.sql
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE "public"."hunt_channel_credits" TO "authenticated", "service_role";
-```
-
-**Benefits:**
-- Easy to identify which migrations to keep/delete when consolidating for production
-- Clear separation of concerns
-- Custom migrations have descriptive comments linking to their related tables
-- If you delete a Drizzle migration, you know which custom migration to delete too
-
-### New Table Checklist
-
-**CRITICAL: Every new table MUST have explicit grants, even if RLS is enabled!**
-
-1. ✅ Define RLS policies in schema (see `src/schema/user.ts`)
-2. ✅ Run `pnpm db:generate` to create Drizzle migration
-3. ✅ Run `pnpm db:generate --custom` to create separate custom migration
-4. ✅ **Add explicit grants in the CUSTOM migration file**:
-   ```sql
-   -- Custom migration: Grants for my_table
-   -- Related to Drizzle migration: 0XXX_migration_name.sql
-   grant select, insert, update, delete on table public.my_table to authenticated, service_role;
-   ```
-   **Why:** Supabase requires explicit grants even with RLS enabled. Without grants, users cannot access the table even if RLS policies allow it.
-
-## GIT Setup
-When committing, be concise in the description. No need to indicate who is the 
-co-author like "Co-Authored-By:"
-
-## Key Patterns
-
-### Route Configuration
-- **All routes MUST use `src/config/routes.ts`** — never hardcode route strings
-- Import: `import { pages } from '@/config/routes'`
-- Static routes: `pages.dashboard`, `pages.settings`, `pages.hunts.list`
-- Dynamic routes: `pages.hunts.detail(huntId)`, `pages.leads.detail(leadId)`
-- revalidatePath: `revalidatePath(pages.hunts.list)`, `revalidatePath(pages.leads.detail(id))`
-- When adding a new page/route, add it to `routes.ts` first
-- External URLs (e.g., Chrome Web Store, ad URLs) are exempt
-
-### Auth Flow
-1. Supabase Auth → JWT token
-2. Middleware (`src/proxy.ts`) → session cookies
-3. Server components → `createClient()` (server.ts)
-4. Browser → `createClient()` (client.ts)
-5. DB queries → RLS wrapper injects JWT → policies evaluate
-
-## MCP Servers
-- `filesystem` → File operations
-- `next-devtools` → Next.js debugging
-- `supabase` → DB, storage, functions
-
-## Code Standards
-
-### Architecture
-- **Server Components by default**: Use `'use client'` only for: events, browser APIs, state, client libraries
-- **Page vs Component separation**: Keep `page.tsx` thin — only handle data fetching, routing, and server-side concerns. Move all UI logic, layouts, and presentation into separate components. Components should be routing-agnostic but rich in presentation logic.
-  ```typescript
-  // page.tsx - Thin, server-focused
-  export default async function HuntsPage() {
-    const hunts = await fetchHunts(); // Data fetching
-    return <HuntsView hunts={hunts} />; // Compose components
-  }
-
-  // hunts-view.tsx - Rich UI logic
-  export function HuntsView({ hunts }: { hunts: Hunt[] }) {
-    // All UI state, handlers, rendering logic here
-  }
-  ```
-
-#### Data Fetching Strategy
-
-**Server-Side by Default**: Prefer server components for data fetching (better performance, SEO, security).
-
-**Client-Side When Needed**: Use client-side data fetching when:
-1. **Avoiding prop drilling**: Data needed by multiple nested client components (passing through many layers would be cumbersome)
-2. **Frequently updating data**: Content updates regularly at runtime (real-time feeds, live status, polling)
-3. **User-specific interactions**: Data depends on client-side state/actions (filtering, sorting without page reload)
-4. **No SEO required**: Page doesn't need search engine indexing
-
-**Client-Side Fetching Libraries:**
-- **SWR (Recommended)**: For most client-side data fetching needs. Provides automatic caching, revalidation, focus tracking, interval refetching, optimistic updates.
-- **TanStack Query**: For complex client state management needs (dependent queries, infinite queries, parallel queries, complex cache invalidation)
-
-**Decision Matrix:**
-```
-Server-side (Server Components/Actions):
-  ✓ Initial page load data
-  ✓ SEO-critical content
-  ✓ Static or infrequently changing data
-  ✓ Data requiring authentication (RLS)
-  ✓ Large datasets (better performance)
-
-Client-side (SWR/TanStack Query):
-  ✓ Real-time/frequently updating data
-  ✓ Data needed by multiple nested client components
-  ✓ User-specific filters/sorts without page reload
-  ✓ Polling/interval refetching
-  ✗ Worse initial page load performance
-  ✗ No SEO benefits
-```
-
-#### SWR Integration Patterns
-
-**CRITICAL: Always use hybrid server+client pattern to preserve SSR benefits**
-
-**Standard Pattern (Hybrid SSR + SWR)**:
-```typescript
-// 1. Server Component (page.tsx) - Provides initial data
-export default async function DashboardPage() {
-  const stats = await getDashboardStats(); // Server-side fetch
-  return <DashboardView stats={stats} />;  // Pass as props
-}
-
-// 2. Client Component - Uses SWR with fallback
-"use client";
-import useSWR from "swr";
-import { swrKeys } from "@/config/swr-keys";
-import { fetchDashboardStats } from "@/actions/dashboard.actions";
-import { SWR_POLLING } from "@/hooks/use-swr-action";
-
-export function DashboardView({ stats: initialStats }: Props) {
-  const { data: stats = initialStats } = useSWR(
-    swrKeys.dashboard.stats,
-    () => fetchDashboardStats(),
-    {
-      fallbackData: initialStats,      // Prevents loading spinner on mount
-      refreshInterval: SWR_POLLING.DASHBOARD, // Auto-refresh every 60s
-      revalidateOnFocus: true,         // Refresh on tab focus
-    }
-  );
-  // Component renders with initialStats immediately, then SWR takes over
-}
-
-// 3. Server Action Wrapper (src/actions/*.actions.ts)
-"use server";
-export async function fetchDashboardStats() {
-  return getDashboardStats(); // Delegates to service
-}
-```
-
-**SWR Cache Keys (`src/config/swr-keys.ts`)**:
-- **ALWAYS import from `swrKeys`** — never hardcode strings
-- Static keys: `swrKeys.dashboard.stats`, `swrKeys.credits.balance`
-- Parameterized keys: `swrKeys.leads.drawer(leadId)`, `swrKeys.hunts.detail(huntId)`
-- Pattern: `"resource-subresource"` or `["resource", param]` for parameterized
-
-Example:
-```typescript
-// src/config/swr-keys.ts
-export const swrKeys = {
-  dashboard: {
-    stats: "dashboard-stats" as const,
-  },
-  leads: {
-    pipeline: "leads-pipeline" as const,
-    drawer: (id: string) => ["lead-drawer", id] as const,
-  },
-};
-```
-
-**Optimistic Updates Pattern**:
-```typescript
-const { data, mutate } = useSWR(swrKeys.hunts.list, fetchAccountHunts);
-
-async function handleDelete(huntId: string) {
-  // 1. Optimistic update - instant UI feedback
-  await mutate(
-    data?.filter(h => h.id !== huntId),
-    { revalidate: false }
-  );
-
-  try {
-    // 2. Server mutation
-    await deleteHunt(huntId);
-    // 3. Revalidate to sync with server
-    await mutate();
-  } catch {
-    // 4. Rollback on error
-    await mutate();
-  }
-}
-```
-
-**Polling Configuration (`src/hooks/use-swr-action.ts`)**:
-```typescript
-export const SWR_POLLING = {
-  DASHBOARD: 60_000,  // 60 seconds
-  KANBAN: 30_000,     // 30 seconds (faster for real-time)
-  CREDITS: 60_000,    // 60 seconds
-} as const;
-```
-
-**Conditional Polling (Pause During Interactions)**:
-```typescript
-const isDraggingRef = useRef(false);
-
-const { data } = useSWR(key, fetcher, {
-  refreshInterval: isDraggingRef.current ? 0 : SWR_POLLING.KANBAN,
-});
-
-// Pause polling during drag operations to avoid UI jumps
-const handleDragStart = () => { isDraggingRef.current = true; };
-const handleDragEnd = () => { isDraggingRef.current = false; };
-```
-
-**When NOT to use SWR**:
-- ❌ Initial page load only (use server component directly)
-- ❌ SEO-critical content (defeats SSR purpose)
-- ❌ One-time mutations (use server actions directly)
-- ❌ Security-sensitive settings (minimize client-side exposure)
-
-#### Server Actions vs Services Pattern
-
-**CRITICAL: Understand when to use server actions vs services**
-
-**Server Actions (`src/actions/*.actions.ts`):**
-- **MUST use** when the function is invoked directly from client-side code
-- Always marked with `"use server"` directive
-- Invoked from client components via form actions or event handlers
-- Examples: Form submissions, button click handlers, mutations triggered by user interactions
-
-**Services (`src/services/*.service.ts`):**
-- **Use for** reusable server-side logic that is NOT directly invoked from client
-- Called by server actions, API routes, server components, or other services
-- Can use Drizzle, external APIs, or any server-side libraries
-- Examples: Business logic, data transformations, external API integrations
-- No `"use server"` directive needed
-
-**Decision Tree:**
-1. **Is the function called directly from client-side code?**
-   - YES → Server Action (`src/actions/`)
-   - NO → Continue to step 2
-
-2. **Is it reusable logic used by multiple server actions or server components?**
-   - YES → Service (`src/services/`)
-   - NO → Continue to step 3
-
-3. **Does it need to expose an endpoint for external services/webhooks?**
-   - YES → API Route (`src/app/api/`)
-   - NO → Default to Service
-
-**Key Points:**
-- Drizzle can be used in BOTH server actions AND services (server-side only)
-- Server actions are just a special type of server function with RPC capabilities
-- Services are for abstracting reusable business logic away from server actions
-- Utils (`src/utils/`) are for client-side or isomorphic logic only
-
-**Preference order**: Services → Server Actions → API Routes (last resort)
-
-### Code Style
-- **Functional over classes**: Prefer functions, avoid OOP patterns
-- **Named exports**: Always use named exports (not default)
-- **Descriptive names**: `isLoading`, `hasError`, `handleClick` patterns
-- **Early returns**: Handle errors/edge cases at function start
-- **Comment complex logic**: Explain non-obvious business rules and edge cases (present tense, no history)
-- **TypeScript strict**: No `any`, prefer type inference, interfaces over types
-
-### Comments & Insights (Explanatory Output Style)
-- **Only comment non-obvious logic**: Skip comments for self-explanatory code (e.g., `users.map(user => user.id)`)
-- **Insight triggers**: Complex algorithms, non-standard patterns, business rules, security considerations, performance trade-offs
-- **Skip insights for**: Standard operations (map/filter/reduce), CRUD operations, simple conditionals, obvious type definitions
-
-### Naming Conventions
-- **PascalCase**: Components, Types, Interfaces
-- **kebab-case**: Files (`user-profile.tsx`), directories (`auth-wizard/`)
-- **camelCase**: Variables, functions, hooks, props
-- **UPPERCASE**: Env vars, constants
-
-### Performance
-- **Avoid unnecessary state**: Prefer derived state, URL params, SSR caching
-- **Dynamic imports**: Code splitting for non-critical components
-- **Proper keys**: Never use array index as key
-
-### Security & Validation
-- **Always validate**: Both client + server (use Zod when available)
-- **Security over UX**: Prioritize security in all decisions
-- **Input sanitization**: Prevent XSS, follow provider security guidelines
-
-## Project Principles
-1. **Single source of truth**: Drizzle schema + migrations (never UI/manual SQL)
-2. **Zero-trust security**: RLS on every table, explicit grants, JWT-based auth
-3. **Type safety**: Full TypeScript, Drizzle type-safe queries
-4. **Team sync**: Migrations in git, seed data exportable
-5. **Environment separation**: Dev/prod configs isolated with dotenvx
+## Key Directories
+`src/app/` pages • `src/actions/` server actions • `src/services/` business logic • `src/lib/drizzle/` DB+RLS • `src/schema/` Drizzle schemas • `src/config/` routes & SWR keys • `supabase/migrations/` SQL (never edit manually)
+
+## Database Patterns
+
+**Schema**: Use Drizzle built-ins (`.defaultRandom()`, `.references()`) - examine `src/schema/` files for patterns
+
+**RLS (Row Level Security)**
+- All tables have RLS enabled (via `pgPolicy` in schema)
+- Auth always server-side
+- DB access: `createDrizzleSupabaseClient()` → use `dbClient.admin` (bypass RLS) or `dbClient.rls(query)` (enforce RLS)
+- Pattern 1 (dynamic): `if (bypassRLS) query(dbClient.admin) else dbClient.rls(query)` - for mixed contexts
+- Pattern 2 (admin only): `dbClient.admin.query...` - for cron jobs, system tasks
+- Pattern 3 (RLS only): `dbClient.rls((tx) => tx.query...)` - for user-triggered actions
+- **Examine existing services to see patterns**
+
+**Migrations**
+1. Modify schema: `src/schema/*.ts`
+2. Generate: `pnpm db:generate`
+3. Review SQL: `supabase/migrations/*.sql`
+4. Commit
+
+**FORBIDDEN:** `pnpm db:migrate`, `drizzle-kit push`, `supabase db push`, Supabase UI changes, manual SQL outside migrations
+
+**Interactive prompts**: If `pnpm db:generate` prompts for input (create vs rename), STOP and tell user to run manually
+
+**Separate migrations**: Drizzle-generated (tables, RLS) and custom SQL (grants, triggers) in different files
+- Step 1: `pnpm db:generate` (Drizzle migration)
+- Step 2: `pnpm db:generate --custom` (custom migration with grants)
+
+**New table checklist**:
+1. Define RLS policies in schema (see `src/schema/user.ts` for pattern)
+2. `pnpm db:generate`
+3. `pnpm db:generate --custom` → add the ncessary grants. For instance authenticated users and service role can perform all crud operations to table X: `grant select, insert, update, delete on table public.X to authenticated, service_role;`
+
+**Git**: Concise commit messages, no "Co-Authored-By:"
+
+## Core Patterns
+
+**No hardcoded values**: Never hardcode strings, numbers, routes, keys, or any constants. Use config files in `src/config/` or create new ones as needed. For instance: 
+  - **Routes**: Always use `src/config/routes.ts` - import `pages`, add new routes there first
+  - **SWR keys**: Always use `src/config/swr-keys.ts` - never use string literals
+**Auth**: Supabase Auth → JWT → middleware (`src/proxy.ts`) → server/client `createClient()` → RLS policies
+
+## Architecture & Patterns
+
+**CRITICAL: Examine existing codebase for patterns. Don't invent - replicate.**
+
+**Pages**: `page.tsx` = thin (data fetch + composition). UI logic → separate view components
+**Components**: Server by default. `'use client'` only for: events, browser APIs, state, client libraries
+
+**Data Fetching**:
+- Server-side default (SSR, SEO, security)
+- Client-side (SWR) when: frequently updating data, prop drilling avoidance, polling needed
+- **Hybrid pattern**: Server fetches initial → client component uses SWR with `fallbackData`
+- Polling config: use constants from `src/hooks/use-swr-action.ts` (SWR_POLLING)
+- Optimistic updates: mutate with `revalidate: false` → server action → mutate again (or rollback on error)
+
+**Server Actions vs Services**:
+- `src/actions/*.actions.ts`: Client-callable (`"use server"`), thin wrappers
+- `src/services/*.service.ts`: Reusable server logic, business rules
+- Preference: Services → Server Actions → API Routes
+
+**Code Style**:
+- Functional (no classes), named exports (no default)
+- Early returns, descriptive names (`isLoading`, `handleClick`)
+- TypeScript strict (no `any`)
+- Comment only complex/non-obvious logic
+
+**Naming**: PascalCase (components/types), kebab-case (files/dirs), camelCase (vars/funcs), UPPERCASE (env/constants)
+**Validation**: react-hook-form + Zod (client AND server - reuse schema)
+**Performance**: Avoid unnecessary state, dynamic imports, proper React keys
 
 ## Task Master AI Instructions
 **Import Task Master's development workflow commands and guidelines, treat as if import is in the main CLAUDE.md file.**

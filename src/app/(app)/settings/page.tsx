@@ -1,24 +1,19 @@
-import {
-  getCurrentaccount,
-  getaccountInvitations,
-  getteamMembers,
-} from "@/actions/account.actions";
+import { getUseraccount } from "@/services/account.service";
+import { getTeamMembers } from "@/services/team.service";
 import { SettingsPageClient } from "./settings-page-client";
 
 export default async function SettingsPage() {
   // Fetch initial data for settings page
-  const [orgData, members, invitations] = await Promise.all([
-    getCurrentaccount(),
-    getteamMembers(),
-    getaccountInvitations(),
+  const [account, members] = await Promise.all([
+    getUseraccount(),
+    getTeamMembers(),
   ]);
 
   return (
     <SettingsPageClient
-      account={orgData.account}
-      userRole={orgData.role}
+      account={account}
+      userRole={"owner"}
       initialMembers={members}
-      initialInvitations={invitations}
     />
   );
 }

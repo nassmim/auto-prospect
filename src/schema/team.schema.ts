@@ -125,8 +125,8 @@ export const teamMembers = pgTable(
     // }),
   ],
 );
-export type TaccountMemberInsert = InferInsertModel<typeof teamMembers>;
-export type TaccountMember = InferSelectModel<typeof teamMembers>;
+export type TTeamMemberInsert = InferInsertModel<typeof teamMembers>;
+export type TTeamMember = InferSelectModel<typeof teamMembers>;
 
 // // account invitations table - manages pending invites with secure tokens
 // export const accountInvitations = pgTable(

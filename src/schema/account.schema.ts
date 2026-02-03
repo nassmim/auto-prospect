@@ -1,4 +1,5 @@
 import { EaccountType } from "@/constants/enums";
+import { TAccountSettings } from "@/types/account.types";
 import { InferSelectModel, sql } from "drizzle-orm";
 import {
   jsonb,
@@ -10,14 +11,6 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { authenticatedRole, authUid } from "drizzle-orm/supabase";
-
-// account settings type for JSONB field
-export type accountSettings = {
-  allowReassignment?: boolean;
-  restrictVisibility?: boolean;
-  dailyReset?: boolean;
-  ignorePhonesVisible?: boolean;
-};
 
 // Types of accounts
 export const accountType = pgEnum(
@@ -38,7 +31,7 @@ export const accounts = pgTable(
     smsApiKey: varchar("sms_api_key", { length: 500 }),
     // account type discriminator
     type: accountType("type").notNull().default(EaccountType.PERSONAL),
-    settings: jsonb().$type<accountSettings>(),
+    settings: jsonb().$type<TAccountSettings>(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -72,4 +65,4 @@ export const accounts = pgTable(
     }),
   ],
 );
-export type TAccount = InferSelectModel<typeof accounts>;
+export type TAccountServer = InferSelectModel<typeof accounts>;

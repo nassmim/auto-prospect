@@ -4,29 +4,22 @@ import { ConnectedAccountsTab } from "@/components/settings/connected-accounts-t
 import { FiltersTab } from "@/components/settings/filters-tab";
 import { MessagesTab } from "@/components/settings/messages-tab";
 import { TeamTab } from "@/components/settings/team-tab";
-import type { accountSettings } from "@/schema/account.schema";
+import type { TAccountClient } from "@/types/account.types";
+import type { TTeamMembersWithAccount } from "@/types/team.types";
 import { useState } from "react";
 
 type Tab = "accounts" | "filters" | "messages" | "team";
 
 type SettingsPageClientProps = {
-  account: {
-    id: string;
-    name: string;
-    ownerId: string;
-    settings: accountSettings | null;
-    createdAt: Date;
-  };
+  account: TAccountClient;
   userRole: "owner" | "admin" | "user";
-  initialMembers: any[];
-  initialInvitations: any[];
+  initialMembers: TTeamMembersWithAccount;
 };
 
 export function SettingsPageClient({
   account,
   userRole,
   initialMembers,
-  initialInvitations,
 }: SettingsPageClientProps) {
   const [activeTab, setActiveTab] = useState<Tab>("accounts");
 
@@ -153,7 +146,6 @@ export function SettingsPageClient({
             account={account}
             userRole={userRole}
             initialMembers={initialMembers}
-            initialInvitations={initialInvitations}
           />
         )}
       </div>

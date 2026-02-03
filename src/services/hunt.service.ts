@@ -136,7 +136,6 @@ async function contactAdsOwners(
       channel: allocation.channel,
       messageId: undefined, // Will be set when actual sending is implemented
       recipient: undefined, // Will be set when actual sending is implemented
-      bypassRLS: true, // Background job - bypass RLS
     });
 
     // Only track if credit consumption succeeded
@@ -206,12 +205,12 @@ export async function getAccountHunts() {
     });
   });
 
-  // Fetch all channel credits for these hunts
-  const huntIds = huntsData.map((h) => h.id);
-
-  if (huntIds.length === 0) {
+  if (huntsData.length === 0) {
     return [];
   }
+
+  // Fetch all channel credits for these hunts
+  const huntIds = huntsData.map(({ id }) => id);
 
   const allChannelCredits = await dbClient.rls(async (tx) => {
     return tx.query.huntChannelCredits.findMany({
@@ -285,12 +284,10 @@ export async function getActiveHunts(): Promise<THuntSummary[]> {
     // Get lead counts for each hunt
     const huntSummaries: THuntSummary[] = await Promise.all(
       huntsData.map(async (hunt) => {
-        const { totalLeads } = await getTotalLeads(hunt.id, dbClient);
-
-        const { contactedLeadsCount } = await getContactedLeads(
-          hunt.id,
-          dbClient,
-        );
+        const [{ totalLeads }, { contactedLeadsCount }] = await Promise.all([
+          getTotalLeads(hunt.id, dbClient),
+          getContactedLeads(hunt.id, dbClient),
+        ]);
 
         return {
           id: hunt.id,

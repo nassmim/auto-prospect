@@ -8,21 +8,17 @@ import {
   TConsumeCreditsParams,
   TConsumeCreditsResult,
 } from "@/types/payment.types";
-import { createClient } from "@/lib/supabase/server";
-import { eq, sql, desc } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 
 /**
  * Consumes one credit for a successful message send
  * Uses database transaction with row-level locking to prevent race conditions
- *
- * @param bypassRLS - If true, uses admin mode (for background jobs). If false, uses RLS mode (for user-triggered actions). Defaults to false.
  */
 export async function consumeCredit({
   huntId,
   channel,
   messageId,
   recipient,
-  bypassRLS = false,
 }: TConsumeCreditsParams): Promise<TConsumeCreditsResult> {
   const dbClient = await createDrizzleSupabaseClient();
 
@@ -92,10 +88,8 @@ export async function consumeCredit({
       return transaction;
     };
 
-    // Execute with transaction for atomicity, choosing admin vs RLS mode (CLAUDE.md Pattern 1)
-    const result = bypassRLS
-      ? await dbClient.admin.transaction(transactionLogic)
-      : await dbClient.rls(transactionLogic);
+    // Execute with transaction for atomicity
+    const result = await dbClient.admin.transaction(transactionLogic);
 
     return { success: true, transaction: result };
   } catch (error) {
@@ -138,25 +132,12 @@ export async function getHuntChannelCredits(
  * Used by the credits page to display balances, allocations, and transaction history
  */
 export async function getAccountCredits() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    throw new Error("User not authenticated");
-  }
-
   const dbClient = await createDrizzleSupabaseClient();
 
   // Fetch credit balance, hunt allocations, and transaction history in parallel
   const [balance, huntAllocations, transactions] = await Promise.all([
     // Get account credit balance
-    dbClient.rls((tx: TDBQuery) =>
-      tx.query.creditBalances.findFirst({
-        where: (table, { eq }) => eq(table.accountId, user.id),
-      }),
-    ),
+    dbClient.rls((tx: TDBQuery) => tx.query.creditBalances.findFirst()),
 
     // Get hunt channel credit allocations with hunt names
     dbClient.rls((tx: TDBQuery) =>
@@ -175,7 +156,6 @@ export async function getAccountCredits() {
     // Get recent credit transactions (last 50)
     dbClient.rls((tx: TDBQuery) =>
       tx.query.creditTransactions.findMany({
-        where: (table, { eq }) => eq(table.accountId, user.id),
         orderBy: (table) => [desc(table.createdAt)],
         limit: 50,
       }),

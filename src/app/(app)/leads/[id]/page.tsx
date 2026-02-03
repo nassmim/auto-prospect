@@ -1,12 +1,13 @@
-import { notFound } from "next/navigation";
+import { LeadDetailView } from "@/components/leads/lead-detail-view";
+import { pages } from "@/config/routes";
+import { getSEOTags } from "@/lib/seo";
 import {
+  getLeadActivities,
   getLeadDetails,
   getLeadMessages,
-  getLeadActivities,
-} from "@/actions/lead.actions";
+} from "@/services/lead.service";
 import type { Metadata } from "next";
-import { getSEOTags } from "@/lib/seo";
-import { LeadDetailView } from "@/components/leads/lead-detail-view";
+import { notFound } from "next/navigation";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -19,18 +20,14 @@ export async function generateMetadata({
 
   try {
     const lead = await getLeadDetails(id);
-    const vehicleInfo = [
-      lead.ad.brand?.name,
-      lead.ad.model,
-      lead.ad.modelYear,
-    ]
+    const vehicleInfo = [lead.ad.brand?.name, lead.ad.model, lead.ad.modelYear]
       .filter(Boolean)
       .join(" ");
 
     return getSEOTags({
       title: lead.ad.title,
       description: lead.ad.description || `Détails du lead pour ${vehicleInfo}`,
-      canonical: `/leads/${id}`,
+      canonical: `/${pages.leads}/${id}`,
       openGraph: {
         type: "article",
         images: lead.ad.picture ? [lead.ad.picture] : undefined,
@@ -66,5 +63,12 @@ export default async function LeadDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  return <LeadDetailView lead={lead} messages={messages} activities={activities} leadId={id} />;
+  return (
+    <LeadDetailView
+      lead={lead}
+      messages={messages}
+      activities={activities}
+      leadId={id}
+    />
+  );
 }

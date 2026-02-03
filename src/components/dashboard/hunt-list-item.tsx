@@ -1,13 +1,13 @@
 "use client";
 
-import { HuntSummary } from "@/actions/dashboard.actions";
 import { pages } from "@/config/routes";
+import { THuntSummary } from "@/types/hunt.types";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import Link from "next/link";
 
 export type HuntListItemProps = {
-  hunt: HuntSummary;
+  hunt: THuntSummary;
   onPauseToggle?: (huntId: string, newStatus: "active" | "paused") => void;
 };
 

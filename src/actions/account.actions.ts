@@ -1,17 +1,18 @@
 "use server";
 
-import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
-import { accounts, type accountSettings } from "@/schema/account.schema";
-import { getUseraccount } from "@/services/account.service";
 import { pages } from "@/config/routes";
+import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
+import { accounts } from "@/schema/account.schema";
+import { getUseraccount } from "@/services/account.service";
+import { TAccountSettings } from "@/types/account.types";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 /**
  * Updates account settings (partial update)
  */
-export async function updateaccountSettings(
-  settings: Partial<accountSettings>,
+export async function updateAccountSettings(
+  settings: Partial<TAccountSettings>,
 ) {
   const dbClient = await createDrizzleSupabaseClient();
 

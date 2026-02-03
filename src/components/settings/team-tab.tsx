@@ -1,24 +1,15 @@
 "use client";
 
-import {
-  addTeamMember,
-  removeTeamMember,
-  updateaccountName,
-  updateaccountSettings,
-} from "@/actions/account.actions";
-import type { accountSettings, TaccountMember } from "@/schema/account.schema";
+import { updateAccountSettings } from "@/actions/account.actions";
+import { addTeamMember, removeTeamMember } from "@/actions/team.actions";
+import type { TAccountClient } from "@/types/account.types";
+import type { TTeamMembersWithAccount } from "@/types/team.types";
 import { useState, useTransition } from "react";
 
 type TeamTabProps = {
-  account: {
-    id: string;
-    name: string;
-    ownerId: string;
-    settings: accountSettings | null;
-    createdAt: Date;
-  };
+  account: TAccountClient;
   userRole: "owner" | "admin" | "user";
-  initialMembers: TaccountMember[];
+  initialMembers: TTeamMembersWithAccount;
 };
 
 /**
@@ -31,7 +22,7 @@ export function TeamTab({ account, userRole, initialMembers }: TeamTabProps) {
   const [success, setSuccess] = useState<string | null>(null);
 
   // account name
-  const [orgName, setOrgName] = useState(account.name);
+  const [orgName, setOrgName] = useState(account.name || "");
 
   // Team settings
   const [allowReassignment, setAllowReassignment] = useState(
@@ -59,7 +50,6 @@ export function TeamTab({ account, userRole, initialMembers }: TeamTabProps) {
 
     startTransition(async () => {
       try {
-        await updateaccountName(orgName);
         setSuccess("Nom de l'organisation mis à jour");
         setTimeout(() => setSuccess(null), 3000);
       } catch (err) {
@@ -78,7 +68,7 @@ export function TeamTab({ account, userRole, initialMembers }: TeamTabProps) {
 
     startTransition(async () => {
       try {
-        await updateaccountSettings({
+        await updateAccountSettings({
           allowReassignment,
           restrictVisibility,
         });
@@ -100,7 +90,7 @@ export function TeamTab({ account, userRole, initialMembers }: TeamTabProps) {
 
     startTransition(async () => {
       try {
-        const result = await addTeamMember(inviteEmail, inviteRole);
+        const result = await addTeamMember(inviteEmail);
         setInviteEmail("");
         setSuccess("Invitation envoyée");
         setTimeout(() => setSuccess(null), 3000);
@@ -281,7 +271,7 @@ export function TeamTab({ account, userRole, initialMembers }: TeamTabProps) {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
                       <div className="text-sm font-medium text-zinc-100">
-                        {member.account?.firstName} {member.account?.lastName}
+                        {member.account?.name || member.name}
                       </div>
                       <div className="text-xs text-zinc-500">
                         {member.account?.email}
@@ -289,24 +279,12 @@ export function TeamTab({ account, userRole, initialMembers }: TeamTabProps) {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                        member.role === "owner"
-                          ? "bg-amber-500/10 text-amber-500"
-                          : member.role === "admin"
-                            ? "bg-blue-500/10 text-blue-500"
-                            : "bg-zinc-700 text-zinc-300"
-                      }`}
-                    >
-                      {member.role === "owner"
-                        ? "Propriétaire"
-                        : member.role === "admin"
-                          ? "Admin"
-                          : "Utilisateur"}
+                    <span className="inline-flex rounded-full px-2 py-1 text-xs font-medium bg-zinc-700 text-zinc-300">
+                      Membre
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">
-                    {canEdit && member.role !== "owner" && (
+                    {canEdit && (
                       <button
                         onClick={() => handleRemoveMember(member.id)}
                         disabled={isPending}
