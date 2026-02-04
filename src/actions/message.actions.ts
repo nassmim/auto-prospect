@@ -1,6 +1,7 @@
 "use server";
 
-import { EContactChannel } from "@/config/message.config";
+import { EContactChannel, TContactChannel } from "@/config/message.config";
+import { pages } from "@/config/routes";
 import {
   createDrizzleSupabaseClient,
   TANDperator,
@@ -13,7 +14,6 @@ import {
   logWhatsAppMessage as logWhatsAppMessageService,
 } from "@/services/message.service";
 import { textTemplateSchema, voiceTemplateSchema } from "@/validation-schemas";
-import { pages } from "@/config/routes";
 import { and, BinaryOperator, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -24,7 +24,7 @@ import { z } from "zod";
  */
 async function createTemplate<
   T extends typeof textTemplateSchema | typeof voiceTemplateSchema,
->(data: unknown, schema: T, channel: EContactChannel) {
+>(data: unknown, schema: T, channel: TContactChannel) {
   // Validate with Zod
   const parseResult = schema.safeParse(data);
   if (!parseResult.success) {
@@ -44,6 +44,11 @@ async function createTemplate<
 
     const accountId = account.id;
 
+    // Determine the actual channel from validated data
+    const actualChannel = 'channel' in validatedData
+      ? validatedData.channel
+      : channel;
+
     // If setting as default, unset other defaults for this channel
     if (validatedData.isDefault) {
       await dbClient.rls((tx) =>
@@ -53,7 +58,7 @@ async function createTemplate<
           .where(
             and(
               eq(messageTemplates.accountId, accountId),
-              eq(messageTemplates.channel, channel),
+              eq(messageTemplates.channel, actualChannel as TContactChannel),
             ),
           ),
       );
@@ -65,7 +70,8 @@ async function createTemplate<
         ? {
             accountId,
             name: validatedData.name,
-            channel,
+            channel: (validatedData as z.infer<typeof voiceTemplateSchema>)
+              .channel,
             audioUrl: (validatedData as z.infer<typeof voiceTemplateSchema>)
               .audioUrl,
             audioDuration: (

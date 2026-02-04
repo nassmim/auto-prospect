@@ -2,12 +2,12 @@
 
 import { updateAccountSettings } from "@/actions/account.actions";
 import { addTeamMember, removeTeamMember } from "@/actions/team.actions";
-import type { TAccountServer } from "@/schema/account.schema";
+import type { TAccount } from "@/schema/account.schema";
 import type { TTeamMembersWithAccount } from "@/types/team.types";
 import { useState, useTransition } from "react";
 
 type TeamTabProps = {
-  account: TAccountServer;
+  account: TAccount;
   userRole: "owner" | "admin" | "user";
   initialMembers: TTeamMembersWithAccount;
 };

@@ -1,15 +1,15 @@
 "use server";
 
+import { THuntStatus } from "@/config/hunt.config";
 import { EContactChannel } from "@/config/message.config";
-import { EHuntStatus } from "@/config/hunt.config";
 import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
 import { createClient } from "@/lib/supabase/server";
 import { formatZodError } from "@/lib/validation";
 import { huntChannelCredits } from "@/schema/credits.schema";
 import { brandsHunts, hunts, subTypesHunts } from "@/schema/hunt.schema";
+import { getAccountHunts, getHuntById } from "@/services/hunt.service";
 import { createHuntSchema, updateHuntSchema } from "@/validation-schemas";
 import { eq } from "drizzle-orm";
-import { getAccountHunts, getHuntById } from "@/services/hunt.service";
 
 /**
  * Fetches all hunts for the current user's account
@@ -161,7 +161,7 @@ export async function createHunt(data: unknown) {
 /**
  * Updates hunt status (active/paused)
  */
-export async function updateHuntStatus(huntId: string, status: EHuntStatus) {
+export async function updateHuntStatus(huntId: string, status: THuntStatus) {
   const supabase = await createClient();
   const { data: userData } = await supabase.auth.getUser();
 

@@ -9,33 +9,13 @@ import {
   CardFooter,
   CardHeader,
 } from "@/components/ui/card";
+import { MessageTemplate } from "@/services/message.service";
+import { EContactChannel, getContactChannelConfig } from "@/config/message.config";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-type Template = {
-  id: string;
-  name: string;
-  type: "text" | "voice";
-  channel: string | null;
-  content: string | null;
-  audioUrl: string | null;
-  audioDuration: number | null;
-  isDefault: boolean;
-  createdAt: Date;
-  createdBy: {
-    id: string;
-    name: string;
-  };
-};
-
 type TemplateCardProps = {
-  template: Template;
-};
-
-const CHANNEL_LABELS: Record<string, string> = {
-  whatsapp: "WhatsApp",
-  sms: "SMS",
-  leboncoin: "Leboncoin",
+  template: MessageTemplate;
 };
 
 export function TemplateCard({ template }: TemplateCardProps) {
@@ -59,26 +39,16 @@ export function TemplateCard({ template }: TemplateCardProps) {
     }
   };
 
+  // Determine if this is a voice or text template based on channel
+  const isVoiceTemplate = template.channel === EContactChannel.RINGLESS_VOICE;
+  const channelConfig = getContactChannelConfig(template.channel);
+
   return (
     <Card className="group relative overflow-hidden transition-all hover:border-zinc-700">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            {template.type === "text" ? (
-              <svg
-                className="h-5 w-5 text-blue-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                />
-              </svg>
-            ) : (
+            {isVoiceTemplate ? (
               <svg
                 className="h-5 w-5 text-purple-400"
                 fill="none"
@@ -90,6 +60,20 @@ export function TemplateCard({ template }: TemplateCardProps) {
                   strokeLinejoin="round"
                   strokeWidth={2}
                   d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
+                />
+              </svg>
+            ) : (
+              <svg
+                className="h-5 w-5 text-blue-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                 />
               </svg>
             )}
@@ -130,19 +114,17 @@ export function TemplateCard({ template }: TemplateCardProps) {
       </CardHeader>
 
       <CardContent className="pb-3">
-        {/* Channel badge for text templates */}
-        {template.channel && (
-          <Badge variant="secondary" className="mb-2">
-            {CHANNEL_LABELS[template.channel]}
-          </Badge>
-        )}
+        {/* Channel badge */}
+        <Badge variant="secondary" className="mb-2">
+          {channelConfig.shortLabel}
+        </Badge>
 
         {/* Content preview or audio duration */}
-        {template.type === "text" && template.content ? (
+        {!isVoiceTemplate && template.content ? (
           <p className="line-clamp-2 text-sm text-zinc-400">
             {template.content}
           </p>
-        ) : template.type === "voice" && template.audioDuration ? (
+        ) : isVoiceTemplate && template.audioDuration ? (
           <div className="flex items-center gap-2 text-sm text-zinc-400">
             <svg
               className="h-4 w-4"
@@ -163,7 +145,7 @@ export function TemplateCard({ template }: TemplateCardProps) {
       </CardContent>
 
       <CardFooter className="border-t pt-3 text-xs text-zinc-500">
-        Créé par {template.createdBy.name}
+        Créé par {template.account.name}
       </CardFooter>
     </Card>
   );

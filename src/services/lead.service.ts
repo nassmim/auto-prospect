@@ -3,8 +3,13 @@ import { createDrizzleSupabaseClient, TDBClient } from "@/lib/drizzle/dbClient";
 import { createClient } from "@/lib/supabase/server";
 import { leads } from "@/schema/lead.schema";
 import { messages } from "@/schema/message.schema";
-import { TLeadsSummaryStats } from "@/types/hunt.types";
 import { and, eq, gte, SQL, sql } from "drizzle-orm";
+
+type TLeadsSummaryStats = {
+  todayLeadsCount: number;
+  contactedLeadsCount: number;
+  totalLeads: number;
+};
 
 /**
  * Fetch complete lead details with all relations
@@ -208,7 +213,7 @@ export async function getContactedLeads(
   const client = dbClient || (await createDrizzleSupabaseClient());
 
   // Build where conditions dynamically based on whether huntId is provided
-  const whereConditions = [eq(leads.stage, ELeadStage.CONTACTE)];
+  const whereConditions = [eq(leads.stage, ELeadStage.CONTACTED)];
 
   if (huntId) {
     whereConditions.push(eq(leads.huntId, huntId));
@@ -326,3 +331,5 @@ export async function getPipelineLeads() {
 
   return pipelineLeads;
 }
+
+export type TPipelineLead = Awaited<ReturnType<typeof getPipelineLeads>>[number];

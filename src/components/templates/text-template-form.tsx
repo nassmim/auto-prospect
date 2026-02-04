@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { pages } from "@/config/routes";
+import { EContactChannel, CONTACT_CHANNEL_DEFINITIONS } from "@/config/message.config";
 import { renderTemplate } from "@/services/message.service";
 import {
   textTemplateSchema,
@@ -31,16 +32,25 @@ import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { VariableToolbar } from "./variable-toolbar";
 
-export function TextTemplateForm() {
+interface TextTemplateFormProps {
+  defaultChannel?: string;
+}
+
+export function TextTemplateForm({ defaultChannel }: TextTemplateFormProps) {
   const [error, setError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const router = useRouter();
+
+  // Get text channels only (SMS and WhatsApp)
+  const textChannels = CONTACT_CHANNEL_DEFINITIONS.filter(
+    (ch) => ch.value === EContactChannel.SMS || ch.value === EContactChannel.WHATSAPP_TEXT
+  );
 
   const form = useForm<TTextTemplateFormData>({
     resolver: zodResolver(textTemplateSchema),
     defaultValues: {
       name: "",
-      channel: "whatsapp",
+      channel: (defaultChannel as TTextTemplateFormData["channel"]) || EContactChannel.WHATSAPP_TEXT,
       content: "",
       isDefault: false,
     },
@@ -160,9 +170,11 @@ export function TextTemplateForm() {
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                  <SelectItem value="sms">SMS</SelectItem>
-                  <SelectItem value="leboncoin">Leboncoin</SelectItem>
+                  {textChannels.map((channel) => (
+                    <SelectItem key={channel.value} value={channel.value}>
+                      {channel.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -243,7 +255,7 @@ export function TextTemplateForm() {
                   />
                 </FormControl>
                 <FormLabel className="text-sm text-zinc-300 cursor-pointer">
-                  Définir comme template par défaut pour {channelValue}
+                  Définir comme template par défaut pour {textChannels.find(ch => ch.value === channelValue)?.label || channelValue}
                 </FormLabel>
               </div>
             </FormItem>

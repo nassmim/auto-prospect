@@ -158,7 +158,7 @@ async function contactAdsOwners(
           accountId: accountId,
           huntId: hunt.id,
           adId: allocation.adId,
-          stage: ELeadStage.CONTACTE, // Already contacted via message
+          stage: ELeadStage.CONTACTED, // Already contacted via message
           position: 0, // Will be reordered by user in UI
         })
         .onConflictDoNothing(); // Unique constraint on (accountId, adId)

@@ -1,6 +1,5 @@
 import { TRANSACTION_TYPE_VALUES } from "@/config/payment.config";
 import { channel } from "@/schema/message.schema";
-import { TTransactionMetadata } from "@/types/payment.types";
 import {
   InferInsertModel,
   InferSelectModel,
@@ -25,6 +24,29 @@ import { authenticatedRole, authUid } from "drizzle-orm/supabase";
 import { accounts } from "./account.schema";
 import { hunts } from "./hunt.schema";
 
+type PurchaseMetadata = {
+  packCredits: number;
+  priceEur: number;
+  paymentProvider?: string;
+  paymentId?: string;
+};
+
+type UsageMetadata = {
+  messageId?: string;
+  recipient?: string;
+  duration?: number; // For voice calls, in seconds
+};
+
+type AdjustmentMetadata = {
+  reason: string;
+  adjustedBy: string;
+};
+
+export type TTransactionMetadata =
+  | PurchaseMetadata
+  | UsageMetadata
+  | AdjustmentMetadata;
+
 // Transaction types enum
 export const transactionType = pgEnum(
   "transaction_type",
@@ -42,7 +64,7 @@ export const creditBalances = pgTable(
       .unique(),
     sms: integer("sms").notNull().default(0),
     ringlessVoice: integer("ringless_voice").notNull().default(0),
-    whatsappText: integer("whatsapp").notNull().default(0),
+    whatsappText: integer("whatsapp_text").notNull().default(0),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .default(sql`now()`),
@@ -70,7 +92,7 @@ export const creditBalances = pgTable(
     // Only service role can update balances (via backend services)
   ],
 );
-export type TCreditBalanceServer = InferSelectModel<typeof creditBalances>;
+export type TCreditBalance = InferSelectModel<typeof creditBalances>;
 
 // Credit transactions table - immutable audit log
 export const creditTransactions = pgTable(

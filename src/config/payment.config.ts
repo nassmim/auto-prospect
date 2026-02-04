@@ -3,7 +3,7 @@
  * All payment-related enums, types, and configs
  */
 
-const TRANSACTION_TYPE_DEFINITIONS = [
+export const TRANSACTION_TYPE_DEFINITIONS = [
   {
     key: "PURCHASE",
     value: "purchase",
@@ -42,15 +42,7 @@ const TRANSACTION_TYPE_DEFINITIONS = [
   },
 ] as const;
 
-export const TRANSACTION_TYPE_CONFIG = Object.fromEntries(
-  TRANSACTION_TYPE_DEFINITIONS.map((type) => [type.key, type]),
-) as {
-  [K in (typeof TRANSACTION_TYPE_DEFINITIONS)[number]["key"]]: Extract<
-    (typeof TRANSACTION_TYPE_DEFINITIONS)[number],
-    { key: K }
-  >;
-};
-
+// Enum-like constant access (e.g., ETransactionType.PURCHASE)
 export const ETransactionType = Object.fromEntries(
   TRANSACTION_TYPE_DEFINITIONS.map((type) => [type.key, type.value]),
 ) as {
@@ -63,7 +55,6 @@ export const ETransactionType = Object.fromEntries(
 export type TransactionType =
   (typeof TRANSACTION_TYPE_DEFINITIONS)[number]["value"];
 
-export const TRANSACTION_TYPES = TRANSACTION_TYPE_DEFINITIONS;
 export const TRANSACTION_TYPE_VALUES = TRANSACTION_TYPE_DEFINITIONS.map(
   (t) => t.value,
 );

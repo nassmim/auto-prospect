@@ -1,19 +1,13 @@
 "use client";
 
 import { Progress } from "@/components/ui/progress";
-import { EContactChannel } from "@/config/message.config";
+import { getContactChannelLabel } from "@/config/message.config";
 import type { THuntChannelCredit } from "@/schema/credits.schema";
 
 type CreditUsageDisplayProps = {
   channelCredits: THuntChannelCredit[];
   dailyPacingLimit?: number | null;
   dailyContactsCount?: number;
-};
-
-const channelLabels: Record<EContactChannel, string> = {
-  [EContactChannel.SMS]: "SMS",
-  [EContactChannel.RINGLESS_VOICE]: "Voix sans sonnerie",
-  [EContactChannel.WHATSAPP_TEXT]: "WhatsApp",
 };
 
 export function CreditUsageDisplay({
@@ -58,7 +52,7 @@ export function CreditUsageDisplay({
             <div key={credit.id} className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-zinc-300">
-                  {channelLabels[credit.channel as EContactChannel]}
+                  {getContactChannelLabel(credit.channel)}
                 </span>
                 <span className="text-xs text-zinc-500">
                   {credit.creditsConsumed} / {credit.creditsAllocated} utilisés

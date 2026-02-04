@@ -3,7 +3,7 @@
  * All hunt-related enums, types, and configs
  */
 
-const HUNT_STATUS_DEFINITIONS = [
+export const HUNT_STATUS_DEFINITIONS = [
   {
     key: "ACTIVE",
     value: "active",
@@ -22,15 +22,7 @@ const HUNT_STATUS_DEFINITIONS = [
   },
 ] as const;
 
-export const HUNT_STATUS_CONFIG = Object.fromEntries(
-  HUNT_STATUS_DEFINITIONS.map((status) => [status.key, status]),
-) as {
-  [K in (typeof HUNT_STATUS_DEFINITIONS)[number]["key"]]: Extract<
-    (typeof HUNT_STATUS_DEFINITIONS)[number],
-    { key: K }
-  >;
-};
-
+// Enum-like constant access (e.g., EHuntStatus.ACTIVE)
 export const EHuntStatus = Object.fromEntries(
   HUNT_STATUS_DEFINITIONS.map((status) => [status.key, status.value]),
 ) as {
@@ -42,7 +34,6 @@ export const EHuntStatus = Object.fromEntries(
 
 export type THuntStatus = (typeof HUNT_STATUS_DEFINITIONS)[number]["value"];
 
-export const HUNT_STATUSES = HUNT_STATUS_DEFINITIONS;
 export const HUNT_STATUS_VALUES = HUNT_STATUS_DEFINITIONS.map((s) => s.value);
 
 export const getHuntStatusConfig = (status: THuntStatus) => {

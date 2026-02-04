@@ -1,7 +1,4 @@
-import {
-  type ContactChannel,
-  EContactChannel,
-} from "@/config/message.config";
+import { TContactChannel } from "@/config/message.config";
 import {
   type TransactionType,
   ETransactionType,
@@ -10,12 +7,48 @@ import { createDrizzleSupabaseClient, TDBQuery } from "@/lib/drizzle/dbClient";
 import {
   creditTransactions,
   huntChannelCredits,
+  TCreditTransaction,
 } from "@/schema/credits.schema";
-import {
-  TConsumeCreditsParams,
-  TConsumeCreditsResult,
-} from "@/types/payment.types";
 import { desc, eq, sql } from "drizzle-orm";
+
+export type TConsumeCreditsParams = {
+  huntId: string;
+  channel: TContactChannel;
+  messageId?: string;
+  recipient?: string;
+};
+
+export type TConsumeCreditsResult =
+  | { success: true; transaction: TCreditTransaction }
+  | { success: false; error: string };
+
+export type TSubscription =
+  | void
+  | {
+      active: boolean;
+      id: string;
+      accountId: string | null;
+      updatedAt: string;
+      createdAt: string;
+      billingProvider: "stripe" | "lemon-squeezy" | "paddle";
+      currency: string;
+      billingCustomerId: number;
+      status:
+        | "active"
+        | "trialing"
+        | "past_due"
+        | "canceled"
+        | "unpaid"
+        | "incomplete"
+        | "incomplete_expired"
+        | "paused";
+      cancelAtPeriodEnd: boolean;
+      periodStartsAt: string;
+      periodEndsAt: string;
+      trialStartsAt: string | null;
+      trialEndsAt: string | null;
+    }
+  | undefined;
 
 /**
  * Consumes one credit for a successful message send
@@ -174,7 +207,7 @@ export async function getAccountCredits() {
     huntAllocations: huntAllocations.map((allocation) => ({
       huntId: allocation.huntId,
       huntName: allocation.hunt.name,
-      channel: allocation.channel as ContactChannel,
+      channel: allocation.channel as TContactChannel,
       allocated: allocation.creditsAllocated,
       consumed: allocation.creditsConsumed,
       remaining: allocation.creditsAllocated - allocation.creditsConsumed,
@@ -182,7 +215,7 @@ export async function getAccountCredits() {
     transactions: transactions.map((tx) => ({
       id: tx.id,
       type: tx.type as TransactionType,
-      channel: tx.channel as ContactChannel,
+      channel: tx.channel as TContactChannel,
       amount: tx.amount,
       balanceAfter: tx.balanceAfter,
       createdAt: tx.createdAt,

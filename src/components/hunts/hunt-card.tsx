@@ -14,8 +14,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { EHuntStatus, THuntStatus } from "@/config/hunt.config";
 import { pages } from "@/config/routes";
-import { EHuntStatus } from "@/config/hunt.config";
 import Link from "next/link";
 import { useState } from "react";
 import type { KeyedMutator } from "swr";
@@ -54,7 +54,7 @@ export function HuntCard({ hunt, onMutate }: HuntCardProps) {
 
   const handleToggleStatus = async () => {
     setIsTogglingStatus(true);
-    const newStatus: EHuntStatus =
+    const newStatus: THuntStatus =
       currentStatus === EHuntStatus.ACTIVE
         ? EHuntStatus.PAUSED
         : EHuntStatus.ACTIVE;

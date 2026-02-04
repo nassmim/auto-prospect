@@ -7,7 +7,7 @@
 // ACCOUNT TYPES
 // ============================================================================
 
-const ACCOUNT_TYPE_DEFINITIONS = [
+export const ACCOUNT_TYPE_DEFINITIONS = [
   {
     key: "PERSONAL",
     value: "personal",
@@ -26,15 +26,7 @@ const ACCOUNT_TYPE_DEFINITIONS = [
   },
 ] as const;
 
-export const ACCOUNT_TYPE_CONFIG = Object.fromEntries(
-  ACCOUNT_TYPE_DEFINITIONS.map((type) => [type.key, type]),
-) as {
-  [K in (typeof ACCOUNT_TYPE_DEFINITIONS)[number]["key"]]: Extract<
-    (typeof ACCOUNT_TYPE_DEFINITIONS)[number],
-    { key: K }
-  >;
-};
-
+// Enum-like constant access (e.g., EAccountType.PERSONAL)
 export const EAccountType = Object.fromEntries(
   ACCOUNT_TYPE_DEFINITIONS.map((type) => [type.key, type.value]),
 ) as {
@@ -46,7 +38,6 @@ export const EAccountType = Object.fromEntries(
 
 export type TAccountType = (typeof ACCOUNT_TYPE_DEFINITIONS)[number]["value"];
 
-export const ACCOUNT_TYPES = ACCOUNT_TYPE_DEFINITIONS;
 export const ACCOUNT_TYPE_VALUES = ACCOUNT_TYPE_DEFINITIONS.map((t) => t.value);
 
 export const getAccountTypeConfig = (type: TAccountType) => {
@@ -63,7 +54,7 @@ export const getAccountTypeLabel = (type: TAccountType): string => {
 // ROLES
 // ============================================================================
 
-const ROLE_DEFINITIONS = [
+export const ROLE_DEFINITIONS = [
   {
     key: "OWNER",
     value: "owner",
@@ -90,15 +81,7 @@ const ROLE_DEFINITIONS = [
   },
 ] as const;
 
-export const ROLE_CONFIG = Object.fromEntries(
-  ROLE_DEFINITIONS.map((role) => [role.key, role]),
-) as {
-  [K in (typeof ROLE_DEFINITIONS)[number]["key"]]: Extract<
-    (typeof ROLE_DEFINITIONS)[number],
-    { key: K }
-  >;
-};
-
+// Enum-like constant access (e.g., ERole.OWNER)
 export const ERole = Object.fromEntries(
   ROLE_DEFINITIONS.map((role) => [role.key, role.value]),
 ) as {
@@ -110,7 +93,6 @@ export const ERole = Object.fromEntries(
 
 export type TRole = (typeof ROLE_DEFINITIONS)[number]["value"];
 
-export const ROLES = ROLE_DEFINITIONS;
 export const ROLE_VALUES = ROLE_DEFINITIONS.map((r) => r.value);
 
 export const getRoleConfig = (role: TRole) => {

@@ -30,8 +30,8 @@ export const pages = {
   // Templates routes
   templates: {
     list: "/templates",
-    new: (type?: "text" | "voice") =>
-      type ? `/templates/new?type=${type}` : "/templates/new",
+    new: (channel?: string) =>
+      channel ? `/templates/new?channel=${channel}` : "/templates/new",
   },
 } as const;
 

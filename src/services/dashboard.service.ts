@@ -1,9 +1,17 @@
-import { EContactChannel } from "@/config/message.config";
+import { EContactChannel, TContactChannel } from "@/config/message.config";
 import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
 import { messages } from "@/schema/message.schema";
 import { getContactedLeads, getTodayNewLeads } from "@/services/lead.service";
-import { TDashboardStats } from "@/types/general.types";
 import { eq, sql } from "drizzle-orm";
+
+/**
+ * Dashboard statistics for the account
+ */
+type TDashboardStats = {
+  newLeadsToday: number;
+  leadsContacted: number;
+  messagesSentByChannel: Record<TContactChannel, number>;
+};
 
 /**
  * Fetches dashboard statistics for the current user's account

@@ -7,10 +7,10 @@
 // CONTACT CHANNELS
 // ============================================================================
 
-const CONTACT_CHANNEL_DEFINITIONS = [
+export const CONTACT_CHANNEL_DEFINITIONS = [
   {
     key: "WHATSAPP_TEXT",
-    value: "whatsappText",
+    value: "whatsapp_text",
     label: "Message WhatsApp",
     shortLabel: "WhatsApp",
     description: "Messages texte via WhatsApp Business",
@@ -28,7 +28,7 @@ const CONTACT_CHANNEL_DEFINITIONS = [
   },
   {
     key: "RINGLESS_VOICE",
-    value: "ringlessVoice",
+    value: "ringless_voice",
     label: "Message Vocal",
     shortLabel: "Vocal",
     description: "Messages vocaux sans sonnerie",
@@ -37,15 +37,7 @@ const CONTACT_CHANNEL_DEFINITIONS = [
   },
 ] as const;
 
-export const CONTACT_CHANNEL_CONFIG = Object.fromEntries(
-  CONTACT_CHANNEL_DEFINITIONS.map((channel) => [channel.key, channel]),
-) as {
-  [K in (typeof CONTACT_CHANNEL_DEFINITIONS)[number]["key"]]: Extract<
-    (typeof CONTACT_CHANNEL_DEFINITIONS)[number],
-    { key: K }
-  >;
-};
-
+// Enum-like constant access (e.g., EContactChannel.WHATSAPP_TEXT)
 export const EContactChannel = Object.fromEntries(
   CONTACT_CHANNEL_DEFINITIONS.map((channel) => [channel.key, channel.value]),
 ) as {
@@ -55,18 +47,20 @@ export const EContactChannel = Object.fromEntries(
   >["value"];
 };
 
-export type TContactChannel = (typeof CONTACT_CHANNEL_DEFINITIONS)[number]["value"];
+export type TContactChannel =
+  (typeof CONTACT_CHANNEL_DEFINITIONS)[number]["value"];
 
-export const CONTACT_CHANNELS = CONTACT_CHANNEL_DEFINITIONS;
-export const CONTACT_CHANNEL_VALUES = CONTACT_CHANNEL_DEFINITIONS.map((c) => c.value);
+export const CONTACT_CHANNEL_VALUES = CONTACT_CHANNEL_DEFINITIONS.map(
+  (c) => c.value,
+);
 
-export const getContactChannelConfig = (channel: TContactChannel) => {
+export const getContactChannelConfig = (channel: string) => {
   const config = CONTACT_CHANNEL_DEFINITIONS.find((c) => c.value === channel);
   if (!config) throw new Error(`Invalid contact channel: ${channel}`);
   return config;
 };
 
-export const getContactChannelLabel = (channel: TContactChannel): string => {
+export const getContactChannelLabel = (channel: string): string => {
   return getContactChannelConfig(channel).label;
 };
 
@@ -74,14 +68,15 @@ export const getContactChannelLabel = (channel: TContactChannel): string => {
 // MESSAGE STATUSES
 // ============================================================================
 
-const MESSAGE_STATUS_DEFINITIONS = [
+export const MESSAGE_STATUS_DEFINITIONS = [
   {
     key: "PENDING",
     value: "pending",
     label: "En attente",
     description: "Message en file d'attente",
     icon: "clock",
-    color: "gray",
+    color: "#eab308",
+    class: "bg-yellow-900/30 text-yellow-400 border-yellow-900/50",
   },
   {
     key: "SENT",
@@ -89,7 +84,8 @@ const MESSAGE_STATUS_DEFINITIONS = [
     label: "Envoyé",
     description: "Message envoyé avec succès",
     icon: "send",
-    color: "blue",
+    color: "#3b82f6",
+    class: "bg-blue-900/30 text-blue-400 border-blue-900/50",
   },
   {
     key: "DELIVERED",
@@ -97,7 +93,8 @@ const MESSAGE_STATUS_DEFINITIONS = [
     label: "Délivré",
     description: "Message délivré au destinataire",
     icon: "check",
-    color: "green",
+    color: "#22c55e",
+    class: "bg-green-900/30 text-green-400 border-green-900/50",
   },
   {
     key: "FAILED",
@@ -105,7 +102,8 @@ const MESSAGE_STATUS_DEFINITIONS = [
     label: "Échoué",
     description: "Échec de l'envoi",
     icon: "x",
-    color: "red",
+    color: "#ef4444",
+    class: "bg-red-900/30 text-red-400 border-red-900/50",
   },
   {
     key: "READ",
@@ -113,7 +111,8 @@ const MESSAGE_STATUS_DEFINITIONS = [
     label: "Lu",
     description: "Message lu par le destinataire",
     icon: "check-check",
-    color: "green",
+    color: "#a855f7",
+    class: "bg-purple-900/30 text-purple-400 border-purple-900/50",
   },
   {
     key: "REPLIED",
@@ -121,19 +120,12 @@ const MESSAGE_STATUS_DEFINITIONS = [
     label: "Répondu",
     description: "Destinataire a répondu",
     icon: "reply",
-    color: "purple",
+    color: "#10b981",
+    class: "bg-emerald-900/30 text-emerald-400 border-emerald-900/50",
   },
 ] as const;
 
-export const MESSAGE_STATUS_CONFIG = Object.fromEntries(
-  MESSAGE_STATUS_DEFINITIONS.map((status) => [status.key, status]),
-) as {
-  [K in (typeof MESSAGE_STATUS_DEFINITIONS)[number]["key"]]: Extract<
-    (typeof MESSAGE_STATUS_DEFINITIONS)[number],
-    { key: K }
-  >;
-};
-
+// Enum-like constant access (e.g., EMessageStatus.SENT)
 export const EMessageStatus = Object.fromEntries(
   MESSAGE_STATUS_DEFINITIONS.map((status) => [status.key, status.value]),
 ) as {
@@ -143,14 +135,14 @@ export const EMessageStatus = Object.fromEntries(
   >["value"];
 };
 
-export type TMessageStatus = (typeof MESSAGE_STATUS_DEFINITIONS)[number]["value"];
+export type TMessageStatus =
+  (typeof MESSAGE_STATUS_DEFINITIONS)[number]["value"];
 
-export const MESSAGE_STATUSES = MESSAGE_STATUS_DEFINITIONS;
 export const MESSAGE_STATUS_VALUES = MESSAGE_STATUS_DEFINITIONS.map(
   (s) => s.value,
 );
 
-export const getMessageStatusConfig = (status: TMessageStatus) => {
+export const getMessageStatusConfig = (status: string) => {
   const config = MESSAGE_STATUS_DEFINITIONS.find((s) => s.value === status);
   if (!config) throw new Error(`Invalid message status: ${status}`);
   return config;

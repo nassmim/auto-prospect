@@ -3,17 +3,26 @@
  * Handles variable replacement and message formatting
  */
 
-import { pages } from "@/config/routes";
 import { EContactChannel } from "@/config/message.config";
+import { pages } from "@/config/routes";
 import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
 import { creditTransactions } from "@/schema/credits.schema";
 import { leadNotes } from "@/schema/lead.schema";
 import { messages } from "@/schema/message.schema";
 import { getUseraccount } from "@/services/account.service";
 import { consumeCredit } from "@/services/credit.service";
-import { TTemplateVariables } from "@/types/message.types";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+
+export type TTemplateVariables = {
+  titre_annonce?: string;
+  prix?: string;
+  marque?: string;
+  modele?: string;
+  annee?: string;
+  ville?: string;
+  vendeur_nom?: string;
+};
 
 /**
  * Renders a message template by replacing variable placeholders
@@ -254,3 +263,7 @@ export async function getAccountTemplates() {
     throw new Error("Failed to fetch templates");
   }
 }
+
+export type MessageTemplate = Awaited<
+  ReturnType<typeof import("@/services/message.service").getAccountTemplates>
+>[number];

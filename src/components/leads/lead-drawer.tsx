@@ -22,7 +22,11 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { leadStages, type LeadStage } from "@/schema/lead.schema";
+import {
+  getLeadStageConfig,
+  LEAD_STAGE_VALUES,
+  TLeadStage,
+} from "@/config/lead.config";
 import { pages } from "@/config/routes";
 import { swrKeys } from "@/config/swr-keys";
 import {
@@ -32,7 +36,7 @@ import {
 } from "@/services/message.service";
 import {
   leadNoteSchema,
-  leadReminderSchema,
+  leadReminderFormSchema,
   type TLeadNoteFormData,
   type TLeadReminderFormData,
 } from "@/validation-schemas";
@@ -47,27 +51,6 @@ import useSWR from "swr";
 type LeadDrawerProps = {
   leadId: string | null;
   onClose: () => void;
-};
-
-type LeadDetails = Awaited<ReturnType<typeof fetchLeadDetails>>;
-type OrgMember = Awaited<ReturnType<typeof fetchLeadTeamMembers>>[number];
-
-const STAGE_LABELS: Record<LeadStage, string> = {
-  nouveau: "Nouveau",
-  contacte: "Contacté",
-  relance: "Relance",
-  negociation: "Négociation",
-  gagne: "Gagné",
-  perdu: "Perdu",
-};
-
-const STAGE_COLORS: Record<LeadStage, string> = {
-  nouveau: "#3b82f6", // blue
-  contacte: "#8b5cf6", // purple
-  relance: "#f59e0b", // amber
-  negociation: "#10b981", // green
-  gagne: "#22c55e", // bright green
-  perdu: "#ef4444", // red
 };
 
 export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
@@ -108,27 +91,28 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
 
   // Reminders form
   const reminderForm = useForm<TLeadReminderFormData>({
-    resolver: zodResolver(leadReminderSchema),
+    resolver: zodResolver(leadReminderFormSchema),
     defaultValues: {
       dueAt: new Date(),
-      note: "",
     },
   });
 
   const handleStageChange = async (newStage: string | null) => {
     if (!lead || !newStage) return;
 
+    const newLeadStage = newStage as TLeadStage;
+
     // Optimistic update with SWR mutate
     mutate(
-      { ...lead, stage: newStage },
+      { ...lead, stage: newLeadStage },
       {
         revalidate: false,
-        optimisticData: { ...lead, stage: newStage },
+        optimisticData: { ...lead, stage: newLeadStage },
       },
     );
 
     try {
-      await updateLeadStage(lead.id, newStage as LeadStage);
+      await updateLeadStage(lead.id, newLeadStage);
       // Revalidate after success
       mutate();
     } catch (err) {
@@ -326,7 +310,9 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
             <div className="flex h-full items-center justify-center px-6">
               <div className="rounded-lg border border-red-900/50 bg-red-950/30 p-4 text-center">
                 <p className="text-sm text-red-400">
-                  {error instanceof Error ? error.message : "Failed to load lead"}
+                  {error instanceof Error
+                    ? error.message
+                    : "Failed to load lead"}
                 </p>
               </div>
             </div>
@@ -451,10 +437,10 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
                   label="Statut"
                   value={lead.stage}
                   onChange={handleStageChange}
-                  options={leadStages.map((stage) => ({
+                  options={LEAD_STAGE_VALUES.map((stage) => ({
                     value: stage,
-                    label: STAGE_LABELS[stage],
-                    color: STAGE_COLORS[stage],
+                    label: getLeadStageConfig(stage).label,
+                    color: getLeadStageConfig(stage).color,
                   }))}
                   placeholder="Sélectionner un statut"
                 />
@@ -724,9 +710,7 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
                         className="rounded-lg border border-zinc-800/50 bg-zinc-900/50 p-3"
                       >
                         <p className="text-sm text-zinc-300">{note.content}</p>
-                        <div className="mt-2 flex items-center gap-2 text-xs text-zinc-500">
-                          <span>{note.createdBy.name}</span>
-                          <span>•</span>
+                        <div className="mt-2 text-xs text-zinc-500">
                           <span>
                             {formatDistance(
                               new Date(note.createdAt),

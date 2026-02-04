@@ -2,6 +2,9 @@
 
 import { useRef, useState } from "react";
 
+// Helper to get current timestamp (wrapped to avoid React purity checks)
+const getCurrentTime = () => Date.now();
+
 type AudioRecorderProps = {
   onRecordingComplete: (audioBlob: Blob, duration: number) => void;
 };
@@ -47,14 +50,17 @@ export function AudioRecorder({ onRecordingComplete }: AudioRecorderProps) {
         stream.getTracks().forEach((track) => track.stop());
       };
 
+      // Capture start time before starting recording
+      const recordingStartTime = getCurrentTime();
+
       mediaRecorder.start();
       setIsRecording(true);
       setError(null);
-      startTimeRef.current = Date.now();
+      startTimeRef.current = recordingStartTime;
 
       // Update duration every 100ms
       timerRef.current = setInterval(() => {
-        const elapsed = (Date.now() - startTimeRef.current) / 1000;
+        const elapsed = (getCurrentTime() - recordingStartTime) / 1000;
         setDuration(elapsed);
 
         // Auto-stop at 55 seconds

@@ -1,6 +1,6 @@
 "use client";
 
-import { updateaccountSettings } from "@/actions/account.actions";
+import { updateAccountSettings } from "@/actions/account.actions";
 import { TAccountSettings } from "@/types/account.types";
 import { useState, useTransition } from "react";
 
@@ -27,7 +27,7 @@ export function FiltersTab({ settings }: FiltersTabProps) {
 
     startTransition(async () => {
       try {
-        await updateaccountSettings({
+        await updateAccountSettings({
           // Store filter preferences (to be implemented in schema)
         });
         setSuccess(true);

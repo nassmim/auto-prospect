@@ -1,4 +1,4 @@
-import { accounts, TAccountServer } from "@/schema/account.schema";
+import { accounts, TAccount } from "@/schema/account.schema";
 import { messageChannel } from "@/schema/message.schema";
 import {
   InferInsertModel,
@@ -383,6 +383,18 @@ export type TAd = InferSelectModel<typeof ads> & {
   contactedAds?: TContactedAd[];
 };
 
+export type TAdReferenceData = {
+  adTypes: Map<string, number>;
+  adSubTypes: Map<string, number>;
+  brands: Map<string, number>;
+  zipcodes: Map<string, number>;
+  gearBoxes: Map<string, number>;
+  drivingLicences: Map<string, number>;
+  fuels: Map<string, number>;
+  vehicleSeats: Map<string, number>;
+  vehicleStates: Map<string, number>;
+};
+
 // export const adTypesRelations = relations(adTypes, ({ many }) => ({
 //   ads: many(ads),
 //   subTypes: many(adSubTypes),
@@ -439,5 +451,5 @@ export const contactedAdsRelations = relations(contactedAds, ({ one }) => ({
 }));
 export type TContactedAd = InferSelectModel<typeof contactedAds> & {
   ad: TAd;
-  account: TAccountServer;
+  account: TAccount;
 };

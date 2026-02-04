@@ -2,14 +2,20 @@ import Link from "next/link";
 import { TextTemplateForm } from "@/components/templates/text-template-form";
 import { VoiceTemplateForm } from "@/components/templates/voice-template-form";
 import { pages } from "@/config/routes";
+import { EContactChannel } from "@/config/message.config";
 
 interface NewTemplateViewProps {
-  type: string;
+  channel?: string;
 }
 
-export function NewTemplateView({ type }: NewTemplateViewProps) {
-  const isTextTemplate = type === "text";
-  const isVoiceTemplate = type === "voice";
+export function NewTemplateView({ channel }: NewTemplateViewProps) {
+  // Determine if this is a voice channel (ringless_voice) or text channel (sms, whatsapp_text)
+  const isVoiceChannel = channel === EContactChannel.RINGLESS_VOICE;
+  const isTextChannel = channel === EContactChannel.SMS || channel === EContactChannel.WHATSAPP_TEXT;
+
+  // Default to text if no channel specified
+  const showTextForm = !channel || isTextChannel;
+  const showVoiceForm = isVoiceChannel;
 
   return (
     <div className="min-h-screen bg-zinc-950 p-6">
@@ -36,7 +42,7 @@ export function NewTemplateView({ type }: NewTemplateViewProps) {
             />
           </svg>
           <span className="text-zinc-100">
-            {isTextTemplate ? "Nouveau template texte" : "Nouveau template vocal"}
+            {showVoiceForm ? "Nouveau template vocal" : "Nouveau template texte"}
           </span>
         </nav>
 
@@ -46,17 +52,17 @@ export function NewTemplateView({ type }: NewTemplateViewProps) {
             Créer un template
           </h1>
           <p className="text-sm text-zinc-400">
-            {isTextTemplate
-              ? "Créez un message avec des variables personnalisables"
-              : "Enregistrez ou importez un message vocal pour vos appels"}
+            {showVoiceForm
+              ? "Enregistrez ou importez un message vocal pour vos appels"
+              : "Créez un message avec des variables personnalisables pour WhatsApp ou SMS"}
           </p>
 
           {/* Type tabs */}
           <div className="mt-6 flex gap-2">
             <Link
-              href={pages.templates.new("text")}
+              href={pages.templates.new(EContactChannel.WHATSAPP_TEXT)}
               className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
-                isTextTemplate
+                showTextForm
                   ? "border-amber-500 bg-amber-500/10 text-amber-500"
                   : "border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:bg-zinc-900"
               }`}
@@ -79,9 +85,9 @@ export function NewTemplateView({ type }: NewTemplateViewProps) {
               </div>
             </Link>
             <Link
-              href={pages.templates.new("voice")}
+              href={pages.templates.new(EContactChannel.RINGLESS_VOICE)}
               className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
-                isVoiceTemplate
+                showVoiceForm
                   ? "border-amber-500 bg-amber-500/10 text-amber-500"
                   : "border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:bg-zinc-900"
               }`}
@@ -108,7 +114,7 @@ export function NewTemplateView({ type }: NewTemplateViewProps) {
 
         {/* Form */}
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
-          {isTextTemplate ? <TextTemplateForm /> : <VoiceTemplateForm />}
+          {showVoiceForm ? <VoiceTemplateForm defaultChannel={channel} /> : <TextTemplateForm defaultChannel={channel} />}
         </div>
       </div>
     </div>

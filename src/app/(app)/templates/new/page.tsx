@@ -1,29 +1,30 @@
 import { NewTemplateView } from "@/components/templates/new-template-view";
 import { getSEOTags } from "@/lib/seo";
+import { EContactChannel } from "@/config/message.config";
 import type { Metadata } from "next";
 
 type PageProps = {
-  searchParams: Promise<{ type?: string }>;
+  searchParams: Promise<{ channel?: string }>;
 };
 
 export async function generateMetadata({
   searchParams,
 }: PageProps): Promise<Metadata> {
-  const { type = "text" } = await searchParams;
+  const { channel } = await searchParams;
 
-  const isTextTemplate = type === "text";
+  const isVoiceChannel = channel === EContactChannel.RINGLESS_VOICE;
 
   return getSEOTags({
-    title: isTextTemplate ? "Créer un template texte" : "Créer un template vocal",
-    description: isTextTemplate
-      ? "Créez un message avec des variables personnalisables pour WhatsApp et SMS"
-      : "Enregistrez ou importez un message vocal pour vos appels automatisés",
-    canonical: `/templates/new?type=${type}`,
+    title: isVoiceChannel ? "Créer un template vocal" : "Créer un template texte",
+    description: isVoiceChannel
+      ? "Enregistrez ou importez un message vocal pour vos appels automatisés"
+      : "Créez un message avec des variables personnalisables pour WhatsApp et SMS",
+    canonical: `/templates/new${channel ? `?channel=${channel}` : ""}`,
   });
 }
 
 export default async function NewTemplatePage({ searchParams }: PageProps) {
-  const { type = "text" } = await searchParams;
+  const { channel } = await searchParams;
 
-  return <NewTemplateView type={type} />;
+  return <NewTemplateView channel={channel} />;
 }

@@ -1,47 +1,20 @@
+import { getLeadStageConfig } from "@/config/lead.config";
+import { getMessageStatusConfig } from "@/config/message.config";
 import { pages } from "@/config/routes";
-import { type LeadStage } from "@/schema/lead.schema";
 import { format, formatDistance } from "date-fns";
 import { fr } from "date-fns/locale";
 import Image from "next/image";
 import Link from "next/link";
-import type React from "react";
-
-// Constants for stage labels and colors
-const STAGE_LABELS: Record<LeadStage, string> = {
-  nouveau: "Nouveau",
-  contacte: "Contacté",
-  relance: "Relance",
-  negociation: "Négociation",
-  gagne: "Gagné",
-  perdu: "Perdu",
-};
-
-const STAGE_COLORS: Record<LeadStage, string> = {
-  nouveau: "#3b82f6",
-  contacte: "#8b5cf6",
-  relance: "#f59e0b",
-  negociation: "#10b981",
-  gagne: "#22c55e",
-  perdu: "#ef4444",
-};
-
-const STATUS_COLORS: Record<string, string> = {
-  pending: "bg-yellow-900/30 text-yellow-400 border-yellow-900/50",
-  sent: "bg-blue-900/30 text-blue-400 border-blue-900/50",
-  delivered: "bg-green-900/30 text-green-400 border-green-900/50",
-  failed: "bg-red-900/30 text-red-400 border-red-900/50",
-  read: "bg-purple-900/30 text-purple-400 border-purple-900/50",
-};
 
 // Type definitions based on action return types
 type Lead = Awaited<
-  ReturnType<typeof import("@/actions/lead.actions").getLeadDetails>
+  ReturnType<typeof import("@/services/lead.service").getLeadDetails>
 >;
 type Message = Awaited<
-  ReturnType<typeof import("@/actions/lead.actions").getLeadMessages>
+  ReturnType<typeof import("@/services/lead.service").getLeadMessages>
 >[number];
 type Activity = Awaited<
-  ReturnType<typeof import("@/actions/lead.actions").getLeadActivities>
+  ReturnType<typeof import("@/services/lead.service").getLeadActivities>
 >[number];
 
 interface LeadDetailViewProps {
@@ -173,13 +146,13 @@ export function LeadDetailView({
                   <div
                     className="rounded-full px-3 py-1.5 text-xs font-semibold"
                     style={{
-                      backgroundColor: `${STAGE_COLORS[lead.stage as LeadStage]}20`,
-                      color: STAGE_COLORS[lead.stage as LeadStage],
-                      borderColor: `${STAGE_COLORS[lead.stage as LeadStage]}40`,
+                      backgroundColor: `${getLeadStageConfig(lead.stage).color}20`,
+                      color: getLeadStageConfig(lead.stage).color,
+                      borderColor: `${getLeadStageConfig(lead.stage).color}40`,
                       borderWidth: "1px",
                     }}
                   >
-                    {STAGE_LABELS[lead.stage as LeadStage]}
+                    {getLeadStageConfig(lead.stage).label}
                   </div>
                 </div>
 
@@ -328,9 +301,9 @@ export function LeadDetailView({
                     >
                       <div className="mb-2 flex items-center gap-2">
                         <span
-                          className={`rounded border px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[message.status]}`}
+                          className={`rounded border px-2 py-0.5 text-xs font-medium ${getMessageStatusConfig(message.status).class}`}
                         >
-                          {message.status}
+                          {getMessageStatusConfig(message.status).label}
                         </span>
                         <span className="text-xs text-zinc-500">
                           {message.sentAt
@@ -342,9 +315,7 @@ export function LeadDetailView({
                             : "En attente"}
                         </span>
                       </div>
-                      <p className="text-sm text-zinc-300">
-                        {message.content}
-                      </p>
+                      <p className="text-sm text-zinc-300">{message.content}</p>
                       <p className="mt-2 text-xs text-zinc-500">
                         Envoyé par {message.sentBy.name}
                       </p>
@@ -419,7 +390,7 @@ export function LeadDetailView({
                         d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
                       />
                     </svg>
-                    Voir l'annonce
+                    Voir l&apos;annonce
                   </a>
                 )}
               </div>
@@ -455,7 +426,6 @@ export function LeadDetailView({
                           {activity.type === "created" && "Lead créé"}
                         </p>
                         <p className="mt-1 text-xs text-zinc-500">
-                          Par {activity.createdBy.name} •{" "}
                           {formatDistance(
                             new Date(activity.createdAt),
                             new Date(),

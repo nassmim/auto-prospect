@@ -1,6 +1,6 @@
 "use client";
 
-import { updateaccountSettings } from "@/actions/account.actions";
+import { updateAccountSettings } from "@/actions/account.actions";
 import { TAccountSettings } from "@/types/account.types";
 import { useState, useTransition } from "react";
 
@@ -29,7 +29,7 @@ export function MessagesTab({ settings }: MessagesTabProps) {
 
     startTransition(async () => {
       try {
-        await updateaccountSettings({
+        await updateAccountSettings({
           dailyReset,
           ignorePhonesVisible,
         });

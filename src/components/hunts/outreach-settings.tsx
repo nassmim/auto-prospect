@@ -1,5 +1,6 @@
 "use client";
 
+import { EContactChannel } from "@/config/message.config";
 import { pages } from "@/config/routes";
 import { getAccountTemplates } from "@/services/message.service";
 
@@ -81,7 +82,7 @@ export function OutreachSettings({
     } else if (channel === "whatsapp") {
       // WhatsApp text templates (channel === "whatsappText" and no audioUrl)
       return templates.filter(
-        (t) => t.channel === "whatsappText" && !t.audioUrl,
+        (t) => t.channel === EContactChannel.WHATSAPP_TEXT && !t.audioUrl,
       );
     } else if (channel === "sms") {
       // SMS text templates (channel === "sms" and no audioUrl)

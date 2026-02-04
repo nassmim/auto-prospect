@@ -1,7 +1,4 @@
-import {
-  EAccountType,
-  ACCOUNT_TYPE_VALUES,
-} from "@/config/account.config";
+import { ACCOUNT_TYPE_VALUES, EAccountType } from "@/config/account.config";
 import { TAccountSettings } from "@/types/account.types";
 import { InferSelectModel, sql } from "drizzle-orm";
 import {
@@ -68,4 +65,13 @@ export const accounts = pgTable(
     }),
   ],
 );
-export type TAccountServer = InferSelectModel<typeof accounts>;
+export type TAccount = InferSelectModel<typeof accounts>;
+/**
+ * Type helper to extract keys from columns object where value is true
+ */
+export type TAccountSelectedKeys<
+  T extends Partial<Record<keyof TAccount, boolean>>,
+> = {
+  [K in keyof T]: T[K] extends true ? K : never;
+}[keyof T] &
+  keyof TAccount;

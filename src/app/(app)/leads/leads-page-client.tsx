@@ -1,17 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { LeadsFilters } from "@/components/leads/leads-filters";
 import { KanbanView } from "@/components/leads/kanban-view";
+import { LeadsFilters } from "@/components/leads/leads-filters";
+import { TPipelineLead } from "@/services/lead.service";
+import { useState } from "react";
 
 type ViewMode = "kanban" | "list";
 
-type Lead = Awaited<
-  ReturnType<typeof import("@/services/lead.service").getPipelineLeads>
->[number];
-
 interface LeadsPageClientProps {
-  leads: Lead[];
+  leads: TPipelineLead[];
 }
 
 export function LeadsPageClient({ leads }: LeadsPageClientProps) {
@@ -62,9 +59,7 @@ export function LeadsPageClient({ leads }: LeadsPageClientProps) {
         ) : (
           <div className="h-full">
             {/* TODO: Implement ListView component */}
-            <p className="text-center text-zinc-400">
-              List view coming soon.
-            </p>
+            <p className="text-center text-zinc-400">List view coming soon.</p>
           </div>
         )}
       </div>

@@ -11,21 +11,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { swrKeys } from "@/config/swr-keys";
 import { EContactChannel, type TContactChannel } from "@/config/message.config";
-import { ETransactionType, type TransactionType } from "@/config/payment.config";
-import { SWR_POLLING } from "@/hooks/use-swr-action";
 import {
-  TCreditBalanceClient,
-  TTransactionMetadata,
-} from "@/types/payment.types";
+  ETransactionType,
+  type TransactionType,
+} from "@/config/payment.config";
+import { swrKeys } from "@/config/swr-keys";
+import { SWR_POLLING } from "@/hooks/use-swr-action";
+import { TCreditBalance, TTransactionMetadata } from "@/schema/credits.schema";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useState } from "react";
 import useSWR from "swr";
 
 type CreditData = {
-  balance: TCreditBalanceClient | undefined;
+  balance: TCreditBalance | undefined;
   huntAllocations: Array<{
     huntId: string;
     huntName: string;

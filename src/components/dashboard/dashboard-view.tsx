@@ -9,7 +9,7 @@ import { StatCard } from "@/components/dashboard/stat-card";
 import { pages } from "@/config/routes";
 import { swrKeys } from "@/config/swr-keys";
 import { SWR_POLLING } from "@/hooks/use-swr-action";
-import { TDashboardStats } from "@/types/general.types";
+import { getDashboardStats } from "@/services/dashboard.service";
 import { THuntSummary } from "@/types/hunt.types";
 import { formatDistance } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -18,7 +18,7 @@ import { useEffect, useState } from "react";
 import useSWR from "swr";
 
 interface DashboardViewProps {
-  stats: TDashboardStats;
+  stats: Awaited<ReturnType<typeof getDashboardStats>>;
   hunts: THuntSummary[];
 }
 
@@ -147,7 +147,7 @@ export function DashboardView({
             </svg>
           }
           label="Messages WhatsApp"
-          value={stats.messagesSentByChannel.whatsappText}
+          value={stats.messagesSentByChannel.whatsapp_text}
         />
 
         <StatCard

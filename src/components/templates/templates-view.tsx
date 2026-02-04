@@ -1,19 +1,21 @@
 import { TemplateCard } from "@/components/templates/template-card";
 import { pages } from "@/config/routes";
+import { MessageTemplate } from "@/services/message.service";
+import { EContactChannel } from "@/config/message.config";
 import Link from "next/link";
 
-// Type based on action return type
-type Template = Awaited<
-  ReturnType<typeof import("@/services/message.service").getAccountTemplates>
->[number];
-
 interface TemplatesViewProps {
-  templates: Template[];
+  templates: MessageTemplate[];
 }
 
 export function TemplatesView({ templates }: TemplatesViewProps) {
-  const textTemplates = templates.filter((t) => t.type === "text");
-  const voiceTemplates = templates.filter((t) => t.type === "voice");
+  // Group templates by media type: text channels (SMS, WhatsApp) vs voice channels (Ringless Voice)
+  const textTemplates = templates.filter(
+    (t) => t.channel === EContactChannel.SMS || t.channel === EContactChannel.WHATSAPP_TEXT
+  );
+  const voiceTemplates = templates.filter(
+    (t) => t.channel === EContactChannel.RINGLESS_VOICE
+  );
 
   return (
     <div className="min-h-screen bg-zinc-950 p-6">
@@ -31,7 +33,7 @@ export function TemplatesView({ templates }: TemplatesViewProps) {
 
           {/* New template button */}
           <Link
-            href={pages.templates.new("text")}
+            href={pages.templates.new(EContactChannel.WHATSAPP_TEXT)}
             className="rounded-lg bg-amber-500 px-4 py-2 font-medium text-black transition-colors hover:bg-amber-400"
           >
             + Nouveau Template
@@ -47,7 +49,7 @@ export function TemplatesView({ templates }: TemplatesViewProps) {
                 Templates Texte ({textTemplates.length})
               </h2>
               <Link
-                href={pages.templates.new("text")}
+                href={pages.templates.new(EContactChannel.WHATSAPP_TEXT)}
                 className="text-sm text-amber-500 transition-colors hover:text-amber-400"
               >
                 + Ajouter un template texte
@@ -60,7 +62,7 @@ export function TemplatesView({ templates }: TemplatesViewProps) {
                   Aucun template texte créé
                 </p>
                 <Link
-                  href={pages.templates.new("text")}
+                  href={pages.templates.new(EContactChannel.WHATSAPP_TEXT)}
                   className="mt-4 inline-block rounded-lg border border-amber-500 px-4 py-2 text-sm font-medium text-amber-500 transition-colors hover:bg-amber-500/10"
                 >
                   Créer votre premier template
@@ -82,7 +84,7 @@ export function TemplatesView({ templates }: TemplatesViewProps) {
                 Templates Voix ({voiceTemplates.length})
               </h2>
               <Link
-                href={pages.templates.new("voice")}
+                href={pages.templates.new(EContactChannel.RINGLESS_VOICE)}
                 className="text-sm text-amber-500 transition-colors hover:text-amber-400"
               >
                 + Ajouter un template voix
@@ -95,7 +97,7 @@ export function TemplatesView({ templates }: TemplatesViewProps) {
                   Aucun template vocal créé
                 </p>
                 <Link
-                  href={pages.templates.new("voice")}
+                  href={pages.templates.new(EContactChannel.RINGLESS_VOICE)}
                   className="mt-4 inline-block rounded-lg border border-amber-500 px-4 py-2 text-sm font-medium text-amber-500 transition-colors hover:bg-amber-500/10"
                 >
                   Créer votre premier template vocal

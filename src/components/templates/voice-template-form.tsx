@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { pages } from "@/config/routes";
+import { EContactChannel } from "@/config/message.config";
 import { createClient } from "@/lib/supabase/client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
@@ -32,7 +33,11 @@ const voiceTemplateFormSchema = z.object({
 
 type VoiceTemplateFormValues = z.infer<typeof voiceTemplateFormSchema>;
 
-export function VoiceTemplateForm() {
+interface VoiceTemplateFormProps {
+  defaultChannel?: string;
+}
+
+export function VoiceTemplateForm({ defaultChannel }: VoiceTemplateFormProps) {
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioDuration, setAudioDuration] = useState<number | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
@@ -116,9 +121,10 @@ export function VoiceTemplateForm() {
         data: { publicUrl },
       } = supabase.storage.from("templates").getPublicUrl(uploadData.path);
 
-      // Create template record
+      // Create template record with ringless_voice channel
       await createVoiceTemplate({
         name: data.name,
+        channel: EContactChannel.RINGLESS_VOICE,
         audioUrl: publicUrl,
         audioDuration,
         isDefault: data.isDefault,

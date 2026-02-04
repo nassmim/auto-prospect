@@ -1,5 +1,5 @@
+import { TPlatformValue } from "@/config/platform.config";
 import { DB_COLUMS_TO_UPDATE } from "@/constants/ad.constants";
-import { EPlatformValue } from "@/config/platform.config";
 import {
   createDrizzleSupabaseClient,
   TDBClient,
@@ -15,13 +15,13 @@ import {
   gearBoxes,
   locations,
   TAd,
+  TAdReferenceData,
   TContactedAd,
   THunt,
   TLocation,
   vehicleSeats,
   vehicleStates,
 } from "@/schema";
-import { TAdReferenceData } from "@/types/ad.types";
 import { BinaryOperator, sql } from "drizzle-orm";
 import { PgColumn } from "drizzle-orm/pg-core";
 
@@ -67,7 +67,7 @@ export const getDataId = async ({
  */
 export const fetchAllReferenceData = async (
   dbClient: TDBClient,
-  platformField: EPlatformValue,
+  platformField: TPlatformValue,
 ): Promise<TAdReferenceData> => {
   const [
     adTypesData,

@@ -47,6 +47,7 @@ export {
 // Lead schemas
 export {
   leadNoteSchema,
+  leadReminderFormSchema,
   leadReminderSchema,
   type TLeadNoteFormData,
   type TLeadReminderFormData,

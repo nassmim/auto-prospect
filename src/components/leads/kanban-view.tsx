@@ -1,10 +1,14 @@
 "use client";
 
-import { useState, useTransition, useRef } from "react";
+import { fetchPipelineLeads, updateLeadStage } from "@/actions/lead.actions";
+import { LEAD_STAGE_DEFINITIONS, TLeadStage } from "@/config/lead.config";
+import { swrKeys } from "@/config/swr-keys";
+import { SWR_POLLING } from "@/hooks/use-swr-action";
+import { TPipelineLead } from "@/services/lead.service";
 import {
+  closestCorners,
   DndContext,
   DragOverlay,
-  closestCorners,
   KeyboardSensor,
   PointerSensor,
   useSensor,
@@ -12,41 +16,22 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
-import { arrayMove, SortableContext } from "@dnd-kit/sortable";
+import { SortableContext } from "@dnd-kit/sortable";
+import { useState, useTransition } from "react";
+import useSWR from "swr";
+import { KanbanColumn } from "./kanban-column";
 import { LeadCard } from "./lead-card";
 import { LeadDrawer } from "./lead-drawer";
-import { KanbanColumn } from "./kanban-column";
-import { LEAD_STAGES, type LeadStage } from "@/config/lead.config";
-import { updateLeadStage, fetchPipelineLeads } from "@/actions/lead.actions";
-import { swrKeys } from "@/config/swr-keys";
-import { SWR_POLLING } from "@/hooks/use-swr-action";
-import useSWR from "swr";
-
-type Lead = {
-  id: string;
-  stage: string;
-  position: number;
-  ad: {
-    title: string;
-    price: number;
-    picture: string | null;
-    phoneNumber: string | null;
-    isWhatsappPhone: boolean | null;
-    zipcode: {
-      name: string;
-    };
-  };
-};
 
 type KanbanViewProps = {
-  initialLeads: Lead[];
+  initialLeads: TPipelineLead[];
 };
 
 export function KanbanView({ initialLeads }: KanbanViewProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const isDraggingRef = useRef(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Fetch pipeline leads with SWR polling
   // Pause polling during drag operations to avoid UI jumps
@@ -55,7 +40,7 @@ export function KanbanView({ initialLeads }: KanbanViewProps) {
     () => fetchPipelineLeads(),
     {
       fallbackData: initialLeads,
-      refreshInterval: isDraggingRef.current ? 0 : SWR_POLLING.KANBAN,
+      refreshInterval: isDragging ? 0 : SWR_POLLING.KANBAN,
       revalidateOnFocus: true,
     },
   );
@@ -66,12 +51,12 @@ export function KanbanView({ initialLeads }: KanbanViewProps) {
   );
 
   const handleDragStart = (event: DragStartEvent) => {
-    isDraggingRef.current = true;
+    setIsDragging(true);
     setActiveId(event.active.id as string);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
-    isDraggingRef.current = false;
+    setIsDragging(false);
     const { active, over } = event;
 
     if (!over) {
@@ -80,7 +65,7 @@ export function KanbanView({ initialLeads }: KanbanViewProps) {
     }
 
     const leadId = active.id as string;
-    const newStage = over.id as LeadStage;
+    const newStage = over.id as TLeadStage;
 
     // Optimistic update with SWR
     const optimisticLeads = leads.map((lead) =>
@@ -109,7 +94,7 @@ export function KanbanView({ initialLeads }: KanbanViewProps) {
   };
 
   const handleDragCancel = () => {
-    isDraggingRef.current = false;
+    setIsDragging(false);
     setActiveId(null);
   };
 
@@ -127,7 +112,7 @@ export function KanbanView({ initialLeads }: KanbanViewProps) {
         onDragCancel={handleDragCancel}
       >
         <div className="flex h-full gap-4 overflow-x-auto pb-4">
-          {LEAD_STAGES.map((stageConfig) => {
+          {LEAD_STAGE_DEFINITIONS.map((stageConfig) => {
             const stageLeads = leads.filter(
               (lead) => lead.stage === stageConfig.value,
             );

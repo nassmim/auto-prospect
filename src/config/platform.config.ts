@@ -3,7 +3,7 @@
  * Platform-related enums, types, and configs
  */
 
-const PLATFORM_DEFINITIONS = [
+export const PLATFORM_DEFINITIONS = [
   {
     key: "LOBSTR",
     value: "lobstrValue",
@@ -14,15 +14,7 @@ const PLATFORM_DEFINITIONS = [
   },
 ] as const;
 
-export const PLATFORM_CONFIG = Object.fromEntries(
-  PLATFORM_DEFINITIONS.map((platform) => [platform.key, platform]),
-) as {
-  [K in (typeof PLATFORM_DEFINITIONS)[number]["key"]]: Extract<
-    (typeof PLATFORM_DEFINITIONS)[number],
-    { key: K }
-  >;
-};
-
+// Enum-like constant access (e.g., EPlatformValue.LOBSTR)
 export const EPlatformValue = Object.fromEntries(
   PLATFORM_DEFINITIONS.map((platform) => [platform.key, platform.value]),
 ) as {
@@ -34,7 +26,6 @@ export const EPlatformValue = Object.fromEntries(
 
 export type TPlatformValue = (typeof PLATFORM_DEFINITIONS)[number]["value"];
 
-export const PLATFORMS = PLATFORM_DEFINITIONS;
 export const PLATFORM_VALUES = PLATFORM_DEFINITIONS.map((p) => p.value);
 
 export const getPlatformConfig = (platform: TPlatformValue) => {

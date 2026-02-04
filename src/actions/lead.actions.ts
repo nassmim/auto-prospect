@@ -1,21 +1,21 @@
 "use server";
 
-import { ELeadStage } from "@/config/lead.config";
+import { TLeadStage } from "@/config/lead.config";
+import { pages } from "@/config/routes";
 import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
 import { createClient } from "@/lib/supabase/server";
 import { formatZodError } from "@/lib/validation";
 import { leadNotes, leadReminders, leads } from "@/schema/lead.schema";
-import { leadNoteSchema, leadReminderSchema } from "@/validation-schemas";
-import { pages } from "@/config/routes";
-import { eq, inArray } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
 import {
-  getLeadDetails,
-  getLeadAssociatedTeamMembers,
-  getLeadMessages,
   getLeadActivities,
+  getLeadAssociatedTeamMembers,
+  getLeadDetails,
+  getLeadMessages,
   getPipelineLeads,
 } from "@/services/lead.service";
+import { leadNoteSchema, leadReminderSchema } from "@/validation-schemas";
+import { eq, inArray } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 
 /**
  * Fetches complete lead details with all relations
@@ -61,7 +61,7 @@ export async function fetchPipelineLeads() {
  * Updates a lead's stage and logs the activity
  * Used when dragging leads between Kanban columns
  */
-export async function updateLeadStage(leadId: string, newStage: ELeadStage) {
+export async function updateLeadStage(leadId: string, newStage: TLeadStage) {
   const supabase = await createClient();
   const {
     data: { session },
@@ -107,7 +107,7 @@ export async function updateLeadStage(leadId: string, newStage: ELeadStage) {
 export async function updateLeadPosition(
   leadId: string,
   newPosition: number,
-  newStage?: ELeadStage,
+  newStage?: TLeadStage,
 ) {
   const supabase = await createClient();
   const {
@@ -121,7 +121,11 @@ export async function updateLeadPosition(
   const dbClient = await createDrizzleSupabaseClient();
 
   try {
-    const updateData: { position: number; updatedAt: Date; stage?: string } = {
+    const updateData: {
+      position: number;
+      updatedAt: Date;
+      stage?: TLeadStage;
+    } = {
       position: newPosition,
       updatedAt: new Date(),
     };
@@ -150,7 +154,7 @@ export async function updateLeadPosition(
 export async function bulkUpdateLeads(
   leadIds: string[],
   updates: {
-    stage?: keyof typeof ELeadStage;
+    stage?: TLeadStage;
     assignedToId?: string | null;
   },
 ) {
@@ -173,7 +177,7 @@ export async function bulkUpdateLeads(
     // Update all leads
     const updateData: {
       updatedAt: Date;
-      stage?: string;
+      stage?: TLeadStage;
       assignedToId?: string | null;
     } = {
       updatedAt: new Date(),

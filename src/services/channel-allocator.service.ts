@@ -4,13 +4,22 @@
  * Database operations delegated to server actions
  */
 
+import { TContactChannel } from "@/config/message.config";
 import { TDBClient } from "@/lib/drizzle/dbClient";
 import { getHuntChannelCreditsMap } from "@/services/channel.service";
 import { getHuntDailyPacingLimit } from "@/services/hunt.service";
-import {
-  TAllocateAdsToChannelsParams,
-  TChannelAllocation,
-} from "@/types/message.types";
+import { TDailyContactTracker } from "@/types/message.types";
+
+type TChannelAllocation = {
+  adId: string;
+  channel: TContactChannel;
+};
+
+type TAllocateAdsToChannelsParams = {
+  huntId: string;
+  adIds: string[];
+  dailyContactTracker: TDailyContactTracker;
+};
 
 /**
  * Allocates ads to channels based on priority, available credits, and daily pacing limit

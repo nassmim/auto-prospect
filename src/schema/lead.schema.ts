@@ -1,12 +1,16 @@
 import {
   ELeadStage,
-  LEAD_STAGE_VALUES,
-  ELeadActivityType,
   LEAD_ACTIVITY_TYPE_VALUES,
+  LEAD_STAGE_VALUES,
 } from "@/config/lead.config";
+import { TMessageStatus } from "@/config/message.config";
 import { teamMembers } from "@/schema/team.schema";
-import { TActivityMetadata } from "@/types/message.types";
-import { InferInsertModel, relations, sql } from "drizzle-orm";
+import {
+  InferInsertModel,
+  InferSelectModel,
+  relations,
+  sql,
+} from "drizzle-orm";
 import {
   boolean,
   index,
@@ -25,15 +29,47 @@ import { accounts } from "./account.schema";
 import { ads } from "./ad.schema";
 import { hunts } from "./hunt.schema";
 
+// Metadata types for different activity types
+type TStageChangeMetadata = {
+  fromStage: string;
+  toStage: string;
+};
+
+type TMessageSentMetadata = {
+  channel: MessageChannel;
+  status: TMessageStatus;
+  messageId: string;
+};
+
+type TAssignmentChangeMetadata = {
+  fromUserId: string | null;
+  toUserId: string | null;
+};
+
+type TNoteAddedMetadata = {
+  noteId: string;
+  preview: string; // First 100 chars of note
+};
+
+type TReminderSetMetadata = {
+  reminderId: string;
+  dueAt: Date;
+};
+
+type TActivityMetadata =
+  | TStageChangeMetadata
+  | TMessageSentMetadata
+  | TAssignmentChangeMetadata
+  | TNoteAddedMetadata
+  | TReminderSetMetadata
+  | Record<string, never>; // For 'created' type
+
 // Lead stage enum - pipeline stages for the Kanban view
-export const leadStage = pgEnum(
-  "lead_stage",
-  LEAD_STAGE_VALUES as [string, ...string[]],
-);
+export const leadStage = pgEnum("lead_stage", LEAD_STAGE_VALUES);
 
 export const leadActivityType = pgEnum(
   "lead_activity_type",
-  LEAD_ACTIVITY_TYPE_VALUES as [string, ...string[]],
+  LEAD_ACTIVITY_TYPE_VALUES,
 );
 
 // Leads table - connects ads to accounts with pipeline tracking
@@ -50,7 +86,7 @@ export const leads = pgTable(
     adId: uuid("ad_id")
       .references(() => ads.id, { onDelete: "cascade" })
       .notNull(),
-    stage: leadStage().notNull().default(ELeadStage.NOUVEAU),
+    stage: leadStage().notNull().default(ELeadStage.NEW),
     assignedToId: uuid("assigned_to_id").references(() => teamMembers.id, {
       onDelete: "set null",
     }),
@@ -106,6 +142,7 @@ export const leads = pgTable(
   ],
 );
 export type TLeadInsert = InferInsertModel<typeof leads>;
+export type TLead = InferSelectModel<typeof leads>;
 
 // Lead notes table - activity log and notes for each lead
 export const leadNotes = pgTable(

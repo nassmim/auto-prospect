@@ -8,7 +8,6 @@ import {
   TAdType,
   TLocation,
 } from "@/schema/ad.schema";
-import { TMessageTemplateIds, TOutreachSettings } from "@/types/hunt.types";
 import {
   InferInsertModel,
   InferSelectModel,
@@ -31,6 +30,21 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { authenticatedRole, authUid } from "drizzle-orm/supabase";
+
+// Outreach settings type for JSONB field
+type TOutreachSettings = {
+  whatsapp?: boolean;
+  sms?: boolean;
+  ringlessVoice?: boolean;
+};
+
+// Template IDs type for JSONB field
+type TMessageTemplateIds = {
+  leboncoin?: string | null;
+  whatsapp?: string | null;
+  sms?: string | null;
+  ringlessVoice?: string | null;
+};
 
 export const huntStatus = pgEnum(
   "hunt_status",

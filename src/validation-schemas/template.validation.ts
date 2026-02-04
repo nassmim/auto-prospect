@@ -25,6 +25,9 @@ export const voiceTemplateSchema = z.object({
     .string()
     .min(1, "Le nom est requis")
     .max(100, "Le nom ne peut pas dépasser 100 caractères"),
+  channel: z.enum(Object.values(EContactChannel), {
+    message: "Canal invalide",
+  }),
   audioUrl: z.string().url("URL audio invalide"),
   audioDuration: z
     .number()

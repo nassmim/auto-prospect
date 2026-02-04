@@ -7,58 +7,55 @@
 // LEAD STAGES
 // ============================================================================
 
-const LEAD_STAGE_DEFINITIONS = [
+export const LEAD_STAGE_DEFINITIONS = [
   {
-    key: "NOUVEAU",
-    value: "nouveau",
+    key: "NEW",
+    value: "new",
     label: "Nouveau",
     description: "Leads nouvellement découverts",
-    color: "blue",
+    color: "#3b82f6",
+    class: "bg-blue-900/30 text-blue-400 border-blue-900/50",
     icon: "star",
   },
   {
-    key: "CONTACTE",
-    value: "contacte",
+    key: "CONTACTED",
+    value: "contacted",
     label: "Contacté",
     description: "Premier contact établi",
-    color: "purple",
+    color: "#8b5cf6",
+    class: "bg-purple-900/30 text-purple-400 border-purple-900/50",
     icon: "message",
   },
   {
-    key: "RELANCE",
-    value: "relance",
+    key: "CHASED",
+    value: "chased",
     label: "Relance",
     description: "En attente de réponse",
-    color: "orange",
+    color: "#f59e0b",
+    class: "bg-orange-900/30 text-orange-400 border-orange-900/50",
     icon: "clock",
   },
   {
-    key: "GAGNE",
-    value: "gagne",
+    key: "WON",
+    value: "won",
     label: "Gagné",
     description: "Vente conclue",
-    color: "green",
+    color: "#22c55e",
+    class: "bg-green-900/30 text-green-400 border-green-900/50",
     icon: "check",
   },
   {
-    key: "PERDU",
-    value: "perdu",
+    key: "LOST",
+    value: "lost",
     label: "Perdu",
     description: "Opportunité perdue",
-    color: "red",
+    color: "#ef4444",
+    class: "bg-red-900/30 text-red-400 border-red-900/50",
     icon: "x",
   },
 ] as const;
 
-export const LEAD_STAGE_CONFIG = Object.fromEntries(
-  LEAD_STAGE_DEFINITIONS.map((stage) => [stage.key, stage]),
-) as {
-  [K in (typeof LEAD_STAGE_DEFINITIONS)[number]["key"]]: Extract<
-    (typeof LEAD_STAGE_DEFINITIONS)[number],
-    { key: K }
-  >;
-};
-
+// Enum-like constant access (e.g., ELeadStage.CONTACTE)
 export const ELeadStage = Object.fromEntries(
   LEAD_STAGE_DEFINITIONS.map((stage) => [stage.key, stage.value]),
 ) as {
@@ -70,8 +67,11 @@ export const ELeadStage = Object.fromEntries(
 
 export type TLeadStage = (typeof LEAD_STAGE_DEFINITIONS)[number]["value"];
 
-export const LEAD_STAGES = LEAD_STAGE_DEFINITIONS;
-export const LEAD_STAGE_VALUES = LEAD_STAGE_DEFINITIONS.map((s) => s.value);
+// Array of values for Drizzle pgEnum
+export const LEAD_STAGE_VALUES = LEAD_STAGE_DEFINITIONS.map((s) => s.value) as [
+  TLeadStage,
+  ...TLeadStage[],
+];
 
 export const getLeadStageConfig = (stage: TLeadStage) => {
   const config = LEAD_STAGE_DEFINITIONS.find((s) => s.value === stage);
@@ -79,15 +79,11 @@ export const getLeadStageConfig = (stage: TLeadStage) => {
   return config;
 };
 
-export const getLeadStageLabel = (stage: TLeadStage): string => {
-  return getLeadStageConfig(stage).label;
-};
-
 // ============================================================================
 // LEAD ACTIVITY TYPES
 // ============================================================================
 
-const LEAD_ACTIVITY_TYPE_DEFINITIONS = [
+export const LEAD_ACTIVITY_TYPE_DEFINITIONS = [
   {
     key: "STAGE_CHANGE",
     value: "stage_change",
@@ -138,15 +134,7 @@ const LEAD_ACTIVITY_TYPE_DEFINITIONS = [
   },
 ] as const;
 
-export const LEAD_ACTIVITY_TYPE_CONFIG = Object.fromEntries(
-  LEAD_ACTIVITY_TYPE_DEFINITIONS.map((type) => [type.key, type]),
-) as {
-  [K in (typeof LEAD_ACTIVITY_TYPE_DEFINITIONS)[number]["key"]]: Extract<
-    (typeof LEAD_ACTIVITY_TYPE_DEFINITIONS)[number],
-    { key: K }
-  >;
-};
-
+// Enum-like constant access (e.g., ELeadActivityType.MESSAGE_SENT)
 export const ELeadActivityType = Object.fromEntries(
   LEAD_ACTIVITY_TYPE_DEFINITIONS.map((type) => [type.key, type.value]),
 ) as {
@@ -159,17 +147,13 @@ export const ELeadActivityType = Object.fromEntries(
 export type TLeadActivityType =
   (typeof LEAD_ACTIVITY_TYPE_DEFINITIONS)[number]["value"];
 
-export const LEAD_ACTIVITY_TYPES = LEAD_ACTIVITY_TYPE_DEFINITIONS;
+// Array of values for Drizzle pgEnum
 export const LEAD_ACTIVITY_TYPE_VALUES = LEAD_ACTIVITY_TYPE_DEFINITIONS.map(
   (t) => t.value,
-);
+) as [TLeadActivityType, ...TLeadActivityType[]];
 
 export const getLeadActivityTypeConfig = (type: TLeadActivityType) => {
   const config = LEAD_ACTIVITY_TYPE_DEFINITIONS.find((t) => t.value === type);
   if (!config) throw new Error(`Invalid lead activity type: ${type}`);
   return config;
-};
-
-export const getLeadActivityTypeLabel = (type: TLeadActivityType): string => {
-  return getLeadActivityTypeConfig(type).label;
 };

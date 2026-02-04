@@ -1,12 +1,16 @@
 "use client";
 
 import { bulkUpdateLeads } from "@/actions/lead.actions";
-import { leadStages, type LeadStage } from "@/schema/lead.schema";
+import {
+  getLeadStageConfig,
+  LEAD_STAGE_VALUES,
+  TLeadStage,
+} from "@/config/lead.config";
 import { useState, useTransition } from "react";
 
 type Lead = {
   id: string;
-  stage: string;
+  stage: TLeadStage;
   assignedToId: string | null;
   createdAt: Date;
   ad: {
@@ -29,15 +33,6 @@ type ListViewProps = {
 
 type SortField = "title" | "price" | "stage" | "assignedTo" | "createdAt";
 type SortDirection = "asc" | "desc";
-
-const STAGE_LABELS: Record<LeadStage, string> = {
-  nouveau: "Nouveau",
-  contacte: "Contacté",
-  relance: "Relance",
-  negociation: "Négociation",
-  gagne: "Gagné",
-  perdu: "Perdu",
-};
 
 export function ListView({ initialLeads, onLeadClick }: ListViewProps) {
   const [leads, setLeads] = useState(initialLeads);
@@ -76,7 +71,7 @@ export function ListView({ initialLeads, onLeadClick }: ListViewProps) {
     }
   };
 
-  const handleBulkStageUpdate = async (newStage: LeadStage) => {
+  const handleBulkStageUpdate = async (newStage: TLeadStage) => {
     if (selectedIds.size === 0) return;
 
     startTransition(async () => {
@@ -135,15 +130,17 @@ export function ListView({ initialLeads, onLeadClick }: ListViewProps) {
 
           <select
             className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1 text-sm text-zinc-100"
-            onChange={(e) => handleBulkStageUpdate(e.target.value as LeadStage)}
+            onChange={(e) =>
+              handleBulkStageUpdate(e.target.value as TLeadStage)
+            }
             defaultValue=""
           >
             <option value="" disabled>
               Changer le stage...
             </option>
-            {leadStages.map((stage) => (
+            {LEAD_STAGE_VALUES.map((stage) => (
               <option key={stage} value={stage}>
-                {STAGE_LABELS[stage]}
+                {getLeadStageConfig(stage).label}
               </option>
             ))}
           </select>
@@ -254,7 +251,7 @@ export function ListView({ initialLeads, onLeadClick }: ListViewProps) {
                 </td>
                 <td className="p-3">
                   <span className="inline-block rounded-full bg-zinc-800 px-2 py-1 text-xs text-zinc-300">
-                    {STAGE_LABELS[lead.stage as LeadStage]}
+                    {getLeadStageConfig(lead.stage).label}
                   </span>
                 </td>
                 <td className="p-3 text-sm text-zinc-400">
