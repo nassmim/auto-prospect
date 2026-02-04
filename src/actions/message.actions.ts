@@ -1,6 +1,6 @@
 "use server";
 
-import { EContactChannel } from "@/constants/enums";
+import { EContactChannel } from "@/config/message.config";
 import {
   createDrizzleSupabaseClient,
   TANDperator,

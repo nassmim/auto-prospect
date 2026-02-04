@@ -1,7 +1,7 @@
 "use client";
 
 import { Progress } from "@/components/ui/progress";
-import { EContactChannel } from "@/constants/enums";
+import { EContactChannel } from "@/config/message.config";
 import type { THuntChannelCredit } from "@/schema/credits.schema";
 
 type CreditUsageDisplayProps = {

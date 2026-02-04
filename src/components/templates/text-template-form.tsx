@@ -23,7 +23,7 @@ import { pages } from "@/config/routes";
 import { renderTemplate } from "@/services/message.service";
 import {
   textTemplateSchema,
-  type TextTemplateFormData,
+  type TTextTemplateFormData,
 } from "@/validation-schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
@@ -36,7 +36,7 @@ export function TextTemplateForm() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const router = useRouter();
 
-  const form = useForm<TextTemplateFormData>({
+  const form = useForm<TTextTemplateFormData>({
     resolver: zodResolver(textTemplateSchema),
     defaultValues: {
       name: "",
@@ -84,7 +84,7 @@ export function TextTemplateForm() {
     alert("Cette fonctionnalité sera bientôt disponible !");
   };
 
-  const onSubmit = async (data: TextTemplateFormData) => {
+  const onSubmit = async (data: TTextTemplateFormData) => {
     setError(null);
 
     try {

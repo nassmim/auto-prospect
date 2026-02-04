@@ -172,10 +172,10 @@ export function getSEOTags(options: SEOTagsOptions): Metadata {
  * // Then use it in your page
  * export const metadata = generateLeadMetadata(leadData);
  */
-export type MetadataGenerator<T> = (data: T) => SEOTagsOptions;
+export type TMetadataGenerator<T> = (data: T) => SEOTagsOptions;
 
 export function createMetadataGenerator<T>(
-  generator: MetadataGenerator<T>,
+  generator: TMetadataGenerator<T>,
 ): (data: T) => Metadata {
   return (data: T) => getSEOTags(generator(data));
 }

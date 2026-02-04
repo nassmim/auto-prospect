@@ -1,4 +1,4 @@
-import { EContactChannel } from "@/constants/enums";
+import { EContactChannel } from "@/config/message.config";
 import { z } from "zod";
 
 // Text template validation schema
@@ -17,7 +17,7 @@ export const textTemplateSchema = z.object({
   isDefault: z.boolean(),
 });
 
-export type TextTemplateFormData = z.infer<typeof textTemplateSchema>;
+export type TTextTemplateFormData = z.infer<typeof textTemplateSchema>;
 
 // Voice template validation schema (server-side, after upload)
 export const voiceTemplateSchema = z.object({
@@ -33,7 +33,7 @@ export const voiceTemplateSchema = z.object({
   isDefault: z.boolean(),
 });
 
-export type VoiceTemplateFormData = z.infer<typeof voiceTemplateSchema>;
+export type TVoiceTemplateFormData = z.infer<typeof voiceTemplateSchema>;
 
 // Client-side voice template schema (before upload)
 export const voiceTemplateClientSchema = z.object({
@@ -51,4 +51,4 @@ export const voiceTemplateClientSchema = z.object({
   isDefault: z.boolean(),
 });
 
-export type VoiceTemplateClientData = z.infer<typeof voiceTemplateClientSchema>;
+export type TVoiceTemplateClientData = z.infer<typeof voiceTemplateClientSchema>;

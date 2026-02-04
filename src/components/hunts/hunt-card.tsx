@@ -15,7 +15,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { pages } from "@/config/routes";
-import { EHuntStatus } from "@/constants/enums";
+import { EHuntStatus } from "@/config/hunt.config";
 import Link from "next/link";
 import { useState } from "react";
 import type { KeyedMutator } from "swr";

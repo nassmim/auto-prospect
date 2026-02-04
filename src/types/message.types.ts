@@ -1,4 +1,4 @@
-import { EContactChannel, EMessageStatus } from "@/constants/enums";
+import { EContactChannel, EMessageStatus } from "@/config/message.config";
 
 /**
  * Daily Contact Tracker Service

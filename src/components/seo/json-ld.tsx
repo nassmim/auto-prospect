@@ -29,15 +29,15 @@ import type {
 import Script from "next/script";
 
 // Union type of all supported schema types
-export type JsonLdSchema =
+export type TJsonLdSchema =
   | accountSchema
   | WebSiteSchema
   | ProductSchema
   | BreadcrumbSchema;
 
-export interface JsonLdProps {
+export interface TJsonLdProps {
   // Accepts either a single schema or an array of schemas
-  data: JsonLdSchema | JsonLdSchema[];
+  data: TJsonLdSchema | TJsonLdSchema[];
 }
 
 /**
@@ -49,7 +49,7 @@ export interface JsonLdProps {
  * Multiple schemas usage (using @graph):
  * <JsonLd data={[accountSchema, breadcrumbSchema]} />
  */
-export function JsonLd({ data }: JsonLdProps) {
+export function JsonLd({ data }: TJsonLdProps) {
   // Build the JSON-LD object
   const jsonLd = {
     "@context": "https://schema.org", // Defines the vocabulary (schema.org)

@@ -11,7 +11,7 @@ export const teamInvitationSchema = z.object({
   }),
 });
 
-export type TeamInvitationFormData = z.infer<typeof teamInvitationSchema>;
+export type TTeamInvitationFormData = z.infer<typeof teamInvitationSchema>;
 
 // account settings schema (for future use)
 export const accountSettingsSchema = z.object({
@@ -21,4 +21,4 @@ export const accountSettingsSchema = z.object({
     .max(100, "Le nom ne peut pas dépasser 100 caractères"),
 });
 
-export type accountSettingsFormData = z.infer<typeof accountSettingsSchema>;
+export type TAccountSettingsFormData = z.infer<typeof accountSettingsSchema>;

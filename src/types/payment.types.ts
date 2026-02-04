@@ -1,4 +1,4 @@
-import { EContactChannel } from "@/constants/enums";
+import { EContactChannel } from "@/config/message.config";
 import { TCreditTransaction } from "@/schema/credits.schema";
 
 // Metadata types for transactions

@@ -1,4 +1,11 @@
-import { EContactChannel, ETransactionType } from "@/constants/enums";
+import {
+  type ContactChannel,
+  EContactChannel,
+} from "@/config/message.config";
+import {
+  type TransactionType,
+  ETransactionType,
+} from "@/config/payment.config";
 import { createDrizzleSupabaseClient, TDBQuery } from "@/lib/drizzle/dbClient";
 import {
   creditTransactions,
@@ -167,15 +174,15 @@ export async function getAccountCredits() {
     huntAllocations: huntAllocations.map((allocation) => ({
       huntId: allocation.huntId,
       huntName: allocation.hunt.name,
-      channel: allocation.channel as EContactChannel,
+      channel: allocation.channel as ContactChannel,
       allocated: allocation.creditsAllocated,
       consumed: allocation.creditsConsumed,
       remaining: allocation.creditsAllocated - allocation.creditsConsumed,
     })),
     transactions: transactions.map((tx) => ({
       id: tx.id,
-      type: tx.type as ETransactionType,
-      channel: tx.channel as EContactChannel,
+      type: tx.type as TransactionType,
+      channel: tx.channel as ContactChannel,
       amount: tx.amount,
       balanceAfter: tx.balanceAfter,
       createdAt: tx.createdAt,

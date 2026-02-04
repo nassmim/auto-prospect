@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
-export type StatCardProps = {
+export type TStatCardProps = {
   icon: ReactNode;
   label: string;
   value: number | string;
@@ -23,7 +23,7 @@ export function StatCard({
   value,
   trend,
   className = "",
-}: StatCardProps) {
+}: TStatCardProps) {
   return (
     <Card className={className}>
       <CardContent className="p-6">

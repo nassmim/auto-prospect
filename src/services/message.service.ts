@@ -4,7 +4,7 @@
  */
 
 import { pages } from "@/config/routes";
-import { EContactChannel } from "@/constants/enums";
+import { EContactChannel } from "@/config/message.config";
 import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
 import { creditTransactions } from "@/schema/credits.schema";
 import { leadNotes } from "@/schema/lead.schema";

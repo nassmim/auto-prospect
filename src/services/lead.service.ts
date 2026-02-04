@@ -1,4 +1,4 @@
-import { ELeadStage } from "@/constants/enums";
+import { ELeadStage } from "@/config/lead.config";
 import { createDrizzleSupabaseClient, TDBClient } from "@/lib/drizzle/dbClient";
 import { createClient } from "@/lib/supabase/server";
 import { leads } from "@/schema/lead.schema";

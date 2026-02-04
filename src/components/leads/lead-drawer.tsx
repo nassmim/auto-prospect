@@ -33,8 +33,8 @@ import {
 import {
   leadNoteSchema,
   leadReminderSchema,
-  type LeadNoteFormData,
-  type LeadReminderFormData,
+  type TLeadNoteFormData,
+  type TLeadReminderFormData,
 } from "@/validation-schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format, formatDistance } from "date-fns";
@@ -99,7 +99,7 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
   const [isSendingWhatsApp, setIsSendingWhatsApp] = useState(false);
 
   // Notes form
-  const noteForm = useForm<LeadNoteFormData>({
+  const noteForm = useForm<TLeadNoteFormData>({
     resolver: zodResolver(leadNoteSchema),
     defaultValues: {
       content: "",
@@ -107,7 +107,7 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
   });
 
   // Reminders form
-  const reminderForm = useForm<LeadReminderFormData>({
+  const reminderForm = useForm<TLeadReminderFormData>({
     resolver: zodResolver(leadReminderSchema),
     defaultValues: {
       dueAt: new Date(),
@@ -203,7 +203,7 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
     }
   };
 
-  const handleAddNote = async (data: LeadNoteFormData) => {
+  const handleAddNote = async (data: TLeadNoteFormData) => {
     if (!lead) return;
 
     try {
@@ -221,7 +221,7 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
     }
   };
 
-  const handleAddReminder = async (data: LeadReminderFormData) => {
+  const handleAddReminder = async (data: TLeadReminderFormData) => {
     if (!lead) return;
 
     try {

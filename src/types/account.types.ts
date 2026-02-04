@@ -17,9 +17,3 @@ export type TAccountSettings = {
   dailyReset?: boolean;
   ignorePhonesVisible?: boolean;
 };
-
-/**
- * User account type for client components
- * Re-exports TAccountServer for use in client components via type-only import
- */
-export type { TAccountServer as TAccountClient } from "@/schema/account.schema";

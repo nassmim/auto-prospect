@@ -1,5 +1,5 @@
 import { DB_COLUMS_TO_UPDATE } from "@/constants/ad.constants";
-import { EPlatformValue } from "@/constants/enums";
+import { EPlatformValue } from "@/config/platform.config";
 import {
   createDrizzleSupabaseClient,
   TDBClient,

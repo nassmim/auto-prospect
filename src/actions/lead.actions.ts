@@ -1,6 +1,6 @@
 "use server";
 
-import { ELeadStage } from "@/constants/enums";
+import { ELeadStage } from "@/config/lead.config";
 import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
 import { createClient } from "@/lib/supabase/server";
 import { formatZodError } from "@/lib/validation";

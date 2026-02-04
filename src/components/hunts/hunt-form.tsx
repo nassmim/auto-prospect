@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { pages } from "@/config/routes";
-import { huntFormSchema, type HuntFormData } from "@/validation-schemas";
+import { huntFormSchema, type THuntFormData } from "@/validation-schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -78,7 +78,7 @@ export function HuntForm({ templates, hunt }: HuntFormProps) {
     radius: 0,
   });
 
-  const form = useForm<HuntFormData>({
+  const form = useForm<THuntFormData>({
     resolver: zodResolver(huntFormSchema),
     defaultValues: {
       name: hunt?.name ?? "",
@@ -123,7 +123,7 @@ export function HuntForm({ templates, hunt }: HuntFormProps) {
     defaultValue: { sms: 0, whatsapp: 0, ringlessVoice: 0 },
   });
 
-  const handleSubmit = async (data: HuntFormData) => {
+  const handleSubmit = async (data: THuntFormData) => {
     setError(null);
 
     // For MVP, we only support URL paste for new hunts

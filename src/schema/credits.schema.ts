@@ -1,4 +1,4 @@
-import { ETransactionType } from "@/constants/enums";
+import { TRANSACTION_TYPE_VALUES } from "@/config/payment.config";
 import { channel } from "@/schema/message.schema";
 import { TTransactionMetadata } from "@/types/payment.types";
 import {
@@ -28,7 +28,7 @@ import { hunts } from "./hunt.schema";
 // Transaction types enum
 export const transactionType = pgEnum(
   "transaction_type",
-  Object.values(ETransactionType) as [string, ...string[]],
+  TRANSACTION_TYPE_VALUES as [string, ...string[]],
 );
 
 // Credit balances table - one row per account

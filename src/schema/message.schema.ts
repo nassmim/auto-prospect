@@ -1,8 +1,8 @@
 import {
-  EContactChannel,
-  EMessageChannel,
+  CONTACT_CHANNEL_VALUES,
   EMessageStatus,
-} from "@/constants/enums";
+  MESSAGE_STATUS_VALUES,
+} from "@/config/message.config";
 import { teamMembers } from "@/schema/team.schema";
 import { InferInsertModel, relations, sql } from "drizzle-orm";
 import {
@@ -26,22 +26,23 @@ import { authenticatedRole, authUid, serviceRole } from "drizzle-orm/supabase";
 import { accounts } from "./account.schema";
 import { leads } from "./lead.schema";
 
-// Message type enum
+// Contact channel enum (used for channel priorities and templates)
 export const channel = pgEnum(
   "channel",
-  Object.values(EContactChannel) as [string, ...string[]],
+  CONTACT_CHANNEL_VALUES as [string, ...string[]],
 );
 
-// Message channels enum
+// Message channel enum (used for messages and contacted ads)
+// TODO: Migrate this to use 'channel' enum and consolidate both enums
 export const messageChannel = pgEnum(
   "message_channel",
-  Object.values(EMessageChannel) as [string, ...string[]],
+  CONTACT_CHANNEL_VALUES as [string, ...string[]],
 );
 
 // Message status enum
 export const messageStatus = pgEnum(
   "message_status",
-  Object.values(EMessageStatus) as [string, ...string[]],
+  MESSAGE_STATUS_VALUES as [string, ...string[]],
 );
 
 // Channel priorities table - defines which channels to try first

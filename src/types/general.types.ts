@@ -1,4 +1,4 @@
-import { EContactChannel } from "@/constants/enums";
+import { EContactChannel } from "@/config/message.config";
 
 /**
  * Dashboard statistics for the account

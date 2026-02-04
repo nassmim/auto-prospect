@@ -1,4 +1,7 @@
-import { EaccountType } from "@/constants/enums";
+import {
+  EAccountType,
+  ACCOUNT_TYPE_VALUES,
+} from "@/config/account.config";
 import { TAccountSettings } from "@/types/account.types";
 import { InferSelectModel, sql } from "drizzle-orm";
 import {
@@ -15,7 +18,7 @@ import { authenticatedRole, authUid } from "drizzle-orm/supabase";
 // Types of accounts
 export const accountType = pgEnum(
   "account_type",
-  Object.values(EaccountType) as [string, ...string[]],
+  ACCOUNT_TYPE_VALUES as [string, ...string[]],
 );
 
 // accounts table - will have either just one member or several
@@ -30,7 +33,7 @@ export const accounts = pgTable(
     whatsappPhoneNumber: varchar("whatsapp_phone_number", { length: 20 }),
     smsApiKey: varchar("sms_api_key", { length: 500 }),
     // account type discriminator
-    type: accountType("type").notNull().default(EaccountType.PERSONAL),
+    type: accountType("type").notNull().default(EAccountType.PERSONAL),
     settings: jsonb().$type<TAccountSettings>(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()

@@ -45,4 +45,4 @@ type ExtractStaticRoutes<T> = T extends string
     ? { [K in keyof T]: ExtractStaticRoutes<T[K]> }[keyof T]
     : never;
 
-export type StaticRoute = ExtractStaticRoutes<typeof pages>;
+export type TStaticRoute = ExtractStaticRoutes<typeof pages>;

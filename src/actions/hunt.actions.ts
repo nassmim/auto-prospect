@@ -1,6 +1,7 @@
 "use server";
 
-import { EContactChannel, EHuntStatus } from "@/constants/enums";
+import { EContactChannel } from "@/config/message.config";
+import { EHuntStatus } from "@/config/hunt.config";
 import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
 import { createClient } from "@/lib/supabase/server";
 import { formatZodError } from "@/lib/validation";

@@ -1,4 +1,9 @@
-import { ELeadActivityType, ELeadStage } from "@/constants/enums";
+import {
+  ELeadStage,
+  LEAD_STAGE_VALUES,
+  ELeadActivityType,
+  LEAD_ACTIVITY_TYPE_VALUES,
+} from "@/config/lead.config";
 import { teamMembers } from "@/schema/team.schema";
 import { TActivityMetadata } from "@/types/message.types";
 import { InferInsertModel, relations, sql } from "drizzle-orm";
@@ -23,12 +28,12 @@ import { hunts } from "./hunt.schema";
 // Lead stage enum - pipeline stages for the Kanban view
 export const leadStage = pgEnum(
   "lead_stage",
-  Object.values(ELeadStage) as [string, ...string[]],
+  LEAD_STAGE_VALUES as [string, ...string[]],
 );
 
 export const leadActivityType = pgEnum(
   "lead_activity_type",
-  Object.values(ELeadActivityType) as [string, ...string[]],
+  LEAD_ACTIVITY_TYPE_VALUES as [string, ...string[]],
 );
 
 // Leads table - connects ads to accounts with pipeline tracking

@@ -16,7 +16,7 @@ import { arrayMove, SortableContext } from "@dnd-kit/sortable";
 import { LeadCard } from "./lead-card";
 import { LeadDrawer } from "./lead-drawer";
 import { KanbanColumn } from "./kanban-column";
-import { ELeadStage } from "@/constants/enums";
+import { LEAD_STAGES, type LeadStage } from "@/config/lead.config";
 import { updateLeadStage, fetchPipelineLeads } from "@/actions/lead.actions";
 import { swrKeys } from "@/config/swr-keys";
 import { SWR_POLLING } from "@/hooks/use-swr-action";
@@ -40,17 +40,6 @@ type Lead = {
 
 type KanbanViewProps = {
   initialLeads: Lead[];
-};
-
-// Array of all lead stages for Kanban columns
-const leadStages = Object.values(ELeadStage);
-
-const STAGE_LABELS: Record<ELeadStage, string> = {
-  [ELeadStage.NOUVEAU]: "Nouveau",
-  [ELeadStage.CONTACTE]: "Contacté",
-  [ELeadStage.RELANCE]: "Relance",
-  [ELeadStage.GAGNE]: "Gagné",
-  [ELeadStage.PERDU]: "Perdu",
 };
 
 export function KanbanView({ initialLeads }: KanbanViewProps) {
@@ -91,7 +80,7 @@ export function KanbanView({ initialLeads }: KanbanViewProps) {
     }
 
     const leadId = active.id as string;
-    const newStage = over.id as ELeadStage;
+    const newStage = over.id as LeadStage;
 
     // Optimistic update with SWR
     const optimisticLeads = leads.map((lead) =>
@@ -138,14 +127,16 @@ export function KanbanView({ initialLeads }: KanbanViewProps) {
         onDragCancel={handleDragCancel}
       >
         <div className="flex h-full gap-4 overflow-x-auto pb-4">
-          {leadStages.map((stage) => {
-            const stageLeads = leads.filter((lead) => lead.stage === stage);
+          {LEAD_STAGES.map((stageConfig) => {
+            const stageLeads = leads.filter(
+              (lead) => lead.stage === stageConfig.value,
+            );
 
             return (
               <KanbanColumn
-                key={stage}
-                id={stage}
-                title={STAGE_LABELS[stage]}
+                key={stageConfig.value}
+                id={stageConfig.value}
+                title={stageConfig.label}
                 count={stageLeads.length}
               >
                 <SortableContext items={stageLeads.map((lead) => lead.id)}>

@@ -12,7 +12,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { swrKeys } from "@/config/swr-keys";
-import { EContactChannel, ETransactionType } from "@/constants/enums";
+import { EContactChannel, type TContactChannel } from "@/config/message.config";
+import { ETransactionType, type TransactionType } from "@/config/payment.config";
 import { SWR_POLLING } from "@/hooks/use-swr-action";
 import {
   TCreditBalanceClient,
@@ -28,15 +29,15 @@ type CreditData = {
   huntAllocations: Array<{
     huntId: string;
     huntName: string;
-    channel: EContactChannel;
+    channel: TContactChannel;
     allocated: number;
     consumed: number;
     remaining: number;
   }>;
   transactions: Array<{
     id: string;
-    type: ETransactionType;
-    channel: EContactChannel;
+    type: TransactionType;
+    channel: TContactChannel;
     amount: number;
     balanceAfter: number;
     createdAt: Date;
@@ -48,13 +49,13 @@ type CreditsViewProps = {
   data: CreditData;
 };
 
-const channelLabels: Record<EContactChannel, string> = {
+const channelLabels: Record<TContactChannel, string> = {
   [EContactChannel.SMS]: "SMS",
   [EContactChannel.RINGLESS_VOICE]: "Ringless Voice",
   [EContactChannel.WHATSAPP_TEXT]: "WhatsApp",
 };
 
-const transactionTypeLabels: Record<ETransactionType, string> = {
+const transactionTypeLabels: Record<TransactionType, string> = {
   [ETransactionType.PURCHASE]: "Achat",
   [ETransactionType.USAGE]: "Utilisation",
   [ETransactionType.REFUND]: "Remboursement",

@@ -1,4 +1,4 @@
-import { EHuntStatus } from "@/constants/enums";
+import { EHuntStatus, HUNT_STATUS_VALUES } from "@/config/hunt.config";
 import { accounts } from "@/schema/account.schema";
 import {
   adSubTypes,
@@ -34,7 +34,7 @@ import { authenticatedRole, authUid } from "drizzle-orm/supabase";
 
 export const huntStatus = pgEnum(
   "hunt_status",
-  Object.values(EHuntStatus) as [string, ...string[]],
+  HUNT_STATUS_VALUES as [string, ...string[]],
 );
 
 export const hunts = pgTable(

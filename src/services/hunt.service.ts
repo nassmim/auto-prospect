@@ -1,4 +1,5 @@
-import { EHuntStatus, ELeadStage } from "@/constants/enums";
+import { EHuntStatus } from "@/config/hunt.config";
+import { ELeadStage } from "@/config/lead.config";
 import { HUNT_WITH_RELATIONS } from "@/constants/hunt.constants";
 import { createDrizzleSupabaseClient, TDBClient } from "@/lib/drizzle/dbClient";
 import { contactedAds } from "@/schema/ad.schema";

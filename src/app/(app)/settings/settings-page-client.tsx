@@ -4,14 +4,14 @@ import { ConnectedAccountsTab } from "@/components/settings/connected-accounts-t
 import { FiltersTab } from "@/components/settings/filters-tab";
 import { MessagesTab } from "@/components/settings/messages-tab";
 import { TeamTab } from "@/components/settings/team-tab";
-import type { TAccountClient } from "@/types/account.types";
+import type { TAccountServer } from "@/schema/account.schema";
 import type { TTeamMembersWithAccount } from "@/types/team.types";
 import { useState } from "react";
 
 type Tab = "accounts" | "filters" | "messages" | "team";
 
 type SettingsPageClientProps = {
-  account: TAccountClient;
+  account: TAccountServer;
   userRole: "owner" | "admin" | "user";
   initialMembers: TTeamMembersWithAccount;
 };

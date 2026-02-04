@@ -55,4 +55,4 @@ export const swrKeys = {
  * Type-safe SWR key type
  * Useful for custom hooks that accept cache keys
  */
-export type SWRKey = string | readonly unknown[];
+export type TSWRKey = string | readonly unknown[];

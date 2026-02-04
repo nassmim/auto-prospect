@@ -6,9 +6,9 @@
  *
  * @example Client-side usage in components
  * ```typescript
- * import { huntFormSchema, type HuntFormData } from '@/schemas/validation';
+ * import { huntFormSchema, type THuntFormData } from '@/schemas/validation';
  *
- * const form = useForm<HuntFormData>({
+ * const form = useForm<THuntFormData>({
  *   resolver: zodResolver(huntFormSchema),
  * });
  * ```
@@ -29,9 +29,9 @@ export {
   createHuntSchema,
   huntFormSchema,
   updateHuntSchema,
-  type CreateHuntData,
-  type HuntFormData,
-  type UpdateHuntData,
+  type TCreateHuntData,
+  type THuntFormData,
+  type TUpdateHuntData,
 } from "./hunt.validation";
 
 // Template schemas
@@ -39,23 +39,23 @@ export {
   textTemplateSchema,
   voiceTemplateClientSchema,
   voiceTemplateSchema,
-  type TextTemplateFormData,
-  type VoiceTemplateClientData,
-  type VoiceTemplateFormData,
+  type TTextTemplateFormData,
+  type TVoiceTemplateClientData,
+  type TVoiceTemplateFormData,
 } from "./template.validation";
 
 // Lead schemas
 export {
   leadNoteSchema,
   leadReminderSchema,
-  type LeadNoteFormData,
-  type LeadReminderFormData,
+  type TLeadNoteFormData,
+  type TLeadReminderFormData,
 } from "./lead.validation";
 
 // Settings schemas
 export {
   accountSettingsSchema,
   teamInvitationSchema,
-  type accountSettingsFormData,
-  type TeamInvitationFormData,
+  type TAccountSettingsFormData,
+  type TTeamInvitationFormData,
 } from "./settings.validation";

@@ -8,7 +8,7 @@ export const leadNoteSchema = z.object({
     .max(5000, "La note ne peut pas dépasser 5000 caractères"),
 });
 
-export type LeadNoteFormData = z.infer<typeof leadNoteSchema>;
+export type TLeadNoteFormData = z.infer<typeof leadNoteSchema>;
 
 // Lead reminder validation
 export const leadReminderSchema = z.object({
@@ -21,4 +21,4 @@ export const leadReminderSchema = z.object({
     .optional(),
 });
 
-export type LeadReminderFormData = z.infer<typeof leadReminderSchema>;
+export type TLeadReminderFormData = z.infer<typeof leadReminderSchema>;

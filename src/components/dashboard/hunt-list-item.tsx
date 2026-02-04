@@ -6,7 +6,7 @@ import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import Link from "next/link";
 
-export type HuntListItemProps = {
+export type THuntListItemProps = {
   hunt: THuntSummary;
   onPauseToggle?: (huntId: string, newStatus: "active" | "paused") => void;
 };
@@ -15,7 +15,7 @@ export type HuntListItemProps = {
  * Hunt list item component for dashboard
  * Shows hunt summary with name, platform, lead counts, and quick actions
  */
-export function HuntListItem({ hunt, onPauseToggle }: HuntListItemProps) {
+export function HuntListItem({ hunt, onPauseToggle }: THuntListItemProps) {
   const isPaused = hunt.status === "paused";
 
   return (

@@ -89,7 +89,7 @@ export const huntFormSchema = z
   );
 
 // Type inference for form data
-export type HuntFormData = z.infer<typeof huntFormSchema>;
+export type THuntFormData = z.infer<typeof huntFormSchema>;
 
 // Server action schema (includes all fields needed for database)
 export const createHuntSchema = huntFormSchema
@@ -153,7 +153,7 @@ export const createHuntSchema = huntFormSchema
     }
   );
 
-export type CreateHuntData = z.infer<typeof createHuntSchema>;
+export type TCreateHuntData = z.infer<typeof createHuntSchema>;
 
 // Update hunt schema (all fields optional except what changes)
 export const updateHuntSchema = z.object({
@@ -181,4 +181,4 @@ export const updateHuntSchema = z.object({
   isLowPrice: z.boolean().optional(),
 });
 
-export type UpdateHuntData = z.infer<typeof updateHuntSchema>;
+export type TUpdateHuntData = z.infer<typeof updateHuntSchema>;

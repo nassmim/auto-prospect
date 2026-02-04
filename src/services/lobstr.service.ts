@@ -1,4 +1,4 @@
-import { EPlatformValue } from "@/constants/enums";
+import { EPlatformValue } from "@/config/platform.config";
 import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
 import { ads as adsTable, TAdInsert } from "@/schema";
 import {
