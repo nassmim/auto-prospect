@@ -16,7 +16,7 @@ import { arrayMove, SortableContext } from "@dnd-kit/sortable";
 import { LeadCard } from "./lead-card";
 import { LeadDrawer } from "./lead-drawer";
 import { KanbanColumn } from "./kanban-column";
-import { leadStages, type LeadStage } from "@/schema/lead.schema";
+import { ELeadStage } from "@/constants/enums";
 import { updateLeadStage, fetchPipelineLeads } from "@/actions/lead.actions";
 import { swrKeys } from "@/config/swr-keys";
 import { SWR_POLLING } from "@/hooks/use-swr-action";
@@ -28,7 +28,7 @@ type Lead = {
   position: number;
   ad: {
     title: string;
-    price: number | null;
+    price: number;
     picture: string | null;
     phoneNumber: string | null;
     isWhatsappPhone: boolean | null;
@@ -42,13 +42,15 @@ type KanbanViewProps = {
   initialLeads: Lead[];
 };
 
-const STAGE_LABELS: Record<LeadStage, string> = {
-  nouveau: "Nouveau",
-  contacte: "Contacté",
-  relance: "Relance",
-  negociation: "Négociation",
-  gagne: "Gagné",
-  perdu: "Perdu",
+// Array of all lead stages for Kanban columns
+const leadStages = Object.values(ELeadStage);
+
+const STAGE_LABELS: Record<ELeadStage, string> = {
+  [ELeadStage.NOUVEAU]: "Nouveau",
+  [ELeadStage.CONTACTE]: "Contacté",
+  [ELeadStage.RELANCE]: "Relance",
+  [ELeadStage.GAGNE]: "Gagné",
+  [ELeadStage.PERDU]: "Perdu",
 };
 
 export function KanbanView({ initialLeads }: KanbanViewProps) {
@@ -89,7 +91,7 @@ export function KanbanView({ initialLeads }: KanbanViewProps) {
     }
 
     const leadId = active.id as string;
-    const newStage = over.id as LeadStage;
+    const newStage = over.id as ELeadStage;
 
     // Optimistic update with SWR
     const optimisticLeads = leads.map((lead) =>

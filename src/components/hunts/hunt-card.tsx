@@ -1,6 +1,10 @@
 "use client";
 
-import { deleteHunt, updateHuntStatus, fetchAccountHunts } from "@/actions/hunt.actions";
+import {
+  deleteHunt,
+  fetchAccountHunts,
+  updateHuntStatus,
+} from "@/actions/hunt.actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,8 +14,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import type { HuntStatus } from "@/schema/hunt.schema";
 import { pages } from "@/config/routes";
+import { EHuntStatus } from "@/constants/enums";
 import Link from "next/link";
 import { useState } from "react";
 import type { KeyedMutator } from "swr";
@@ -50,8 +54,10 @@ export function HuntCard({ hunt, onMutate }: HuntCardProps) {
 
   const handleToggleStatus = async () => {
     setIsTogglingStatus(true);
-    const newStatus: HuntStatus =
-      currentStatus === "active" ? "paused" : "active";
+    const newStatus: EHuntStatus =
+      currentStatus === EHuntStatus.ACTIVE
+        ? EHuntStatus.PAUSED
+        : EHuntStatus.ACTIVE;
 
     // Optimistic update
     setCurrentStatus(newStatus);
@@ -105,14 +111,16 @@ export function HuntCard({ hunt, onMutate }: HuntCardProps) {
   const isActive = currentStatus === "active";
 
   // Calculate total credits
-  const totalAllocated = hunt.channelCredits?.reduce(
-    (sum, credit) => sum + credit.creditsAllocated,
-    0
-  ) || 0;
-  const totalConsumed = hunt.channelCredits?.reduce(
-    (sum, credit) => sum + credit.creditsConsumed,
-    0
-  ) || 0;
+  const totalAllocated =
+    hunt.channelCredits?.reduce(
+      (sum, credit) => sum + credit.creditsAllocated,
+      0,
+    ) || 0;
+  const totalConsumed =
+    hunt.channelCredits?.reduce(
+      (sum, credit) => sum + credit.creditsConsumed,
+      0,
+    ) || 0;
 
   return (
     <Card className="transition-colors hover:border-zinc-700">
@@ -144,8 +152,8 @@ export function HuntCard({ hunt, onMutate }: HuntCardProps) {
                     totalConsumed >= totalAllocated
                       ? "bg-red-500/10 text-red-500 border-red-500/20"
                       : totalConsumed / totalAllocated >= 0.8
-                      ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
-                      : "bg-zinc-500/10 text-zinc-400 border-zinc-500/20"
+                        ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
+                        : "bg-zinc-500/10 text-zinc-400 border-zinc-500/20"
                   }
                 >
                   {totalConsumed}/{totalAllocated} crédits

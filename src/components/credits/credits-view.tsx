@@ -1,5 +1,6 @@
 "use client";
 
+import { fetchAccountCredits } from "@/actions/credit.actions";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -10,22 +11,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { swrKeys } from "@/config/swr-keys";
 import { EContactChannel, ETransactionType } from "@/constants/enums";
+import { SWR_POLLING } from "@/hooks/use-swr-action";
+import {
+  TCreditBalanceClient,
+  TTransactionMetadata,
+} from "@/types/payment.types";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
-import { swrKeys } from "@/config/swr-keys";
-import { SWR_POLLING } from "@/hooks/use-swr-action";
-import { fetchAccountCredits } from "@/actions/credit.actions";
+import { useState } from "react";
 import useSWR from "swr";
-import { useState, useEffect } from "react";
 
 type CreditData = {
-  balance: {
-    sms: number;
-    ringlessVoice: number;
-    whatsappText: number;
-    updatedAt: Date;
-  };
+  balance: TCreditBalanceClient | undefined;
   huntAllocations: Array<{
     huntId: string;
     huntName: string;
@@ -41,7 +40,7 @@ type CreditData = {
     amount: number;
     balanceAfter: number;
     createdAt: Date;
-    metadata: unknown;
+    metadata: TTransactionMetadata | null;
   }>;
 };
 
@@ -75,6 +74,8 @@ export function CreditsView({ data: initialData }: CreditsViewProps) {
       refreshInterval: SWR_POLLING.CREDITS,
       revalidateOnFocus: true,
       onSuccess: (newData) => {
+        if (!newData.balance) return;
+
         const newTotal =
           newData.balance.sms +
           newData.balance.ringlessVoice +
@@ -89,10 +90,19 @@ export function CreditsView({ data: initialData }: CreditsViewProps) {
     },
   );
 
+  // Guard against undefined balance
+  if (!data.balance) {
+    return (
+      <div className="flex min-h-screen items-center justify-center p-6">
+        <div className="text-center text-zinc-400">
+          <p>Aucune donnée de crédits disponible</p>
+        </div>
+      </div>
+    );
+  }
+
   const totalCredits =
-    data.balance.sms +
-    data.balance.ringlessVoice +
-    data.balance.whatsappText;
+    data.balance.sms + data.balance.ringlessVoice + data.balance.whatsappText;
 
   return (
     <div className="space-y-6 p-6">

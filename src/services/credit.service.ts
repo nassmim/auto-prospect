@@ -163,12 +163,7 @@ export async function getAccountCredits() {
   ]);
 
   return {
-    balance: balance || {
-      sms: 0,
-      ringlessVoice: 0,
-      whatsappText: 0,
-      updatedAt: new Date(),
-    },
+    balance,
     huntAllocations: huntAllocations.map((allocation) => ({
       huntId: allocation.huntId,
       huntName: allocation.hunt.name,

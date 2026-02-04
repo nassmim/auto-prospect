@@ -40,7 +40,6 @@ export function OutreachSettings({
   onTemplateChange,
   onChannelCreditsChange,
 }: OutreachSettingsProps) {
-
   const handleToggle = (
     channel: "leboncoin" | "whatsapp" | "sms" | "ringlessVoice",
   ) => {
@@ -191,124 +190,121 @@ export function OutreachSettings({
       </h3>
 
       <div className="space-y-6">
-          {channelConfig.map((config) => {
-            const isEnabled = outreachSettings[config.key];
-            const availableTemplates = getTemplatesForChannel(config.key);
+        {channelConfig.map((config) => {
+          const isEnabled = outreachSettings[config.key];
+          const availableTemplates = getTemplatesForChannel(config.key);
 
-            return (
-              <div
-                key={config.key}
-                className={`rounded-lg border p-4 transition-colors ${
-                  isEnabled
-                    ? "border-amber-900/50 bg-amber-950/10"
-                    : "border-zinc-800 bg-zinc-950/50"
-                }`}
-              >
-                {/* Channel toggle */}
-                <div className="mb-3 flex items-start gap-3">
-                  <input
-                    type="checkbox"
-                    id={`channel-${config.key}`}
-                    checked={isEnabled}
-                    onChange={() => handleToggle(config.key)}
-                    className="mt-1 h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-amber-500 focus:ring-2 focus:ring-amber-500 focus:ring-offset-0"
-                  />
-                  <div className="flex-1">
-                    <label
-                      htmlFor={`channel-${config.key}`}
-                      className="flex items-center gap-2 text-sm font-medium text-zinc-300 cursor-pointer"
-                    >
-                      {config.icon}
-                      {config.label}
-                    </label>
-                    <p className="mt-1 text-xs text-zinc-500">
-                      {config.description}
-                    </p>
-                  </div>
+          return (
+            <div
+              key={config.key}
+              className={`rounded-lg border p-4 transition-colors ${
+                isEnabled
+                  ? "border-amber-900/50 bg-amber-950/10"
+                  : "border-zinc-800 bg-zinc-950/50"
+              }`}
+            >
+              {/* Channel toggle */}
+              <div className="mb-3 flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  id={`channel-${config.key}`}
+                  checked={isEnabled}
+                  onChange={() => handleToggle(config.key)}
+                  className="mt-1 h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-amber-500 focus:ring-2 focus:ring-amber-500 focus:ring-offset-0"
+                />
+                <div className="flex-1">
+                  <label
+                    htmlFor={`channel-${config.key}`}
+                    className="flex items-center gap-2 text-sm font-medium text-zinc-300 cursor-pointer"
+                  >
+                    {config.icon}
+                    {config.label}
+                  </label>
+                  <p className="mt-1 text-xs text-zinc-500">
+                    {config.description}
+                  </p>
                 </div>
+              </div>
 
-                {/* Template selector */}
-                {isEnabled && (
-                  <div className="mt-3 space-y-3 pl-7">
-                    <div>
-                      <label
-                        htmlFor={`template-${config.key}`}
-                        className="mb-2 block text-xs font-medium text-zinc-400"
-                      >
-                        Template à utiliser
-                      </label>
-                      {availableTemplates.length === 0 ? (
-                        <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 text-xs text-zinc-500">
-                          Aucun template disponible pour ce canal.{" "}
-                          <a
-                            href={pages.templates.new()}
-                            className="text-amber-500 hover:underline"
-                          >
-                            Créer un template
-                          </a>
-                        </div>
-                      ) : (
-                        <select
-                          id={`template-${config.key}`}
-                          value={templateIds[config.key] || ""}
-                          onChange={(e) =>
-                            handleTemplateChange(config.key, e.target.value)
-                          }
-                          className="w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-200 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+              {/* Template selector */}
+              {isEnabled && (
+                <div className="mt-3 space-y-3 pl-7">
+                  <div>
+                    <label
+                      htmlFor={`template-${config.key}`}
+                      className="mb-2 block text-xs font-medium text-zinc-400"
+                    >
+                      Template à utiliser
+                    </label>
+                    {availableTemplates.length === 0 ? (
+                      <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 text-xs text-zinc-500">
+                        Aucun template disponible pour ce canal.{" "}
+                        <a
+                          href={pages.templates.new()}
+                          className="text-amber-500 hover:underline"
                         >
-                          <option value="">Sélectionner un template...</option>
-                          {availableTemplates.map((template) => (
-                            <option key={template.id} value={template.id}>
-                              {template.name} (
-                              {template.audioUrl ? "Vocal" : "Texte"})
-                            </option>
-                          ))}
-                        </select>
-                      )}
-                    </div>
-
-                    {/* Credit allocation input (only for channels that require credits) */}
-                    {config.requiresCredits && config.key !== "leboncoin" && (
-                      <div>
-                        <label
-                          htmlFor={`credits-${config.key}`}
-                          className="mb-2 block text-xs font-medium text-zinc-400"
-                        >
-                          Crédits à allouer
-                        </label>
-                        <input
-                          type="number"
-                          id={`credits-${config.key}`}
-                          min="0"
-                          step="1"
-                          value={
-                            channelCredits?.[
-                              config.key as "sms" | "whatsapp" | "ringlessVoice"
-                            ] || 0
-                          }
-                          onChange={(e) =>
-                            handleCreditsChange(
-                              config.key as
-                                | "sms"
-                                | "whatsapp"
-                                | "ringlessVoice",
-                              parseInt(e.target.value) || 0,
-                            )
-                          }
-                          className="w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-200 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                          placeholder="0"
-                        />
-                        <p className="mt-1 text-xs text-zinc-500">
-                          1 crédit = 1 contact. Ces crédits seront déduits de
-                          votre solde d'organisation.
-                        </p>
+                          Créer un template
+                        </a>
                       </div>
+                    ) : (
+                      <select
+                        id={`template-${config.key}`}
+                        value={templateIds[config.key] || ""}
+                        onChange={(e) =>
+                          handleTemplateChange(config.key, e.target.value)
+                        }
+                        className="w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-200 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                      >
+                        <option value="">Sélectionner un template...</option>
+                        {availableTemplates.map((template) => (
+                          <option key={template.id} value={template.id}>
+                            {template.name} (
+                            {template.audioUrl ? "Vocal" : "Texte"})
+                          </option>
+                        ))}
+                      </select>
                     )}
                   </div>
-                )}
-              </div>
-            );
-          })}
+
+                  {/* Credit allocation input (only for channels that require credits) */}
+                  {config.requiresCredits && config.key !== "leboncoin" && (
+                    <div>
+                      <label
+                        htmlFor={`credits-${config.key}`}
+                        className="mb-2 block text-xs font-medium text-zinc-400"
+                      >
+                        Crédits à allouer
+                      </label>
+                      <input
+                        type="number"
+                        id={`credits-${config.key}`}
+                        min="0"
+                        step="1"
+                        value={
+                          channelCredits?.[
+                            config.key as "sms" | "whatsapp" | "ringlessVoice"
+                          ] || 0
+                        }
+                        onChange={(e) =>
+                          handleCreditsChange(
+                            config.key as "sms" | "whatsapp" | "ringlessVoice",
+                            parseInt(e.target.value) || 0,
+                          )
+                        }
+                        className="w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-200 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                        placeholder="0"
+                      />
+                      <p className="mt-1 text-xs text-zinc-500">
+                        1 crédit = 1 contact. Ces crédits seront déduits de
+                        votre solde d&apos;organisation.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

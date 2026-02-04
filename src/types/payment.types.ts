@@ -35,3 +35,5 @@ export type TConsumeCreditsParams = {
 export type TConsumeCreditsResult =
   | { success: true; transaction: TCreditTransaction }
   | { success: false; error: string };
+
+export type { TCreditBalanceServer as TCreditBalanceClient } from "@/schema/credits.schema";

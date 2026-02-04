@@ -147,7 +147,7 @@ export function DashboardView({
             </svg>
           }
           label="Messages WhatsApp"
-          value={stats.messagesSentByChannel.whatsapp}
+          value={stats.messagesSentByChannel.whatsappText}
         />
 
         <StatCard

@@ -1,4 +1,5 @@
-import { EContactChannel, ETransactionType } from "@/constants/enums";
+import { ETransactionType } from "@/constants/enums";
+import { channel } from "@/schema/message.schema";
 import { TTransactionMetadata } from "@/types/payment.types";
 import {
   InferInsertModel,
@@ -28,12 +29,6 @@ import { hunts } from "./hunt.schema";
 export const transactionType = pgEnum(
   "transaction_type",
   Object.values(ETransactionType) as [string, ...string[]],
-);
-
-// Credit types enum (uses EContactChannel since they map 1:1)
-export const contactChannel = pgEnum(
-  "contact_channel",
-  Object.values(EContactChannel) as [string, ...string[]],
 );
 
 // Credit balances table - one row per account
@@ -75,7 +70,7 @@ export const creditBalances = pgTable(
     // Only service role can update balances (via backend services)
   ],
 );
-export type TCreditBalance = InferSelectModel<typeof creditBalances>;
+export type TCreditBalanceServer = InferSelectModel<typeof creditBalances>;
 
 // Credit transactions table - immutable audit log
 export const creditTransactions = pgTable(
@@ -86,7 +81,7 @@ export const creditTransactions = pgTable(
       .references(() => accounts.id, { onDelete: "cascade" })
       .notNull(),
     type: transactionType().notNull(),
-    channel: contactChannel().notNull(),
+    channel: channel().notNull(),
     amount: integer().notNull(), // Positive for purchase/refund, negative for usage
     balanceAfter: integer("balance_after").notNull(), // Balance snapshot after transaction
     referenceId: uuid("reference_id"), // Message ID for usage, payment ID for purchase
@@ -131,7 +126,7 @@ export const creditPacks = pgTable(
   "credit_packs",
   {
     id: smallserial().primaryKey(),
-    channel: contactChannel().notNull(),
+    channel: channel().notNull(),
     credits: integer().notNull(),
     priceEur: integer("price_eur").notNull(), // Store in cents for precision
     isActive: boolean("is_active").notNull().default(true),
@@ -154,7 +149,7 @@ export const huntChannelCredits = pgTable(
   {
     id: uuid().defaultRandom().primaryKey(),
     huntId: uuid("hunt_id").notNull(),
-    channel: contactChannel().notNull(),
+    channel: channel().notNull(),
     creditsAllocated: integer("credits_allocated").notNull().default(0),
     creditsConsumed: integer("credits_consumed").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true })
