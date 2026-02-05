@@ -236,11 +236,11 @@ export async function logWhatsAppMessage(
 export async function getAccountTemplates() {
   const dbClient = await createDrizzleSupabaseClient();
 
+  const account = await getUseraccount(dbClient, {
+    columnsToKeep: { id: true },
+  });
+  console.log("account", account);
   try {
-    const account = await getUseraccount(dbClient, {
-      columnsToKeep: { id: true },
-    });
-
     // Fetch all templates for this account
     const templates = await dbClient.rls(async (tx) => {
       return tx.query.messageTemplates.findMany({

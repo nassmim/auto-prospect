@@ -1,5 +1,5 @@
 import { ELeadStage } from "@/config/lead.config";
-import { createDrizzleSupabaseClient, TDBClient } from "@/lib/drizzle/dbClient";
+import { createDrizzleSupabaseClient, TDBClient, TDBQuery } from "@/lib/drizzle/dbClient";
 import { createClient } from "@/lib/supabase/server";
 import { leads } from "@/schema/lead.schema";
 import { messages } from "@/schema/message.schema";
@@ -170,14 +170,13 @@ export async function getLeadActivities(leadId: string) {
 
 /**
  * Fetches leads acquired today
- * @param huntId - Optional hunt ID to filter by specific hunt. If not provided, returns stats for all hunts.
- * @param dbClient - Optional database client instance
  */
-export async function getTodayNewLeads(
-  huntId?: string,
-  dbClient?: TDBClient,
-): Promise<{ todayLeadsCount: number }> {
-  const client = dbClient || (await createDrizzleSupabaseClient());
+export async function getTodayNewLeads(options?: {
+  huntId?: string;
+  dbClient?: TDBClient;
+  tx?: TDBQuery;
+}): Promise<{ todayLeadsCount: number }> {
+  const { huntId, dbClient, tx } = options || {};
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -189,6 +188,19 @@ export async function getTodayNewLeads(
     whereConditions.push(eq(leads.huntId, huntId));
   }
 
+  // If transaction provided, use it directly; otherwise create new RLS transaction
+  if (tx) {
+    const todayLeads = await tx
+      .select({ count: sql<number>`cast(count(*) as integer)` })
+      .from(leads)
+      .where(and(...whereConditions));
+
+    return {
+      todayLeadsCount: todayLeads[0]?.count ?? 0,
+    };
+  }
+
+  const client = dbClient || (await createDrizzleSupabaseClient());
   const todayLeads = await client.rls(async (tx) =>
     tx
       .select({ count: sql<number>`cast(count(*) as integer)` })
@@ -203,14 +215,13 @@ export async function getTodayNewLeads(
 
 /**
  * Fetches the number of leads contacted
- * @param huntId - Optional hunt ID to filter by specific hunt. If not provided, returns stats for all hunts.
- * @param dbClient - Optional database client instance
  */
-export async function getContactedLeads(
-  huntId?: string,
-  dbClient?: TDBClient,
-): Promise<{ contactedLeadsCount: number }> {
-  const client = dbClient || (await createDrizzleSupabaseClient());
+export async function getContactedLeads(options?: {
+  huntId?: string;
+  dbClient?: TDBClient;
+  tx?: TDBQuery;
+}): Promise<{ contactedLeadsCount: number }> {
+  const { huntId, dbClient, tx } = options || {};
 
   // Build where conditions dynamically based on whether huntId is provided
   const whereConditions = [eq(leads.stage, ELeadStage.CONTACTED)];
@@ -219,6 +230,19 @@ export async function getContactedLeads(
     whereConditions.push(eq(leads.huntId, huntId));
   }
 
+  // If transaction provided, use it directly; otherwise create new RLS transaction
+  if (tx) {
+    const contactedLeads = await tx
+      .select({ count: sql<number>`cast(count(*) as integer)` })
+      .from(leads)
+      .where(and(...whereConditions));
+
+    return {
+      contactedLeadsCount: contactedLeads[0]?.count ?? 0,
+    };
+  }
+
+  const client = dbClient || (await createDrizzleSupabaseClient());
   const contactedLeads = await client.rls(async (tx) =>
     tx
       .select({ count: sql<number>`cast(count(*) as integer)` })
@@ -233,19 +257,31 @@ export async function getContactedLeads(
 
 /**
  * Fetches the total number of leads
- * @param huntId - Optional hunt ID to filter by specific hunt. If not provided, returns stats for all hunts.
- * @param dbClient - Optional database client instance
  */
-export async function getTotalLeads(
-  huntId?: string,
-  dbClient?: TDBClient,
-): Promise<{ totalLeads: number }> {
-  const client = dbClient || (await createDrizzleSupabaseClient());
+export async function getTotalLeads(options?: {
+  huntId?: string;
+  dbClient?: TDBClient;
+  tx?: TDBQuery;
+}): Promise<{ totalLeads: number }> {
+  const { huntId, dbClient, tx } = options || {};
 
   // Build where conditions dynamically based on whether huntId is provided
-  let whereConditions: SQL<unknown>;
+  let whereConditions: SQL<unknown> | undefined;
   if (huntId) whereConditions = eq(leads.huntId, huntId);
 
+  // If transaction provided, use it directly; otherwise create new RLS transaction
+  if (tx) {
+    const totalLeads = await tx
+      .select({ count: sql<number>`cast(count(*) as integer)` })
+      .from(leads)
+      .where(whereConditions);
+
+    return {
+      totalLeads: totalLeads[0]?.count ?? 0,
+    };
+  }
+
+  const client = dbClient || (await createDrizzleSupabaseClient());
   const totalLeads = await client.rls(async (tx) =>
     tx
       .select({ count: sql<number>`cast(count(*) as integer)` })
@@ -268,9 +304,9 @@ export async function getLeadsSummaryStats(
   const dbClient = await createDrizzleSupabaseClient();
 
   const summaryStats = await Promise.all([
-    getTodayNewLeads(huntId, dbClient),
-    getContactedLeads(huntId, dbClient),
-    getTotalLeads(huntId, dbClient),
+    getTodayNewLeads({ huntId, dbClient }),
+    getContactedLeads({ huntId, dbClient }),
+    getTotalLeads({ huntId, dbClient }),
   ]);
 
   return {

@@ -282,12 +282,12 @@ export async function getActiveHunts(): Promise<THuntSummary[]> {
       limit: 10, // Show top 10 active hunts
     });
 
-    // Get lead counts for each hunt
+    // Get lead counts for each hunt - pass transaction to avoid nested RLS calls
     const huntSummaries: THuntSummary[] = await Promise.all(
       huntsData.map(async (hunt) => {
         const [{ totalLeads }, { contactedLeadsCount }] = await Promise.all([
-          getTotalLeads(hunt.id, dbClient),
-          getContactedLeads(hunt.id, dbClient),
+          getTotalLeads({ huntId: hunt.id, tx }),
+          getContactedLeads({ huntId: hunt.id, tx }),
         ]);
 
         return {

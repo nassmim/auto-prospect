@@ -54,7 +54,7 @@ export async function getUseraccount(
       ...(options?.columnsToKeep && { columns: options.columnsToKeep }),
     });
   });
-
+  console.log("account", account);
   if (!account) throw new Error("account not found");
 
   return account;
