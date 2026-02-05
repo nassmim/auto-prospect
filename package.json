@@ -10,6 +10,9 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate-only": "dotenvx run --env-file=.env.development.local -- tsx scripts/migrate.ts",
     "db:migrate": "drizzle-kit generate && dotenvx run --env-file=.env.development.local -- tsx scripts/migrate.ts",
+    "db:reset": "dotenvx run --env-file=.env.development.local -- tsx scripts/reset-db.ts",
+    "db:seed": "dotenvx run --env-file=.env.development.local -- tsx scripts/seed.ts",
+    "db:fresh": "pnpm db:reset && pnpm db:seed",
     "supabase:start": "npx dotenvx run --env-file=.env.local --env-file=.env.development --env-file=.env.development.local -- supabase start",
     "db:dump": "docker exec -it supabase_db_auto-prospect pg_dump -U postgres -d postgres --data-only --schema=auth --schema=public > supabase/seed.sql",
     "create-user": "dotenvx run --env-file=.env.development.local -- tsx scripts/create-user.ts"

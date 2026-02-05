@@ -43,6 +43,7 @@ $function$;
 
 -- Trigger on new user signup
 -- Automatically creates a personal account when user signs up
+DROP TRIGGER IF EXISTS on_auth_user_created_account ON auth.users;
 CREATE TRIGGER on_auth_user_created_account
   AFTER INSERT ON auth.users
   FOR EACH ROW
@@ -50,6 +51,7 @@ CREATE TRIGGER on_auth_user_created_account
 
 -- Trigger on user profile update
 -- Updates personal account when user metadata changes
+DROP TRIGGER IF EXISTS on_auth_user_updated_account ON auth.users;
 CREATE TRIGGER on_auth_user_updated_account
   AFTER UPDATE ON auth.users
   FOR EACH ROW

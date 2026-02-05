@@ -1,11 +1,10 @@
 CREATE TYPE "public"."account_type" AS ENUM('personal', 'team');--> statement-breakpoint
-CREATE TYPE "public"."contact_channel" AS ENUM('whatsappText', 'sms', 'ringlessVoice');--> statement-breakpoint
 CREATE TYPE "public"."transaction_type" AS ENUM('purchase', 'usage', 'refund', 'adjustment');--> statement-breakpoint
 CREATE TYPE "public"."hunt_status" AS ENUM('active', 'paused');--> statement-breakpoint
 CREATE TYPE "public"."lead_activity_type" AS ENUM('stage_change', 'message_sent', 'assignment_change', 'note_added', 'reminder_set', 'created');--> statement-breakpoint
-CREATE TYPE "public"."lead_stage" AS ENUM('nouveau', 'contacte', 'relance', 'gagne', 'perdu');--> statement-breakpoint
-CREATE TYPE "public"."channel" AS ENUM('whatsappText', 'sms', 'ringlessVoice');--> statement-breakpoint
-CREATE TYPE "public"."message_channel" AS ENUM('whatsapp', 'phone');--> statement-breakpoint
+CREATE TYPE "public"."lead_stage" AS ENUM('new', 'contacted', 'chased', 'won', 'lost');--> statement-breakpoint
+CREATE TYPE "public"."channel" AS ENUM('whatsapp_text', 'sms', 'ringless_voice');--> statement-breakpoint
+CREATE TYPE "public"."message_channel" AS ENUM('whatsapp_text', 'sms', 'ringless_voice');--> statement-breakpoint
 CREATE TYPE "public"."message_status" AS ENUM('pending', 'sent', 'delivered', 'failed', 'read', 'replied');--> statement-breakpoint
 CREATE TYPE "public"."role" AS ENUM('owner', 'admin', 'member');--> statement-breakpoint
 CREATE TABLE "accounts" (
@@ -161,7 +160,7 @@ CREATE TABLE "credit_balances" (
 	"account_id" uuid NOT NULL,
 	"sms" integer DEFAULT 0 NOT NULL,
 	"ringless_voice" integer DEFAULT 0 NOT NULL,
-	"whatsapp" integer DEFAULT 0 NOT NULL,
+	"whatsapp_text" integer DEFAULT 0 NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "credit_balances_account_id_unique" UNIQUE("account_id")
 );
@@ -169,7 +168,7 @@ CREATE TABLE "credit_balances" (
 ALTER TABLE "credit_balances" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 CREATE TABLE "credit_packs" (
 	"id" "smallserial" PRIMARY KEY NOT NULL,
-	"channel" "contact_channel" NOT NULL,
+	"channel" "channel" NOT NULL,
 	"credits" integer NOT NULL,
 	"price_eur" integer NOT NULL,
 	"is_active" boolean DEFAULT true NOT NULL
@@ -180,7 +179,7 @@ CREATE TABLE "credit_transactions" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"account_id" uuid NOT NULL,
 	"type" "transaction_type" NOT NULL,
-	"channel" "contact_channel" NOT NULL,
+	"channel" "channel" NOT NULL,
 	"amount" integer NOT NULL,
 	"balance_after" integer NOT NULL,
 	"reference_id" uuid,
@@ -192,7 +191,7 @@ ALTER TABLE "credit_transactions" ENABLE ROW LEVEL SECURITY;--> statement-breakp
 CREATE TABLE "hunt_channel_credits" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"hunt_id" uuid NOT NULL,
-	"channel" "contact_channel" NOT NULL,
+	"channel" "channel" NOT NULL,
 	"credits_allocated" integer DEFAULT 0 NOT NULL,
 	"credits_consumed" integer DEFAULT 0 NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
@@ -282,7 +281,7 @@ CREATE TABLE "leads" (
 	"account_id" uuid NOT NULL,
 	"hunt_id" uuid NOT NULL,
 	"ad_id" uuid NOT NULL,
-	"stage" "lead_stage" DEFAULT 'nouveau' NOT NULL,
+	"stage" "lead_stage" DEFAULT 'new' NOT NULL,
 	"assigned_to_id" uuid,
 	"position" integer DEFAULT 0 NOT NULL,
 	"notes" text,

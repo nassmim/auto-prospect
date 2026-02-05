@@ -69,3 +69,5 @@ node_modules/
 
 seed.sql
 _seed.sql
+# Ignore Supabase auto-migrations (we use Drizzle)
+supabase/migrations/*.sql

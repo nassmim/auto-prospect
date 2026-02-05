@@ -42,15 +42,32 @@ Next.js 16.1.1 (App Router) • React 19 • TypeScript • Supabase (PostgreSQL
 - Pattern 3 (RLS only): `dbClient.rls((tx) => tx.query...)` - for user-triggered actions
 - **Examine existing services to see patterns**
 
-**Migrations**
+**Migrations (Drizzle-only workflow)**
+
+Development (local):
 1. Modify schema: `src/schema/*.ts`
 2. Generate: `pnpm db:generate`
 3. Review SQL: `supabase/migrations/*.sql`
-4. Commit
+4. Apply: `pnpm db:migrate` (or `pnpm db:reset` for fresh start)
+5. Seed (optional): `pnpm db:seed`
+6. Commit migrations
 
-**FORBIDDEN:** `pnpm db:migrate`, `drizzle-kit push`, `supabase db push`, Supabase UI changes, manual SQL outside migrations
+Production (remote):
+1. Same as dev: modify schema → generate → review → commit
+2. Deploy: CI/CD runs `pnpm db:migrate` against remote database
+3. Drizzle tracks applied migrations in `drizzle.__drizzle_migrations` table
+
+**FORBIDDEN:** `drizzle-kit push`, `supabase db push`, `supabase db reset`, Supabase UI changes, manual SQL outside migrations
 
 **Interactive prompts**: If `pnpm db:generate` prompts for input (create vs rename), STOP and tell user to run manually
+
+**Available commands**:
+- `pnpm db:generate` - Generate migration from schema changes
+- `pnpm db:migrate` - Apply pending migrations (incremental)
+- `pnpm db:reset` - Drop all tables, rerun all migrations (clean slate)
+- `pnpm db:seed` - Load data from `supabase/seed.sql`
+- `pnpm db:fresh` - Reset + seed (complete refresh)
+- `pnpm db:dump` - Export current data to `supabase/seed.sql`
 
 **Separate migrations**: Drizzle-generated (tables, RLS) and custom SQL (grants, triggers) in different files
 - Step 1: `pnpm db:generate` (Drizzle migration)
@@ -59,7 +76,8 @@ Next.js 16.1.1 (App Router) • React 19 • TypeScript • Supabase (PostgreSQL
 **New table checklist**:
 1. Define RLS policies in schema (see `src/schema/user.ts` for pattern)
 2. `pnpm db:generate`
-3. `pnpm db:generate --custom` → add the ncessary grants. For instance authenticated users and service role can perform all crud operations to table X: `grant select, insert, update, delete on table public.X to authenticated, service_role;`
+3. `pnpm db:generate --custom` → add necessary grants: `grant select, insert, update, delete on table public.X to authenticated, service_role;`
+4. `pnpm db:migrate` to apply
 
 **Git**: Concise commit messages, no "Co-Authored-By:"
 

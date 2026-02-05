@@ -12,22 +12,22 @@
     {
       "idx": 1,
       "version": "7",
-      "when": 1769366952033,
-      "tag": "0001_premium_the_leader",
+      "when": 1770258773205,
+      "tag": "0001_ambitious_onslaught",
       "breakpoints": true
     },
     {
       "idx": 2,
       "version": "7",
-      "when": 1770007939825,
-      "tag": "0002_bouncy_rafael_vega",
+      "when": 1770258777600,
+      "tag": "0002_vengeful_champions",
       "breakpoints": true
     },
     {
       "idx": 3,
       "version": "7",
-      "when": 1770007950313,
-      "tag": "0003_elite_leopardon",
+      "when": 1770258790526,
+      "tag": "0003_solid_miek",
       "breakpoints": true
     }
   ]
