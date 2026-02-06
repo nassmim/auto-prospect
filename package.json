@@ -18,10 +18,10 @@
     "create-user": "dotenvx run --env-file=.env.development.local -- tsx scripts/create-user.ts"
   },
   "dependencies": {
-    "@hapi/boom": "^10.0.1",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
+    "@hapi/boom": "^10.0.1",
     "@heroicons/react": "^2.2.0",
     "@hookform/resolvers": "^5.2.2",
     "@next/env": "^16.1.1",
@@ -50,8 +50,8 @@
     "qrcode": "^1.5.4",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "sharp": "^0.34.5",
     "react-hook-form": "^7.71.1",
+    "sharp": "^0.34.5",
     "swr": "^2.4.0",
     "tailwind-merge": "^3.4.0",
     "zod": "^4.3.5"
