@@ -386,24 +386,24 @@ export type THunt = InferSelectModel<typeof hunts> & {
   subTypes?: TSubTypeHunt[];
 };
 
-// export const adSubTypesHuntsRelations = relations(subTypesHunts, ({ one }) => ({
-//   base: one(hunts, {
-//     fields: [subTypesHunts.huntId],
-//     references: [hunts.id],
-//   }),
-//   subType: one(adSubTypes, {
-//     fields: [subTypesHunts.subTypeId],
-//     references: [adSubTypes.id],
-//   }),
-// }));
+export const adSubTypesHuntsRelations = relations(subTypesHunts, ({ one }) => ({
+  base: one(hunts, {
+    fields: [subTypesHunts.huntId],
+    references: [hunts.id],
+  }),
+  subType: one(adSubTypes, {
+    fields: [subTypesHunts.subTypeId],
+    references: [adSubTypes.id],
+  }),
+}));
 
-// export const brandsHuntsRelations = relations(brandsHunts, ({ one }) => ({
-//   base: one(hunts, {
-//     fields: [brandsHunts.huntId],
-//     references: [hunts.id],
-//   }),
-//   brand: one(brands, {
-//     fields: [brandsHunts.brandId],
-//     references: [brands.id],
-//   }),
-// }));
+export const brandsHuntsRelations = relations(brandsHunts, ({ one }) => ({
+  base: one(hunts, {
+    fields: [brandsHunts.huntId],
+    references: [hunts.id],
+  }),
+  brand: one(brands, {
+    fields: [brandsHunts.brandId],
+    references: [brands.id],
+  }),
+}));
