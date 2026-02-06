@@ -1,142 +1,122 @@
 # Auto-Prospect: AI Context
 
-**Automated prospection tool for professional resellers**
+**CRITICAL: Always examine existing codebase patterns and follow the same structure, naming, and organization. When in doubt, find similar code and replicate its approach.**
+
+## Task Discipline
+
+**Start each task with:** `"I will focus ONLY on: [task]. Nothing more."`
+
+- Do ONLY what is requested - no extras, refactoring, or improvements
+- Ask for clarification if unclear BEFORE starting
+- Complete and stop
+
+## AUTO-WORK MODE (when active)
+
+**Start each task/subtask with:** `"🤖 AUTO-WORK MODE: [task]" + "Context: [X]% - will compact at 70%+"`
+
+- Monitor context at task start
+- At 70%+: run `/compact` immediately
+- Execute silently: no announcements, verbose logs, or commentary
+- Output only: errors, user questions, completion confirmations
 
 ## Tech Stack
-- **Next.js 16.1.1** (App Router) + React 19 + TypeScript
-- **Database**: Supabase (PostgreSQL) + Drizzle ORM
-- **Auth**: Supabase Auth (JWT, RLS)
-- **Styling**: Tailwind CSS 4
-- **Env**: dotenvx (multi-file), **pnpm** (not npm)
+Next.js 16.1.1 (App Router) • React 19 • TypeScript • Supabase (PostgreSQL + Auth) • Drizzle ORM • Tailwind CSS 4 • shadcn/ui • react-hook-form + Zod • SWR • pnpm (not npm)
 
-## Critical Paths
-```
-src/app/              → Next.js pages (App Router)
-src/lib/drizzle/      → DB client + RLS wrapper
-src/lib/supabase/     → Auth clients (browser/server)
-src/schema/           → Drizzle schemas (source of truth)
-supabase/migrations/  → Generated SQL (never edit manually)
-src/proxy.ts          → Auth middleware
-```
+## UI/UX
+- **shadcn/ui**: All UI components from `src/components/ui/`
+- **Forms**: react-hook-form + Zod (client AND server validation - reuse same schema)
 
-## Database: Zero-Trust Security Model
+## Key Directories
+`src/app/` pages • `src/actions/` server actions • `src/services/` business logic • `src/lib/drizzle/` DB+RLS • `src/schema/` Drizzle schemas • `src/config/` routes & SWR keys • `supabase/migrations/` SQL (never edit manually)
 
-### RLS Architecture
-- **All tables MUST have RLS enabled** (automatic with `pgPolicy`)
-- JWT decoded → `auth.uid()` / `auth.jwt()` injected into Postgres session
-- Client wrapper: `src/lib/drizzle/rls/client-wrapper.ts`
-- Two modes: `admin` (bypasses RLS), `client` (enforces RLS)
-- **Auth always server-side**: Never handle auth or sensitive data on client
+## Database Patterns
 
-### Migration Workflow (STRICT)
-```bash
-1. Modify schema:     src/schema/*.ts
-2. Generate:          pnpm db:generate
-3. Review SQL:        supabase/migrations/*.sql
-4. Apply:             pnpm db:migrate-only (human only)
-5. Commit:            schema + migration files
-```
+**Schema**: Use Drizzle built-ins (`.defaultRandom()`, `.references()`) - examine `src/schema/` files for patterns
 
-**❌ AI FORBIDDEN:**
-- `pnpm db:migrate-only` / `pnpm db:migrate` (apply migrations)
-- `pnpm db:dump` (dump seed data)
-- `drizzle-kit push` or `supabase db push`
-- UI changes (Supabase dashboard)
-- Manual SQL outside migrations
+**RLS (Row Level Security)**
+- All tables have RLS enabled (via `pgPolicy` in schema)
+- Auth always server-side
+- DB access: `createDrizzleSupabaseClient()` → use `dbClient.admin` (bypass RLS) or `dbClient.rls(query)` (enforce RLS)
+- Pattern 1 (dynamic): `if (bypassRLS) query(dbClient.admin) else dbClient.rls(query)` - for mixed contexts
+- Pattern 2 (admin only): `dbClient.admin.query...` - for cron jobs, system tasks
+- Pattern 3 (RLS only): `dbClient.rls((tx) => tx.query...)` - for user-triggered actions
+- **Examine existing services to see patterns**
 
-### New Table Checklist
-1. ✅ Define RLS policies in schema (see `src/schema/user.ts`)
-2. ✅ Add explicit grants in migration:
-   ```sql
-   grant select, insert, update, delete on table public.my_table
-   to anon, authenticated, service_role;
-   ```
-3. ✅ Foreign keys to `auth.users` on cascade delete (if user-owned)
+**Migrations (Drizzle-only workflow)**
 
-## Environment Setup
-- **5 files**: `.env.local`, `.env.development`, `.env.development.local`, `.env.production`, `.env.production.local`
-- Local dev: `pnpm supabase:start` (uses dotenvx to load all files)
-- Dev server: `pnpm dev` (port 3000 default)
+Development (local):
+1. Modify schema: `src/schema/*.ts`
+2. Generate: `pnpm db:generate`
+3. Review SQL: `supabase/migrations/*.sql`
+4. Apply: `pnpm db:migrate` (or `pnpm db:reset` for fresh start)
+5. Seed (optional): `pnpm db:seed`
+6. Commit migrations
 
-## Key Patterns
+Production (remote):
+1. Same as dev: modify schema → generate → review → commit
+2. Deploy: CI/CD runs `pnpm db:migrate` against remote database
+3. Drizzle tracks applied migrations in `drizzle.__drizzle_migrations` table
 
-### Auth Flow
-1. Supabase Auth → JWT token
-2. Middleware (`src/proxy.ts`) → session cookies
-3. Server components → `createClient()` (server.ts)
-4. Browser → `createClient()` (client.ts)
-5. DB queries → RLS wrapper injects JWT → policies evaluate
+**FORBIDDEN:** `drizzle-kit push`, `supabase db push`, `supabase db reset`, Supabase UI changes, manual SQL outside migrations
 
-### Database Access
+**Interactive prompts**: If `pnpm db:generate` prompts for input (create vs rename), STOP and tell user to run manually
 
-**Direct queries:**
-```typescript
-// With RLS (user context)
-import { db } from '@/lib/drizzle/dbClient'
-const data = await db.select().from(accounts)
+**Available commands**:
+- `pnpm db:generate` - Generate migration from schema changes
+- `pnpm db:migrate` - Apply pending migrations (incremental)
+- `pnpm db:reset` - Drop all tables, rerun all migrations (clean slate)
+- `pnpm db:seed` - Load data from `supabase/seed.sql`
+- `pnpm db:fresh` - Reset + seed (complete refresh)
+- `pnpm db:dump` - Export current data to `supabase/seed.sql`
 
-// Without RLS (admin)
-import { adminDb } from '@/lib/drizzle/dbClient'
-const data = await adminDb.select().from(accounts)
-```
+**Separate migrations**: Drizzle-generated (tables, RLS) and custom SQL (grants, triggers) in different files
+- Step 1: `pnpm db:generate` (Drizzle migration)
+- Step 2: `pnpm db:generate --custom` (custom migration with grants)
 
-## MCP Servers
-- `filesystem` → File operations
-- `next-devtools` → Next.js debugging
-- `supabase` → DB, storage, functions
+**New table checklist**:
+1. Define RLS policies in schema (see `src/schema/user.ts` for pattern)
+2. `pnpm db:generate`
+3. `pnpm db:generate --custom` → add necessary grants: `grant select, insert, update, delete on table public.X to authenticated, service_role;`
+4. `pnpm db:migrate` to apply
 
-## Development Commands
-```bash
-# AI can run:
-pnpm dev               # Dev server (auto-loads .env.development*)
-pnpm supabase:start    # Start local DB (with dotenvx)
-pnpm db:generate       # Generate migration from schema
+**Git**: Concise commit messages, no "Co-Authored-By:"
 
-# AI forbidden (human only):
-pnpm db:migrate        # Generate + apply migration
-pnpm db:migrate-only   # Apply migration only
-pnpm db:dump           # Export seed data
-supabase stop --backup # Stop DB (preserve data)
-```
+## Core Patterns
 
-## Code Standards
+**No hardcoded values**: Never hardcode strings, numbers, routes, keys, or any constants. Use config files in `src/config/` or create new ones as needed. For instance: 
+  - **Routes**: Always use `src/config/routes.ts` - import `pages`, add new routes there first
+  - **SWR keys**: Always use `src/config/swr-keys.ts` - never use string literals
+**Auth**: Supabase Auth → JWT → middleware (`src/proxy.ts`) → server/client `createClient()` → RLS policies
 
-### Architecture
-- **Server Components by default**: Use `'use client'` only for: events, browser APIs, state, client libraries
-- **Services pattern**: `/src/services/` for reusable logic using external tools 
-or running on server but that don't necessarily need to be server actions. 
-Whenever Drizzle is needed, then move the part that needs it to server actions 
-as Drizzle can't be invoked from client side unless it is within a server action. 
-- **Utils pattern**: `/src/utils/` for reusable logic that run client side
-- **Preference order**: Services → Server Actions → API Routes (last resort)
+## Architecture & Patterns
 
-### Code Style
-- **Functional over classes**: Prefer functions, avoid OOP patterns
-- **Named exports**: Always use named exports (not default)
-- **Descriptive names**: `isLoading`, `hasError`, `handleClick` patterns
-- **Early returns**: Handle errors/edge cases at function start
-- **Comment complex logic**: Explain non-obvious business rules and edge cases (present tense, no history)
-- **TypeScript strict**: No `any`, prefer type inference, interfaces over types
+**CRITICAL: Examine existing codebase for patterns. Don't invent - replicate.**
 
-### Naming Conventions
-- **PascalCase**: Components, Types, Interfaces
-- **kebab-case**: Files (`user-profile.tsx`), directories (`auth-wizard/`)
-- **camelCase**: Variables, functions, hooks, props
-- **UPPERCASE**: Env vars, constants
+**Pages**: `page.tsx` = thin (data fetch + composition). UI logic → separate view components
+**Components**: Server by default. `'use client'` only for: events, browser APIs, state, client libraries
 
-### Performance
-- **Avoid unnecessary state**: Prefer derived state, URL params, SSR caching
-- **Dynamic imports**: Code splitting for non-critical components
-- **Proper keys**: Never use array index as key
+**Data Fetching**:
+- Server-side default (SSR, SEO, security)
+- Client-side (SWR) when: frequently updating data, prop drilling avoidance, polling needed
+- **Hybrid pattern**: Server fetches initial → client component uses SWR with `fallbackData`
+- Polling config: use constants from `src/hooks/use-swr-action.ts` (SWR_POLLING)
+- Optimistic updates: mutate with `revalidate: false` → server action → mutate again (or rollback on error)
 
-### Security & Validation
-- **Always validate**: Both client + server (use Zod when available)
-- **Security over UX**: Prioritize security in all decisions
-- **Input sanitization**: Prevent XSS, follow provider security guidelines
+**Server Actions vs Services**:
+- `src/actions/*.actions.ts`: Client-callable (`"use server"`), thin wrappers
+- `src/services/*.service.ts`: Reusable server logic, business rules
+- Preference: Services → Server Actions → API Routes
 
-## Project Principles
-1. **Single source of truth**: Drizzle schema + migrations (never UI/manual SQL)
-2. **Zero-trust security**: RLS on every table, explicit grants, JWT-based auth
-3. **Type safety**: Full TypeScript, Drizzle type-safe queries
-4. **Team sync**: Migrations in git, seed data exportable
-5. **Environment separation**: Dev/prod configs isolated with dotenvx
+**Code Style**:
+- Functional (no classes), named exports (no default)
+- Early returns, descriptive names (`isLoading`, `handleClick`)
+- TypeScript strict (no `any`)
+- Comment only complex/non-obvious logic
+
+**Naming**: PascalCase (components/types), kebab-case (files/dirs), camelCase (vars/funcs), UPPERCASE (env/constants)
+**Validation**: react-hook-form + Zod (client AND server - reuse schema)
+**Performance**: Avoid unnecessary state, dynamic imports, proper React keys
+
+## Task Master AI Instructions
+**Import Task Master's development workflow commands and guidelines, treat as if import is in the main CLAUDE.md file.**
+@./.taskmaster/CLAUDE.md

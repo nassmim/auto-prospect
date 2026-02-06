@@ -1,0 +1,93 @@
+{
+	"meta": {
+		"generatedAt": "2026-02-02T05:32:47.229Z",
+		"tasksAnalyzed": 10,
+		"totalTasks": 66,
+		"analysisCount": 10,
+		"thresholdScore": 5,
+		"projectName": "Task Master",
+		"usedResearch": false
+	},
+	"complexityAnalysis": [
+		{
+			"taskId": 57,
+			"taskTitle": "Audit all hardcoded route strings in codebase",
+			"complexityScore": 2,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "No expansion needed. This is a straightforward grep/search task with well-defined search patterns already documented in the task details.",
+			"reasoning": "This is purely a search-and-document task with no code changes. The task details already contain most of the audit results (known hardcoded locations). My codebase analysis confirms: 12 template literal route occurrences + 14 revalidatePath calls across ~6 files. The grep patterns are well-defined. A single pass with ripgrep covers everything. No subtasks needed — this can be done in one focused session."
+		},
+		{
+			"taskId": 58,
+			"taskTitle": "Redesign routes.ts with nested structure and dynamic route helpers",
+			"complexityScore": 4,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "No expansion needed. The current routes.ts is only 34 lines with 11 route keys. The redesign is well-specified in the task details with exact target structure.",
+			"reasoning": "The current routes.ts is a small 34-line file with a flat object of 11 keys. The target nested structure is fully specified in the task. The main work is: (1) restructure the object to nest hunts/leads/templates with list/detail/edit helpers, (2) add dynamic route helper functions, (3) update or remove PageKey/PageValue types. This is a single-file change with clear requirements. Only mild complexity from ensuring TypeScript types work correctly with the mixed string/function/nested structure."
+		},
+		{
+			"taskId": 59,
+			"taskTitle": "Update sidebar and layout components to use new route structure",
+			"complexityScore": 1,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "No expansion needed. Only 2-3 files need trivial key renames (e.g., pages.hunts → pages.hunts.list).",
+			"reasoning": "The sidebar has 6 navigation items, of which only 2 need updating (hunts → hunts.list, templates → templates.list). The layout file has a commented-out redirect. user-menu.tsx uses pages.login which stays flat. This is ~3 lines changed across 2-3 files. Trivial find-and-replace."
+		},
+		{
+			"taskId": 60,
+			"taskTitle": "Replace hardcoded routes in hunt components",
+			"complexityScore": 3,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "No expansion needed. 7 files with well-documented line-by-line changes. Each change is a simple string replacement.",
+			"reasoning": "Confirmed from codebase: hunt-card.tsx has 2 hardcoded template literals, hunt-list-item.tsx has 2, plus 4-5 flat key renames in hunts-view, new-hunt-view, hunt-form, outreach-settings. All changes are mechanical replacements — import pages, swap string. 7 files total but each change is 1-2 lines. The task details document every file and line number precisely."
+		},
+		{
+			"taskId": 61,
+			"taskTitle": "Replace hardcoded routes in lead and template components",
+			"complexityScore": 3,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "No expansion needed. 6 files with well-documented replacements. Similar mechanical changes to task 60.",
+			"reasoning": "Confirmed from codebase: lead-drawer.tsx has 1 hardcoded template literal, lead-detail-view.tsx needs pages.leads → pages.leads.list. Template components (templates-view, new-template-view, text-template-form, voice-template-form) need pages.templates → pages.templates.list and pages.templates_new → pages.templates.new. All mechanical replacements across 6 files with clear documentation."
+		},
+		{
+			"taskId": 62,
+			"taskTitle": "Replace hardcoded routes in dashboard components",
+			"complexityScore": 2,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "No expansion needed. Only 1-3 files with simple key renames.",
+			"reasoning": "dashboard-view.tsx needs pages.hunts_create → pages.hunts.create and pages.hunts → pages.hunts.list. The page files (dashboard/page.tsx, templates/page.tsx) may have minor references. This is the smallest of the replacement tasks — at most 3 files with 2-3 line changes each."
+		},
+		{
+			"taskId": 63,
+			"taskTitle": "Replace hardcoded revalidatePath calls in server actions and services",
+			"complexityScore": 3,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "No expansion needed. 5 files with 14 total revalidatePath replacements, all well-documented.",
+			"reasoning": "Confirmed from codebase: 14 revalidatePath calls across 5 files (team.actions.ts:2, account.actions.ts:1, message.actions.ts:3, lead.actions.ts:7, message.service.ts:1). Each needs an import added and the string replaced. The dynamic ones (lead.actions.ts lines 246/296 and message.service.ts line 222) use template literals that map directly to pages.leads.detail(leadId). Mechanical but slightly more files than other replacement tasks."
+		},
+		{
+			"taskId": 64,
+			"taskTitle": "Update SEO utility files to use route config",
+			"complexityScore": 2,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "No expansion needed. Only 2 files (seo.ts, seo-examples.ts) with a handful of hardcoded route strings to replace.",
+			"reasoning": "seo-examples.ts has ~5 hardcoded route references (confirmed via grep: lines 31, 50, 82 with template literals, plus static strings). seo.ts may have minor references. This is a small, well-scoped task. seo-examples.ts appears to be a reference/documentation file (107 lines) so changes are low-risk."
+		},
+		{
+			"taskId": 65,
+			"taskTitle": "Remove backward-compatible aliases and clean up old route keys",
+			"complexityScore": 3,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "No expansion needed. This is a cleanup task: remove old keys from routes.ts, grep to verify zero remaining references, and run build verification.",
+			"reasoning": "After all migration tasks (59-64) are done, this task removes the old flat keys (hunts_new, hunts_create, templates_new) and updates types. The verification grep is important but straightforward. The main risk is missing a reference, but the build will catch type errors. Complexity is low since all the hard migration work is already done in prior tasks."
+		},
+		{
+			"taskId": 66,
+			"taskTitle": "Update CLAUDE.md with route configuration guidelines",
+			"complexityScore": 1,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "No expansion needed. This is adding a single documentation section to an existing file.",
+			"reasoning": "Adding ~10 lines of markdown documentation to CLAUDE.md under an existing section. The content is already specified in the task details. No code changes, no risk, purely documentation. The CLAUDE.md structure is well-organized with clear sections to insert into."
+		}
+	]
+}

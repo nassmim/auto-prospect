@@ -1,25 +1,33 @@
 {
-  "mcpServers": {
-    "filesystem": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-filesystem",
-        "/home/user/auto-prospect"
-      ]
-    },
-    "next-devtools": {
-      "type": "stdio",
-      "command": "npx",
-      "args": [
-        "-y",
-        "next-devtools-mcp@latest"
-      ],
-      "env": {}
-    },
-    "supabase": {
-      "type": "http",
-      "url": "https://mcp.supabase.com/mcp?project_ref=wrognygfjzirjtxefwam&features=docs%2Cdatabase%2Cdebugging%2Cdevelopment%2Cfunctions%2Cbranching"
-    }
-  }
+	"mcpServers": {
+		"filesystem": {
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"-y",
+				"@modelcontextprotocol/server-filesystem",
+				"/home/user/auto-prospect"
+			]
+		},
+		"next-devtools": {
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"-y",
+				"next-devtools-mcp@latest"
+			],
+			"env": {}
+		},
+		"task-master-ai": {
+			"type": "stdio",
+			"command": "sh",
+			"args": [
+				"-c",
+				"source .env.local 2>/dev/null || true && npx -y task-master-ai"
+			],
+			"env": {
+				"TASK_MASTER_TOOLS": "standard"
+			}
+		}
+	}
 }

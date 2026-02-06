@@ -1,0 +1,1 @@
+// Metadata types for transactions

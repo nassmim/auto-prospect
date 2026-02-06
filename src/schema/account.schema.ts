@@ -1,65 +1,82 @@
-import { relations, sql } from "drizzle-orm";
+import { ACCOUNT_TYPE_VALUES, EAccountType } from "@/config/account.config";
+import { contactedAds } from "@/schema/ad.schema";
+import { whatsappSessions } from "@/schema/whatsapp-session.schema";
+import { TAccountSettings } from "@/types/account.types";
+import { InferSelectModel, relations, sql } from "drizzle-orm";
 import {
-  boolean,
-  foreignKey,
+  jsonb,
+  pgEnum,
   pgPolicy,
   pgTable,
-  unique,
+  timestamp,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
-import { authenticatedRole, authUid, authUsers } from "drizzle-orm/supabase";
-import { contactedAds } from "@/schema/ad.schema";
-import { whatsappSessions } from "@/schema/whatsapp-session.schema";
+import { authenticatedRole, authUid } from "drizzle-orm/supabase";
 
+// Types of accounts
+export const accountType = pgEnum(
+  "account_type",
+  ACCOUNT_TYPE_VALUES as [string, ...string[]],
+);
+
+// accounts table - will have either just one member or several
 export const accounts = pgTable(
   "accounts",
   {
-    id: uuid().primaryKey().notNull(),
-    name: varchar({ length: 255 }).notNull(),
-    email: varchar({ length: 320 }),
-    isPersonalAccount: boolean("is_personal_account").default(true).notNull(),
+    id: uuid().primaryKey(),
+    name: varchar({ length: 255 }),
+    email: varchar({ length: 320 }).notNull(),
     pictureUrl: varchar("picture_url", { length: 1000 }),
     phoneNumber: varchar("phone_number", { length: 14 }),
     whatsappPhoneNumber: varchar("whatsapp_phone_number", { length: 20 }),
     smsApiKey: varchar("sms_api_key", { length: 500 }),
+    // account type discriminator
+    type: accountType("type").notNull().default(EAccountType.PERSONAL),
+    settings: jsonb().$type<TAccountSettings>(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
-    foreignKey({
-      columns: [table.id],
-	  // reference to the auth table from Supabase
-      foreignColumns: [authUsers.id],
-      name: "accounts_id_fk",
-    }).onDelete("cascade"),    
-    unique("accounts_email_key").on(table.email),
-    pgPolicy("enable update for data owners", {
+    pgPolicy("enable update for account owners", {
       as: "permissive",
       for: "update",
       to: authenticatedRole,
-      using: sql`${authUid} = id`,
-      withCheck: sql`${authUid} = id`,
+      using: sql`
+        ${authUid} = ${table.id}`,
+      withCheck: sql`
+        ${authUid} = ${table.id}`,
     }),
-    // we don't do on self data because organisation can read the team members accounts
-    pgPolicy("enable read for authenticated users", {
-      as: "permissive",
-      for: "select",
-      to: authenticatedRole,
-      using: sql`true`,
-    }),
-    pgPolicy("enable insert for authenticated users", {
-      as: "permissive",
-      for: "insert",
-      to: authenticatedRole,
-      using: sql`true`,
-    }),
-    pgPolicy("enable delete for authenticated users", {
+    // Users can delete their own org
+    pgPolicy("enable delete for account owners", {
       as: "permissive",
       for: "delete",
       to: authenticatedRole,
-      using: sql`true`,
-    })
+      using: sql`
+        ${authUid} = ${table.id} 
+      `,
+    }),
+    // Members can read data for orgs they belong to
+    pgPolicy("enable read for account owners", {
+      as: "permissive",
+      for: "select",
+      to: authenticatedRole,
+      using: sql`
+        ${authUid} = ${table.id} `,
+    }),
   ],
 );
+export type TAccount = InferSelectModel<typeof accounts>;
+/**
+ * Type helper to extract keys from columns object where value is true
+ */
+export type TAccountSelectedKeys<
+  T extends Partial<Record<keyof TAccount, boolean>>,
+> = {
+  [K in keyof T]: T[K] extends true ? K : never;
+}[keyof T] &
+  keyof TAccount;
 
 export const accountsRelations = relations(accounts, ({ many, one }) => ({
   contactedAds: many(contactedAds),

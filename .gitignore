@@ -41,3 +41,33 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Logs
+logs
+*.log
+dev-debug.log
+# Dependency directories
+node_modules/
+# Environment variables
+.env
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+# OS specific
+
+# Task files
+# tasks.json
+# tasks/
+
+# Auto-work opt-in flag (per-branch decision)
+.claude/.auto-work-enabled
+
+seed.sql
+_seed.sql
+# Ignore Supabase auto-migrations (we use Drizzle)
+supabase/migrations/*.sql
