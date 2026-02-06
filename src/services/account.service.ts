@@ -1,7 +1,7 @@
 import { createDrizzleSupabaseClient, TDBClient } from "@/lib/drizzle/dbClient";
 import { createClient } from "@/lib/supabase/server";
 import { TAccount, TAccountSelectedKeys } from "@/schema/account.schema";
-import { Session } from "@supabase/supabase-js";
+import { Session, User } from "@supabase/supabase-js";
 
 /**
  * Gets the current user's session
@@ -20,6 +20,23 @@ export async function getUserSession(): Promise<
   if (!session) return { user: { id: "" } };
 
   return session;
+}
+
+/**
+ * Gets the current user
+ */
+export async function getAuthser(): Promise<User | { id: "" }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error) throw new Error(error.message);
+
+  if (!user) return { id: "" };
+
+  return user;
 }
 
 /**
@@ -44,17 +61,14 @@ export async function getUseraccount(
   dbClient?: TDBClient,
   options?: { columnsToKeep?: Partial<Record<keyof TAccount, boolean>> },
 ): Promise<TAccount | Partial<TAccount>> {
-  const session = await getUserSession();
-
   const client = dbClient || (await createDrizzleSupabaseClient());
 
   const account = await client.rls(async (tx) => {
     return tx.query.accounts.findFirst({
-      where: (table, { eq }) => eq(table.id, session.user.id),
       ...(options?.columnsToKeep && { columns: options.columnsToKeep }),
     });
   });
-  console.log("account", account);
+
   if (!account) throw new Error("account not found");
 
   return account;

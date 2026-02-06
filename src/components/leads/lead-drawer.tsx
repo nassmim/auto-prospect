@@ -29,11 +29,11 @@ import {
 } from "@/config/lead.config";
 import { pages } from "@/config/routes";
 import { swrKeys } from "@/config/swr-keys";
+import { extractLeadVariables } from "@/utils/lead.utils";
 import {
-  extractLeadVariables,
   generateWhatsAppLink,
-  renderTemplate,
-} from "@/services/message.service";
+  renderMessageTemplate,
+} from "@/utils/message.utils";
 import {
   leadNoteSchema,
   leadReminderFormSchema,
@@ -165,7 +165,7 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
       // Render template or use default message
       const defaultMessage = `Bonjour, je suis intéressé par votre annonce "${lead.ad.title}".`;
       const renderedMessage = template
-        ? renderTemplate(template.content || defaultMessage, variables)
+        ? renderMessageTemplate(template.content || defaultMessage, variables)
         : defaultMessage;
 
       // Generate WhatsApp link

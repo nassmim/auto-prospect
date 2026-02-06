@@ -9,7 +9,7 @@ import { redirect } from "next/navigation";
  */
 export async function signInWithMagicLink(email: string) {
   const supabase = await createClient();
-  console.log(`${process.env.NEXT_PUBLIC_SITE_URL}/api/auth/callback`);
+
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {

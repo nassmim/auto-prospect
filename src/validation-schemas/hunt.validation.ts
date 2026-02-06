@@ -23,9 +23,21 @@ const templateIdsSchema = z
 // Channel credit allocation schema
 const channelCreditsSchema = z
   .object({
-    sms: z.number().int().min(0, "Les crédits doivent être positifs").optional(),
-    whatsapp: z.number().int().min(0, "Les crédits doivent être positifs").optional(),
-    ringlessVoice: z.number().int().min(0, "Les crédits doivent être positifs").optional(),
+    sms: z
+      .number()
+      .int()
+      .min(0, "Les crédits doivent être positifs")
+      .optional(),
+    whatsapp: z
+      .number()
+      .int()
+      .min(0, "Les crédits doivent être positifs")
+      .optional(),
+    ringlessVoice: z
+      .number()
+      .int()
+      .min(0, "Les crédits doivent être positifs")
+      .optional(),
   })
   .optional();
 
@@ -41,7 +53,7 @@ export const huntFormSchema = z
       .url("Veuillez entrer une URL valide")
       .refine(
         (url) => url.includes("leboncoin.fr"),
-        "L'URL doit provenir de Leboncoin"
+        "L'URL doit provenir de Leboncoin",
       )
       .optional(),
     autoRefresh: z.boolean(),
@@ -61,7 +73,7 @@ export const huntFormSchema = z
     {
       message: "Au moins un canal de communication doit être activé",
       path: ["outreachSettings"],
-    }
+    },
   )
   .refine(
     (data) => {
@@ -76,7 +88,10 @@ export const huntFormSchema = z
       if (settings.whatsapp && (!credits.whatsapp || credits.whatsapp <= 0)) {
         return false;
       }
-      if (settings.ringlessVoice && (!credits.ringlessVoice || credits.ringlessVoice <= 0)) {
+      if (
+        settings.ringlessVoice &&
+        (!credits.ringlessVoice || credits.ringlessVoice <= 0)
+      ) {
         return false;
       }
 
@@ -85,7 +100,7 @@ export const huntFormSchema = z
     {
       message: "Les canaux activés doivent avoir des crédits alloués (> 0)",
       path: ["channelCredits"],
-    }
+    },
   );
 
 // Type inference for form data
@@ -93,7 +108,7 @@ export type THuntFormData = z.infer<typeof huntFormSchema>;
 
 // Server action schema (includes all fields needed for database)
 export const createHuntSchema = huntFormSchema
-  .extend({
+  .safeExtend({
     locationId: z.number().positive("L'emplacement est requis"),
     radiusInKm: z.number().min(0).default(0),
     adTypeId: z.number().positive("Le type d'annonce est requis"),
@@ -104,7 +119,11 @@ export const createHuntSchema = huntFormSchema
     mileageMin: z.number().min(0).optional(),
     mileageMax: z.number().positive().optional(),
     modelYearMin: z.number().int().min(1900).optional(),
-    modelYearMax: z.number().int().max(new Date().getFullYear() + 1).optional(),
+    modelYearMax: z
+      .number()
+      .int()
+      .max(new Date().getFullYear() + 1)
+      .optional(),
     // Boolean flags
     hasBeenReposted: z.boolean().optional(),
     priceHasDropped: z.boolean().optional(),
@@ -126,7 +145,7 @@ export const createHuntSchema = huntFormSchema
     {
       message: "Au moins un canal de communication doit être activé",
       path: ["outreachSettings"],
-    }
+    },
   )
   .refine(
     (data) => {
@@ -141,7 +160,10 @@ export const createHuntSchema = huntFormSchema
       if (settings.whatsapp && (!credits.whatsapp || credits.whatsapp <= 0)) {
         return false;
       }
-      if (settings.ringlessVoice && (!credits.ringlessVoice || credits.ringlessVoice <= 0)) {
+      if (
+        settings.ringlessVoice &&
+        (!credits.ringlessVoice || credits.ringlessVoice <= 0)
+      ) {
         return false;
       }
 
@@ -150,7 +172,7 @@ export const createHuntSchema = huntFormSchema
     {
       message: "Les canaux activés doivent avoir des crédits alloués (> 0)",
       path: ["channelCredits"],
-    }
+    },
   );
 
 export type TCreateHuntData = z.infer<typeof createHuntSchema>;
@@ -173,7 +195,11 @@ export const updateHuntSchema = z.object({
   mileageMin: z.number().min(0).optional(),
   mileageMax: z.number().positive().optional(),
   modelYearMin: z.number().int().min(1900).optional(),
-  modelYearMax: z.number().int().max(new Date().getFullYear() + 1).optional(),
+  modelYearMax: z
+    .number()
+    .int()
+    .max(new Date().getFullYear() + 1)
+    .optional(),
   hasBeenReposted: z.boolean().optional(),
   priceHasDropped: z.boolean().optional(),
   isUrgent: z.boolean().optional(),

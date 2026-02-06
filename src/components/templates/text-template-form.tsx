@@ -19,9 +19,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  CONTACT_CHANNEL_DEFINITIONS,
+  EContactChannel,
+} from "@/config/message.config";
 import { pages } from "@/config/routes";
-import { EContactChannel, CONTACT_CHANNEL_DEFINITIONS } from "@/config/message.config";
-import { renderTemplate } from "@/services/message.service";
+import { renderMessageTemplate } from "@/utils/message.utils";
 import {
   textTemplateSchema,
   type TTextTemplateFormData,
@@ -43,14 +46,18 @@ export function TextTemplateForm({ defaultChannel }: TextTemplateFormProps) {
 
   // Get text channels only (SMS and WhatsApp)
   const textChannels = CONTACT_CHANNEL_DEFINITIONS.filter(
-    (ch) => ch.value === EContactChannel.SMS || ch.value === EContactChannel.WHATSAPP_TEXT
+    (ch) =>
+      ch.value === EContactChannel.SMS ||
+      ch.value === EContactChannel.WHATSAPP_TEXT,
   );
 
   const form = useForm<TTextTemplateFormData>({
     resolver: zodResolver(textTemplateSchema),
     defaultValues: {
       name: "",
-      channel: (defaultChannel as TTextTemplateFormData["channel"]) || EContactChannel.WHATSAPP_TEXT,
+      channel:
+        (defaultChannel as TTextTemplateFormData["channel"]) ||
+        EContactChannel.WHATSAPP_TEXT,
       content: "",
       isDefault: false,
     },
@@ -126,7 +133,7 @@ export function TextTemplateForm({ defaultChannel }: TextTemplateFormProps) {
 
   const contentValue = watch("content");
   const channelValue = watch("channel");
-  const previewContent = renderTemplate(contentValue, previewData);
+  const previewContent = renderMessageTemplate(contentValue, previewData);
 
   return (
     <Form {...form}>
@@ -255,7 +262,9 @@ export function TextTemplateForm({ defaultChannel }: TextTemplateFormProps) {
                   />
                 </FormControl>
                 <FormLabel className="text-sm text-zinc-300 cursor-pointer">
-                  Définir comme template par défaut pour {textChannels.find(ch => ch.value === channelValue)?.label || channelValue}
+                  Définir comme template par défaut pour{" "}
+                  {textChannels.find((ch) => ch.value === channelValue)
+                    ?.label || channelValue}
                 </FormLabel>
               </div>
             </FormItem>

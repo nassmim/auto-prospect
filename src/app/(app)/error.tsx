@@ -13,7 +13,8 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("App error:", error);
+    if (process.env.NODE_ENV === "development")
+      console.error("App error:", error);
   }, [error]);
 
   return (
@@ -43,7 +44,8 @@ export default function Error({
 
         {/* Error message */}
         <p className="mb-6 text-sm text-zinc-400">
-          {error.message || "Une erreur inattendue s'est produite. Veuillez réessayer."}
+          Une erreur inattendue s&apos;est produite. Essaie de nouveau après
+          avoir rechargé la page. Si le problème persiste, contacte-nous.
         </p>
 
         {/* Actions */}
@@ -55,14 +57,17 @@ export default function Error({
             Réessayer
           </Button>
           <Link href={pages.dashboard}>
-            <Button variant="outline" className="w-full border-zinc-800 sm:w-auto">
+            <Button
+              variant="outline"
+              className="w-full border-zinc-800 sm:w-auto"
+            >
               Retour au dashboard
             </Button>
           </Link>
         </div>
 
         {/* Error digest for debugging */}
-        {error.digest && (
+        {error.digest && process.env.NODE_ENV === "development" && (
           <p className="mt-6 text-xs text-zinc-600">
             Référence de l&apos;erreur: {error.digest}
           </p>

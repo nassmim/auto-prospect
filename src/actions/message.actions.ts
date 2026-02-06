@@ -45,9 +45,8 @@ async function createTemplate<
     const accountId = account.id;
 
     // Determine the actual channel from validated data
-    const actualChannel = 'channel' in validatedData
-      ? validatedData.channel
-      : channel;
+    const actualChannel =
+      "channel" in validatedData ? validatedData.channel : channel;
 
     // If setting as default, unset other defaults for this channel
     if (validatedData.isDefault) {
