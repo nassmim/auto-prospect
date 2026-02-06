@@ -1,6 +1,8 @@
 import { ACCOUNT_TYPE_VALUES, EAccountType } from "@/config/account.config";
+import { contactedAds } from "@/schema/ad.schema";
+import { whatsappSessions } from "@/schema/whatsapp-session.schema";
 import { TAccountSettings } from "@/types/account.types";
-import { InferSelectModel, sql } from "drizzle-orm";
+import { InferSelectModel, relations, sql } from "drizzle-orm";
 import {
   jsonb,
   pgEnum,
@@ -75,3 +77,8 @@ export type TAccountSelectedKeys<
   [K in keyof T]: T[K] extends true ? K : never;
 }[keyof T] &
   keyof TAccount;
+
+export const accountsRelations = relations(accounts, ({ many, one }) => ({
+  contactedAds: many(contactedAds),
+  whatsappSession: one(whatsappSessions),
+}));

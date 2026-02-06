@@ -15,6 +15,4 @@ ALTER TABLE "whatsapp_sessions" ADD CONSTRAINT "whatsapp_sessions_account_id_acc
 CREATE POLICY "enable select for own session" ON "whatsapp_sessions" AS PERMISSIVE FOR SELECT TO "authenticated" USING ((select auth.uid()) = "whatsapp_sessions"."account_id");--> statement-breakpoint
 CREATE POLICY "enable insert for own session" ON "whatsapp_sessions" AS PERMISSIVE FOR INSERT TO "authenticated" WITH CHECK ((select auth.uid()) = "whatsapp_sessions"."account_id");--> statement-breakpoint
 CREATE POLICY "enable update for own session" ON "whatsapp_sessions" AS PERMISSIVE FOR UPDATE TO "authenticated" USING ((select auth.uid()) = "whatsapp_sessions"."account_id") WITH CHECK ((select auth.uid()) = "whatsapp_sessions"."account_id");--> statement-breakpoint
-CREATE POLICY "enable delete for own session" ON "whatsapp_sessions" AS PERMISSIVE FOR DELETE TO "authenticated" USING ((select auth.uid()) = "whatsapp_sessions"."account_id");--> statement-breakpoint
--- Explicit grants for whatsapp_sessions table
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.whatsapp_sessions TO authenticated, service_role;
+CREATE POLICY "enable delete for own session" ON "whatsapp_sessions" AS PERMISSIVE FOR DELETE TO "authenticated" USING ((select auth.uid()) = "whatsapp_sessions"."account_id");
