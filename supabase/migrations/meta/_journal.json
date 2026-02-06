@@ -64,6 +64,13 @@
       "when": 1769272418556,
       "tag": "0008_dry_madrox",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1770394904500,
+      "tag": "0009_tidy_shadow_king",
+      "breakpoints": true
     }
   ]
 }

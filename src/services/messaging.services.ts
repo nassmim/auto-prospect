@@ -22,23 +22,19 @@ export const sendSlackMessage = async (message: string) => {
 export const sendSms = async ({
   to,
   message,
-  senderId,
+  apiKey,
 }: {
   to: string;
   message: string;
-  senderId: string; 
+  apiKey: string;
 }) => {
-  const apiKey = process.env.SMSMOBILEAPI_API_KEY;
-  if (!apiKey) throw new Error("Missing SMSMOBILEAPI_API_KEY");
-
-  if (!senderId) throw new Error("senderId is required");
+  if (!apiKey) throw new Error("API key is required");
 
   const body = new URLSearchParams();
   body.set("apikey", apiKey);
   body.set("recipients", to);
   body.set("message", message);
   body.set("sendsms", "1");
-  body.set("sIdentifiant", senderId);
 
   const res = await fetch("https://api.smsmobileapi.com/sendsms/", {
     method: "POST",

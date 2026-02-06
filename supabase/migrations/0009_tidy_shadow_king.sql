@@ -1,0 +1,1 @@
+ALTER TABLE "accounts" ADD COLUMN "sms_api_key" varchar(500);
