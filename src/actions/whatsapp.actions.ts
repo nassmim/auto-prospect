@@ -84,11 +84,8 @@ export const saveWhatsAppSession = async (
       });
 
   try {
-    if (options?.bypassRLS) {
-      await query(client.admin);
-    } else {
-      await client.rls(query);
-    }
+    if (options?.bypassRLS) await query(client.admin);
+    else await client.rls(query);
     return { success: true };
   } catch (error) {
     return {
@@ -217,11 +214,13 @@ export const updateWhatsAppPhoneNumber = async (
       currentAccount?.whatsappPhoneNumber !== validation.formatted;
 
     // Update the phone number
-    const result = await client.admin
-      .update(accounts)
-      .set({ whatsappPhoneNumber: validation.formatted })
-      .where(eq(accounts.id, accountId))
-      .returning({ id: accounts.id });
+    const result = await client.rls((tx) =>
+      tx
+        .update(accounts)
+        .set({ whatsappPhoneNumber: validation.formatted })
+        .where(eq(accounts.id, accountId))
+        .returning({ id: accounts.id }),
+    );
 
     if (result.length === 0) {
       return { success: false, error: "Compte non trouvé" };
@@ -311,8 +310,9 @@ export const initiateWhatsAppConnection = async (
               await updateWhatsAppConnectionStatus(accountId, true, {
                 bypassRLS: true,
               });
+              console.log("WhatsApp connecté et credentials sauvegardés");
             } catch (err) {
-              console.error("Error saving WhatsApp credentials:", err);
+              console.error("Erreur sauvegarde credentials:", err);
             }
           }
           if (!resolved) {
@@ -321,7 +321,8 @@ export const initiateWhatsAppConnection = async (
           }
         },
         onDisconnected: (reason) => {
-          console.log("WhatsApp disconnected:", reason);
+          // Ne pas résoudre avec erreur pour les reconnexions (515)
+          console.log("WhatsApp déconnecté:", reason);
         },
         onError: (error) => {
           if (!resolved) {
