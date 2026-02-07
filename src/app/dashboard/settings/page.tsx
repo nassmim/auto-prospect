@@ -1,7 +1,7 @@
-import { isWhatsAppConnected } from "@/actions/whatsapp.actions";
 import { ConnectedAccountsTab } from "@/components/settings/connected-accounts-tab";
 import { getUseraccount } from "@/services/account.service";
 import { getTeamMembers } from "@/services/team.service";
+import { isWhatsAppConnected } from "@/services/whatsapp.service";
 import { SettingsPageClient } from "./settings-page-client";
 
 export default async function SettingsPage() {

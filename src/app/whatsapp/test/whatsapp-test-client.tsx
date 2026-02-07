@@ -5,8 +5,8 @@ import {
   sendWhatsAppTextMessage,
   updateWhatsAppPhoneNumber,
 } from "@/actions/whatsapp.actions";
-import { getErrorMessage } from "@/utils/error-messages.utils";
 import { createClient } from "@/lib/supabase/client";
+import { getErrorMessage } from "@/utils/error-messages.utils";
 import Image from "next/image";
 import { useState } from "react";
 
@@ -323,6 +323,8 @@ export function WhatsAppTestClient({ initialData }: WhatsAppTestClientProps) {
                           src={qrCode}
                           alt="QR Code WhatsApp"
                           className="h-52 w-52"
+                          width={200}
+                          height={200}
                         />
                       </div>
                       <p className="mt-4 text-xs text-gray-400">

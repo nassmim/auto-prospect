@@ -50,7 +50,14 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Redirect logged-in users away from public pages
-  if (user && !request.nextUrl.pathname.startsWith(pages.dashboard)) {
+
+  if (
+    user &&
+    !request.nextUrl.pathname.startsWith(pages.dashboard) &&
+    request.nextUrl.pathname !== "/whatsapp/test" &&
+    request.nextUrl.pathname !== "/test-login/test" &&
+    request.nextUrl.pathname !== "/sms/settings"
+  ) {
     return NextResponse.redirect(new URL(pages.dashboard, request.url));
   }
 

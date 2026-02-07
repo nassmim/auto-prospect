@@ -5,18 +5,33 @@
  * Doc: https://github.com/WhiskeySockets/Baileys
  */
 
-import makeWASocket, {
-  DisconnectReason,
-  WASocket,
-  AuthenticationState,
-  SignalDataTypeMap,
-  initAuthCreds,
-  BufferJSON,
-} from "@whiskeysockets/baileys";
+import {
+  EGeneralErrorCode,
+  EWhatsAppErrorCode,
+  TErrorCode,
+} from "@/config/error-codes";
+import {
+  createDrizzleSupabaseClient,
+  TDBClient,
+  TDBOptions,
+  TDBQuery,
+} from "@/lib/drizzle/dbClient";
+import {
+  TWhatsappSession,
+  whatsappSessions,
+} from "@/schema/whatsapp-session.schema";
+import { decryptCredentials, encryptCredentials } from "@/utils/crypto.utils";
 import { Boom } from "@hapi/boom";
+import makeWASocket, {
+  AuthenticationState,
+  BufferJSON,
+  DisconnectReason,
+  initAuthCreds,
+  SignalDataTypeMap,
+  WASocket,
+} from "@whiskeysockets/baileys";
+import { eq } from "drizzle-orm";
 import * as QRCode from "qrcode";
-import { encryptCredentials, decryptCredentials } from "@/utils/crypto.utils";
-import { TErrorCode, EWhatsAppErrorCode } from "@/config/error-codes";
 
 // =============================================================================
 // TYPES
@@ -63,7 +78,10 @@ const createFilteredLogger = () => {
     fatal: noop,
     error: (msg: unknown) => {
       // Only log actual errors
-      if (msg instanceof Error || (typeof msg === "string" && msg.toLowerCase().includes("error"))) {
+      if (
+        msg instanceof Error ||
+        (typeof msg === "string" && msg.toLowerCase().includes("error"))
+      ) {
         console.error("[WhatsApp Error]", msg);
       }
     },
@@ -75,12 +93,49 @@ const createFilteredLogger = () => {
   };
 };
 
+/**
+ * Retrieves the WhatsApp session for an account
+ * Returns null if no session exists
+ */
+export const getWhatsAppSession = async (
+  accountId: string,
+  options: TDBOptions = { bypassRLS: false },
+): Promise<{
+  session: TWhatsappSession | null;
+  credentials: StoredAuthState | null;
+}> => {
+  const client = options?.dbClient || (await createDrizzleSupabaseClient());
+
+  const query = (tx: TDBQuery) =>
+    tx.query.whatsappSessions.findFirst({
+      where: (table, { eq }) => eq(table.accountId, accountId),
+    });
+
+  const session = options?.bypassRLS
+    ? await query(client.admin)
+    : await client.rls(query);
+
+  if (!session || !session.credentials) {
+    return { session: session || null, credentials: null };
+  }
+
+  // Parse credentials JSON (contains { creds, keys })
+  try {
+    const credentials = JSON.parse(session.credentials) as StoredAuthState;
+    return { session, credentials };
+  } catch {
+    return { session, credentials: null };
+  }
+};
+
 // =============================================================================
 // FONCTIONS
 // =============================================================================
 
 /** Convertit un QR string (Baileys) en image base64 affichable */
-export const generateQRCodeDataURL = async (qrString: string): Promise<string> => {
+export const generateQRCodeDataURL = async (
+  qrString: string,
+): Promise<string> => {
   return await QRCode.toDataURL(qrString, {
     width: 256,
     margin: 2,
@@ -105,10 +160,16 @@ export const createDBAuthState = (
   // Charger les credentials existants si disponibles
   if (storedState) {
     try {
-      const decryptedCreds = decryptCredentials(storedState.creds, ENCRYPTION_KEY);
+      const decryptedCreds = decryptCredentials(
+        storedState.creds,
+        ENCRYPTION_KEY,
+      );
       creds = JSON.parse(decryptedCreds, BufferJSON.reviver);
 
-      const decryptedKeys = decryptCredentials(storedState.keys, ENCRYPTION_KEY);
+      const decryptedKeys = decryptCredentials(
+        storedState.keys,
+        ENCRYPTION_KEY,
+      );
       keys = JSON.parse(decryptedKeys, BufferJSON.reviver);
     } catch (error) {
       console.error("Échec du déchiffrement des credentials:", error);
@@ -225,8 +286,7 @@ export const createWhatsAppConnection = async (
     if (connection === "close") {
       const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
       const shouldReconnect =
-        statusCode === DisconnectReason.restartRequired ||
-        statusCode === 515;
+        statusCode === DisconnectReason.restartRequired || statusCode === 515;
 
       if (shouldReconnect && !isCleanedUp) {
         // Reconnexion automatique après pairing
@@ -357,11 +417,13 @@ export const sendWhatsAppMessage = async (
   phoneNumber: string, // Format: 33612345678 (sans +)
   message: string,
 ): Promise<{ success: boolean; errorCode?: TErrorCode }> => {
+  console.log("dans sens hatsapp");
   try {
     const jid = `${phoneNumber}@s.whatsapp.net`;
 
     // Vérifier si le numéro existe sur WhatsApp
     const results = await socket.onWhatsApp(jid);
+    console.log(results);
     if (!results || results.length === 0) {
       return {
         success: false,
@@ -375,9 +437,11 @@ export const sendWhatsAppMessage = async (
         errorCode: EWhatsAppErrorCode.RECIPIENT_INVALID,
       };
     }
-
+    console.log(result);
+    console.log(message);
     // Envoyer le message
-    await socket.sendMessage(result.jid, { text: message });
+    const test = await socket.sendMessage(result.jid, { text: message });
+    console.log(test);
     return { success: true };
   } catch (error) {
     console.error("Failed to send WhatsApp message:", error);
@@ -404,4 +468,93 @@ export const checkWhatsAppNumber = async (
   } catch {
     return { exists: false };
   }
+};
+
+/**
+ * Creates or updates the WhatsApp session for an account
+ * Stores encrypted credentials as JSON
+ */
+export const saveWhatsAppSession = async (
+  accountId: string,
+  credentials: StoredAuthState,
+  dbClient?: TDBClient,
+): Promise<{ success: boolean; errorCode?: TErrorCode }> => {
+  const client = dbClient || (await createDrizzleSupabaseClient());
+
+  const credentialsJson = JSON.stringify(credentials);
+
+  try {
+    await client.rls((tx) =>
+      tx
+        .insert(whatsappSessions)
+        .values({
+          accountId,
+          credentials: credentialsJson,
+          isConnected: true,
+          lastConnectedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .onConflictDoUpdate({
+          target: whatsappSessions.accountId,
+          set: {
+            credentials: credentialsJson,
+            isConnected: true,
+            lastConnectedAt: new Date(),
+            updatedAt: new Date(),
+          },
+        }),
+    );
+    return { success: true };
+  } catch {
+    return {
+      success: false,
+      errorCode: EWhatsAppErrorCode.SESSION_SAVE_FAILED,
+    };
+  }
+};
+
+/**
+ * Updates the connection status of a WhatsApp session
+ */
+export const updateWhatsAppConnectionStatus = async (
+  accountId: string,
+  isConnected: boolean,
+  options?: TDBOptions,
+): Promise<{ success: boolean; errorCode?: TErrorCode }> => {
+  const client = options?.dbClient || (await createDrizzleSupabaseClient());
+
+  const query = (tx: TDBQuery) =>
+    tx
+      .update(whatsappSessions)
+      .set({
+        isConnected,
+        lastConnectedAt: isConnected
+          ? new Date()
+          : whatsappSessions.lastConnectedAt,
+        updatedAt: new Date(),
+      })
+      .where(eq(whatsappSessions.accountId, accountId));
+
+  try {
+    if (options?.bypassRLS) await query(client.admin);
+    else await client.rls(query);
+
+    return { success: true };
+  } catch {
+    return {
+      success: false,
+      errorCode: EGeneralErrorCode.DATABASE_ERROR,
+    };
+  }
+};
+
+/**
+ * Checks if an account has an active WhatsApp connection
+ */
+export const isWhatsAppConnected = async (
+  accountId: string,
+  options: TDBOptions = { bypassRLS: false },
+): Promise<boolean> => {
+  const { session } = await getWhatsAppSession(accountId, options);
+  return session?.isConnected ?? false;
 };

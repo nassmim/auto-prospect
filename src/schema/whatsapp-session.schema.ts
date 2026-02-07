@@ -1,5 +1,5 @@
 import { accounts } from "@/schema/account.schema";
-import { relations, sql } from "drizzle-orm";
+import { InferSelectModel, relations, sql } from "drizzle-orm";
 import {
   boolean,
   pgPolicy,
@@ -40,6 +40,8 @@ export const whatsappSessions = pgTable(
     }),
   ],
 );
+
+export type TWhatsappSession = InferSelectModel<typeof whatsappSessions>;
 
 export const whatsappSessionsRelations = relations(
   whatsappSessions,
