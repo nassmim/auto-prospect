@@ -22,6 +22,7 @@ export const accounts = pgTable(
     pictureUrl: varchar("picture_url", { length: 1000 }),
     phoneNumber: varchar("phone_number", { length: 14 }),
     whatsappPhoneNumber: varchar("whatsapp_phone_number", { length: 20 }),
+    confirmedByAdmin: boolean("confirmed_by_admin").default(false).notNull(),
   },
   (table) => [
     foreignKey({

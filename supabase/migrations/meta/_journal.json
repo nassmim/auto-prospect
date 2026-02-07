@@ -64,6 +64,20 @@
       "when": 1769272418556,
       "tag": "0008_dry_madrox",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1738857600000,
+      "tag": "0009_delete_user_function",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1770421677094,
+      "tag": "0010_married_leader",
+      "breakpoints": true
     }
   ]
 }
