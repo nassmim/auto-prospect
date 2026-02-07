@@ -302,13 +302,14 @@ export const sendWhatsAppTextMessage = async (
       }
 
       // Send the message (use validated & formatted recipient number)
+      // Note: sendWhatsAppMessage includes a delay to ensure message delivery
       const result = await sendWhatsAppMessage(
         socket,
         recipientValidation.formatted!,
         message,
       );
 
-      // Cleanup connection
+      // Cleanup connection after message is sent (delay is already included in sendWhatsAppMessage)
       cleanup();
 
       return result;
