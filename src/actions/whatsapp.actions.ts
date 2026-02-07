@@ -1,17 +1,21 @@
 "use server";
 
-import { createDrizzleSupabaseClient, TDBClient, TDBQuery } from "@/lib/drizzle/dbClient";
+import {
+  createDrizzleSupabaseClient,
+  TDBClient,
+  TDBQuery,
+} from "@/lib/drizzle/dbClient";
 import { accounts } from "@/schema/account.schema";
 import { whatsappSessions } from "@/schema/whatsapp-session.schema";
 import {
-  StoredAuthState,
-  createWhatsAppConnection,
   connectWithCredentials,
+  createWhatsAppConnection,
   sendWhatsAppMessage,
+  StoredAuthState,
 } from "@/services/whatsapp.service";
-import { z } from "zod";
 import { validateWhatsAppNumber } from "@/utils/validation.utils";
 import { eq } from "drizzle-orm";
+import { z } from "zod";
 
 type WhatsAppSessionRow = typeof whatsappSessions.$inferSelect;
 
@@ -19,10 +23,13 @@ type WhatsAppSessionRow = typeof whatsappSessions.$inferSelect;
  * Retrieves the WhatsApp session for an account
  * Returns null if no session exists
  */
-export const getWhatsAppSession = async (
+const getWhatsAppSession = async (
   accountId: string,
   options?: { dbClient?: TDBClient; bypassRLS?: boolean },
-): Promise<{ session: WhatsAppSessionRow | null; credentials: StoredAuthState | null }> => {
+): Promise<{
+  session: WhatsAppSessionRow | null;
+  credentials: StoredAuthState | null;
+}> => {
   const client = options?.dbClient || (await createDrizzleSupabaseClient());
 
   const query = (tx: TDBQuery) =>
@@ -30,7 +37,9 @@ export const getWhatsAppSession = async (
       where: eq(whatsappSessions.accountId, accountId),
     });
 
-  const session = options?.bypassRLS ? await query(client.admin) : await client.rls(query);
+  const session = options?.bypassRLS
+    ? await query(client.admin)
+    : await client.rls(query);
 
   if (!session || !session.credentials) {
     return { session: session || null, credentials: null };
@@ -54,10 +63,10 @@ export const saveWhatsAppSession = async (
   credentials: StoredAuthState,
   options?: { dbClient?: TDBClient; bypassRLS?: boolean },
 ): Promise<{ success: boolean; error?: string }> => {
+  console.log("dans save");
   const client = options?.dbClient || (await createDrizzleSupabaseClient());
 
   const credentialsJson = JSON.stringify(credentials);
-
   const query = (tx: TDBQuery) =>
     tx
       .insert(whatsappSessions)
@@ -79,16 +88,22 @@ export const saveWhatsAppSession = async (
       });
 
   try {
+    console.log("dans try");
     if (options?.bypassRLS) {
       await query(client.admin);
     } else {
       await client.rls(query);
     }
+    console.log("done");
     return { success: true };
   } catch (error) {
+    console.log("dans error");
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Échec de sauvegarde de la session",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Échec de sauvegarde de la session",
     };
   }
 };
@@ -123,7 +138,10 @@ export const updateWhatsAppConnectionStatus = async (
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Échec de mise à jour du statut",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Échec de mise à jour du statut",
     };
   }
 };
@@ -138,7 +156,9 @@ export const deleteWhatsAppSession = async (
   const client = options?.dbClient || (await createDrizzleSupabaseClient());
 
   const query = (tx: TDBQuery) =>
-    tx.delete(whatsappSessions).where(eq(whatsappSessions.accountId, accountId));
+    tx
+      .delete(whatsappSessions)
+      .where(eq(whatsappSessions.accountId, accountId));
 
   try {
     if (options?.bypassRLS) {
@@ -150,7 +170,10 @@ export const deleteWhatsAppSession = async (
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Échec de suppression de la session",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Échec de suppression de la session",
     };
   }
 };
@@ -196,7 +219,8 @@ export const updateWhatsAppPhoneNumber = async (
       columns: { whatsappPhoneNumber: true },
     });
 
-    const numberChanged = currentAccount?.whatsappPhoneNumber !== validation.formatted;
+    const numberChanged =
+      currentAccount?.whatsappPhoneNumber !== validation.formatted;
 
     // Update the phone number
     const result = await client.admin
@@ -220,7 +244,10 @@ export const updateWhatsAppPhoneNumber = async (
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Échec de mise à jour du numéro",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Échec de mise à jour du numéro",
     };
   }
 };
@@ -240,7 +267,9 @@ export const getWhatsAppPhoneNumber = async (
       columns: { whatsappPhoneNumber: true },
     });
 
-  const result = options?.bypassRLS ? await query(client.admin) : await client.rls(query);
+  const result = options?.bypassRLS
+    ? await query(client.admin)
+    : await client.rls(query);
 
   return result?.whatsappPhoneNumber ?? null;
 };
@@ -259,7 +288,8 @@ export const initiateWhatsAppConnection = async (
 ): Promise<{ success: boolean; qrCode?: string; error?: string }> => {
   try {
     // Get existing session if any
-    const { session, credentials: storedCredentials } = await getWhatsAppSession(accountId);
+    const { session, credentials: storedCredentials } =
+      await getWhatsAppSession(accountId);
 
     // If session is marked as disconnected, ignore old credentials and start fresh
     const credentialsToUse = session?.isConnected ? storedCredentials : null;
@@ -276,12 +306,19 @@ export const initiateWhatsAppConnection = async (
           }
         },
         onConnected: async () => {
+          console.log("on connected");
           // Save credentials when connected (including after reconnection)
           if (saveStateFn) {
+            console.log("dans if");
             try {
               const credentials = saveStateFn();
-              await saveWhatsAppSession(accountId, credentials, { bypassRLS: true });
-              await updateWhatsAppConnectionStatus(accountId, true, { bypassRLS: true });
+
+              await saveWhatsAppSession(accountId, credentials, {
+                bypassRLS: true,
+              });
+              await updateWhatsAppConnectionStatus(accountId, true, {
+                bypassRLS: true,
+              });
               console.log("WhatsApp connecté et credentials sauvegardés");
             } catch (err) {
               console.error("Erreur sauvegarde credentials:", err);
@@ -317,7 +354,8 @@ export const initiateWhatsAppConnection = async (
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Échec de connexion WhatsApp",
+      error:
+        error instanceof Error ? error.message : "Échec de connexion WhatsApp",
     };
   }
 };
@@ -333,7 +371,9 @@ const sendWhatsAppTextMessageSchema = z.object({
   message: z.string().min(1, "Le message est requis"),
 });
 
-export type SendWhatsAppTextMessageInput = z.infer<typeof sendWhatsAppTextMessageSchema>;
+export type SendWhatsAppTextMessageInput = z.infer<
+  typeof sendWhatsAppTextMessageSchema
+>;
 
 export type SendWhatsAppTextMessageResult = {
   success: boolean;
@@ -359,7 +399,10 @@ export const sendWhatsAppTextMessage = async (
   // Validate recipient phone number format
   const recipientValidation = validateWhatsAppNumber(recipientPhone);
   if (!recipientValidation.isValid) {
-    return { success: false, error: `Numéro destinataire invalide: ${recipientValidation.error}` };
+    return {
+      success: false,
+      error: `Numéro destinataire invalide: ${recipientValidation.error}`,
+    };
   }
 
   const client = await createDrizzleSupabaseClient();
@@ -375,14 +418,20 @@ export const sendWhatsAppTextMessage = async (
     }
 
     // Get WhatsApp session credentials
-    const { credentials } = await getWhatsAppSession(account.id, { bypassRLS: true });
+    const { credentials } = await getWhatsAppSession(account.id, {
+      bypassRLS: true,
+    });
 
     if (!credentials) {
-      return { success: false, error: "Session WhatsApp non trouvée. Veuillez vous reconnecter." };
+      return {
+        success: false,
+        error: "Session WhatsApp non trouvée. Veuillez vous reconnecter.",
+      };
     }
 
     // Connect to WhatsApp with stored credentials
-    const { socket, cleanup, waitForConnection } = await connectWithCredentials(credentials);
+    const { socket, cleanup, waitForConnection } =
+      await connectWithCredentials(credentials);
 
     try {
       // Wait for connection to be established
@@ -391,7 +440,9 @@ export const sendWhatsAppTextMessage = async (
       if (!isConnected) {
         cleanup();
         // Session expired or disconnected from phone - update DB status
-        await updateWhatsAppConnectionStatus(account.id, false, { bypassRLS: true });
+        await updateWhatsAppConnectionStatus(account.id, false, {
+          bypassRLS: true,
+        });
         return {
           success: false,
           error: "Session WhatsApp expirée. Veuillez vous reconnecter.",
@@ -400,7 +451,11 @@ export const sendWhatsAppTextMessage = async (
       }
 
       // Send the message (use validated & formatted recipient number)
-      const result = await sendWhatsAppMessage(socket, recipientValidation.formatted!, message);
+      const result = await sendWhatsAppMessage(
+        socket,
+        recipientValidation.formatted!,
+        message,
+      );
 
       // Cleanup connection
       cleanup();
@@ -413,7 +468,8 @@ export const sendWhatsAppTextMessage = async (
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Échec de l'envoi du message",
+      error:
+        error instanceof Error ? error.message : "Échec de l'envoi du message",
     };
   }
 };

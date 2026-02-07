@@ -24,7 +24,7 @@ const postgresClient = postgres(databaseUrl, { prepare: false });
 const config = {
   casing: "snake_case",
   schema,
-  logger: process.env.NODE_ENV === "development",
+  logger: false,
 } satisfies DrizzleConfig<typeof schema>;
 
 const defaultDBClient = drizzle({

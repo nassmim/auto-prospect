@@ -1,14 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { createClient } from "@/lib/supabase/client";
 import {
   getWhatsAppPhoneNumber,
-  updateWhatsAppPhoneNumber,
   initiateWhatsAppConnection,
   isWhatsAppConnected,
   sendWhatsAppTextMessage,
+  updateWhatsAppPhoneNumber,
 } from "@/actions/whatsapp.actions";
+import { createClient } from "@/lib/supabase/client";
+import { useEffect, useState } from "react";
 
 type User = {
   id: string;
@@ -36,7 +36,11 @@ export default function WhatsAppTestPage() {
   const [recipientPhone, setRecipientPhone] = useState("");
   const [messageText, setMessageText] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
-  const [sendResult, setSendResult] = useState<{ success: boolean; error?: string; needsReconnect?: boolean } | null>(null);
+  const [sendResult, setSendResult] = useState<{
+    success: boolean;
+    error?: string;
+    needsReconnect?: boolean;
+  } | null>(null);
 
   const supabase = createClient();
 
@@ -50,7 +54,9 @@ export default function WhatsAppTestPage() {
       setLoading(false);
 
       if (user) {
-        const phone = await getWhatsAppPhoneNumber(user.id, { bypassRLS: true });
+        const phone = await getWhatsAppPhoneNumber(user.id, {
+          bypassRLS: true,
+        });
         setSavedPhoneNumber(phone);
         setPhoneNumber(phone || "");
 
@@ -163,7 +169,9 @@ export default function WhatsAppTestPage() {
 
     const result = await sendWhatsAppTextMessage({
       senderPhone: savedPhoneNumber,
-      recipientPhone: recipientPhone.startsWith("+") ? recipientPhone : `+${recipientPhone}`,
+      recipientPhone: recipientPhone.startsWith("+")
+        ? recipientPhone
+        : `+${recipientPhone}`,
       adTitle: "Test",
       message: messageText,
     });
@@ -257,14 +265,6 @@ export default function WhatsAppTestPage() {
         ) : (
           /* WhatsApp Configuration */
           <div className="space-y-4">
-            {/* User Header */}
-            <div className="flex items-center justify-between text-sm text-gray-500">
-              <span>{user.email}</span>
-              <button onClick={handleLogout} className="hover:text-gray-900">
-                Déconnexion
-              </button>
-            </div>
-
             {/* Step 1: Phone Number */}
             <div className="rounded-xl border border-gray-200 bg-white p-5">
               <div className="mb-4 flex items-center gap-3">
@@ -277,9 +277,7 @@ export default function WhatsAppTestPage() {
                 >
                   {savedPhoneNumber ? "✓" : "1"}
                 </div>
-                <h3 className="font-semibold text-gray-900">
-                  Numéro WhatsApp
-                </h3>
+                <h3 className="font-semibold text-gray-900">Numéro WhatsApp</h3>
               </div>
 
               <div className="flex gap-3">
@@ -301,7 +299,7 @@ export default function WhatsAppTestPage() {
 
               {savedPhoneNumber && (
                 <p className="mt-3 text-sm text-green-600">
-                  ✓ Numéro enregistré : {savedPhoneNumber}
+                  ✓ Numéro enregistré : +{savedPhoneNumber}
                 </p>
               )}
             </div>
@@ -412,9 +410,7 @@ export default function WhatsAppTestPage() {
             {/* Step 3: Send Test Message */}
             <div
               className={`rounded-xl border bg-white p-5 ${
-                connected
-                  ? "border-gray-200"
-                  : "border-gray-100 opacity-50"
+                connected ? "border-gray-200" : "border-gray-100 opacity-50"
               }`}
             >
               <div className="mb-4 flex items-center gap-3">
@@ -463,7 +459,9 @@ export default function WhatsAppTestPage() {
                     disabled={sendingMessage || !recipientPhone || !messageText}
                     className="w-full rounded-lg bg-green-600 py-2.5 font-medium text-white hover:bg-green-700 disabled:opacity-50"
                   >
-                    {sendingMessage ? "Envoi en cours..." : "Envoyer le message"}
+                    {sendingMessage
+                      ? "Envoi en cours..."
+                      : "Envoyer le message"}
                   </button>
 
                   {sendResult && (
