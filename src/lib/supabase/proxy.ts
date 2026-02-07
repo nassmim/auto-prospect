@@ -49,7 +49,7 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Redirect logged-in users away from auth pages
+  // Redirect logged-in users away from public pages
   if (user) {
     return NextResponse.redirect(new URL(pages.dashboard, request.url));
   }

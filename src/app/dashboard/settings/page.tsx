@@ -1,3 +1,4 @@
+import { isWhatsAppConnected } from "@/actions/whatsapp.actions";
 import { getUseraccount } from "@/services/account.service";
 import { getTeamMembers } from "@/services/team.service";
 import { SettingsPageClient } from "./settings-page-client";
@@ -9,11 +10,15 @@ export default async function SettingsPage() {
     getTeamMembers(),
   ]);
 
+  // Get WhatsApp connection status
+  const whatsappConnected = await isWhatsAppConnected(account.id);
+
   return (
     <SettingsPageClient
       account={account}
       userRole={"owner"}
       initialMembers={members}
+      whatsappConnected={whatsappConnected}
     />
   );
 }

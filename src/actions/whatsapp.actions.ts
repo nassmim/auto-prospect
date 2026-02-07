@@ -3,6 +3,7 @@
 import {
   createDrizzleSupabaseClient,
   TDBClient,
+  TDBOptions,
   TDBQuery,
 } from "@/lib/drizzle/dbClient";
 import { accounts } from "@/schema/account.schema";
@@ -25,7 +26,7 @@ type WhatsAppSessionRow = typeof whatsappSessions.$inferSelect;
  */
 const getWhatsAppSession = async (
   accountId: string,
-  options: { dbClient?: TDBClient; bypassRLS?: boolean } = { bypassRLS: false },
+  options: TDBOptions = { bypassRLS: false },
 ): Promise<{
   session: WhatsAppSessionRow | null;
   credentials: StoredAuthState | null;
@@ -58,7 +59,7 @@ const getWhatsAppSession = async (
 export const saveWhatsAppSession = async (
   accountId: string,
   credentials: StoredAuthState,
-  options?: { dbClient?: TDBClient; bypassRLS?: boolean },
+  options?: TDBOptions,
 ): Promise<{ success: boolean; error?: string }> => {
   const client = options?.dbClient || (await createDrizzleSupabaseClient());
 
@@ -104,7 +105,7 @@ export const saveWhatsAppSession = async (
 export const updateWhatsAppConnectionStatus = async (
   accountId: string,
   isConnected: boolean,
-  options?: { dbClient?: TDBClient; bypassRLS?: boolean },
+  options?: TDBOptions,
 ): Promise<{ success: boolean; error?: string }> => {
   const client = options?.dbClient || (await createDrizzleSupabaseClient());
 
@@ -141,7 +142,7 @@ export const updateWhatsAppConnectionStatus = async (
  */
 export const deleteWhatsAppSession = async (
   accountId: string,
-  options?: { dbClient?: TDBClient; bypassRLS?: boolean },
+  options?: TDBOptions,
 ): Promise<{ success: boolean; error?: string }> => {
   const client = options?.dbClient || (await createDrizzleSupabaseClient());
 
@@ -173,7 +174,7 @@ export const deleteWhatsAppSession = async (
  */
 export const isWhatsAppConnected = async (
   accountId: string,
-  options?: { dbClient?: TDBClient; bypassRLS?: boolean },
+  options: TDBOptions = { bypassRLS: false },
 ): Promise<boolean> => {
   const { session } = await getWhatsAppSession(accountId, options);
   return session?.isConnected ?? false;
@@ -250,7 +251,7 @@ export const updateWhatsAppPhoneNumber = async (
  */
 export const getWhatsAppPhoneNumber = async (
   accountId: string,
-  options?: { dbClient?: TDBClient; bypassRLS?: boolean },
+  options?: TDBOptions,
 ): Promise<string | null> => {
   const client = options?.dbClient || (await createDrizzleSupabaseClient());
 

@@ -14,12 +14,14 @@ type SettingsPageClientProps = {
   account: TAccount;
   userRole: "owner" | "admin" | "user";
   initialMembers: TTeamMembersWithAccount;
+  whatsappConnected: boolean;
 };
 
 export function SettingsPageClient({
   account,
   userRole,
   initialMembers,
+  whatsappConnected,
 }: SettingsPageClientProps) {
   const [activeTab, setActiveTab] = useState<Tab>("accounts");
 
@@ -136,7 +138,13 @@ export function SettingsPageClient({
 
       {/* Tab Content */}
       <div className="py-6">
-        {activeTab === "accounts" && <ConnectedAccountsTab />}
+        {activeTab === "accounts" && (
+          <ConnectedAccountsTab
+            accountId={account.id}
+            whatsappPhoneNumber={account.whatsappPhoneNumber}
+            whatsappConnected={whatsappConnected}
+          />
+        )}
         {activeTab === "filters" && <FiltersTab settings={account.settings} />}
         {activeTab === "messages" && (
           <MessagesTab settings={account.settings} />
