@@ -1,4 +1,5 @@
 import { isWhatsAppConnected } from "@/actions/whatsapp.actions";
+import { ConnectedAccountsTab } from "@/components/settings/connected-accounts-tab";
 import { getUseraccount } from "@/services/account.service";
 import { getTeamMembers } from "@/services/team.service";
 import { SettingsPageClient } from "./settings-page-client";
@@ -18,7 +19,13 @@ export default async function SettingsPage() {
       account={account}
       userRole={"owner"}
       initialMembers={members}
-      whatsappConnected={whatsappConnected}
+      connectedAccountsTab={
+        <ConnectedAccountsTab
+          accountId={account.id}
+          whatsappPhoneNumber={account.whatsappPhoneNumber}
+          whatsappConnected={whatsappConnected}
+        />
+      }
     />
   );
 }

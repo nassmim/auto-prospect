@@ -1,5 +1,3 @@
-"use client";
-
 import { WhatsAppConnectionCard } from "./whatsapp-connection-card";
 
 type ConnectedAccountsTabProps = {

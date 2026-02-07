@@ -1,29 +1,18 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { pages } from "@/config/routes";
 import { AppLayoutClient } from "@/components/layout/app-layout-client";
-import { Suspense, cache } from "react";
-
-// Cache the auth check to make it compatible with Next.js 16 cacheComponents
-const getAuthUser = cache(async () => {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return user;
-});
+import { pages } from "@/config/routes";
+import { getUseraccount } from "@/services/account.service";
+import { redirect } from "next/navigation";
+import { Suspense } from "react";
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const user = await getAuthUser();
+  const user = await getUseraccount(undefined, { columnsToKeep: { id: true } });
 
   // Redirect to login if user is not authenticated
-  if (!user) {
-    redirect(pages.login);
-  }
+  if (!user || !user.id) redirect(pages.login);
 
   return (
     <AppLayoutClient>

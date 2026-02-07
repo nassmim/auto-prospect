@@ -16,6 +16,7 @@ import makeWASocket, {
 import { Boom } from "@hapi/boom";
 import * as QRCode from "qrcode";
 import { encryptCredentials, decryptCredentials } from "@/utils/crypto.utils";
+import { TErrorCode, EWhatsAppErrorCode } from "@/config/error-codes";
 
 // =============================================================================
 // TYPES
@@ -355,27 +356,34 @@ export const sendWhatsAppMessage = async (
   socket: WASocket,
   phoneNumber: string, // Format: 33612345678 (sans +)
   message: string,
-): Promise<{ success: boolean; error?: string }> => {
+): Promise<{ success: boolean; errorCode?: TErrorCode }> => {
   try {
     const jid = `${phoneNumber}@s.whatsapp.net`;
 
     // Vérifier si le numéro existe sur WhatsApp
     const results = await socket.onWhatsApp(jid);
     if (!results || results.length === 0) {
-      return { success: false, error: "Ce numéro n'est pas enregistré sur WhatsApp" };
+      return {
+        success: false,
+        errorCode: EWhatsAppErrorCode.RECIPIENT_INVALID,
+      };
     }
     const result = results[0];
     if (!result?.exists) {
-      return { success: false, error: "Ce numéro n'est pas enregistré sur WhatsApp" };
+      return {
+        success: false,
+        errorCode: EWhatsAppErrorCode.RECIPIENT_INVALID,
+      };
     }
 
     // Envoyer le message
     await socket.sendMessage(result.jid, { text: message });
     return { success: true };
   } catch (error) {
+    console.error("Failed to send WhatsApp message:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Échec de l'envoi du message",
+      errorCode: EWhatsAppErrorCode.MESSAGE_SEND_FAILED,
     };
   }
 };

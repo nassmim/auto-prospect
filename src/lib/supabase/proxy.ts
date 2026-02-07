@@ -50,7 +50,7 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Redirect logged-in users away from public pages
-  if (user) {
+  if (user && !request.nextUrl.pathname.startsWith(pages.dashboard)) {
     return NextResponse.redirect(new URL(pages.dashboard, request.url));
   }
 

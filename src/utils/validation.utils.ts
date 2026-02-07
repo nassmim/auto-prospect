@@ -3,30 +3,31 @@ import {
   isValidPhoneNumber,
   parsePhoneNumberWithError,
 } from "libphonenumber-js";
+import { EWhatsAppErrorCode, TWhatsAppErrorCode } from "@/config/error-codes";
 
-export type PhoneValidationResult = {
+export type TPhoneValidationResult = {
   isValid: boolean;
   formatted: string | null; // E.164 format without + (e.g., "33612345678")
   formattedWithPlus: string | null; // E.164 format with + (e.g., "+33612345678")
-  error?: string;
+  errorCode?: TWhatsAppErrorCode;
 };
 
 /**
  * Validates and formats a phone number for WhatsApp
  * @param phoneNumber - The phone number to validate (can include +, spaces, dashes)
  * @param defaultCountry - Default country code if not included in number (e.g., "FR")
- * @returns Validation result with formatted number or error
+ * @returns Validation result with formatted number or error code
  */
 export const validateWhatsAppNumber = (
   phoneNumber: string,
   defaultCountry: CountryCode = "FR",
-): PhoneValidationResult => {
+): TPhoneValidationResult => {
   if (!phoneNumber || phoneNumber.trim() === "") {
     return {
       isValid: false,
       formatted: null,
       formattedWithPlus: null,
-      error: "Renseigne ton numéro de téléphone",
+      errorCode: EWhatsAppErrorCode.PHONE_REQUIRED,
     };
   }
 
@@ -39,7 +40,7 @@ export const validateWhatsAppNumber = (
         isValid: false,
         formatted: null,
         formattedWithPlus: null,
-        error: "Ton numéro n'est pas valide, vérifie le format",
+        errorCode: EWhatsAppErrorCode.PHONE_INVALID_FORMAT,
       };
     }
 
@@ -51,7 +52,7 @@ export const validateWhatsAppNumber = (
         isValid: false,
         formatted: null,
         formattedWithPlus: null,
-        error: "Ton numéro n'est pas valide, vérifie le format",
+        errorCode: EWhatsAppErrorCode.PHONE_INVALID_FORMAT,
       };
     }
 
@@ -68,7 +69,7 @@ export const validateWhatsAppNumber = (
       isValid: false,
       formatted: null,
       formattedWithPlus: null,
-      error: "Ton numéro n'est pas valide, vérifie le format",
+      errorCode: EWhatsAppErrorCode.PHONE_INVALID_FORMAT,
     };
   }
 };

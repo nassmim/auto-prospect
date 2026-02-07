@@ -5,6 +5,7 @@ import {
   sendWhatsAppTextMessage,
   updateWhatsAppPhoneNumber,
 } from "@/actions/whatsapp.actions";
+import { getErrorMessage } from "@/utils/error-messages.utils";
 import { createClient } from "@/lib/supabase/client";
 import Image from "next/image";
 import { useState } from "react";
@@ -48,7 +49,7 @@ export function WhatsAppTestClient({ initialData }: WhatsAppTestClientProps) {
   const [sendingMessage, setSendingMessage] = useState(false);
   const [sendResult, setSendResult] = useState<{
     success: boolean;
-    error?: string;
+    errorCode?: import("@/config/error-codes").TErrorCode;
     needsReconnect?: boolean;
   } | null>(null);
 
@@ -106,7 +107,11 @@ export function WhatsAppTestClient({ initialData }: WhatsAppTestClientProps) {
       setConnected(false);
       setQrCode(null);
     } else {
-      setError(result.error || "Erreur lors de la sauvegarde");
+      setError(
+        result.errorCode
+          ? getErrorMessage(result.errorCode)
+          : "Erreur lors de la sauvegarde",
+      );
     }
     setWhatsappLoading(false);
   };
@@ -127,7 +132,11 @@ export function WhatsAppTestClient({ initialData }: WhatsAppTestClientProps) {
         setConnected(true);
       }
     } else {
-      setError(result.error || "Erreur de connexion WhatsApp");
+      setError(
+        result.errorCode
+          ? getErrorMessage(result.errorCode)
+          : "Erreur de connexion WhatsApp",
+      );
     }
     setWhatsappLoading(false);
   };
@@ -438,7 +447,7 @@ export function WhatsAppTestClient({ initialData }: WhatsAppTestClientProps) {
                     >
                       {sendResult.success
                         ? "✓ Message envoyé avec succès !"
-                        : `✗ Erreur: ${sendResult.error}`}
+                        : `✗ Erreur: ${sendResult.errorCode ? getErrorMessage(sendResult.errorCode) : "Échec de l'envoi du message"}`}
                     </div>
                   )}
                 </div>

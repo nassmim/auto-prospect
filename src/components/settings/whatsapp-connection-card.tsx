@@ -4,6 +4,7 @@ import {
   initiateWhatsAppConnection,
   updateWhatsAppPhoneNumber,
 } from "@/actions/whatsapp.actions";
+import { getErrorMessage } from "@/utils/error-messages.utils";
 import Image from "next/image";
 import { useState } from "react";
 
@@ -49,7 +50,11 @@ export function WhatsAppConnectionCard({
       setConnected(false);
       setQrCode(null);
     } else {
-      setError(result.error || "Erreur lors de la sauvegarde");
+      setError(
+        result.errorCode
+          ? getErrorMessage(result.errorCode)
+          : "Erreur lors de la sauvegarde",
+      );
     }
     setPhoneLoading(false);
   };
@@ -69,7 +74,11 @@ export function WhatsAppConnectionCard({
         setConnected(true);
       }
     } else {
-      setError(result.error || "Erreur de connexion WhatsApp");
+      setError(
+        result.errorCode
+          ? getErrorMessage(result.errorCode)
+          : "Erreur de connexion WhatsApp",
+      );
     }
     setConnectionLoading(false);
   };
@@ -91,7 +100,7 @@ export function WhatsAppConnectionCard({
           <div>
             <h3 className="text-sm font-medium text-zinc-100">WhatsApp</h3>
             <p className="mt-1 text-xs text-zinc-500">
-              Intégration directe WhatsApp Business
+              Intégration directe WhatsApp
             </p>
             <div className="mt-2 flex items-center gap-2">
               {connected ? (
@@ -134,9 +143,7 @@ export function WhatsAppConnectionCard({
           >
             {savedPhoneNumber ? "✓" : "1"}
           </div>
-          <h4 className="text-sm font-medium text-zinc-200">
-            Numéro WhatsApp
-          </h4>
+          <h4 className="text-sm font-medium text-zinc-200">Numéro WhatsApp</h4>
         </div>
 
         <div className="ml-10 space-y-3">

@@ -1,23 +1,27 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { pages } from "@/config/routes";
 import {
-  HomeIcon,
-  MagnifyingGlassIcon,
-  Squares2X2Icon,
   ChatBubbleBottomCenterTextIcon,
   Cog6ToothIcon,
   CurrencyDollarIcon,
+  HomeIcon,
+  MagnifyingGlassIcon,
+  Squares2X2Icon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
-import { pages } from "@/config/routes";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const navigation = [
   { name: "Dashboard", href: pages.dashboard, icon: HomeIcon },
   { name: "Hunts", href: pages.hunts.list, icon: MagnifyingGlassIcon },
   { name: "Pipeline", href: pages.pipeline, icon: Squares2X2Icon },
-  { name: "Templates", href: pages.templates.list, icon: ChatBubbleBottomCenterTextIcon },
+  {
+    name: "Templates",
+    href: pages.templates.list,
+    icon: ChatBubbleBottomCenterTextIcon,
+  },
   { name: "Settings", href: pages.settings, icon: Cog6ToothIcon },
   { name: "Credits", href: pages.credits, icon: CurrencyDollarIcon },
 ];
@@ -52,7 +56,9 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
         <div className="flex h-16 items-center justify-between border-b border-zinc-800 px-6">
           <div className="flex items-center gap-3">
             <div className="flex h-8 w-8 items-center justify-center rounded border border-amber-500/30 bg-amber-500/10">
-              <span className="font-mono text-sm font-bold text-amber-500">AP</span>
+              <span className="font-mono text-sm font-bold text-amber-500">
+                AP
+              </span>
             </div>
             <div>
               <h1 className="font-mono text-sm font-bold tracking-tight text-zinc-100">
@@ -77,7 +83,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
         {/* Navigation */}
         <nav className="flex-1 space-y-1 px-3 py-4">
           {navigation.map((item, index) => {
-            const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
+            const isActive = pathname === item.href;
             return (
               <Link
                 key={item.name}
@@ -115,7 +121,9 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
         <div className="border-t border-zinc-800 p-4">
           <div className="flex items-center gap-2 rounded bg-zinc-900/50 px-3 py-2">
             <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
-            <span className="font-mono text-xs text-zinc-500">SYSTEM ONLINE</span>
+            <span className="font-mono text-xs text-zinc-500">
+              SYSTEM ONLINE
+            </span>
           </div>
         </div>
 

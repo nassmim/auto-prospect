@@ -17,6 +17,11 @@ import {
 import { validateWhatsAppNumber } from "@/utils/validation.utils";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
+import {
+  TErrorCode,
+  EGeneralErrorCode,
+  EWhatsAppErrorCode,
+} from "@/config/error-codes";
 
 type WhatsAppSessionRow = typeof whatsappSessions.$inferSelect;
 
@@ -33,7 +38,10 @@ const getWhatsAppSession = async (
 }> => {
   const client = options?.dbClient || (await createDrizzleSupabaseClient());
 
-  const query = (tx: TDBQuery) => tx.query.whatsappSessions.findFirst();
+  const query = (tx: TDBQuery) =>
+    tx.query.whatsappSessions.findFirst({
+      where: eq(whatsappSessions.accountId, accountId),
+    });
 
   const session = options?.bypassRLS
     ? await query(client.admin)
@@ -60,7 +68,7 @@ export const saveWhatsAppSession = async (
   accountId: string,
   credentials: StoredAuthState,
   options?: TDBOptions,
-): Promise<{ success: boolean; error?: string }> => {
+): Promise<{ success: boolean; errorCode?: TErrorCode }> => {
   const client = options?.dbClient || (await createDrizzleSupabaseClient());
 
   const credentialsJson = JSON.stringify(credentials);
@@ -88,13 +96,10 @@ export const saveWhatsAppSession = async (
     if (options?.bypassRLS) await query(client.admin);
     else await client.rls(query);
     return { success: true };
-  } catch (error) {
+  } catch {
     return {
       success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Échec de sauvegarde de la session",
+      errorCode: EWhatsAppErrorCode.SESSION_SAVE_FAILED,
     };
   }
 };
@@ -106,7 +111,7 @@ export const updateWhatsAppConnectionStatus = async (
   accountId: string,
   isConnected: boolean,
   options?: TDBOptions,
-): Promise<{ success: boolean; error?: string }> => {
+): Promise<{ success: boolean; errorCode?: TErrorCode }> => {
   const client = options?.dbClient || (await createDrizzleSupabaseClient());
 
   const query = (tx: TDBQuery) =>
@@ -126,13 +131,10 @@ export const updateWhatsAppConnectionStatus = async (
       await client.rls(query);
     }
     return { success: true };
-  } catch (error) {
+  } catch {
     return {
       success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Échec de mise à jour du statut",
+      errorCode: EGeneralErrorCode.DATABASE_ERROR,
     };
   }
 };
@@ -143,7 +145,7 @@ export const updateWhatsAppConnectionStatus = async (
 export const deleteWhatsAppSession = async (
   accountId: string,
   options?: TDBOptions,
-): Promise<{ success: boolean; error?: string }> => {
+): Promise<{ success: boolean; errorCode?: TErrorCode }> => {
   const client = options?.dbClient || (await createDrizzleSupabaseClient());
 
   const query = (tx: TDBQuery) =>
@@ -158,13 +160,10 @@ export const deleteWhatsAppSession = async (
       await client.rls(query);
     }
     return { success: true };
-  } catch (error) {
+  } catch {
     return {
       success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Échec de suppression de la session",
+      errorCode: EWhatsAppErrorCode.SESSION_DELETE_FAILED,
     };
   }
 };
@@ -193,11 +192,11 @@ export const updateWhatsAppPhoneNumber = async (
   accountId: string,
   phoneNumber: string,
   options?: { dbClient?: TDBClient },
-): Promise<{ success: boolean; formattedNumber?: string; error?: string }> => {
+): Promise<{ success: boolean; formattedNumber?: string; errorCode?: TErrorCode }> => {
   // Validate and format the phone number
   const validation = validateWhatsAppNumber(phoneNumber);
   if (!validation.isValid) {
-    return { success: false, error: validation.error };
+    return { success: false, errorCode: validation.errorCode };
   }
 
   const client = options?.dbClient || (await createDrizzleSupabaseClient());
@@ -224,7 +223,7 @@ export const updateWhatsAppPhoneNumber = async (
     );
 
     if (result.length === 0) {
-      return { success: false, error: "Compte non trouvé" };
+      return { success: false, errorCode: EWhatsAppErrorCode.ACCOUNT_NOT_FOUND };
     }
 
     // If number changed, delete the existing WhatsApp session
@@ -235,13 +234,10 @@ export const updateWhatsAppPhoneNumber = async (
     }
 
     return { success: true, formattedNumber: validation.formatted! };
-  } catch (error) {
+  } catch {
     return {
       success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Échec de mise à jour du numéro",
+      errorCode: EWhatsAppErrorCode.PHONE_UPDATE_FAILED,
     };
   }
 };
@@ -279,7 +275,7 @@ export const getWhatsAppPhoneNumber = async (
  */
 export const initiateWhatsAppConnection = async (
   accountId: string,
-): Promise<{ success: boolean; qrCode?: string; error?: string }> => {
+): Promise<{ success: boolean; qrCode?: string; errorCode?: TErrorCode }> => {
   try {
     // Get existing session if any
     const { session, credentials: storedCredentials } =
@@ -325,10 +321,10 @@ export const initiateWhatsAppConnection = async (
           // Ne pas résoudre avec erreur pour les reconnexions (515)
           console.log("WhatsApp déconnecté:", reason);
         },
-        onError: (error) => {
+        onError: () => {
           if (!resolved) {
             resolved = true;
-            resolve({ success: false, error });
+            resolve({ success: false, errorCode: EWhatsAppErrorCode.QR_GENERATION_FAILED });
           }
         },
       }).then(({ saveState }) => {
@@ -339,15 +335,14 @@ export const initiateWhatsAppConnection = async (
       setTimeout(() => {
         if (!resolved) {
           resolved = true;
-          resolve({ success: false, error: "Timeout: QR code non généré" });
+          resolve({ success: false, errorCode: EWhatsAppErrorCode.CONNECTION_TIMEOUT });
         }
       }, 120000);
     });
-  } catch (error) {
+  } catch {
     return {
       success: false,
-      error:
-        error instanceof Error ? error.message : "Échec de connexion WhatsApp",
+      errorCode: EWhatsAppErrorCode.CONNECTION_FAILED,
     };
   }
 };
@@ -369,7 +364,7 @@ export type SendWhatsAppTextMessageInput = z.infer<
 
 export type SendWhatsAppTextMessageResult = {
   success: boolean;
-  error?: string;
+  errorCode?: TErrorCode;
   needsReconnect?: boolean;
 };
 
@@ -383,7 +378,7 @@ export const sendWhatsAppTextMessage = async (
   // Validate input
   const validation = sendWhatsAppTextMessageSchema.safeParse(input);
   if (!validation.success) {
-    return { success: false, error: validation.error.issues[0].message };
+    return { success: false, errorCode: EGeneralErrorCode.VALIDATION_FAILED };
   }
 
   const { recipientPhone, senderPhone, message } = validation.data;
@@ -393,7 +388,7 @@ export const sendWhatsAppTextMessage = async (
   if (!recipientValidation.isValid) {
     return {
       success: false,
-      error: `Numéro destinataire invalide: ${recipientValidation.error}`,
+      errorCode: EWhatsAppErrorCode.RECIPIENT_INVALID,
     };
   }
 
@@ -406,7 +401,7 @@ export const sendWhatsAppTextMessage = async (
     });
 
     if (!account) {
-      return { success: false, error: "Compte expéditeur non trouvé" };
+      return { success: false, errorCode: EWhatsAppErrorCode.ACCOUNT_NOT_FOUND };
     }
 
     // Get WhatsApp session credentials
@@ -417,7 +412,7 @@ export const sendWhatsAppTextMessage = async (
     if (!credentials) {
       return {
         success: false,
-        error: "Session WhatsApp non trouvée. Veuillez vous reconnecter.",
+        errorCode: EWhatsAppErrorCode.SESSION_NOT_FOUND,
       };
     }
 
@@ -437,7 +432,7 @@ export const sendWhatsAppTextMessage = async (
         });
         return {
           success: false,
-          error: "Session WhatsApp expirée. Veuillez vous reconnecter.",
+          errorCode: EWhatsAppErrorCode.SESSION_EXPIRED,
           needsReconnect: true,
         };
       }
@@ -457,11 +452,10 @@ export const sendWhatsAppTextMessage = async (
       cleanup();
       throw error;
     }
-  } catch (error) {
+  } catch {
     return {
       success: false,
-      error:
-        error instanceof Error ? error.message : "Échec de l'envoi du message",
+      errorCode: EWhatsAppErrorCode.MESSAGE_SEND_FAILED,
     };
   }
 };
