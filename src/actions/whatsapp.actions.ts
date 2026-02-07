@@ -25,17 +25,14 @@ type WhatsAppSessionRow = typeof whatsappSessions.$inferSelect;
  */
 const getWhatsAppSession = async (
   accountId: string,
-  options?: { dbClient?: TDBClient; bypassRLS?: boolean },
+  options: { dbClient?: TDBClient; bypassRLS?: boolean } = { bypassRLS: false },
 ): Promise<{
   session: WhatsAppSessionRow | null;
   credentials: StoredAuthState | null;
 }> => {
   const client = options?.dbClient || (await createDrizzleSupabaseClient());
 
-  const query = (tx: TDBQuery) =>
-    tx.query.whatsappSessions.findFirst({
-      where: eq(whatsappSessions.accountId, accountId),
-    });
+  const query = (tx: TDBQuery) => tx.query.whatsappSessions.findFirst();
 
   const session = options?.bypassRLS
     ? await query(client.admin)
@@ -63,7 +60,6 @@ export const saveWhatsAppSession = async (
   credentials: StoredAuthState,
   options?: { dbClient?: TDBClient; bypassRLS?: boolean },
 ): Promise<{ success: boolean; error?: string }> => {
-  console.log("dans save");
   const client = options?.dbClient || (await createDrizzleSupabaseClient());
 
   const credentialsJson = JSON.stringify(credentials);
@@ -88,16 +84,13 @@ export const saveWhatsAppSession = async (
       });
 
   try {
-    console.log("dans try");
     if (options?.bypassRLS) {
       await query(client.admin);
     } else {
       await client.rls(query);
     }
-    console.log("done");
     return { success: true };
   } catch (error) {
-    console.log("dans error");
     return {
       success: false,
       error:
@@ -196,7 +189,6 @@ export const isWhatsAppConnected = async (
 /**
  * Updates the WhatsApp phone number for an account
  * Validates and formats the phone number before saving
- * Uses admin client to bypass RLS (server action is already authenticated)
  * Also deletes any existing WhatsApp session since credentials are tied to the old number
  */
 export const updateWhatsAppPhoneNumber = async (
@@ -214,10 +206,12 @@ export const updateWhatsAppPhoneNumber = async (
 
   try {
     // Check if the number is different from the current one
-    const currentAccount = await client.admin.query.accounts.findFirst({
-      where: eq(accounts.id, accountId),
-      columns: { whatsappPhoneNumber: true },
-    });
+    const currentAccount = await client.rls((tx) =>
+      tx.query.accounts.findFirst({
+        where: eq(accounts.id, accountId),
+        columns: { whatsappPhoneNumber: true },
+      }),
+    );
 
     const numberChanged =
       currentAccount?.whatsappPhoneNumber !== validation.formatted;
@@ -306,10 +300,8 @@ export const initiateWhatsAppConnection = async (
           }
         },
         onConnected: async () => {
-          console.log("on connected");
           // Save credentials when connected (including after reconnection)
           if (saveStateFn) {
-            console.log("dans if");
             try {
               const credentials = saveStateFn();
 
@@ -319,9 +311,8 @@ export const initiateWhatsAppConnection = async (
               await updateWhatsAppConnectionStatus(accountId, true, {
                 bypassRLS: true,
               });
-              console.log("WhatsApp connecté et credentials sauvegardés");
             } catch (err) {
-              console.error("Erreur sauvegarde credentials:", err);
+              console.error("Error saving WhatsApp credentials:", err);
             }
           }
           if (!resolved) {
@@ -330,8 +321,7 @@ export const initiateWhatsAppConnection = async (
           }
         },
         onDisconnected: (reason) => {
-          // Ne pas résoudre avec erreur pour les reconnexions (515)
-          console.log("WhatsApp déconnecté:", reason);
+          console.log("WhatsApp disconnected:", reason);
         },
         onError: (error) => {
           if (!resolved) {

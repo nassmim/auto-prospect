@@ -50,6 +50,30 @@ export type WhatsAppEventHandlers = {
 const ENCRYPTION_KEY = process.env.WHATSAPP_ENCRYPTION_KEY!;
 const QR_TIMEOUT_MS = 120000; // 2 minutes
 
+/**
+ * Custom logger for Baileys to suppress verbose history notifications
+ * These logs flood the console and hide important messages
+ */
+const createFilteredLogger = () => {
+  const noop = () => {};
+
+  return {
+    level: "silent",
+    fatal: noop,
+    error: (msg: unknown) => {
+      // Only log actual errors
+      if (msg instanceof Error || (typeof msg === "string" && msg.toLowerCase().includes("error"))) {
+        console.error("[WhatsApp Error]", msg);
+      }
+    },
+    warn: noop,
+    info: noop, // Suppress all info logs including history notifications
+    debug: noop,
+    trace: noop,
+    child: () => createFilteredLogger(),
+  };
+};
+
 // =============================================================================
 // FONCTIONS
 // =============================================================================
@@ -161,6 +185,8 @@ export const createWhatsAppConnection = async (
     browser: ["Auto-Prospect", "Chrome", "1.0.0"],
     syncFullHistory: false,
     markOnlineOnConnect: false,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    logger: createFilteredLogger() as any, // Suppress verbose Baileys logs
   });
 
   // Ferme proprement la connexion
@@ -212,6 +238,8 @@ export const createWhatsAppConnection = async (
               browser: ["Auto-Prospect", "Chrome", "1.0.0"],
               syncFullHistory: false,
               markOnlineOnConnect: false,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              logger: createFilteredLogger() as any, // Suppress verbose Baileys logs
             });
 
             newSocket.ev.on("connection.update", (newUpdate) => {
@@ -225,7 +253,7 @@ export const createWhatsAppConnection = async (
                 handlers.onDisconnected("Connexion fermée après reconnexion");
               }
             });
-          } catch (err) {
+          } catch {
             handlers.onError("Échec de reconnexion");
           }
         }, 1000);
@@ -274,6 +302,8 @@ export const connectWithCredentials = async (
     browser: ["Auto-Prospect", "Chrome", "1.0.0"],
     syncFullHistory: false,
     markOnlineOnConnect: false,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    logger: createFilteredLogger() as any, // Suppress verbose Baileys logs
   });
 
   let connectionResolve: ((value: boolean) => void) | null = null;

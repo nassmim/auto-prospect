@@ -1,4 +1,8 @@
-import { parsePhoneNumber, isValidPhoneNumber, CountryCode } from "libphonenumber-js";
+import {
+  CountryCode,
+  isValidPhoneNumber,
+  parsePhoneNumberWithError,
+} from "libphonenumber-js";
 
 export type PhoneValidationResult = {
   isValid: boolean;
@@ -40,7 +44,7 @@ export const validateWhatsAppNumber = (
     }
 
     // Parse and format the number
-    const parsed = parsePhoneNumber(cleanedNumber, defaultCountry);
+    const parsed = parsePhoneNumberWithError(cleanedNumber, defaultCountry);
 
     if (!parsed) {
       return {
