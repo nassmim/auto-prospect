@@ -4,6 +4,7 @@ import { whatsappSessions } from "@/schema/whatsapp-session.schema";
 import { TAccountSettings } from "@/types/account.types";
 import { InferSelectModel, relations, sql } from "drizzle-orm";
 import {
+  boolean,
   jsonb,
   pgEnum,
   pgPolicy,
@@ -30,6 +31,7 @@ export const accounts = pgTable(
     pictureUrl: varchar("picture_url", { length: 1000 }),
     phoneNumber: varchar("phone_number", { length: 14 }),
     whatsappPhoneNumber: varchar("whatsapp_phone_number", { length: 20 }),
+    smsMobileAPiAllowed: boolean("sms_mobile_api_allowed").default(false),
     smsApiKey: varchar("sms_api_key", { length: 500 }),
     // account type discriminator
     type: accountType("type").notNull().default(EAccountType.PERSONAL),

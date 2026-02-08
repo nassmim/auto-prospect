@@ -1,9 +1,11 @@
+import { SmsConnectionCard } from "./sms-connection-card";
 import { WhatsAppConnectionCard } from "./whatsapp-connection-card";
 
 type ConnectedAccountsTabProps = {
   accountId: string;
   whatsappPhoneNumber: string | null;
   whatsappConnected: boolean;
+  smsApiKeyConfigured: boolean;
 };
 
 /**
@@ -14,6 +16,7 @@ export function ConnectedAccountsTab({
   accountId,
   whatsappPhoneNumber,
   whatsappConnected,
+  smsApiKeyConfigured,
 }: ConnectedAccountsTabProps) {
   return (
     <div className="space-y-6">
@@ -78,57 +81,7 @@ export function ConnectedAccountsTab({
       />
 
       {/* SMS API Connection */}
-      <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-6">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-500/10">
-              <svg
-                className="h-6 w-6 text-blue-500"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                />
-              </svg>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-zinc-100">
-                SMS Mobile API
-              </h3>
-              <p className="mt-1 text-xs text-zinc-500">
-                Configuration de l&apos;API SMS Mobile
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="mt-4 space-y-4">
-          <div>
-            <label
-              htmlFor="sms-api-key"
-              className="block text-sm font-medium text-zinc-300"
-            >
-              Clé API
-            </label>
-            <input
-              id="sms-api-key"
-              type="password"
-              placeholder="Entrez votre clé API SMS Mobile"
-              className="mt-2 w-full rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-            />
-          </div>
-          <button
-            type="button"
-            className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-zinc-950 transition-colors hover:bg-amber-400"
-          >
-            Enregistrer
-          </button>
-        </div>
-      </div>
+      <SmsConnectionCard initialHasApiKey={smsApiKeyConfigured} />
     </div>
   );
 }

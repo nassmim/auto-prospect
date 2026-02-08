@@ -225,6 +225,21 @@ export async function hasSmsApiKeyAction(): Promise<boolean> {
 }
 
 /**
+ * Checks if the user is allowed to configure SMS Mobile API
+ */
+export async function isSmsApiAllowedAction(): Promise<boolean> {
+  try {
+    const account = await getUseraccount(undefined, {
+      columnsToKeep: { id: true, smsMobileAPiAllowed: true },
+    });
+
+    return !!account.smsMobileAPiAllowed;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Send SMS via SMSMobileAPI
  */
 export const sendSms = async ({
