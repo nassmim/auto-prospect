@@ -1,41 +1,37 @@
-"use client";
-
-import { useState } from "react";
 import SmsApiKeyForm from "./SmsApiKeyForm";
 
 type SmsConfigurationSectionProps = {
-  accountId: string;
   hasApiKey: boolean;
 };
 
-export default function SmsConfigurationSection({ accountId, hasApiKey }: SmsConfigurationSectionProps) {
-  const [apiKeyConfigured, setApiKeyConfigured] = useState(hasApiKey);
-
+export default function SmsConfigurationSection({
+  hasApiKey,
+}: SmsConfigurationSectionProps) {
   return (
     <div className="bg-white rounded-lg shadow-md p-8">
       <div className="flex items-center gap-3 mb-6">
         <div
           className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold ${
-            apiKeyConfigured ? "bg-green-100 text-green-700" : "bg-gray-900 text-white"
+            hasApiKey
+              ? "bg-green-100 text-green-700"
+              : "bg-gray-900 text-white"
           }`}
         >
-          {apiKeyConfigured ? "✓" : "1"}
+          {hasApiKey ? "✓" : "1"}
         </div>
         <h1 className="text-2xl font-bold text-black">Configuration SMS</h1>
       </div>
 
-      <p className="text-black mb-8">Configure ta clé API SMS Mobile API pour envoyer des SMS</p>
+      <p className="text-black mb-8">
+        Configure ta clé API SMS Mobile API pour envoyer des SMS
+      </p>
 
-      <SmsApiKeyForm
-        accountId={accountId}
-        hasExistingKey={apiKeyConfigured}
-        onSuccess={() => {
-          setApiKeyConfigured(true);
-        }}
-      />
+      <SmsApiKeyForm hasExistingKey={hasApiKey} />
 
       <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <h3 className="font-semibold text-blue-900 mb-3">Comment obtenir ta clé API SMS Mobile ?</h3>
+        <h3 className="font-semibold text-blue-900 mb-3">
+          Comment obtenir ta clé API SMS Mobile ?
+        </h3>
 
         <div className="space-y-4 text-sm text-blue-800">
           {/* Méthode 1: Android */}

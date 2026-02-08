@@ -2,6 +2,7 @@ import {
   TErrorCode,
   EGeneralErrorCode,
   EWhatsAppErrorCode,
+  ESmsErrorCode,
 } from "@/config/error-codes";
 
 /**
@@ -54,11 +55,40 @@ const GENERAL_ERROR_MESSAGES: Record<EGeneralErrorCode, string> = {
 };
 
 /**
+ * Error messages mapping for SMS errors
+ * Maps error codes to user-friendly French messages
+ */
+const SMS_ERROR_MESSAGES: Record<ESmsErrorCode, string> = {
+  // API Key errors
+  [ESmsErrorCode.API_KEY_REQUIRED]:
+    "Configure d'abord ta clé API pour envoyer des SMS",
+  [ESmsErrorCode.API_KEY_INVALID]: "Ta clé API n'est pas valide",
+  [ESmsErrorCode.API_KEY_SAVE_FAILED]:
+    "Échec de sauvegarde de la clé API. Réessaie.",
+  [ESmsErrorCode.ENCRYPTION_KEY_MISSING]:
+    "Erreur de configuration du serveur. Contacte-nous.",
+
+  // Phone number errors
+  [ESmsErrorCode.PHONE_NUMBER_REQUIRED]: "Renseigne le numéro du destinataire",
+  [ESmsErrorCode.PHONE_NUMBER_INVALID]:
+    "Le numéro du destinataire n'est pas valide",
+
+  // Message errors
+  [ESmsErrorCode.MESSAGE_REQUIRED]: "Renseigne le message à envoyer",
+  [ESmsErrorCode.MESSAGE_SEND_FAILED]: "Échec de l'envoi du SMS. Réessaie.",
+
+  // Account errors
+  [ESmsErrorCode.ACCOUNT_NOT_FOUND]:
+    "Ton compte n'a pas été trouvé. Essaie de te connecter de nouveau.",
+};
+
+/**
  * Complete error messages mapping
  */
 const ERROR_MESSAGES: Record<TErrorCode, string> = {
   ...WHATSAPP_ERROR_MESSAGES,
   ...GENERAL_ERROR_MESSAGES,
+  ...SMS_ERROR_MESSAGES,
 };
 
 /**

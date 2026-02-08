@@ -1,5 +1,10 @@
 "use server";
 
+import {
+  EGeneralErrorCode,
+  ESmsErrorCode,
+  TErrorCode,
+} from "@/config/error-codes";
 import { EContactChannel, TContactChannel } from "@/config/message.config";
 import { pages } from "@/config/routes";
 import {
@@ -7,13 +12,22 @@ import {
   TANDperator,
 } from "@/lib/drizzle/dbClient";
 import { formatZodError } from "@/lib/validation";
+import { accounts } from "@/schema/account.schema";
 import { messageTemplates } from "@/schema/message.schema";
 import { getUseraccount, getUserSession } from "@/services/account.service";
 import {
   getDefaultWhatsAppTemplate as getDefaultWhatsAppTemplateService,
   logWhatsAppMessage as logWhatsAppMessageService,
+  sendSms,
 } from "@/services/message.service";
+import { decryptCredentials, encryptCredentials } from "@/utils/crypto.utils";
 import { textTemplateSchema, voiceTemplateSchema } from "@/validation-schemas";
+import {
+  saveSmsApiKeySchema,
+  sendSmsSchema,
+  TSaveSmsApiKeySchema,
+  TSendSmsSchema,
+} from "@/validation-schemas/settings.validation";
 import { and, BinaryOperator, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -248,4 +262,140 @@ export async function logWhatsAppMessage(
   templateId?: string,
 ) {
   return logWhatsAppMessageService(leadId, renderedMessage, templateId);
+}
+
+type SendSmsResult = {
+  success: boolean;
+  errorCode?: TErrorCode;
+  data?: Record<string, unknown>;
+};
+
+/**
+ * Sends an SMS message via SMS Mobile API using the user's own API key
+ * Validates input, fetches user's API key from their account, and calls the messaging service
+ */
+export async function sendSmsAction(
+  data: TSendSmsSchema,
+): Promise<SendSmsResult> {
+  // Validate data
+  const validation = sendSmsSchema.safeParse(data);
+  if (!validation.success) {
+    return {
+      success: false,
+      errorCode: EGeneralErrorCode.VALIDATION_FAILED,
+    };
+  }
+
+  const { to, message } = validation.data;
+
+  try {
+    // Fetch user's account to get their SMS API key
+    const dbClient = await createDrizzleSupabaseClient();
+
+    // Use admin client to bypass RLS (server action is already authenticated)
+    const account = await getUseraccount(dbClient, {
+      columnsToKeep: { smsApiKey: true },
+    });
+
+    if (!account.smsApiKey) {
+      return {
+        success: false,
+        errorCode: ESmsErrorCode.API_KEY_REQUIRED,
+      };
+    }
+
+    // Decrypt the API key before using it
+    const encryptionKey = process.env.SMS_API_KEY_ENCRYPTION_KEY;
+    if (!encryptionKey) {
+      return {
+        success: false,
+        errorCode: ESmsErrorCode.ENCRYPTION_KEY_MISSING,
+      };
+    }
+
+    const decryptedApiKey = decryptCredentials(
+      account.smsApiKey,
+      encryptionKey,
+    );
+
+    // Call the service with user's decrypted API key
+    const result = await sendSms({
+      to,
+      message,
+      apiKey: decryptedApiKey,
+    });
+
+    return { success: true, data: result };
+  } catch {
+    return {
+      success: false,
+      errorCode: ESmsErrorCode.MESSAGE_SEND_FAILED,
+    };
+  }
+}
+
+type SaveSmsApiKeyResult = {
+  success: boolean;
+  errorCode?: TErrorCode;
+};
+
+/**
+ * Saves the user's SMS API key (encrypted) to their account
+ */
+export async function saveSmsApiKeyAction(
+  data: TSaveSmsApiKeySchema,
+): Promise<SaveSmsApiKeyResult> {
+  // Validate data
+  const validation = saveSmsApiKeySchema.safeParse(data);
+  if (!validation.success) {
+    return {
+      success: false,
+      errorCode: EGeneralErrorCode.VALIDATION_FAILED,
+    };
+  }
+
+  const { apiKey } = validation.data;
+
+  try {
+    const dbClient = await createDrizzleSupabaseClient();
+
+    const account = await getUseraccount(dbClient, {
+      columnsToKeep: { id: true, smsApiKey: true },
+    });
+
+    // Encrypt the API key before storing
+    const encryptionKey = process.env.SMS_API_KEY_ENCRYPTION_KEY;
+    if (!encryptionKey) {
+      return {
+        success: false,
+        errorCode: ESmsErrorCode.ENCRYPTION_KEY_MISSING,
+      };
+    }
+
+    const encryptedApiKey = encryptCredentials(apiKey, encryptionKey);
+
+    // Update the account with the encrypted API key
+    // Use admin client to bypass RLS (server action is already authenticated)
+    const result = await dbClient.rls((tx) =>
+      tx
+        .update(accounts)
+        .set({ smsApiKey: encryptedApiKey })
+        .where(eq(accounts.id, account.id))
+        .returning({ id: accounts.id }),
+    );
+
+    if (!result || result.length === 0) {
+      return {
+        success: false,
+        errorCode: ESmsErrorCode.ACCOUNT_NOT_FOUND,
+      };
+    }
+
+    return { success: true };
+  } catch {
+    return {
+      success: false,
+      errorCode: ESmsErrorCode.API_KEY_SAVE_FAILED,
+    };
+  }
 }

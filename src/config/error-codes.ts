@@ -48,7 +48,32 @@ export enum EGeneralErrorCode {
 export type TGeneralErrorCode = EGeneralErrorCode;
 
 // =============================================================================
+// SMS ERROR CODES
+// =============================================================================
+
+export enum ESmsErrorCode {
+  // API Key errors
+  API_KEY_REQUIRED = "API_KEY_REQUIRED",
+  API_KEY_INVALID = "API_KEY_INVALID",
+  API_KEY_SAVE_FAILED = "API_KEY_SAVE_FAILED",
+  ENCRYPTION_KEY_MISSING = "ENCRYPTION_KEY_MISSING",
+
+  // Phone number errors
+  PHONE_NUMBER_REQUIRED = "PHONE_NUMBER_REQUIRED",
+  PHONE_NUMBER_INVALID = "PHONE_NUMBER_INVALID",
+
+  // Message errors
+  MESSAGE_REQUIRED = "MESSAGE_REQUIRED",
+  MESSAGE_SEND_FAILED = "MESSAGE_SEND_FAILED",
+
+  // Account errors
+  ACCOUNT_NOT_FOUND = "ACCOUNT_NOT_FOUND",
+}
+
+export type TSmsErrorCode = ESmsErrorCode;
+
+// =============================================================================
 // ALL ERROR CODES (union type)
 // =============================================================================
 
-export type TErrorCode = TWhatsAppErrorCode | TGeneralErrorCode;
+export type TErrorCode = TWhatsAppErrorCode | TGeneralErrorCode | TSmsErrorCode;

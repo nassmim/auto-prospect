@@ -56,7 +56,14 @@ export {
 // Settings schemas
 export {
   accountSettingsSchema,
+  sendSmsSchema,
   teamInvitationSchema,
   type TAccountSettingsFormData,
+  type TSendSmsSchema,
   type TTeamInvitationFormData,
 } from "./settings.validation";
+
+export {
+  sendWhatsAppTextMessageSchema,
+  type TSendWhatsAppTextMessageSchema,
+} from "./whatsapp.validation";

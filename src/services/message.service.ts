@@ -208,3 +208,49 @@ export async function getAccountTemplates() {
 export type MessageTemplate = Awaited<
   ReturnType<typeof import("@/services/message.service").getAccountTemplates>
 >[number];
+
+/**
+ * Checks if the user has an SMS API key configured
+ */
+export async function hasSmsApiKeyAction(): Promise<boolean> {
+  try {
+    const account = await getUseraccount(undefined, {
+      columnsToKeep: { id: true, smsApiKey: true },
+    });
+
+    return !!account.smsApiKey;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Send SMS via SMSMobileAPI
+ */
+export const sendSms = async ({
+  to,
+  message,
+  apiKey,
+}: {
+  to: string;
+  message: string;
+  apiKey: string;
+}) => {
+  if (!apiKey) throw new Error("API key is required");
+
+  const body = new URLSearchParams();
+  body.set("apikey", apiKey);
+  body.set("recipients", to);
+  body.set("message", message);
+  body.set("sendsms", "1");
+
+  const res = await fetch("https://api.smsmobileapi.com/sendsms/", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body,
+  });
+
+  if (!res.ok) throw new Error("Failed to send SMS");
+
+  return res.json();
+};
