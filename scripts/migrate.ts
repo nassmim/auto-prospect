@@ -8,7 +8,7 @@ import { migrate } from "drizzle-orm/postgres-js/migrator";
 async function migrateDB() {
     // Run migrations on the database, skipping the ones already applied
     await migrate(defaultDBClient, {
-        migrationsFolder: "./drizzle/migrations",
+        migrationsFolder: "./src/lib/drizzle/migrations",
     });
     // Connection must be closed, otherwise the script will hang
     await postgresClient.end();

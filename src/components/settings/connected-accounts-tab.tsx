@@ -6,6 +6,7 @@ type ConnectedAccountsTabProps = {
   whatsappPhoneNumber: string | null;
   whatsappConnected: boolean;
   smsApiKeyConfigured: boolean;
+  smsApiAllowed: boolean;
 };
 
 /**
@@ -17,6 +18,7 @@ export function ConnectedAccountsTab({
   whatsappPhoneNumber,
   whatsappConnected,
   smsApiKeyConfigured,
+  smsApiAllowed,
 }: ConnectedAccountsTabProps) {
   return (
     <div className="space-y-6">
@@ -81,7 +83,10 @@ export function ConnectedAccountsTab({
       />
 
       {/* SMS API Connection */}
-      <SmsConnectionCard initialHasApiKey={smsApiKeyConfigured} />
+      <SmsConnectionCard
+        initialHasApiKey={smsApiKeyConfigured}
+        smsApiAllowed={smsApiAllowed}
+      />
     </div>
   );
 }
