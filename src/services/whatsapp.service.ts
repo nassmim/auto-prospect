@@ -28,6 +28,7 @@ import makeWASocket, {
   DisconnectReason,
   initAuthCreds,
   SignalDataTypeMap,
+  WAMessageUpdate,
   WASocket,
 } from "@whiskeysockets/baileys";
 import { eq } from "drizzle-orm";
@@ -451,7 +452,7 @@ export const sendWhatsAppMessage = async (
       let acknowledged = false;
 
       // Listen for message status updates
-      const messageUpdateListener = (updates: any[]) => {
+      const messageUpdateListener = (updates: WAMessageUpdate[]) => {
         for (const update of updates) {
           if (update.key?.id === sentMessage?.key?.id) {
             console.log("Message update:", update);

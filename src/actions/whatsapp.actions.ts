@@ -18,8 +18,11 @@ import {
   updateWhatsAppConnectionStatus,
 } from "@/services/whatsapp.service";
 import { validateWhatsAppNumber } from "@/utils/validation.utils";
+import {
+  sendWhatsAppTextMessageSchema,
+  TSendWhatsAppTextMessageSchema,
+} from "@/validation-schemas/whatsapp.validation";
 import { eq } from "drizzle-orm";
-import { z } from "zod";
 
 /**
  * Deletes the WhatsApp session for an account (logout)
@@ -211,17 +214,6 @@ export const initiateWhatsAppConnection = async (
 // SEND WHATSAPP MESSAGE
 // =============================================================================
 
-const sendWhatsAppTextMessageSchema = z.object({
-  recipientPhone: z.string().min(1, "Le numéro du destinataire est requis"),
-  senderPhone: z.string().min(1, "Le numéro de l'expéditeur est requis"),
-  adTitle: z.string().min(1, "Le titre de l'annonce est requis"),
-  message: z.string().min(1, "Le message est requis"),
-});
-
-export type SendWhatsAppTextMessageInput = z.infer<
-  typeof sendWhatsAppTextMessageSchema
->;
-
 export type SendWhatsAppTextMessageResult = {
   success: boolean;
   errorCode?: TErrorCode;
@@ -233,10 +225,10 @@ export type SendWhatsAppTextMessageResult = {
  * Finds the sender account by phone number, connects with stored credentials, and sends the message
  */
 export const sendWhatsAppTextMessage = async (
-  input: SendWhatsAppTextMessageInput,
+  data: TSendWhatsAppTextMessageSchema,
 ): Promise<SendWhatsAppTextMessageResult> => {
-  // Validate input
-  const validation = sendWhatsAppTextMessageSchema.safeParse(input);
+  // Validate data
+  const validation = sendWhatsAppTextMessageSchema.safeParse(data);
   if (!validation.success) {
     return { success: false, errorCode: EGeneralErrorCode.VALIDATION_FAILED };
   }
