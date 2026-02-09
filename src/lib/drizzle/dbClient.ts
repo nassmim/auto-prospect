@@ -24,7 +24,7 @@ const postgresClient = postgres(databaseUrl, { prepare: false });
 const config = {
   casing: "snake_case",
   schema,
-  logger: process.env.NODE_ENV === "development",
+  logger: false,
 } satisfies DrizzleConfig<typeof schema>;
 
 const defaultDBClient = drizzle({
@@ -57,7 +57,15 @@ type TDBQuery =
 
 type TEqOperator = typeof eq;
 type TANDperator = typeof and;
+type TDBOptions = { dbClient?: TDBClient; bypassRLS?: boolean };
 
 export { createDrizzleSupabaseClient, defaultDBClient, postgresClient };
 
-export type { TANDperator, TDBClient, TDBModel, TDBQuery, TEqOperator };
+export type {
+  TANDperator,
+  TDBClient,
+  TDBModel,
+  TDBOptions,
+  TDBQuery,
+  TEqOperator,
+};

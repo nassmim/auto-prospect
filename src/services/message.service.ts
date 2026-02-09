@@ -5,14 +5,15 @@
 
 import { EContactChannel } from "@/config/message.config";
 import { pages } from "@/config/routes";
-import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
+import { CACHE_TAGS } from "@/lib/cache/cache.config";
+import { createDrizzleSupabaseClient, TDBClient } from "@/lib/drizzle/dbClient";
 import { creditTransactions } from "@/schema/credits.schema";
 import { leadNotes } from "@/schema/lead.schema";
 import { messages } from "@/schema/message.schema";
-import { getUseraccount } from "@/services/account.service";
+import { getUserAccount } from "@/services/account.service";
 import { consumeCredit } from "@/services/credit.service";
 import { eq } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 
 export type TTemplateVariables = {
   titre_annonce?: string;
@@ -176,16 +177,30 @@ export async function logWhatsAppMessage(
  */
 export async function getAccountTemplates() {
   const dbClient = await createDrizzleSupabaseClient();
-
-  const account = await getUseraccount(dbClient, {
+  const account = await getUserAccount(dbClient, {
     columnsToKeep: { id: true },
   });
+  return getCachedAccountTemplates(account.id);
+}
+
+/**
+ * Internal cached function for account templates
+ */
+async function getCachedAccountTemplates(accountId: string) {
+  "use cache";
+
+  const { cacheTag } = await import("next/cache");
+  const { CACHE_TAGS } = await import("@/lib/cache/cache.config");
+
+  cacheTag(CACHE_TAGS.templatesByAccount(accountId));
+
+  const dbClient = await createDrizzleSupabaseClient();
 
   try {
     // Fetch all templates for this account
     const templates = await dbClient.rls(async (tx) => {
       return tx.query.messageTemplates.findMany({
-        where: (table, { eq }) => eq(table.accountId, account.id),
+        where: (table, { eq }) => eq(table.accountId, accountId),
         with: {
           account: {
             columns: {
@@ -208,3 +223,79 @@ export async function getAccountTemplates() {
 export type MessageTemplate = Awaited<
   ReturnType<typeof import("@/services/message.service").getAccountTemplates>
 >[number];
+
+/**
+ * Checks if the user has an SMS API key configured
+ */
+export async function hasSmsApiKeyAction(): Promise<boolean> {
+  try {
+    const account = await getUserAccount(undefined, {
+      columnsToKeep: { id: true, smsApiKey: true },
+    });
+
+    return !!account.smsApiKey;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Checks if the user is allowed to configure SMS Mobile API
+ */
+export async function isSmsApiAllowedAction(): Promise<boolean> {
+  try {
+    const account = await getUserAccount(undefined, {
+      columnsToKeep: { id: true, smsMobileAPiAllowed: true },
+    });
+
+    return !!account.smsMobileAPiAllowed;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Send SMS via SMSMobileAPI
+ */
+export const sendSms = async ({
+  to,
+  message,
+  apiKey,
+}: {
+  to: string;
+  message: string;
+  apiKey: string;
+}) => {
+  if (!apiKey) throw new Error("API key is required");
+
+  const body = new URLSearchParams();
+  body.set("apikey", apiKey);
+  body.set("recipients", to);
+  body.set("message", message);
+  body.set("sendsms", "1");
+
+  const res = await fetch("https://api.smsmobileapi.com/sendsms/", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body,
+  });
+
+  if (!res.ok) throw new Error("Failed to send SMS");
+
+  return res.json();
+};
+
+export const updateAccountTemplatesCache = async (
+  dbClient: TDBClient,
+  accountId?: string,
+) => {
+  let accountIdToUse = accountId;
+  if (!accountIdToUse) {
+    const account = await getUserAccount(dbClient, {
+      columnsToKeep: { id: true },
+    });
+    accountIdToUse = account.id;
+  }
+
+  updateTag(CACHE_TAGS.templatesByAccount(accountIdToUse));
+};

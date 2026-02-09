@@ -1,10 +1,12 @@
 import { EHuntStatus } from "@/config/hunt.config";
 import { ELeadStage } from "@/config/lead.config";
 import { HUNT_WITH_RELATIONS } from "@/constants/hunt.constants";
+import { CACHE_TAGS } from "@/lib/cache/cache.config";
 import { createDrizzleSupabaseClient, TDBClient } from "@/lib/drizzle/dbClient";
 import { contactedAds } from "@/schema/ad.schema";
 import { THunt } from "@/schema/hunt.schema";
 import { leads } from "@/schema/lead.schema";
+import { getUserAccount } from "@/services/account.service";
 import { getAdsContactedByUser, getMatchingAds } from "@/services/ad.service";
 import { allocateAdsToChannels } from "@/services/channel-allocator.service";
 import { consumeCredit } from "@/services/credit.service";
@@ -13,6 +15,7 @@ import { getContactedLeads, getTotalLeads } from "@/services/lead.service";
 import { getUserPlan } from "@/services/subscription.service";
 import { THuntSummary } from "@/types/hunt.types";
 import { TDailyContactTracker } from "@/types/message.types";
+import { cacheTag, updateTag } from "next/cache";
 
 export const runDailyHunts = async () => {
   const dbClient = await createDrizzleSupabaseClient();
@@ -193,9 +196,25 @@ export async function getHuntDailyPacingLimit(
 }
 
 /**
- * Fetches all hunts for the current user's account with channel credits
+ * Fetches hunt configurations (without credits) - CACHED
+ * This is the cached version that only returns hunt config
  */
-export async function getAccountHunts() {
+export async function getAccountHuntsConfig() {
+  const dbClient = await createDrizzleSupabaseClient();
+  const account = await getUserAccount(dbClient, {
+    columnsToKeep: { id: true },
+  });
+  return getCachedAccountHuntsConfig(account.id);
+}
+
+/**
+ * Internal cached function for hunt configurations
+ */
+async function getCachedAccountHuntsConfig(accountId: string) {
+  "use cache";
+
+  cacheTag(CACHE_TAGS.huntsByAccount(accountId));
+
   const dbClient = await createDrizzleSupabaseClient();
 
   // Use RLS wrapper to ensure user can only see their account's hunts
@@ -206,12 +225,15 @@ export async function getAccountHunts() {
     });
   });
 
-  if (huntsData.length === 0) {
-    return [];
-  }
+  return huntsData;
+}
 
-  // Fetch all channel credits for these hunts
-  const huntIds = huntsData.map(({ id }) => id);
+/**
+ * Fetches channel credits for multiple hunts - NOT CACHED
+ * Called separately when credit display is needed
+ */
+export async function getHuntsChannelCredits(huntIds: string[]) {
+  const dbClient = await createDrizzleSupabaseClient();
 
   const allChannelCredits = await dbClient.rls(async (tx) => {
     return tx.query.huntChannelCredits.findMany({
@@ -228,6 +250,25 @@ export async function getAccountHunts() {
     creditsByHuntId.get(credit.huntId)!.push(credit);
   }
 
+  return creditsByHuntId;
+}
+
+/**
+ * Fetches all hunts for the current user's account with channel credits
+ * Combines cached config with fresh credits
+ */
+export async function getAccountHunts() {
+  // Get cached hunt configs
+  const huntsData = await getAccountHuntsConfig();
+
+  if (huntsData.length === 0) {
+    return [];
+  }
+
+  // Fetch fresh channel credits
+  const huntIds = huntsData.map(({ id }) => id);
+  const creditsByHuntId = await getHuntsChannelCredits(huntIds);
+
   // Attach credits to each hunt
   return huntsData.map((hunt) => ({
     ...hunt,
@@ -236,9 +277,24 @@ export async function getAccountHunts() {
 }
 
 /**
- * Fetches a single hunt by ID with channel credits
+ * Fetches hunt config by ID (without credits) - CACHED
  */
-export async function getHuntById(huntId: string) {
+export async function getHuntConfigById(huntId: string) {
+  const dbClient = await createDrizzleSupabaseClient();
+  const account = await getUserAccount(dbClient, {
+    columnsToKeep: { id: true },
+  });
+  return getCachedHuntConfigById(huntId, account.id);
+}
+
+/**
+ * Internal cached function for single hunt config
+ */
+async function getCachedHuntConfigById(huntId: string, accountId: string) {
+  "use cache";
+
+  cacheTag(CACHE_TAGS.hunt(huntId), CACHE_TAGS.huntsByAccount(accountId));
+
   const dbClient = await createDrizzleSupabaseClient();
 
   const hunt = await dbClient.rls(async (tx) => {
@@ -252,7 +308,19 @@ export async function getHuntById(huntId: string) {
     throw new Error("hunt not found");
   }
 
-  // Fetch channel credits separately
+  return hunt;
+}
+
+/**
+ * Fetches a single hunt by ID with channel credits
+ * Combines cached config with fresh credits
+ */
+export async function getHuntById(huntId: string) {
+  // Get cached hunt config
+  const hunt = await getHuntConfigById(huntId);
+
+  // Fetch fresh channel credits
+  const dbClient = await createDrizzleSupabaseClient();
   const channelCreditsData = await dbClient.rls(async (tx) => {
     return tx.query.huntChannelCredits.findMany({
       where: (table, { eq }) => eq(table.huntId, huntId),
@@ -307,3 +375,20 @@ export async function getActiveHunts(): Promise<THuntSummary[]> {
 
   return hunts;
 }
+
+export const updateAccountHuntsCache = async (
+  dbClient: TDBClient,
+  huntId?: string,
+  accountId?: string,
+) => {
+  let accountIdToUse = accountId;
+  if (!accountIdToUse) {
+    const account = await getUserAccount(dbClient, {
+      columnsToKeep: { id: true },
+    });
+    accountIdToUse = account.id;
+  }
+
+  updateTag(CACHE_TAGS.huntsByAccount(accountIdToUse));
+  if (huntId) updateTag(CACHE_TAGS.hunt(huntId));
+};

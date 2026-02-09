@@ -22,3 +22,16 @@ export const accountSettingsSchema = z.object({
 });
 
 export type TAccountSettingsFormData = z.infer<typeof accountSettingsSchema>;
+
+export const saveSmsApiKeySchema = z.object({
+  apiKey: z.string().min(1, "Ta clé api est requise"),
+});
+
+export type TSaveSmsApiKeySchema = z.infer<typeof saveSmsApiKeySchema>;
+
+export const sendSmsSchema = z.object({
+  to: z.string().min(1, "Le numéro du destinataire est requis"),
+  message: z.string().min(1, "Le message est requis."),
+});
+
+export type TSendSmsSchema = z.infer<typeof sendSmsSchema>;

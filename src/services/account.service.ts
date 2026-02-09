@@ -42,12 +42,12 @@ export async function getAuthser(): Promise<User | { id: "" }> {
 /**
  * Gets the current user's primary account (overload for no columns - returns full account)
  */
-export async function getUseraccount(dbClient?: TDBClient): Promise<TAccount>;
+export async function getUserAccount(dbClient?: TDBClient): Promise<TAccount>;
 
 /**
  * Gets the current user's primary account (overload for selected columns)
  */
-export async function getUseraccount<
+export async function getUserAccount<
   T extends Partial<Record<keyof TAccount, boolean>>,
 >(
   dbClient: TDBClient | undefined,
@@ -57,7 +57,7 @@ export async function getUseraccount<
 /**
  * Implementation
  */
-export async function getUseraccount(
+export async function getUserAccount(
   dbClient?: TDBClient,
   options?: { columnsToKeep?: Partial<Record<keyof TAccount, boolean>> },
 ): Promise<TAccount | Partial<TAccount>> {

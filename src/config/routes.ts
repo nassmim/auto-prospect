@@ -3,35 +3,39 @@
  * Single source of truth for all application routes
  */
 
+const DASHBOARD_PREFIX = "/dashboard";
+
 export const pages = {
   // Authentication
   login: "/login",
 
   // Main app sections
-  dashboard: "/dashboard",
-  pipeline: "/pipeline",
-  settings: "/settings",
-  credits: "/credits",
+  dashboard: `${DASHBOARD_PREFIX}`,
+  pipeline: `${DASHBOARD_PREFIX}/pipeline`,
+  settings: `${DASHBOARD_PREFIX}/settings`,
+  credits: `${DASHBOARD_PREFIX}/credits`,
 
   // Hunts routes
   hunts: {
-    list: "/hunts",
-    new: "/hunts/new",
-    detail: (huntId: string) => `/hunts/${huntId}`,
-    edit: (huntId: string) => `/hunts/${huntId}/edit`,
+    list: `${DASHBOARD_PREFIX}/hunts`,
+    new: `${DASHBOARD_PREFIX}/hunts/new`,
+    detail: (huntId: string) => `${DASHBOARD_PREFIX}/hunts/${huntId}`,
+    edit: (huntId: string) => `${DASHBOARD_PREFIX}/hunts/${huntId}/edit`,
   },
 
   // Leads routes
   leads: {
-    list: "/leads",
-    detail: (leadId: string) => `/leads/${leadId}`,
+    list: `${DASHBOARD_PREFIX}/leads`,
+    detail: (leadId: string) => `${DASHBOARD_PREFIX}/leads/${leadId}`,
   },
 
   // Templates routes
   templates: {
-    list: "/templates",
+    list: `${DASHBOARD_PREFIX}/templates`,
     new: (channel?: string) =>
-      channel ? `/templates/new?channel=${channel}` : "/templates/new",
+      channel
+        ? `${DASHBOARD_PREFIX}/templates/new?channel=${channel}`
+        : `${DASHBOARD_PREFIX}/templates/new`,
   },
 } as const;
 

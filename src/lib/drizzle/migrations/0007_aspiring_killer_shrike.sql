@@ -1,0 +1,1 @@
+ALTER TABLE "accounts" ALTER COLUMN "sms_mobile_api_allowed" SET NOT NULL;

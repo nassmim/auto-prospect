@@ -1,12 +1,11 @@
 "use client";
 
-import { ConnectedAccountsTab } from "@/components/settings/connected-accounts-tab";
 import { FiltersTab } from "@/components/settings/filters-tab";
 import { MessagesTab } from "@/components/settings/messages-tab";
 import { TeamTab } from "@/components/settings/team-tab";
 import type { TAccount } from "@/schema/account.schema";
 import type { TTeamMembersWithAccount } from "@/types/team.types";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 
 type Tab = "accounts" | "filters" | "messages" | "team";
 
@@ -14,12 +13,14 @@ type SettingsPageClientProps = {
   account: TAccount;
   userRole: "owner" | "admin" | "user";
   initialMembers: TTeamMembersWithAccount;
+  connectedAccountsTab: ReactNode;
 };
 
 export function SettingsPageClient({
   account,
   userRole,
   initialMembers,
+  connectedAccountsTab,
 }: SettingsPageClientProps) {
   const [activeTab, setActiveTab] = useState<Tab>("accounts");
 
@@ -136,7 +137,7 @@ export function SettingsPageClient({
 
       {/* Tab Content */}
       <div className="py-6">
-        {activeTab === "accounts" && <ConnectedAccountsTab />}
+        {activeTab === "accounts" && connectedAccountsTab}
         {activeTab === "filters" && <FiltersTab settings={account.settings} />}
         {activeTab === "messages" && (
           <MessagesTab settings={account.settings} />
