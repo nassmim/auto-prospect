@@ -30,7 +30,6 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
-    "jwt-decode": "^4.0.0",
     "libphonenumber-js": "^1.12.34",
     "lucide-react": "^0.562.0",
     "next": "16.1.1",
@@ -44,7 +43,6 @@
   "devDependencies": {
     "@dotenvx/dotenvx": "^1.51.4",
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint-config-next": "16.1.1",
