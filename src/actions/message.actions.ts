@@ -6,7 +6,7 @@ import {
   TErrorCode,
 } from "@/config/error-codes";
 import { EContactChannel, TContactChannel } from "@/config/message.config";
-import { pages } from "@/config/routes";
+import { CACHE_TAGS } from "@/lib/cache/cache.config";
 import {
   createDrizzleSupabaseClient,
   TANDperator,
@@ -14,11 +14,12 @@ import {
 import { formatZodError } from "@/lib/validation";
 import { accounts } from "@/schema/account.schema";
 import { messageTemplates } from "@/schema/message.schema";
-import { getUseraccount, getUserSession } from "@/services/account.service";
+import { getUserAccount } from "@/services/account.service";
 import {
   getDefaultWhatsAppTemplate as getDefaultWhatsAppTemplateService,
   logWhatsAppMessage as logWhatsAppMessageService,
   sendSms,
+  updateAccountTemplatesCache,
 } from "@/services/message.service";
 import { decryptCredentials, encryptCredentials } from "@/utils/crypto.utils";
 import { textTemplateSchema, voiceTemplateSchema } from "@/validation-schemas";
@@ -29,7 +30,7 @@ import {
   TSendSmsSchema,
 } from "@/validation-schemas/settings.validation";
 import { and, BinaryOperator, eq } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
+import { updateTag } from "next/cache";
 import { z } from "zod";
 
 /**
@@ -52,7 +53,7 @@ async function createTemplate<
   const dbClient = await createDrizzleSupabaseClient();
 
   try {
-    const account = await getUseraccount(dbClient, {
+    const account = await getUserAccount(dbClient, {
       columnsToKeep: { id: true },
     });
 
@@ -107,7 +108,7 @@ async function createTemplate<
       return tx.insert(messageTemplates).values(templateValues).returning();
     });
 
-    revalidatePath(pages.templates.list);
+    updateTag(CACHE_TAGS.templatesByAccount(accountId));
 
     return { success: true, template };
   } catch (error) {
@@ -147,7 +148,7 @@ export async function deleteTemplate(templateId: string) {
         .where(eq(messageTemplates.id, templateId));
     });
 
-    revalidatePath(pages.templates.list);
+    await updateAccountTemplatesCache(dbClient);
 
     return { success: true };
   } catch (error) {
@@ -167,9 +168,6 @@ export async function updateTemplate(
     isDefault?: boolean;
   },
 ) {
-  // Will throw an error if session is empty
-  await getUserSession();
-
   const dbClient = await createDrizzleSupabaseClient();
 
   try {
@@ -235,7 +233,7 @@ export async function updateTemplate(
         .where(eq(messageTemplates.id, templateId));
     });
 
-    revalidatePath(pages.templates.list);
+    await updateAccountTemplatesCache(dbClient);
 
     return { success: true };
   } catch (error) {
@@ -293,7 +291,7 @@ export async function sendSmsAction(
     const dbClient = await createDrizzleSupabaseClient();
 
     // Use admin client to bypass RLS (server action is already authenticated)
-    const account = await getUseraccount(dbClient, {
+    const account = await getUserAccount(dbClient, {
       columnsToKeep: { smsApiKey: true },
     });
 
@@ -359,7 +357,7 @@ export async function saveSmsApiKeyAction(
   try {
     const dbClient = await createDrizzleSupabaseClient();
 
-    const account = await getUseraccount(dbClient, {
+    const account = await getUserAccount(dbClient, {
       columnsToKeep: { id: true, smsApiKey: true },
     });
 

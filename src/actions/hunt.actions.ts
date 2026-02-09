@@ -1,15 +1,22 @@
 "use server";
 
-import { THuntStatus } from "@/config/hunt.config";
+import { EHuntStatus, THuntStatus } from "@/config/hunt.config";
 import { EContactChannel } from "@/config/message.config";
+import { CACHE_TAGS } from "@/lib/cache/cache.config";
 import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
 import { createClient } from "@/lib/supabase/server";
 import { formatZodError } from "@/lib/validation";
 import { huntChannelCredits } from "@/schema/credits.schema";
 import { brandsHunts, hunts, subTypesHunts } from "@/schema/hunt.schema";
-import { getAccountHunts, getHuntById } from "@/services/hunt.service";
+import { getUserAccount } from "@/services/account.service";
+import {
+  getAccountHunts,
+  getHuntById,
+  updateAccountHuntsCache,
+} from "@/services/hunt.service";
 import { createHuntSchema, updateHuntSchema } from "@/validation-schemas";
 import { eq } from "drizzle-orm";
+import { updateTag } from "next/cache";
 
 /**
  * Fetches all hunts for the current user's account
@@ -31,13 +38,6 @@ export async function fetchHuntById(huntId: string) {
  * Creates a new hunt
  */
 export async function createHunt(data: unknown) {
-  const supabase = await createClient();
-  const { data: userData } = await supabase.auth.getUser();
-
-  if (!userData.user) {
-    throw new Error("Non authentifié");
-  }
-
   // Validate input with Zod
   const parseResult = createHuntSchema.safeParse(data);
   if (!parseResult.success) {
@@ -46,18 +46,10 @@ export async function createHunt(data: unknown) {
 
   const validatedData = parseResult.data;
 
-  // Get user's account
-  const { data: memberData } = await supabase
-    .from("team_members")
-    .select("account_id")
-    .eq("account_id", userData.user.id)
-    .single();
-
-  if (!memberData) {
-    throw new Error("L'utilisateur n'est membre d'aucune organisation");
-  }
-
   const dbClient = await createDrizzleSupabaseClient();
+  const account = await getUserAccount(dbClient, {
+    columnsToKeep: { id: true },
+  });
 
   // Create the hunt with RLS enforcement
   const hunt = await dbClient.rls(async (tx) => {
@@ -65,11 +57,11 @@ export async function createHunt(data: unknown) {
     const [newHunt] = await tx
       .insert(hunts)
       .values({
-        accountId: memberData.account_id,
+        accountId: account.id,
         name: validatedData.name,
         locationId: validatedData.locationId,
         typeId: validatedData.adTypeId,
-        status: "active",
+        status: EHuntStatus.ACTIVE,
         radiusInKm: validatedData.radiusInKm,
         dailyPacingLimit: validatedData.dailyPacingLimit,
         autoRefresh: validatedData.autoRefresh,
@@ -155,6 +147,8 @@ export async function createHunt(data: unknown) {
     return newHunt;
   });
 
+  updateTag(CACHE_TAGS.huntsByAccount(account.id));
+
   return hunt;
 }
 
@@ -162,13 +156,6 @@ export async function createHunt(data: unknown) {
  * Updates hunt status (active/paused)
  */
 export async function updateHuntStatus(huntId: string, status: THuntStatus) {
-  const supabase = await createClient();
-  const { data: userData } = await supabase.auth.getUser();
-
-  if (!userData.user) {
-    throw new Error("Non authentifié");
-  }
-
   const dbClient = await createDrizzleSupabaseClient();
 
   const [updatedHunt] = await dbClient.rls(async (tx) => {
@@ -179,6 +166,8 @@ export async function updateHuntStatus(huntId: string, status: THuntStatus) {
       .returning();
   });
 
+  await updateAccountHuntsCache(dbClient, huntId);
+
   return updatedHunt;
 }
 
@@ -186,13 +175,6 @@ export async function updateHuntStatus(huntId: string, status: THuntStatus) {
  * Updates hunt details and channel credits
  */
 export async function updateHunt(huntId: string, data: unknown) {
-  const supabase = await createClient();
-  const { data: userData } = await supabase.auth.getUser();
-
-  if (!userData.user) {
-    throw new Error("Non authentifié");
-  }
-
   // Validate input with Zod
   const parseResult = updateHuntSchema.safeParse(data);
   if (!parseResult.success) {
@@ -212,6 +194,8 @@ export async function updateHunt(huntId: string, data: unknown) {
 
     return result;
   });
+
+  await updateAccountHuntsCache(dbClient, huntId);
 
   return updatedHunt;
 }
@@ -327,18 +311,13 @@ export async function updateHuntChannelCredits(
  * Deletes a hunt
  */
 export async function deleteHunt(huntId: string) {
-  const supabase = await createClient();
-  const { data: userData } = await supabase.auth.getUser();
-
-  if (!userData.user) {
-    throw new Error("Non authentifié");
-  }
-
   const dbClient = await createDrizzleSupabaseClient();
 
   await dbClient.rls(async (tx) => {
     return tx.delete(hunts).where(eq(hunts.id, huntId));
   });
+
+  await updateAccountHuntsCache(dbClient, huntId);
 
   return { success: true };
 }

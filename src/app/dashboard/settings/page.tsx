@@ -1,6 +1,6 @@
 import { ConnectedAccountsTab } from "@/components/settings/connected-accounts-tab";
 import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
-import { getUseraccount } from "@/services/account.service";
+import { getUserAccount } from "@/services/account.service";
 import { getTeamMembers } from "@/services/team.service";
 import { isWhatsAppConnected } from "@/services/whatsapp.service";
 import { SettingsPageClient } from "./settings-page-client";
@@ -10,7 +10,7 @@ export default async function SettingsPage() {
 
   // Fetch initial data for settings page
   const [account, members] = await Promise.all([
-    getUseraccount(dbClient),
+    getUserAccount(dbClient),
     getTeamMembers(dbClient),
   ]);
 

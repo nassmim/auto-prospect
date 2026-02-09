@@ -1,11 +1,11 @@
 "use server";
 
+import { CACHE_TAGS } from "@/lib/cache/cache.config";
 import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
 import { teamMembers } from "@/schema/team.schema";
-import { getUseraccount } from "@/services/account.service";
-import { pages } from "@/config/routes";
+import { getUserAccount } from "@/services/account.service";
 import { and, eq } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
+import { updateTag } from "next/cache";
 
 /**
  * Invites a new team member to the account
@@ -18,18 +18,21 @@ export async function addTeamMember(name: string) {
   const dbClient = await createDrizzleSupabaseClient();
 
   try {
-    const account = await getUseraccount(dbClient, {
+    const account = await getUserAccount(dbClient, {
       columnsToKeep: { id: true },
     });
 
-    await dbClient.rls(async (tx) => {
-      await tx.insert(teamMembers).values({
-        accountId: account.id,
-        name,
-      });
-    });
+    const [teamMember] = await dbClient.rls(async (tx) =>
+      tx
+        .insert(teamMembers)
+        .values({
+          accountId: account.id,
+          name,
+        })
+        .returning({ accountId: teamMembers.accountId }),
+    );
 
-    revalidatePath(pages.settings);
+    updateTag(CACHE_TAGS.teamMembersByAccount(teamMember.accountId));
 
     return { success: true };
   } catch (error) {
@@ -45,22 +48,22 @@ export async function removeTeamMember(memberId: string) {
   const dbClient = await createDrizzleSupabaseClient();
 
   try {
-    const account = await getUseraccount(dbClient, {
+    const account = await getUserAccount(dbClient, {
       columnsToKeep: { id: true },
     });
 
-    await dbClient.rls(async (tx) => {
-      await tx
+    await dbClient.rls(async (tx) =>
+      tx
         .delete(teamMembers)
         .where(
           and(
             eq(teamMembers.id, memberId),
             eq(teamMembers.accountId, account.id),
           ),
-        );
-    });
+        ),
+    );
 
-    revalidatePath(pages.settings);
+    updateTag(CACHE_TAGS.teamMembersByAccount(account.id));
 
     return { success: true };
   } catch (error) {

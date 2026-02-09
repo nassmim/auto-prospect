@@ -3,7 +3,7 @@
 import { pages } from "@/config/routes";
 import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
 import { accounts } from "@/schema/account.schema";
-import { getUseraccount } from "@/services/account.service";
+import { getUserAccount } from "@/services/account.service";
 import { TAccountSettings } from "@/types/account.types";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -17,7 +17,7 @@ export async function updateAccountSettings(
   const dbClient = await createDrizzleSupabaseClient();
 
   try {
-    const account = await getUseraccount(dbClient, {
+    const account = await getUserAccount(dbClient, {
       columnsToKeep: { id: true, settings: true },
     });
 

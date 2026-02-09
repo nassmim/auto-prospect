@@ -1,9 +1,9 @@
-import { getUseraccount } from "@/services/account.service";
+import { getUserAccount } from "@/services/account.service";
 import { isWhatsAppConnected } from "@/services/whatsapp.service";
 import { WhatsAppTestClient } from "./whatsapp-test-client";
 
 export default async function WhatsAppTestPage() {
-  const account = await getUseraccount(undefined, {
+  const account = await getUserAccount(undefined, {
     columnsToKeep: { id: true, whatsappPhoneNumber: true, email: true },
   });
 
