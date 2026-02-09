@@ -1,0 +1,65 @@
+{
+  "node": {
+    "002f8a0392800b465940e6cc4d7d57f3709d592bed": {
+      "workers": {
+        "app/dashboard/page": {
+          "moduleId": 80890,
+          "async": false,
+          "exportedName": "fetchActiveHunts",
+          "filename": "Projets/auto-prospect-worktrees/config/mono-repo/apps/web/src/actions/dashboard.actions.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/page": "action-browser"
+      },
+      "exportedName": "fetchActiveHunts",
+      "filename": "Projets/auto-prospect-worktrees/config/mono-repo/apps/web/src/actions/dashboard.actions.ts"
+    },
+    "003c878c0cee57d6bb0d44a12c262f79cb054d8946": {
+      "workers": {
+        "app/dashboard/page": {
+          "moduleId": 80890,
+          "async": false,
+          "exportedName": "fetchDashboardStats",
+          "filename": "Projets/auto-prospect-worktrees/config/mono-repo/apps/web/src/actions/dashboard.actions.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/page": "action-browser"
+      },
+      "exportedName": "fetchDashboardStats",
+      "filename": "Projets/auto-prospect-worktrees/config/mono-repo/apps/web/src/actions/dashboard.actions.ts"
+    },
+    "e0c6d22713dddd2f666ea2bc6c4707dc5bd51b4e50": {
+      "workers": {
+        "app/dashboard/page": {
+          "moduleId": 80890,
+          "async": false,
+          "exportedName": "$$RSC_SERVER_CACHE_0",
+          "filename": "Projets/auto-prospect-worktrees/config/mono-repo/apps/web/src/services/hunt.service.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/page": "rsc"
+      },
+      "exportedName": "$$RSC_SERVER_CACHE_0",
+      "filename": "Projets/auto-prospect-worktrees/config/mono-repo/apps/web/src/services/hunt.service.ts"
+    },
+    "f0165f65ac6657ab99c1343b90c7d1753d9ed0dfd5": {
+      "workers": {
+        "app/dashboard/page": {
+          "moduleId": 80890,
+          "async": false,
+          "exportedName": "$$RSC_SERVER_CACHE_1",
+          "filename": "Projets/auto-prospect-worktrees/config/mono-repo/apps/web/src/services/hunt.service.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/page": "rsc"
+      },
+      "exportedName": "$$RSC_SERVER_CACHE_1",
+      "filename": "Projets/auto-prospect-worktrees/config/mono-repo/apps/web/src/services/hunt.service.ts"
+    }
+  },
+  "edge": {}
+}

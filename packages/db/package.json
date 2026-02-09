@@ -1,0 +1,31 @@
+{
+  "name": "@auto-prospect/db",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "echo 'no build needed'",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate-only": "dotenvx run --env-file=../../apps/web/.env.development.local -- tsx scripts/migrate.ts",
+    "db:migrate": "drizzle-kit generate && dotenvx run --env-file=../../apps/web/.env.development.local -- tsx scripts/migrate.ts",
+    "db:studio": "drizzle-kit studio",
+    "db:dump": "docker exec -it supabase_db_auto-prospect pg_dump -U postgres -d postgres --data-only --schema=auth --schema=public > supabase/seed.sql",
+    "supabase:start": "npx dotenvx run --env-file=.env --env-file=.env.local --env-file=.env.development --env-file=.env.development.local -- supabase start",
+    "create-user": "dotenvx run --env-file=.env.development.local -- tsx scripts/create-user.ts"    
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.1",
+    "postgres": "^3.4.8",
+    "@supabase/supabase-js": "^2.90.1",
+    "@supabase/ssr": "^0.8.0"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.31.8",
+    "@dotenvx/dotenvx": "^1.51.4",
+    "tsx": "^4.21.0"
+  }
+}

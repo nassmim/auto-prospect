@@ -1,0 +1,20 @@
+{
+  "node": {
+    "004102d06d50d37387df4a46ba71866a9119bdb666": {
+      "workers": {
+        "app/dashboard/credits/page": {
+          "moduleId": 89779,
+          "async": false,
+          "exportedName": "fetchAccountCredits",
+          "filename": "Projets/auto-prospect-worktrees/config/mono-repo/apps/web/src/actions/credit.actions.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/credits/page": "action-browser"
+      },
+      "exportedName": "fetchAccountCredits",
+      "filename": "Projets/auto-prospect-worktrees/config/mono-repo/apps/web/src/actions/credit.actions.ts"
+    }
+  },
+  "edge": {}
+}

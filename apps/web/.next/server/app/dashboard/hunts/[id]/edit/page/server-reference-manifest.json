@@ -1,0 +1,80 @@
+{
+  "node": {
+    "40bc40327414d65c149623d29751f6236173c3d9aa": {
+      "workers": {
+        "app/dashboard/hunts/[id]/edit/page": {
+          "moduleId": 52239,
+          "async": false,
+          "exportedName": "createHunt",
+          "filename": "Projets/auto-prospect-worktrees/config/mono-repo/apps/web/src/actions/hunt.actions.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/hunts/[id]/edit/page": "action-browser"
+      },
+      "exportedName": "createHunt",
+      "filename": "Projets/auto-prospect-worktrees/config/mono-repo/apps/web/src/actions/hunt.actions.ts"
+    },
+    "60611e6860255adc0799d2db64bb54465f1f907a39": {
+      "workers": {
+        "app/dashboard/hunts/[id]/edit/page": {
+          "moduleId": 52239,
+          "async": false,
+          "exportedName": "updateHunt",
+          "filename": "Projets/auto-prospect-worktrees/config/mono-repo/apps/web/src/actions/hunt.actions.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/hunts/[id]/edit/page": "action-browser"
+      },
+      "exportedName": "updateHunt",
+      "filename": "Projets/auto-prospect-worktrees/config/mono-repo/apps/web/src/actions/hunt.actions.ts"
+    },
+    "e0c6d22713dddd2f666ea2bc6c4707dc5bd51b4e50": {
+      "workers": {
+        "app/dashboard/hunts/[id]/edit/page": {
+          "moduleId": 52239,
+          "async": false,
+          "exportedName": "$$RSC_SERVER_CACHE_0",
+          "filename": "Projets/auto-prospect-worktrees/config/mono-repo/apps/web/src/services/hunt.service.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/hunts/[id]/edit/page": "rsc"
+      },
+      "exportedName": "$$RSC_SERVER_CACHE_0",
+      "filename": "Projets/auto-prospect-worktrees/config/mono-repo/apps/web/src/services/hunt.service.ts"
+    },
+    "f0165f65ac6657ab99c1343b90c7d1753d9ed0dfd5": {
+      "workers": {
+        "app/dashboard/hunts/[id]/edit/page": {
+          "moduleId": 52239,
+          "async": false,
+          "exportedName": "$$RSC_SERVER_CACHE_1",
+          "filename": "Projets/auto-prospect-worktrees/config/mono-repo/apps/web/src/services/hunt.service.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/hunts/[id]/edit/page": "rsc"
+      },
+      "exportedName": "$$RSC_SERVER_CACHE_1",
+      "filename": "Projets/auto-prospect-worktrees/config/mono-repo/apps/web/src/services/hunt.service.ts"
+    },
+    "e0d884f19ec9288fa94a30ca8841972647d88a166f": {
+      "workers": {
+        "app/dashboard/hunts/[id]/edit/page": {
+          "moduleId": 52239,
+          "async": false,
+          "exportedName": "$$RSC_SERVER_CACHE_0",
+          "filename": "Projets/auto-prospect-worktrees/config/mono-repo/apps/web/src/services/message.service.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/hunts/[id]/edit/page": "rsc"
+      },
+      "exportedName": "$$RSC_SERVER_CACHE_0",
+      "filename": "Projets/auto-prospect-worktrees/config/mono-repo/apps/web/src/services/message.service.ts"
+    }
+  },
+  "edge": {}
+}
