@@ -21,6 +21,8 @@
 
 import { Router, Request, Response } from "express";
 import { huntQueue } from "../queues";
+import { JOB_TYPES } from "../config";
+import { EWorkerErrorCode } from "@auto-prospect/shared";
 
 const router = Router();
 
@@ -87,13 +89,15 @@ router.post("/execute", async (req: Request, res: Response) => {
     // Validate required fields
     if (!huntId || !accountId || !contacts || !Array.isArray(contacts)) {
       return res.status(400).json({
-        error: "Missing required fields: huntId, accountId, contacts (array)"
+        error: EWorkerErrorCode.MISSING_REQUIRED_FIELDS,
+        message: "Missing required fields: huntId, accountId, contacts (array)"
       });
     }
 
     if (contacts.length === 0) {
       return res.status(400).json({
-        error: "Contacts array cannot be empty"
+        error: EWorkerErrorCode.MISSING_REQUIRED_FIELDS,
+        message: "Contacts array cannot be empty"
       });
     }
 
@@ -108,14 +112,15 @@ router.post("/execute", async (req: Request, res: Response) => {
 
     if (invalidContacts.length > 0) {
       return res.status(400).json({
-        error: "Invalid contacts: each contact must have adId, recipientPhone, channel, and message",
+        error: EWorkerErrorCode.MISSING_REQUIRED_FIELDS,
+        message: "Invalid contacts: each contact must have adId, recipientPhone, channel, and message",
         invalidCount: invalidContacts.length
       });
     }
 
     // Add job to hunt queue
     // The hunt worker will dispatch to individual channel queues
-    const job = await huntQueue.add("execute-hunt", {
+    const job = await huntQueue.add(JOB_TYPES.HUNT_EXECUTE, {
       huntId,
       accountId,
       contacts,
@@ -127,8 +132,10 @@ router.post("/execute", async (req: Request, res: Response) => {
       contactCount: contacts.length
     });
   } catch (error) {
-    console.error("Hunt execute error:", error);
-    res.status(500).json({ error: "Failed to queue hunt execution" });
+    res.status(500).json({
+      error: EWorkerErrorCode.HUNT_EXECUTION_FAILED,
+      message: error instanceof Error ? error.message : "Unknown error"
+    });
   }
 });
 
@@ -157,7 +164,10 @@ router.get("/status/:jobId", async (req: Request, res: Response) => {
 
     const job = await huntQueue.getJob(jobId);
     if (!job) {
-      return res.status(404).json({ error: "Hunt job not found" });
+      return res.status(404).json({
+        error: EWorkerErrorCode.JOB_NOT_FOUND,
+        message: "Hunt job not found"
+      });
     }
 
     const state = await job.getState();
@@ -181,8 +191,10 @@ router.get("/status/:jobId", async (req: Request, res: Response) => {
       finishedOn: job.finishedOn,
     });
   } catch (error) {
-    console.error("Get hunt status error:", error);
-    res.status(500).json({ error: "Failed to get hunt status" });
+    res.status(500).json({
+      error: EWorkerErrorCode.HUNT_STATUS_FETCH_FAILED,
+      message: error instanceof Error ? error.message : "Unknown error"
+    });
   }
 });
 

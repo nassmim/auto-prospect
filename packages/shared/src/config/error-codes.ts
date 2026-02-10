@@ -73,7 +73,61 @@ export enum ESmsErrorCode {
 export type TSmsErrorCode = ESmsErrorCode;
 
 // =============================================================================
+// VOICE ERROR CODES
+// =============================================================================
+
+export enum EVoiceErrorCode {
+  // API Key errors
+  API_KEY_MISSING = "API_KEY_MISSING",
+  API_KEY_INVALID = "API_KEY_INVALID",
+
+  // Phone number errors
+  PHONE_NUMBER_REQUIRED = "PHONE_NUMBER_REQUIRED",
+  PHONE_NUMBER_INVALID = "PHONE_NUMBER_INVALID",
+
+  // Audio errors
+  AUDIO_TOKEN_REQUIRED = "AUDIO_TOKEN_REQUIRED",
+  AUDIO_TOKEN_INVALID = "AUDIO_TOKEN_INVALID",
+
+  // Message errors
+  MESSAGE_SEND_FAILED = "MESSAGE_SEND_FAILED",
+
+  // API errors
+  API_ERROR = "API_ERROR",
+}
+
+export type TVoiceErrorCode = EVoiceErrorCode;
+
+// =============================================================================
+// WORKER ERROR CODES (for API routes)
+// =============================================================================
+
+export enum EWorkerErrorCode {
+  // Queue errors
+  HUNT_EXECUTION_FAILED = "HUNT_EXECUTION_FAILED",
+  HUNT_STATUS_FETCH_FAILED = "HUNT_STATUS_FETCH_FAILED",
+  SMS_QUEUE_FAILED = "SMS_QUEUE_FAILED",
+  VOICE_QUEUE_FAILED = "VOICE_QUEUE_FAILED",
+  WHATSAPP_QUEUE_FAILED = "WHATSAPP_QUEUE_FAILED",
+  JOB_STATUS_FETCH_FAILED = "JOB_STATUS_FETCH_FAILED",
+  QUEUE_STATS_FETCH_FAILED = "QUEUE_STATS_FETCH_FAILED",
+
+  // Validation errors
+  MISSING_REQUIRED_FIELDS = "MISSING_REQUIRED_FIELDS",
+  INVALID_QUEUE_NAME = "INVALID_QUEUE_NAME",
+  JOB_NOT_FOUND = "JOB_NOT_FOUND",
+  QUEUE_NOT_FOUND = "QUEUE_NOT_FOUND",
+}
+
+export type TWorkerErrorCode = EWorkerErrorCode;
+
+// =============================================================================
 // ALL ERROR CODES (union type)
 // =============================================================================
 
-export type TErrorCode = TWhatsAppErrorCode | TGeneralErrorCode | TSmsErrorCode;
+export type TErrorCode =
+  | TWhatsAppErrorCode
+  | TGeneralErrorCode
+  | TSmsErrorCode
+  | TVoiceErrorCode
+  | TWorkerErrorCode;

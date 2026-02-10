@@ -11,6 +11,8 @@
 
 import { Router, Request, Response } from "express";
 import { smsQueue, voiceQueue } from "../queues";
+import { JOB_TYPES } from "../config";
+import { EWorkerErrorCode } from "@auto-prospect/shared";
 
 const router = Router();
 
@@ -49,20 +51,23 @@ router.post("/sms", async (req: Request, res: Response) => {
     // Validate required fields
     if (!recipientPhone || !message) {
       return res.status(400).json({
-        error: "Missing required fields: recipientPhone, message"
+        error: EWorkerErrorCode.MISSING_REQUIRED_FIELDS,
+        message: "Missing required fields: recipientPhone, message"
       });
     }
 
     // Add job to SMS queue
-    const job = await smsQueue.add("send-sms", {
+    const job = await smsQueue.add(JOB_TYPES.SMS_SEND, {
       recipientPhone,
       message,
     });
 
     res.json({ success: true, jobId: job.id });
   } catch (error) {
-    console.error("SMS send error:", error);
-    res.status(500).json({ error: "Failed to queue SMS" });
+    res.status(500).json({
+      error: EWorkerErrorCode.SMS_QUEUE_FAILED,
+      message: error instanceof Error ? error.message : "Unknown error"
+    });
   }
 });
 
@@ -112,12 +117,13 @@ router.post("/ringless-voice", async (req: Request, res: Response) => {
     // Validate required fields
     if (!recipientPhone || (!message && !audioUrl)) {
       return res.status(400).json({
-        error: "Missing required fields: recipientPhone and either message or audioUrl"
+        error: EWorkerErrorCode.MISSING_REQUIRED_FIELDS,
+        message: "Missing required fields: recipientPhone and either message or audioUrl"
       });
     }
 
     // Add job to voice queue
-    const job = await voiceQueue.add("send-ringless-voice", {
+    const job = await voiceQueue.add(JOB_TYPES.VOICE_SEND, {
       recipientPhone,
       message,
       audioUrl,
@@ -125,8 +131,10 @@ router.post("/ringless-voice", async (req: Request, res: Response) => {
 
     res.json({ success: true, jobId: job.id });
   } catch (error) {
-    console.error("Ringless voice send error:", error);
-    res.status(500).json({ error: "Failed to queue ringless voice message" });
+    res.status(500).json({
+      error: EWorkerErrorCode.VOICE_QUEUE_FAILED,
+      message: error instanceof Error ? error.message : "Unknown error"
+    });
   }
 });
 

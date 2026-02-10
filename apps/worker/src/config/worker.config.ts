@@ -4,6 +4,17 @@
  */
 
 /**
+ * Job type names used when adding jobs to queues
+ * These are the first argument to queue.add()
+ */
+export const JOB_TYPES = {
+  HUNT_EXECUTE: "execute-hunt",
+  WHATSAPP_SEND_TEXT: "send-text",
+  SMS_SEND: "send-sms",
+  VOICE_SEND: "send-ringless-voice",
+} as const;
+
+/**
  * Job ID template generators
  * These functions create consistent job IDs across the worker system
  */

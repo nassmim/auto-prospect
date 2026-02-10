@@ -79,8 +79,6 @@ async function sendVoiceMessage(input: {
 }
 
 export async function voiceWorker(job: Job<VoiceJob>) {
-  console.log(`Processing Voice job ${job.id}:`, job.data);
-
   const { recipientPhone, tokenAudio, sender, emailForNotification, scheduledDate, metadata } = job.data;
 
   // Validate required fields
@@ -105,8 +103,6 @@ export async function voiceWorker(job: Job<VoiceJob>) {
       throw new Error(result.error || "Voice message send failed");
     }
 
-    console.log(`Voice message sent successfully to ${recipientPhone}:`, result.data);
-
     return {
       success: true,
       timestamp: new Date().toISOString(),
@@ -114,7 +110,6 @@ export async function voiceWorker(job: Job<VoiceJob>) {
       metadata,
     };
   } catch (error) {
-    console.error(`Voice job ${job.id} failed:`, error);
     throw error;
   }
 }

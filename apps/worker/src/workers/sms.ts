@@ -46,8 +46,6 @@ async function sendSms({
 }
 
 export async function smsWorker(job: Job<SmsJob>) {
-  console.log(`Processing SMS job ${job.id}:`, job.data);
-
   const { recipientPhone, message, accountId, metadata } = job.data;
 
   try {
@@ -77,8 +75,6 @@ export async function smsWorker(job: Job<SmsJob>) {
       apiKey: decryptedApiKey,
     });
 
-    console.log(`SMS sent successfully to ${recipientPhone}:`, result);
-
     return {
       success: true,
       messageId: result.message_id,
@@ -86,7 +82,6 @@ export async function smsWorker(job: Job<SmsJob>) {
       metadata,
     };
   } catch (error) {
-    console.error(`SMS job ${job.id} failed:`, error);
     throw error;
   }
 }

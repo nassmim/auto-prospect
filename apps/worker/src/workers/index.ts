@@ -9,6 +9,7 @@
  * - Voice Worker: Sends ringless voice messages
  * - Scraping Worker: Scrapes web content (future use)
  * - Hunt Worker: Orchestrates automated prospect hunting (dispatches to other workers)
+ * - Active Hunts Worker: Fetches all active hunts and dispatches them to hunt queue
  *
  * Workers run continuously, picking up jobs as they arrive in Redis queues.
  */
@@ -21,6 +22,7 @@ import { smsWorker } from "./sms";
 import { voiceWorker } from "./voice";
 import { scrapingWorker } from "./scraping";
 import { huntWorker } from "./hunt";
+import { fetchActiveHuntsWorker } from "./fetch-active-hunts";
 
 export async function startAllWorkers() {
   const workers = [
@@ -29,18 +31,8 @@ export async function startAllWorkers() {
     new Worker(QUEUE_NAMES.VOICE, voiceWorker, { connection }),
     new Worker(QUEUE_NAMES.SCRAPING, scrapingWorker, { connection }),
     new Worker(QUEUE_NAMES.HUNT, huntWorker, { connection }),
+    new Worker(QUEUE_NAMES.ACTIVE_HUNTS, fetchActiveHuntsWorker, { connection }),
   ];
 
-  workers.forEach((worker) => {
-    worker.on("failed", (job, err) => {
-      console.error(`Job ${job?.id} in ${worker.name} failed:`, err);
-    });
-
-    worker.on("error", (err) => {
-      console.error(`Worker ${worker.name} error:`, err);
-    });
-  });
-
-  console.log("All workers started");
   return workers;
 }

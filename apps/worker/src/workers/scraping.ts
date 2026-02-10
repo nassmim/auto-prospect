@@ -46,8 +46,6 @@ async function handleLobstrWebhook(runId: string): Promise<void> {
 }
 
 export async function scrapingWorker(job: Job<ScrapingJob>) {
-  console.log(`Processing Scraping job ${job.id}:`, job.data);
-
   const { runId, huntId } = job.data;
 
   if (!runId) {
@@ -58,15 +56,12 @@ export async function scrapingWorker(job: Job<ScrapingJob>) {
     // Process Lobstr webhook and save ads
     await handleLobstrWebhook(runId);
 
-    // Update hunt's lastScanAt timestamp if huntId provided
     if (huntId) {
       const db = createDrizzleAdmin();
       await db
         .update(hunts)
         .set({ lastScanAt: new Date() })
         .where(eq(hunts.id, huntId));
-
-      console.log(`Updated lastScanAt for hunt ${huntId}`);
     }
 
     return {
@@ -76,11 +71,6 @@ export async function scrapingWorker(job: Job<ScrapingJob>) {
       timestamp: new Date().toISOString(),
     };
   } catch (error) {
-    console.error(`Scraping job ${job.id} failed:`, error);
-
-    // TODO: Send admin alert on critical failures
-    // This requires importing sendAlertToAdmin from web app
-
     throw error;
   }
 }

@@ -1913,7 +1913,7 @@
         "id": "82",
         "title": "Implement WhatsApp Worker with Baileys Integration",
         "description": "Complete the WhatsApp worker by refactoring whatsapp.service.ts functions into a shared package, then integrating with the worker. Currently blocked: whatsapp.service.ts uses Next.js-specific imports (@/lib, @/schema, @/utils) that cannot be imported from the worker package.",
-        "status": "in-progress",
+        "status": "done",
         "dependencies": [
           "80"
         ],
@@ -1975,13 +1975,13 @@
               4
             ],
             "details": "Update `apps/worker/src/workers/whatsapp.ts`:\n1. Import from @auto-prospect/whatsapp: connectWithCredentials, sendWhatsAppMessage\n2. Import from @auto-prospect/shared: decryptCredentials, EWhatsAppErrorCode\n3. Query whatsappSessions directly using createDrizzleAdmin()\n4. Implement full flow:\n   - Fetch session: `db.query.whatsappSessions.findFirst({ where: eq(whatsappSessions.accountId, accountId) })`\n   - Parse credentials: `JSON.parse(session.credentials) as StoredAuthState`\n   - Connect: `const { socket, waitForConnection, cleanup } = await connectWithCredentials(credentials)`\n   - Wait: `const connected = await waitForConnection()`\n   - Send: `await sendWhatsAppMessage(socket, formattedPhone, message)`\n   - Cleanup in finally block\n5. Remove placeholder setTimeout and console.logs",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": "Integration test with test WhatsApp number; unit test with mocked @auto-prospect/whatsapp functions",
             "parentId": "undefined",
-            "updatedAt": "2026-02-10T13:00:46.625Z"
+            "updatedAt": "2026-02-10T13:56:47.097Z"
           }
         ],
-        "updatedAt": "2026-02-10T13:00:46.625Z"
+        "updatedAt": "2026-02-10T13:56:47.097Z"
       },
       {
         "id": "83",
@@ -2157,8 +2157,9 @@
         "dependencies": [
           "80"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "in-progress",
+        "subtasks": [],
+        "updatedAt": "2026-02-10T13:57:07.934Z"
       },
       {
         "id": "87",
@@ -2242,9 +2243,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-02-10T13:00:46.626Z",
+      "lastModified": "2026-02-10T13:57:07.935Z",
       "taskCount": 91,
-      "completedCount": 80,
+      "completedCount": 81,
       "tags": [
         "master"
       ]

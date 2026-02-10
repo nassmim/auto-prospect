@@ -69,8 +69,6 @@ interface ContactResult {
  * @returns Summary with successes, failures, and individual results
  */
 export async function huntWorker(job: Job<HuntJob>) {
-  console.log(`Processing hunt job ${job.id} for hunt ${job.data.huntId} with ${job.data.contacts.length} contacts`);
-
   const { huntId, accountId, contacts } = job.data;
 
   const results: ContactResult[] = [];
@@ -164,9 +162,6 @@ export async function huntWorker(job: Job<HuntJob>) {
       successCount++;
 
     } catch (error) {
-      // Track failure but continue processing other contacts
-      console.error(`Failed to queue contact ${contact.adId}:`, error);
-
       results.push({
         adId: contact.adId,
         channel: contact.channel,
@@ -180,10 +175,6 @@ export async function huntWorker(job: Job<HuntJob>) {
     const progress = Math.round(((i + 1) / contacts.length) * 100);
     await job.updateProgress(progress);
   }
-
-  console.log(
-    `Hunt job ${job.id} completed: ${successCount} succeeded, ${failureCount} failed`
-  );
 
   return {
     huntId,

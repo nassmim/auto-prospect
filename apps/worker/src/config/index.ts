@@ -2,4 +2,4 @@
  * Configuration barrel exports
  */
 
-export { jobIds, RETRY_CONFIG, API_ROUTES, TIMEOUTS } from './worker.config';
+export { JOB_TYPES, jobIds, RETRY_CONFIG, API_ROUTES, TIMEOUTS } from './worker.config';

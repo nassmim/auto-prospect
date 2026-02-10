@@ -15,6 +15,8 @@
 
 import { Router, Request, Response } from "express";
 import { whatsappQueue } from "../queues";
+import { JOB_TYPES } from "../config";
+import { EWorkerErrorCode } from "@auto-prospect/shared";
 
 const router = Router();
 
@@ -49,12 +51,13 @@ router.post("/text", async (req: Request, res: Response) => {
     // Validate required fields
     if (!recipientPhone || !senderPhone || !message) {
       return res.status(400).json({
-        error: "Missing required fields: recipientPhone, senderPhone, message"
+        error: EWorkerErrorCode.MISSING_REQUIRED_FIELDS,
+        message: "Missing required fields: recipientPhone, senderPhone, message"
       });
     }
 
     // Add job to WhatsApp queue
-    const job = await whatsappQueue.add("send-text", {
+    const job = await whatsappQueue.add(JOB_TYPES.WHATSAPP_SEND_TEXT, {
       recipientPhone,
       senderPhone,
       message,
@@ -62,8 +65,10 @@ router.post("/text", async (req: Request, res: Response) => {
 
     res.json({ success: true, jobId: job.id });
   } catch (error) {
-    console.error("WhatsApp text send error:", error);
-    res.status(500).json({ error: "Failed to queue WhatsApp text message" });
+    res.status(500).json({
+      error: EWorkerErrorCode.WHATSAPP_QUEUE_FAILED,
+      message: error instanceof Error ? error.message : "Unknown error"
+    });
   }
 });
 

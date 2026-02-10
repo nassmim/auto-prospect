@@ -14,6 +14,7 @@
 
 import { Router, Request, Response } from "express";
 import { queues, getAllQueuesStats, getQueueStats } from "../queues";
+import { EWorkerErrorCode } from "@auto-prospect/shared";
 
 const router = Router();
 
@@ -54,7 +55,8 @@ router.get("/:queue/:jobId", async (req: Request, res: Response) => {
     const queueInstance = queues[queue as keyof typeof queues];
     if (!queueInstance) {
       return res.status(404).json({
-        error: "Queue not found",
+        error: EWorkerErrorCode.QUEUE_NOT_FOUND,
+        message: "Queue not found",
         validQueues: Object.keys(queues)
       });
     }
@@ -63,7 +65,8 @@ router.get("/:queue/:jobId", async (req: Request, res: Response) => {
     const job = await queueInstance.getJob(jobId);
     if (!job) {
       return res.status(404).json({
-        error: "Job not found",
+        error: EWorkerErrorCode.JOB_NOT_FOUND,
+        message: "Job not found",
         queue,
         jobId
       });
@@ -86,8 +89,10 @@ router.get("/:queue/:jobId", async (req: Request, res: Response) => {
       finishedOn: job.finishedOn,
     });
   } catch (error) {
-    console.error("Get job status error:", error);
-    res.status(500).json({ error: "Failed to get job status" });
+    res.status(500).json({
+      error: EWorkerErrorCode.JOB_STATUS_FETCH_FAILED,
+      message: error instanceof Error ? error.message : "Unknown error"
+    });
   }
 });
 
@@ -138,8 +143,10 @@ router.get("/stats", async (_req: Request, res: Response) => {
     const stats = await getAllQueuesStats();
     res.json({ success: true, queues: stats });
   } catch (error) {
-    console.error("Get queue stats error:", error);
-    res.status(500).json({ error: "Failed to get queue stats" });
+    res.status(500).json({
+      error: EWorkerErrorCode.QUEUE_STATS_FETCH_FAILED,
+      message: error instanceof Error ? error.message : "Unknown error"
+    });
   }
 });
 
@@ -173,7 +180,8 @@ router.get("/:queue/stats", async (req: Request, res: Response) => {
     // Validate queue name
     if (!queues[queue as keyof typeof queues]) {
       return res.status(404).json({
-        error: "Queue not found",
+        error: EWorkerErrorCode.QUEUE_NOT_FOUND,
+        message: "Queue not found",
         validQueues: Object.keys(queues)
       });
     }
@@ -181,8 +189,10 @@ router.get("/:queue/stats", async (req: Request, res: Response) => {
     const stats = await getQueueStats(queue);
     res.json({ success: true, queue: stats });
   } catch (error) {
-    console.error("Get queue stats error:", error);
-    res.status(500).json({ error: "Failed to get queue stats" });
+    res.status(500).json({
+      error: EWorkerErrorCode.QUEUE_STATS_FETCH_FAILED,
+      message: error instanceof Error ? error.message : "Unknown error"
+    });
   }
 });
 
