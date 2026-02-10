@@ -10,6 +10,7 @@
  * - Scraping Worker: Scrapes web content (future use)
  * - Hunt Worker: Orchestrates automated prospect hunting (dispatches to other workers)
  * - Active Hunts Worker: Fetches all active hunts and dispatches them to hunt queue
+ * - Daily Orchestrator Worker: Master orchestrator for daily automated hunts
  *
  * Workers run continuously, picking up jobs as they arrive in Redis queues.
  */
@@ -23,6 +24,7 @@ import { voiceWorker } from "./voice";
 import { scrapingWorker } from "./scraping";
 import { huntWorker } from "./hunt";
 import { fetchActiveHuntsWorker } from "./fetch-active-hunts";
+import { dailyOrchestratorWorker } from "./daily-orchestrator";
 
 export async function startAllWorkers() {
   const workers = [
@@ -32,6 +34,9 @@ export async function startAllWorkers() {
     new Worker(QUEUE_NAMES.SCRAPING, scrapingWorker, { connection }),
     new Worker(QUEUE_NAMES.HUNT, huntWorker, { connection }),
     new Worker(QUEUE_NAMES.ACTIVE_HUNTS, fetchActiveHuntsWorker, { connection }),
+    new Worker(QUEUE_NAMES.DAILY_ORCHESTRATOR, dailyOrchestratorWorker, {
+      connection,
+    }),
   ];
 
   return workers;

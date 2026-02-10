@@ -87,6 +87,43 @@ async function bulkSend(
 }
 
 /**
+ * Processes a single hunt by ID: fetches hunt, finds matching ads, sends messages, creates leads
+ * This is the exported version for API routes and workers
+ */
+export async function processSingleHunt(
+  huntId: string,
+  accountId: string
+): Promise<{ messagesDispatched: number }> {
+  const dbClient = await createDrizzleSupabaseClient();
+  const dailyContactTracker = createDailyContactTracker();
+
+  // Fetch the hunt with relations
+  const hunt = await dbClient.admin.query.hunts.findFirst({
+    where: (table, { eq }) => eq(table.id, huntId),
+    with: {
+      location: true,
+      subTypes: true,
+      brands: true,
+    },
+  });
+
+  if (!hunt) {
+    throw new Error(`Hunt not found: ${huntId}`);
+  }
+
+  if (hunt.accountId !== accountId) {
+    throw new Error("Hunt does not belong to this account");
+  }
+
+  await contactAdsOwners(hunt, dbClient, dailyContactTracker);
+
+  // Return the count of messages dispatched
+  return {
+    messagesDispatched: dailyContactTracker.getCount(huntId),
+  };
+}
+
+/**
  * Processes a single hunt: finds matching ads, sends messages, creates leads
  */
 async function contactAdsOwners(
