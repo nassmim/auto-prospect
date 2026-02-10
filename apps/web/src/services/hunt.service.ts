@@ -11,11 +11,15 @@ import { consumeCredit } from "@/services/credit.service";
 import { createDailyContactTracker } from "@/services/daily-contact-tracker.service";
 import { getContactedLeads, getTotalLeads } from "@/services/lead.service";
 import { getUserPlan } from "@/services/subscription.service";
+import { dispatchHuntMessages, WorkerHuntContact } from "@/services/worker-api.service";
+import { renderMessageTemplate } from "@/utils/message.utils";
 import { THuntSummary } from "@/types/hunt.types";
 import { TDailyContactTracker } from "@/types/message.types";
 import { EHuntStatus } from "@auto-prospect/shared/src/config/hunt.config";
 import { ELeadStage } from "@auto-prospect/shared/src/config/lead.config";
+import { EContactChannel } from "@auto-prospect/shared/src/config/message.config";
 import { cacheTag, updateTag } from "next/cache";
+import { eq } from "drizzle-orm";
 
 export const runDailyHunts = async () => {
   const dbClient = await createDrizzleSupabaseClient();
@@ -129,17 +133,99 @@ async function contactAdsOwners(
     return; // No allocations possible (no credits or at daily limit)
   }
 
-  // Process each allocation: send message, consume credit, track contact
-  for (const allocation of allocations) {
-    // TODO: Implement actual message sending based on allocation.channel
-    // For now, we'll skip the actual send and just consume credits and track
+  // Get account info for WhatsApp sender phone
+  const account = await dbClient.admin.query.accounts.findFirst({
+    where: (table, { eq }) => eq(table.id, accountId),
+    columns: {
+      id: true,
+      whatsappPhoneNumber: true,
+    },
+  });
 
+  // Fetch message templates for this hunt
+  const messageTemplates = await dbClient.admin.query.messageTemplates.findMany({
+    where: (table, { eq, and }) =>
+      and(
+        eq(table.accountId, accountId),
+        eq(table.isDefault, true)
+      ),
+  });
+
+  // Build contact list with personalized messages
+  const contacts: WorkerHuntContact[] = [];
+
+  for (const allocation of allocations) {
+    // Find the ad for this allocation
+    const ad = matchingAds.find((a) => a.id === allocation.adId);
+    if (!ad || !ad.phoneNumber) continue;
+
+    // Get template for this channel
+    const template = messageTemplates.find((t) => t.channel === allocation.channel);
+    if (!template) continue;
+
+    // Fetch ad relations for template variables
+    const adWithRelations = await dbClient.admin.query.ads.findFirst({
+      where: (table, { eq }) => eq(table.id, ad.id),
+      with: {
+        brand: true,
+        location: true,
+      },
+    });
+
+    if (!adWithRelations) continue;
+
+    // Build template variables
+    const variables = {
+      titre_annonce: ad.title,
+      prix: ad.price ? `${ad.price.toLocaleString("fr-FR")} €` : "",
+      marque: adWithRelations.brand?.name || "",
+      modele: ad.model || "",
+      annee: ad.modelYear?.toString() || "",
+      ville: adWithRelations.location.name,
+      vendeur_nom: ad.ownerName,
+    };
+
+    // Render personalized message
+    const personalizedMessage = renderMessageTemplate(template.body, variables);
+
+    // Build contact for worker
+    const contact: WorkerHuntContact = {
+      adId: ad.id,
+      recipientPhone: ad.phoneNumber,
+      channel: allocation.channel as "whatsapp_text" | "sms" | "ringless_voice",
+      message: personalizedMessage,
+    };
+
+    // Add senderPhone for WhatsApp
+    if (allocation.channel === EContactChannel.WHATSAPP_TEXT) {
+      if (!account?.whatsappPhoneNumber) {
+        continue; // Skip if no WhatsApp phone configured
+      }
+      contact.senderPhone = account.whatsappPhoneNumber;
+    }
+
+    contacts.push(contact);
+  }
+
+  // Dispatch messages to worker if we have any contacts
+  if (contacts.length > 0) {
+    try {
+      await dispatchHuntMessages(hunt.id, accountId, contacts);
+    } catch (error) {
+      return;
+    }
+  }
+
+  // Consume credits and track contacts
+  // NOTE: We consume credits upfront. If message send fails in worker,
+  // the worker should notify us via webhook to refund credits (future work)
+  for (const allocation of allocations) {
     // Consume credit for this channel
     const creditResult = await consumeCredit({
       huntId: hunt.id,
       channel: allocation.channel,
-      messageId: undefined, // Will be set when actual sending is implemented
-      recipient: undefined, // Will be set when actual sending is implemented
+      messageId: undefined,
+      recipient: undefined,
     });
 
     // Only track if credit consumption succeeded
@@ -161,10 +247,10 @@ async function contactAdsOwners(
           accountId: accountId,
           huntId: hunt.id,
           adId: allocation.adId,
-          stage: ELeadStage.CONTACTED, // Already contacted via message
-          position: 0, // Will be reordered by user in UI
+          stage: ELeadStage.CONTACTED,
+          position: 0,
         })
-        .onConflictDoNothing(); // Unique constraint on (accountId, adId)
+        .onConflictDoNothing();
     }
 
     // Check if we've hit the daily limit after this contact
