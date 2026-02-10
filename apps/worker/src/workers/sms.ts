@@ -1,23 +1,90 @@
 import { Job } from "bullmq";
+import { createDrizzleAdmin, accounts } from "@auto-prospect/db";
+import { decryptCredentials, ESmsErrorCode } from "@auto-prospect/shared";
+import { eq } from "drizzle-orm";
 
 interface SmsJob {
   recipientPhone: string;
   message: string;
+  accountId: string;
+  metadata?: {
+    huntId?: string;
+    adId?: string;
+    leadId?: string;
+  };
+}
+
+/**
+ * Sends SMS using SMSMobileAPI provider
+ */
+async function sendSms({
+  to,
+  message,
+  apiKey,
+}: {
+  to: string;
+  message: string;
+  apiKey: string;
+}) {
+  if (!apiKey) throw new Error("API key is required");
+
+  const body = new URLSearchParams();
+  body.set("apikey", apiKey);
+  body.set("recipients", to);
+  body.set("message", message);
+  body.set("sendsms", "1");
+
+  const res = await fetch("https://api.smsmobileapi.com/sendsms/", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body,
+  });
+
+  if (!res.ok) throw new Error(ESmsErrorCode.MESSAGE_SEND_FAILED);
+
+  return (await res.json()) as { message_id: string };
 }
 
 export async function smsWorker(job: Job<SmsJob>) {
   console.log(`Processing SMS job ${job.id}:`, job.data);
 
-  const { recipientPhone, message } = job.data;
+  const { recipientPhone, message, accountId, metadata } = job.data;
 
   try {
-    // TODO: Implement SMS provider integration (e.g., Twilio, Vonage)
-    console.log(`Sending SMS to ${recipientPhone}: ${message}`);
+    // Step 1: Fetch user's account to get encrypted SMS API key
+    const db = createDrizzleAdmin();
+    const account = await db.query.accounts.findFirst({
+      where: eq(accounts.id, accountId),
+      columns: { smsApiKey: true },
+    });
 
-    // Placeholder
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    if (!account?.smsApiKey) {
+      throw new Error(ESmsErrorCode.API_KEY_REQUIRED);
+    }
 
-    return { success: true, messageId: "placeholder-sms-id" };
+    // Step 2: Decrypt the API key
+    const encryptionKey = process.env.SMS_API_KEY_ENCRYPTION_KEY;
+    if (!encryptionKey) {
+      throw new Error(ESmsErrorCode.ENCRYPTION_KEY_MISSING);
+    }
+
+    const decryptedApiKey = decryptCredentials(account.smsApiKey, encryptionKey);
+
+    // Step 3: Call SMSMobileAPI
+    const result = await sendSms({
+      to: recipientPhone,
+      message,
+      apiKey: decryptedApiKey,
+    });
+
+    console.log(`SMS sent successfully to ${recipientPhone}:`, result);
+
+    return {
+      success: true,
+      messageId: result.message_id,
+      timestamp: new Date().toISOString(),
+      metadata,
+    };
   } catch (error) {
     console.error(`SMS job ${job.id} failed:`, error);
     throw error;
