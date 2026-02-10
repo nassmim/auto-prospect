@@ -1,7 +1,8 @@
 import { Job } from "bullmq";
-import { createDrizzleAdmin, accounts } from "@auto-prospect/db";
+import { accounts } from "@auto-prospect/db";
 import { decryptCredentials, ESmsErrorCode } from "@auto-prospect/shared";
 import { eq } from "drizzle-orm";
+import { getAdminClient } from "../services/db.service";
 
 interface SmsJob {
   recipientPhone: string;
@@ -50,7 +51,7 @@ export async function smsWorker(job: Job<SmsJob>) {
 
   try {
     // Step 1: Fetch user's account to get encrypted SMS API key
-    const db = createDrizzleAdmin();
+    const db = getAdminClient();
     const account = await db.query.accounts.findFirst({
       where: eq(accounts.id, accountId),
       columns: { smsApiKey: true },

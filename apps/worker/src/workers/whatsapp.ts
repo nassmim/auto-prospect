@@ -18,7 +18,7 @@
  */
 
 import { Job } from "bullmq";
-import { createDrizzleAdmin, accounts, whatsappSessions } from "@auto-prospect/db";
+import { accounts, whatsappSessions } from "@auto-prospect/db";
 import { EWhatsAppErrorCode } from "@auto-prospect/shared";
 import { eq } from "drizzle-orm";
 import {
@@ -26,6 +26,7 @@ import {
   connectWithCredentials,
   sendWhatsAppMessage,
 } from "@auto-prospect/whatsapp";
+import { getAdminClient } from "../services/db.service";
 
 interface WhatsAppJob {
   recipientPhone: string; // Phone in international format (e.g., "+33612345678")
@@ -48,7 +49,7 @@ export async function whatsappWorker(job: Job<WhatsAppJob>) {
 
   try {
     // Step 1: Get account from database
-    const db = createDrizzleAdmin();
+    const db = getAdminClient();
     const account = await db.query.accounts.findFirst({
       where: eq(accounts.id, metadata.accountId),
       columns: { id: true, phone: true },

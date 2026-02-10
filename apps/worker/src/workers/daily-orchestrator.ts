@@ -23,7 +23,6 @@
 
 import { Job } from "bullmq";
 import {
-  createDrizzleAdmin,
   hunts,
   contactedAds,
   leads,
@@ -35,6 +34,8 @@ import { EHuntStatus, ELeadStage, EContactChannel } from "@auto-prospect/shared"
 import { eq, and, notInArray } from "drizzle-orm";
 import { whatsappQueue, smsQueue, voiceQueue } from "../queues";
 import { jobIds, RETRY_CONFIG } from "../config";
+import { getAdminClient } from "../services/db.service";
+import { personalizeMessage } from "../services/message.service";
 
 interface DailyOrchestratorJob {
   triggeredAt: string;
@@ -89,20 +90,6 @@ function createDailyContactTracker() {
   };
 }
 
-/**
- * Renders a message template by replacing variable placeholders
- */
-function renderMessageTemplate(
-  template: string,
-  variables: Record<string, string>
-): string {
-  let rendered = template;
-  Object.entries(variables).forEach(([key, value]) => {
-    const placeholder = `{${key}}`;
-    rendered = rendered.replace(new RegExp(placeholder, "g"), value || "");
-  });
-  return rendered;
-}
 
 /**
  * Daily Orchestrator Worker Implementation
@@ -113,7 +100,7 @@ export async function dailyOrchestratorWorker(
   const startTime = Date.now();
   const { triggeredAt, source } = job.data;
 
-  const db = createDrizzleAdmin();
+  const db = getAdminClient();
   const dailyContactTracker = createDailyContactTracker();
   const results: HuntResult[] = [];
 
@@ -201,7 +188,7 @@ export async function dailyOrchestratorWorker(
  */
 async function processHunt(
   hunt: any,
-  db: ReturnType<typeof createDrizzleAdmin>,
+  db: ReturnType<typeof getAdminClient>,
   dailyContactTracker: ReturnType<typeof createDailyContactTracker>
 ): Promise<number> {
   const accountId = hunt.accountId;
@@ -278,7 +265,7 @@ async function processHunt(
     };
 
     // Render personalized message
-    const personalizedMessage = renderMessageTemplate(template.body, variables);
+    const personalizedMessage = personalizeMessage(template.body, variables);
 
     // Dispatch to appropriate queue based on channel
     const channel = template.channel as "whatsapp_text" | "sms" | "ringless_voice";
