@@ -1961,10 +1961,10 @@
               3
             ],
             "details": "Update `apps/web/src/services/whatsapp.service.ts`:\n1. Import core functions from @auto-prospect/whatsapp: createDBAuthState, connectWithCredentials, sendWhatsAppMessage, etc.\n2. Keep database wrapper functions (getWhatsAppSession, saveWhatsAppSession) in web app since they handle RLS\n3. Re-export types for backward compatibility with existing web app code\n4. Remove duplicate implementations, keep only web-specific wrappers\n5. Update imports in any files using whatsapp.service.ts",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": "Verify existing WhatsApp functionality in web app works after refactor (QR code pairing, message sending)",
             "parentId": "undefined",
-            "updatedAt": "2026-02-10T12:56:05.577Z"
+            "updatedAt": "2026-02-10T13:00:09.730Z"
           },
           {
             "id": 5,
@@ -1975,12 +1975,13 @@
               4
             ],
             "details": "Update `apps/worker/src/workers/whatsapp.ts`:\n1. Import from @auto-prospect/whatsapp: connectWithCredentials, sendWhatsAppMessage\n2. Import from @auto-prospect/shared: decryptCredentials, EWhatsAppErrorCode\n3. Query whatsappSessions directly using createDrizzleAdmin()\n4. Implement full flow:\n   - Fetch session: `db.query.whatsappSessions.findFirst({ where: eq(whatsappSessions.accountId, accountId) })`\n   - Parse credentials: `JSON.parse(session.credentials) as StoredAuthState`\n   - Connect: `const { socket, waitForConnection, cleanup } = await connectWithCredentials(credentials)`\n   - Wait: `const connected = await waitForConnection()`\n   - Send: `await sendWhatsAppMessage(socket, formattedPhone, message)`\n   - Cleanup in finally block\n5. Remove placeholder setTimeout and console.logs",
-            "status": "pending",
+            "status": "in-progress",
             "testStrategy": "Integration test with test WhatsApp number; unit test with mocked @auto-prospect/whatsapp functions",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-02-10T13:00:46.625Z"
           }
         ],
-        "updatedAt": "2026-02-10T12:56:05.577Z"
+        "updatedAt": "2026-02-10T13:00:46.625Z"
       },
       {
         "id": "83",
@@ -2241,7 +2242,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-02-10T12:56:05.578Z",
+      "lastModified": "2026-02-10T13:00:46.626Z",
       "taskCount": 91,
       "completedCount": 80,
       "tags": [

@@ -156,6 +156,9 @@ importers:
       '@auto-prospect/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@auto-prospect/whatsapp':
+        specifier: workspace:*
+        version: link:../../packages/whatsapp
       '@hapi/boom':
         specifier: ^10.0.1
         version: 10.0.1

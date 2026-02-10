@@ -18,17 +18,14 @@
  */
 
 import { Job } from "bullmq";
-import { createDrizzleAdmin, accounts } from "@auto-prospect/db";
+import { createDrizzleAdmin, accounts, whatsappSessions } from "@auto-prospect/db";
 import { EWhatsAppErrorCode } from "@auto-prospect/shared";
 import { eq } from "drizzle-orm";
-
-// Import WhatsApp service functions from web app
-// Note: These need to be accessible from the worker package
-// TODO: Consider moving shared WhatsApp functions to a shared package
-type StoredAuthState = {
-  creds: string;
-  keys: string;
-};
+import {
+  StoredAuthState,
+  connectWithCredentials,
+  sendWhatsAppMessage,
+} from "@auto-prospect/whatsapp";
 
 interface WhatsAppJob {
   recipientPhone: string; // Phone in international format (e.g., "+33612345678")
@@ -43,8 +40,6 @@ interface WhatsAppJob {
 }
 
 export async function whatsappWorker(job: Job<WhatsAppJob>) {
-  console.log(`Processing WhatsApp job ${job.id}:`, job.data);
-
   const { recipientPhone, senderPhone, message, metadata } = job.data;
 
   if (!metadata?.accountId) {
@@ -64,60 +59,48 @@ export async function whatsappWorker(job: Job<WhatsAppJob>) {
     }
 
     // Step 2: Get WhatsApp session/credentials
-    // Note: This requires importing the whatsapp service functions
-    // For now, this is a placeholder showing the integration pattern
-    // TODO: Import and use getWhatsAppSession, connectWithCredentials, sendWhatsAppMessage
+    const session = await db.query.whatsappSessions.findFirst({
+      where: eq(whatsappSessions.accountId, metadata.accountId),
+    });
 
-    // const { credentials } = await getWhatsAppSession(metadata.accountId, { bypassRLS: true });
-    //
-    // if (!credentials) {
-    //   throw new Error(EWhatsAppErrorCode.SESSION_NOT_FOUND);
-    // }
-    //
-    // // Step 3: Connect with existing credentials (no QR code)
-    // const { socket, waitForConnection, cleanup } = await connectWithCredentials(credentials);
-    //
-    // try {
-    //   // Step 4: Wait for connection to establish
-    //   const connected = await waitForConnection();
-    //   if (!connected) {
-    //     throw new Error(EWhatsAppErrorCode.CONNECTION_TIMEOUT);
-    //   }
-    //
-    //   // Step 5: Send message
-    //   // Format phone: remove + and @s.whatsapp.net suffix
-    //   const formattedPhone = recipientPhone.replace(/^\+/, "");
-    //   const result = await sendWhatsAppMessage(socket, formattedPhone, message);
-    //
-    //   if (!result.success) {
-    //     throw new Error(result.errorCode || EWhatsAppErrorCode.MESSAGE_SEND_FAILED);
-    //   }
-    //
-    //   return {
-    //     success: true,
-    //     timestamp: new Date().toISOString(),
-    //     metadata,
-    //   };
-    // } finally {
-    //   // Step 6: Always cleanup socket connection
-    //   cleanup();
-    // }
+    if (!session || !session.credentials) {
+      throw new Error(EWhatsAppErrorCode.SESSION_NOT_FOUND);
+    }
 
-    // Placeholder implementation
-    console.log(
-      `Sending WhatsApp message from ${senderPhone} to ${recipientPhone}`,
-      metadata ? `(Hunt: ${metadata.huntId}, Ad: ${metadata.adId})` : ""
-    );
+    // Parse stored credentials
+    const credentials = JSON.parse(session.credentials) as StoredAuthState;
 
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    // Step 3: Connect with existing credentials (no QR code)
+    const { socket, waitForConnection, cleanup } =
+      await connectWithCredentials(credentials);
 
-    return {
-      success: true,
-      timestamp: new Date().toISOString(),
-      metadata,
-    };
+    try {
+      // Step 4: Wait for connection to establish
+      const connected = await waitForConnection();
+      if (!connected) {
+        throw new Error(EWhatsAppErrorCode.CONNECTION_TIMEOUT);
+      }
+
+      // Step 5: Send message
+      // Format phone: remove + and @s.whatsapp.net suffix
+      const formattedPhone = recipientPhone.replace(/^\+/, "");
+      const result = await sendWhatsAppMessage(socket, formattedPhone, message);
+
+      if (!result.success) {
+        throw new Error(
+          result.errorCode || EWhatsAppErrorCode.MESSAGE_SEND_FAILED,
+        );
+      }
+
+      return {
+        success: true,
+        timestamp: new Date().toISOString(),
+        metadata,
+      };
+    } finally {
+      cleanup();
+    }
   } catch (error) {
-    console.error(`WhatsApp job ${job.id} failed:`, error);
     throw error;
   }
 }

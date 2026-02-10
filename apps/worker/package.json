@@ -10,6 +10,7 @@
   "dependencies": {
     "@auto-prospect/db": "workspace:*",
     "@auto-prospect/shared": "workspace:*",
+    "@auto-prospect/whatsapp": "workspace:*",
     "@hapi/boom": "^10.0.1",
     "@whiskeysockets/baileys": "7.0.0-rc.9",
     "bullmq": "^5.0.0",
