@@ -74,3 +74,11 @@ seed.sql
 _seed.sql
 # Ignore Supabase auto-migrations (we use Drizzle)
 supabase/migrations/*.sql
+
+# Documentation/Guide files (keep only README files)
+**/ARCHITECTURE.md
+**/architecture.md
+MIGRATION-STATUS.md
+mono-repo-guide.md
+!README.md
+!**/README.md
