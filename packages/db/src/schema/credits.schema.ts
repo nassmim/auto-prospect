@@ -1,5 +1,4 @@
-import { TRANSACTION_TYPE_VALUES } from "@/config/payment.config";
-import { channel } from "@/schema/message.schema";
+import { TRANSACTION_TYPE_VALUES } from "@auto-prospect/shared";
 import {
   InferInsertModel,
   InferSelectModel,
@@ -23,6 +22,7 @@ import {
 import { authenticatedRole, authUid } from "drizzle-orm/supabase";
 import { accounts } from "./account.schema";
 import { hunts } from "./hunt.schema";
+import { channel } from "./message.schema";
 
 type PurchaseMetadata = {
   packCredits: number;
@@ -50,7 +50,7 @@ export type TTransactionMetadata =
 // Transaction types enum
 export const transactionType = pgEnum(
   "transaction_type",
-  TRANSACTION_TYPE_VALUES as [string, ...string[]],
+  TRANSACTION_TYPE_VALUES,
 );
 
 // Credit balances table - one row per account

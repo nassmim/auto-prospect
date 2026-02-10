@@ -1,14 +1,14 @@
-import { TContactChannel } from "@/config/message.config";
-import {
-  type TransactionType,
-  ETransactionType,
-} from "@/config/payment.config";
 import { createDrizzleSupabaseClient, TDBQuery } from "@/lib/drizzle/dbClient";
 import {
   creditTransactions,
   huntChannelCredits,
   TCreditTransaction,
 } from "@/schema/credits.schema";
+import { TContactChannel } from "@auto-prospect/shared/src/config/message.config";
+import {
+  type TransactionType,
+  ETransactionType,
+} from "@auto-prospect/shared/src/config/payment.config";
 import { desc, eq, sql } from "drizzle-orm";
 
 export type TConsumeCreditsParams = {

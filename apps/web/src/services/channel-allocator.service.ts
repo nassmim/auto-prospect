@@ -4,11 +4,11 @@
  * Database operations delegated to server actions
  */
 
-import { TContactChannel } from "@/config/message.config";
 import { TDBClient } from "@/lib/drizzle/dbClient";
 import { getHuntChannelCreditsMap } from "@/services/channel.service";
 import { getHuntDailyPacingLimit } from "@/services/hunt.service";
 import { TDailyContactTracker } from "@/types/message.types";
+import { TContactChannel } from "@auto-prospect/shared/src/config/message.config";
 
 type TChannelAllocation = {
   adId: string;

@@ -1,5 +1,3 @@
-import { accounts, TAccount } from "@/schema/account.schema";
-import { messageChannel } from "@/schema/message.schema";
 import {
   InferInsertModel,
   InferSelectModel,
@@ -24,6 +22,8 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { authenticatedRole } from "drizzle-orm/supabase";
+import { accounts, TAccount } from "./account.schema";
+import { channel } from "./message.schema";
 
 export const ads = pgTable(
   "ads",
@@ -305,7 +305,7 @@ export const contactedAds = pgTable(
     accountId: uuid("account_id")
       .references(() => accounts.id, { onDelete: "cascade" })
       .notNull(),
-    channel: messageChannel("channel").notNull(),
+    channel: channel("channel").notNull(),
     createdAt: date("created_at").defaultNow().notNull(),
   },
   () => [

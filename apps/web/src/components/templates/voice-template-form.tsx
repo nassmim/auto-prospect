@@ -12,8 +12,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { EContactChannel } from "@/config/message.config";
 import { pages } from "@/config/routes";
+import { EContactChannel } from "@auto-prospect/shared/src/config/message.config";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useState } from "react";

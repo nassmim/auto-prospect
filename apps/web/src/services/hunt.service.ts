@@ -1,5 +1,3 @@
-import { EHuntStatus } from "@/config/hunt.config";
-import { ELeadStage } from "@/config/lead.config";
 import { HUNT_WITH_RELATIONS } from "@/constants/hunt.constants";
 import { CACHE_TAGS } from "@/lib/cache/cache.config";
 import { createDrizzleSupabaseClient, TDBClient } from "@/lib/drizzle/dbClient";
@@ -15,6 +13,8 @@ import { getContactedLeads, getTotalLeads } from "@/services/lead.service";
 import { getUserPlan } from "@/services/subscription.service";
 import { THuntSummary } from "@/types/hunt.types";
 import { TDailyContactTracker } from "@/types/message.types";
+import { EHuntStatus } from "@auto-prospect/shared/src/config/hunt.config";
+import { ELeadStage } from "@auto-prospect/shared/src/config/lead.config";
 import { cacheTag, updateTag } from "next/cache";
 
 export const runDailyHunts = async () => {

@@ -1,6 +1,5 @@
 "use server";
 
-import { TLeadStage } from "@/config/lead.config";
 import { pages } from "@/config/routes";
 import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
 import { formatZodError } from "@/lib/validation";
@@ -13,6 +12,7 @@ import {
   getPipelineLeads,
 } from "@/services/lead.service";
 import { leadNoteSchema, leadReminderSchema } from "@/validation-schemas";
+import { TLeadStage } from "@auto-prospect/shared/src/config/lead.config";
 import { eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { createClient } from "../../../../packages/db/src/supabase/server";

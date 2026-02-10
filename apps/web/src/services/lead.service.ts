@@ -1,4 +1,3 @@
-import { ELeadStage } from "@/config/lead.config";
 import {
   createDrizzleSupabaseClient,
   TDBClient,
@@ -6,6 +5,7 @@ import {
 } from "@/lib/drizzle/dbClient";
 import { leads } from "@/schema/lead.schema";
 import { messages } from "@/schema/message.schema";
+import { ELeadStage } from "@auto-prospect/shared/src/config/lead.config";
 import { and, eq, gte, SQL, sql } from "drizzle-orm";
 import { createClient } from "../../../../packages/db/src/supabase/server";
 

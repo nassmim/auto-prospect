@@ -14,8 +14,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { EHuntStatus, THuntStatus } from "@/config/hunt.config";
 import { pages } from "@/config/routes";
+import {
+  EHuntStatus,
+  THuntStatus,
+} from "@auto-prospect/shared/src/config/hunt.config";
 import Link from "next/link";
 import { useState } from "react";
 import type { KeyedMutator } from "swr";

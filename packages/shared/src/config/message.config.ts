@@ -52,7 +52,7 @@ export type TContactChannel =
 
 export const CONTACT_CHANNEL_VALUES = CONTACT_CHANNEL_DEFINITIONS.map(
   (c) => c.value,
-);
+) as [TContactChannel, ...TContactChannel[]];
 
 export const getContactChannelConfig = (channel: string) => {
   const config = CONTACT_CHANNEL_DEFINITIONS.find((c) => c.value === channel);
@@ -140,7 +140,7 @@ export type TMessageStatus =
 
 export const MESSAGE_STATUS_VALUES = MESSAGE_STATUS_DEFINITIONS.map(
   (s) => s.value,
-);
+) as [TMessageStatus, ...TMessageStatus[]];
 
 export const getMessageStatusConfig = (status: string) => {
   const config = MESSAGE_STATUS_DEFINITIONS.find((s) => s.value === status);

@@ -57,7 +57,7 @@ export type TransactionType =
 
 export const TRANSACTION_TYPE_VALUES = TRANSACTION_TYPE_DEFINITIONS.map(
   (t) => t.value,
-);
+) as [TransactionType, ...TransactionType[]];
 
 export const getTransactionTypeConfig = (type: TransactionType) => {
   const config = TRANSACTION_TYPE_DEFINITIONS.find((t) => t.value === type);

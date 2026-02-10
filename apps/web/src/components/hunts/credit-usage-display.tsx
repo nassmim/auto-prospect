@@ -1,8 +1,8 @@
 "use client";
 
 import { Progress } from "@/components/ui/progress";
-import { getContactChannelLabel } from "@/config/message.config";
 import type { THuntChannelCredit } from "@/schema/credits.schema";
+import { getContactChannelLabel } from "@auto-prospect/shared/src/config/message.config";
 
 type CreditUsageDisplayProps = {
   channelCredits: THuntChannelCredit[];

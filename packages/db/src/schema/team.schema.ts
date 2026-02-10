@@ -1,5 +1,4 @@
-import { ERole, ROLE_VALUES } from "@/config/account.config";
-import { accounts } from "@/schema/account.schema";
+import { ROLE_VALUES } from "@auto-prospect/shared";
 import {
   InferInsertModel,
   InferSelectModel,
@@ -16,9 +15,10 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { authenticatedRole, authUid } from "drizzle-orm/supabase";
+import { accounts } from "./account.schema";
 
 // Role enum type for account members
-export const role = pgEnum("role", ROLE_VALUES as [string, ...string[]]);
+export const role = pgEnum("role", ROLE_VALUES);
 
 // account members table - they are not users, they are only data for now.
 // We'll implement team-based features later

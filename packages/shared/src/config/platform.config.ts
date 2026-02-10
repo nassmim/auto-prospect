@@ -26,7 +26,10 @@ export const EPlatformValue = Object.fromEntries(
 
 export type TPlatformValue = (typeof PLATFORM_DEFINITIONS)[number]["value"];
 
-export const PLATFORM_VALUES = PLATFORM_DEFINITIONS.map((p) => p.value);
+export const PLATFORM_VALUES = PLATFORM_DEFINITIONS.map((p) => p.value) as [
+  TPlatformValue,
+  ...TPlatformValue[],
+];
 
 export const getPlatformConfig = (platform: TPlatformValue) => {
   const config = PLATFORM_DEFINITIONS.find((p) => p.value === platform);

@@ -38,7 +38,9 @@ export const EAccountType = Object.fromEntries(
 
 export type TAccountType = (typeof ACCOUNT_TYPE_DEFINITIONS)[number]["value"];
 
-export const ACCOUNT_TYPE_VALUES = ACCOUNT_TYPE_DEFINITIONS.map((t) => t.value);
+export const ACCOUNT_TYPE_VALUES = ACCOUNT_TYPE_DEFINITIONS.map(
+  (t) => t.value,
+) as [TAccountType, ...TAccountType[]];
 
 export const getAccountTypeConfig = (type: TAccountType) => {
   const config = ACCOUNT_TYPE_DEFINITIONS.find((t) => t.value === type);
@@ -93,7 +95,10 @@ export const ERole = Object.fromEntries(
 
 export type TRole = (typeof ROLE_DEFINITIONS)[number]["value"];
 
-export const ROLE_VALUES = ROLE_DEFINITIONS.map((r) => r.value);
+export const ROLE_VALUES = ROLE_DEFINITIONS.map((r) => r.value) as [
+  TRole,
+  ...TRole[],
+];
 
 export const getRoleConfig = (role: TRole) => {
   const config = ROLE_DEFINITIONS.find((r) => r.value === role);

@@ -1,8 +1,8 @@
 "use client";
 
-import { EContactChannel } from "@/config/message.config";
 import { pages } from "@/config/routes";
 import { getAccountTemplates } from "@/services/message.service";
+import { EContactChannel } from "@auto-prospect/shared/src/config/message.config";
 
 type OutreachSettingsProps = {
   templates: Awaited<ReturnType<typeof getAccountTemplates>>;

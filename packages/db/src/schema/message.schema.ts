@@ -1,9 +1,8 @@
 import {
-  CONTACT_CHANNEL_VALUES,
+  EContactChannel,
   EMessageStatus,
   MESSAGE_STATUS_VALUES,
-} from "@/config/message.config";
-import { teamMembers } from "@/schema/team.schema";
+} from "@auto-prospect/shared";
 import { InferInsertModel, relations, sql } from "drizzle-orm";
 import {
   boolean,
@@ -25,25 +24,13 @@ import {
 import { authenticatedRole, authUid, serviceRole } from "drizzle-orm/supabase";
 import { accounts } from "./account.schema";
 import { leads } from "./lead.schema";
+import { teamMembers } from "./team.schema";
 
 // Contact channel enum (used for channel priorities and templates)
-export const channel = pgEnum(
-  "channel",
-  CONTACT_CHANNEL_VALUES as [string, ...string[]],
-);
-
-// Message channel enum (used for messages and contacted ads)
-// TODO: Migrate this to use 'channel' enum and consolidate both enums
-export const messageChannel = pgEnum(
-  "message_channel",
-  CONTACT_CHANNEL_VALUES as [string, ...string[]],
-);
+export const channel = pgEnum("channel", EContactChannel);
 
 // Message status enum
-export const messageStatus = pgEnum(
-  "message_status",
-  MESSAGE_STATUS_VALUES as [string, ...string[]],
-);
+export const messageStatus = pgEnum("message_status", MESSAGE_STATUS_VALUES);
 
 // Channel priorities table - defines which channels to try first
 export const channelPriorities = pgTable(
@@ -145,7 +132,7 @@ export const messages = pgTable(
     id: uuid().defaultRandom().primaryKey(),
     leadId: uuid("lead_id").notNull(),
     templateId: uuid("template_id"), // Null if message wasn't from template
-    channel: messageChannel().notNull(),
+    channel: channel().notNull(),
     content: text().notNull(), // Rendered message with variables replaced
     status: messageStatus().notNull().default(EMessageStatus.PENDING),
     externalId: varchar("external_id", { length: 255 }), // Provider message ID for tracking

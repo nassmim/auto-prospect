@@ -1,7 +1,8 @@
-import { ACCOUNT_TYPE_VALUES, EAccountType } from "@/config/account.config";
-import { contactedAds } from "@/schema/ad.schema";
-import { whatsappSessions } from "@/schema/whatsapp-session.schema";
-import { TAccountSettings } from "@/types/account.types";
+import {
+  ACCOUNT_TYPE_VALUES,
+  EAccountType,
+  TAccountSettings,
+} from "@auto-prospect/shared";
 import { InferSelectModel, relations, sql } from "drizzle-orm";
 import {
   boolean,
@@ -14,12 +15,11 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { authenticatedRole, authUid } from "drizzle-orm/supabase";
+import { contactedAds } from "./ad.schema";
+import { whatsappSessions } from "./whatsapp-session.schema";
 
 // Types of accounts
-export const accountType = pgEnum(
-  "account_type",
-  ACCOUNT_TYPE_VALUES as [string, ...string[]],
-);
+export const accountType = pgEnum("account_type", ACCOUNT_TYPE_VALUES);
 
 // accounts table - will have either just one member or several
 export const accounts = pgTable(

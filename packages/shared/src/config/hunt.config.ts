@@ -34,7 +34,9 @@ export const EHuntStatus = Object.fromEntries(
 
 export type THuntStatus = (typeof HUNT_STATUS_DEFINITIONS)[number]["value"];
 
-export const HUNT_STATUS_VALUES = HUNT_STATUS_DEFINITIONS.map((s) => s.value);
+export const HUNT_STATUS_VALUES = HUNT_STATUS_DEFINITIONS.map(
+  (s) => s.value,
+) as [THuntStatus, ...THuntStatus[]];
 
 export const getHuntStatusConfig = (status: THuntStatus) => {
   const config = HUNT_STATUS_DEFINITIONS.find((s) => s.value === status);

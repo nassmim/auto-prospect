@@ -1,7 +1,10 @@
-import { EContactChannel, TContactChannel } from "@/config/message.config";
 import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
 import { messages } from "@/schema/message.schema";
 import { getContactedLeads, getTodayNewLeads } from "@/services/lead.service";
+import {
+  EContactChannel,
+  TContactChannel,
+} from "@auto-prospect/shared/src/config/message.config";
 import { eq, sql } from "drizzle-orm";
 
 /**

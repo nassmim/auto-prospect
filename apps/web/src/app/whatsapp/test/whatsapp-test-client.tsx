@@ -49,7 +49,7 @@ export function WhatsAppTestClient({ initialData }: WhatsAppTestClientProps) {
   const [sendingMessage, setSendingMessage] = useState(false);
   const [sendResult, setSendResult] = useState<{
     success: boolean;
-    errorCode?: import("@/config/error-codes").TErrorCode;
+    errorCode?: import("@auto-prospect/shared/src/config/error-codes").TErrorCode;
     needsReconnect?: boolean;
   } | null>(null);
 

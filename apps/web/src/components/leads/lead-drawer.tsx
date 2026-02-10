@@ -22,11 +22,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  getLeadStageConfig,
-  LEAD_STAGE_VALUES,
-  TLeadStage,
-} from "@/config/lead.config";
 import { pages } from "@/config/routes";
 import { swrKeys } from "@/config/swr-keys";
 import { extractLeadVariables } from "@/utils/lead.utils";
@@ -40,6 +35,11 @@ import {
   type TLeadNoteFormData,
   type TLeadReminderFormData,
 } from "@/validation-schemas";
+import {
+  getLeadStageConfig,
+  LEAD_STAGE_VALUES,
+  TLeadStage,
+} from "@auto-prospect/shared/src/config/lead.config";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format, formatDistance } from "date-fns";
 import { fr } from "date-fns/locale";

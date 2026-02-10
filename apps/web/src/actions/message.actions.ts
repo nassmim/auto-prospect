@@ -1,11 +1,5 @@
 "use server";
 
-import {
-  EGeneralErrorCode,
-  ESmsErrorCode,
-  TErrorCode,
-} from "@/config/error-codes";
-import { EContactChannel, TContactChannel } from "@/config/message.config";
 import { CACHE_TAGS } from "@/lib/cache/cache.config";
 import {
   createDrizzleSupabaseClient,
@@ -29,6 +23,15 @@ import {
   TSaveSmsApiKeySchema,
   TSendSmsSchema,
 } from "@/validation-schemas/settings.validation";
+import {
+  EGeneralErrorCode,
+  ESmsErrorCode,
+  TErrorCode,
+} from "@auto-prospect/shared/src/config/error-codes";
+import {
+  EContactChannel,
+  TContactChannel,
+} from "@auto-prospect/shared/src/config/message.config";
 import { and, BinaryOperator, eq } from "drizzle-orm";
 import { updateTag } from "next/cache";
 import { z } from "zod";

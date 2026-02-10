@@ -1,6 +1,6 @@
 import { NewTemplateView } from "@/components/templates/new-template-view";
 import { getSEOTags } from "@/lib/seo";
-import { EContactChannel } from "@/config/message.config";
+import { EContactChannel } from "@auto-prospect/shared/src/config/message.config";
 import type { Metadata } from "next";
 
 type PageProps = {
@@ -15,7 +15,9 @@ export async function generateMetadata({
   const isVoiceChannel = channel === EContactChannel.RINGLESS_VOICE;
 
   return getSEOTags({
-    title: isVoiceChannel ? "Créer un template vocal" : "Créer un template texte",
+    title: isVoiceChannel
+      ? "Créer un template vocal"
+      : "Créer un template texte",
     description: isVoiceChannel
       ? "Enregistrez ou importez un message vocal pour vos appels automatisés"
       : "Créez un message avec des variables personnalisables pour WhatsApp et SMS",

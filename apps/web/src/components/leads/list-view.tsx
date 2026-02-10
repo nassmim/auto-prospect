@@ -5,7 +5,7 @@ import {
   getLeadStageConfig,
   LEAD_STAGE_VALUES,
   TLeadStage,
-} from "@/config/lead.config";
+} from "@auto-prospect/shared/src/config/lead.config";
 import { useState, useTransition } from "react";
 
 type Lead = {

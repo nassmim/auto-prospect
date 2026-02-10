@@ -1,6 +1,6 @@
-import { getLeadStageConfig } from "@/config/lead.config";
-import { getMessageStatusConfig } from "@/config/message.config";
 import { pages } from "@/config/routes";
+import { getLeadStageConfig } from "@auto-prospect/shared/src/config/lead.config";
+import { getMessageStatusConfig } from "@auto-prospect/shared/src/config/message.config";
 import { format, formatDistance } from "date-fns";
 import { fr } from "date-fns/locale";
 import Image from "next/image";

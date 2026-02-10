@@ -14,7 +14,7 @@ export default function SmsTestSection({ hasApiKey }: SmsTestSectionProps) {
   const [sendingMessage, setSendingMessage] = useState(false);
   const [sendResult, setSendResult] = useState<{
     success: boolean;
-    errorCode?: import("@/config/error-codes").TErrorCode;
+    errorCode?: import("@auto-prospect/shared/src/config/error-codes").TErrorCode;
   } | null>(null);
 
   const handleSendTestSms = async () => {

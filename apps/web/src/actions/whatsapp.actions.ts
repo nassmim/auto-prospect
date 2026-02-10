@@ -1,10 +1,5 @@
 "use server";
 
-import {
-  EGeneralErrorCode,
-  EWhatsAppErrorCode,
-  TErrorCode,
-} from "@/config/error-codes";
 import { createDrizzleSupabaseClient, TDBClient } from "@/lib/drizzle/dbClient";
 import { accounts } from "@/schema/account.schema";
 import { whatsappSessions } from "@/schema/whatsapp-session.schema";
@@ -22,6 +17,11 @@ import {
   sendWhatsAppTextMessageSchema,
   TSendWhatsAppTextMessageSchema,
 } from "@/validation-schemas/whatsapp.validation";
+import {
+  EGeneralErrorCode,
+  EWhatsAppErrorCode,
+  TErrorCode,
+} from "@auto-prospect/shared/src/config/error-codes";
 import { eq } from "drizzle-orm";
 
 /**

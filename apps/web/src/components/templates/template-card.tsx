@@ -10,7 +10,10 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import { MessageTemplate } from "@/services/message.service";
-import { EContactChannel, getContactChannelConfig } from "@/config/message.config";
+import {
+  EContactChannel,
+  getContactChannelConfig,
+} from "@auto-prospect/shared/src/config/message.config";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 

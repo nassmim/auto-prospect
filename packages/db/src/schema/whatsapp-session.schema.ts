@@ -1,4 +1,3 @@
-import { accounts } from "@/schema/account.schema";
 import { InferSelectModel, relations, sql } from "drizzle-orm";
 import {
   boolean,
@@ -9,6 +8,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { authenticatedRole, authUid } from "drizzle-orm/supabase";
+import { accounts } from "./account.schema";
 
 export const whatsappSessions = pgTable(
   "whatsapp_sessions",

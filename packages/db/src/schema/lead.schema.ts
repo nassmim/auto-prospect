@@ -2,9 +2,8 @@ import {
   ELeadStage,
   LEAD_ACTIVITY_TYPE_VALUES,
   LEAD_STAGE_VALUES,
-} from "@/config/lead.config";
-import { TMessageStatus } from "@/config/message.config";
-import { teamMembers } from "@/schema/team.schema";
+  TMessageStatus,
+} from "@auto-prospect/shared";
 import {
   InferInsertModel,
   InferSelectModel,
@@ -28,6 +27,7 @@ import { authenticatedRole, authUid } from "drizzle-orm/supabase";
 import { accounts } from "./account.schema";
 import { ads } from "./ad.schema";
 import { hunts } from "./hunt.schema";
+import { teamMembers } from "./team.schema";
 
 // Metadata types for different activity types
 type TStageChangeMetadata = {

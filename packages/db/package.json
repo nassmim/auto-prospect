@@ -15,6 +15,7 @@
     "create-user": "dotenvx run --env-file=.env.development.local -- tsx scripts/create-user.ts"    
   },
   "dependencies": {
+    "@auto-prospect/shared": "workspace:*",
     "drizzle-orm": "^0.45.1",
     "postgres": "^3.4.8",
     "@supabase/supabase-js": "^2.90.1",

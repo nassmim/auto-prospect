@@ -19,16 +19,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  CONTACT_CHANNEL_DEFINITIONS,
-  EContactChannel,
-} from "@/config/message.config";
 import { pages } from "@/config/routes";
 import { renderMessageTemplate } from "@/utils/message.utils";
 import {
   textTemplateSchema,
   type TTextTemplateFormData,
 } from "@/validation-schemas";
+import {
+  CONTACT_CHANNEL_DEFINITIONS,
+  EContactChannel,
+} from "@auto-prospect/shared/src/config/message.config";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";

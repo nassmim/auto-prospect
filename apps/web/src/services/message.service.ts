@@ -3,7 +3,6 @@
  * Handles variable replacement and message formatting
  */
 
-import { EContactChannel } from "@/config/message.config";
 import { pages } from "@/config/routes";
 import { CACHE_TAGS } from "@/lib/cache/cache.config";
 import { createDrizzleSupabaseClient, TDBClient } from "@/lib/drizzle/dbClient";
@@ -12,6 +11,7 @@ import { leadNotes } from "@/schema/lead.schema";
 import { messages } from "@/schema/message.schema";
 import { getUserAccount } from "@/services/account.service";
 import { consumeCredit } from "@/services/credit.service";
+import { EContactChannel } from "@auto-prospect/shared/src/config/message.config";
 import { eq } from "drizzle-orm";
 import { revalidatePath, updateTag } from "next/cache";
 

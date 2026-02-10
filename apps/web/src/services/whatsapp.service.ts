@@ -6,11 +6,6 @@
  */
 
 import {
-  EGeneralErrorCode,
-  EWhatsAppErrorCode,
-  TErrorCode,
-} from "@/config/error-codes";
-import {
   createDrizzleSupabaseClient,
   TDBClient,
   TDBOptions,
@@ -21,6 +16,11 @@ import {
   whatsappSessions,
 } from "@/schema/whatsapp-session.schema";
 import { decryptCredentials, encryptCredentials } from "@/utils/crypto.utils";
+import {
+  EGeneralErrorCode,
+  EWhatsAppErrorCode,
+  TErrorCode,
+} from "@auto-prospect/shared/src/config/error-codes";
 import { Boom } from "@hapi/boom";
 import makeWASocket, {
   AuthenticationState,

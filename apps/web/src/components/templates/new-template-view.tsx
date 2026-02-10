@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { TextTemplateForm } from "@/components/templates/text-template-form";
 import { VoiceTemplateForm } from "@/components/templates/voice-template-form";
 import { pages } from "@/config/routes";
-import { EContactChannel } from "@/config/message.config";
+import { EContactChannel } from "@auto-prospect/shared/src/config/message.config";
+import Link from "next/link";
 
 interface NewTemplateViewProps {
   channel?: string;
@@ -11,7 +11,9 @@ interface NewTemplateViewProps {
 export function NewTemplateView({ channel }: NewTemplateViewProps) {
   // Determine if this is a voice channel (ringless_voice) or text channel (sms, whatsapp_text)
   const isVoiceChannel = channel === EContactChannel.RINGLESS_VOICE;
-  const isTextChannel = channel === EContactChannel.SMS || channel === EContactChannel.WHATSAPP_TEXT;
+  const isTextChannel =
+    channel === EContactChannel.SMS ||
+    channel === EContactChannel.WHATSAPP_TEXT;
 
   // Default to text if no channel specified
   const showTextForm = !channel || isTextChannel;
@@ -42,7 +44,9 @@ export function NewTemplateView({ channel }: NewTemplateViewProps) {
             />
           </svg>
           <span className="text-zinc-100">
-            {showVoiceForm ? "Nouveau template vocal" : "Nouveau template texte"}
+            {showVoiceForm
+              ? "Nouveau template vocal"
+              : "Nouveau template texte"}
           </span>
         </nav>
 
@@ -114,7 +118,11 @@ export function NewTemplateView({ channel }: NewTemplateViewProps) {
 
         {/* Form */}
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
-          {showVoiceForm ? <VoiceTemplateForm defaultChannel={channel} /> : <TextTemplateForm defaultChannel={channel} />}
+          {showVoiceForm ? (
+            <VoiceTemplateForm defaultChannel={channel} />
+          ) : (
+            <TextTemplateForm defaultChannel={channel} />
+          )}
         </div>
       </div>
     </div>

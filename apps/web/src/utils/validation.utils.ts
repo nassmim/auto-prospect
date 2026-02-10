@@ -1,9 +1,12 @@
 import {
+  EWhatsAppErrorCode,
+  TWhatsAppErrorCode,
+} from "@auto-prospect/shared/src/config/error-codes";
+import {
   CountryCode,
   isValidPhoneNumber,
   parsePhoneNumberWithError,
 } from "libphonenumber-js";
-import { EWhatsAppErrorCode, TWhatsAppErrorCode } from "@/config/error-codes";
 
 export type TPhoneValidationResult = {
   isValid: boolean;

@@ -1,10 +1,13 @@
 "use client";
 
 import { fetchPipelineLeads, updateLeadStage } from "@/actions/lead.actions";
-import { LEAD_STAGE_DEFINITIONS, TLeadStage } from "@/config/lead.config";
 import { swrKeys } from "@/config/swr-keys";
 import { SWR_POLLING } from "@/hooks/use-swr-action";
 import { TPipelineLead } from "@/services/lead.service";
+import {
+  LEAD_STAGE_DEFINITIONS,
+  TLeadStage,
+} from "@auto-prospect/shared/src/config/lead.config";
 import {
   closestCorners,
   DndContext,

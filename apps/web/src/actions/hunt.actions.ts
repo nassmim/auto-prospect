@@ -1,7 +1,5 @@
 "use server";
 
-import { EHuntStatus, THuntStatus } from "@/config/hunt.config";
-import { EContactChannel } from "@/config/message.config";
 import { CACHE_TAGS } from "@/lib/cache/cache.config";
 import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
 import { formatZodError } from "@/lib/validation";
@@ -14,6 +12,11 @@ import {
   updateAccountHuntsCache,
 } from "@/services/hunt.service";
 import { createHuntSchema, updateHuntSchema } from "@/validation-schemas";
+import {
+  EHuntStatus,
+  THuntStatus,
+} from "@auto-prospect/shared/src/config/hunt.config";
+import { EContactChannel } from "@auto-prospect/shared/src/config/message.config";
 import { eq } from "drizzle-orm";
 import { updateTag } from "next/cache";
 import { createClient } from "../../../../packages/db/src/supabase/server";

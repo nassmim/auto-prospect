@@ -1,4 +1,4 @@
-import { EContactChannel } from "@/config/message.config";
+import { EContactChannel } from "@auto-prospect/shared/src/config/message.config";
 import { z } from "zod";
 
 // Text template validation schema
@@ -54,4 +54,6 @@ export const voiceTemplateClientSchema = z.object({
   isDefault: z.boolean(),
 });
 
-export type TVoiceTemplateClientData = z.infer<typeof voiceTemplateClientSchema>;
+export type TVoiceTemplateClientData = z.infer<
+  typeof voiceTemplateClientSchema
+>;

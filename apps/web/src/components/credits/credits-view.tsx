@@ -11,14 +11,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { EContactChannel, type TContactChannel } from "@/config/message.config";
-import {
-  ETransactionType,
-  type TransactionType,
-} from "@/config/payment.config";
 import { swrKeys } from "@/config/swr-keys";
 import { SWR_POLLING } from "@/hooks/use-swr-action";
 import { TCreditBalance, TTransactionMetadata } from "@/schema/credits.schema";
+import {
+  EContactChannel,
+  type TContactChannel,
+} from "@auto-prospect/shared/src/config/message.config";
+import {
+  ETransactionType,
+  type TransactionType,
+} from "@auto-prospect/shared/src/config/payment.config";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useState } from "react";

@@ -1,7 +1,7 @@
 import { TemplateCard } from "@/components/templates/template-card";
 import { pages } from "@/config/routes";
 import { MessageTemplate } from "@/services/message.service";
-import { EContactChannel } from "@/config/message.config";
+import { EContactChannel } from "@auto-prospect/shared/src/config/message.config";
 import Link from "next/link";
 
 interface TemplatesViewProps {
@@ -11,10 +11,12 @@ interface TemplatesViewProps {
 export function TemplatesView({ templates }: TemplatesViewProps) {
   // Group templates by media type: text channels (SMS, WhatsApp) vs voice channels (Ringless Voice)
   const textTemplates = templates.filter(
-    (t) => t.channel === EContactChannel.SMS || t.channel === EContactChannel.WHATSAPP_TEXT
+    (t) =>
+      t.channel === EContactChannel.SMS ||
+      t.channel === EContactChannel.WHATSAPP_TEXT,
   );
   const voiceTemplates = templates.filter(
-    (t) => t.channel === EContactChannel.RINGLESS_VOICE
+    (t) => t.channel === EContactChannel.RINGLESS_VOICE,
   );
 
   return (

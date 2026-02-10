@@ -1,13 +1,4 @@
-import { EHuntStatus, HUNT_STATUS_VALUES } from "@/config/hunt.config";
-import { accounts } from "@/schema/account.schema";
-import {
-  adSubTypes,
-  adTypes,
-  brands,
-  locations,
-  TAdType,
-  TLocation,
-} from "@/schema/ad.schema";
+import { EHuntStatus, HUNT_STATUS_VALUES } from "@auto-prospect/shared";
 import {
   InferInsertModel,
   InferSelectModel,
@@ -30,6 +21,15 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { authenticatedRole, authUid } from "drizzle-orm/supabase";
+import { accounts } from "./account.schema";
+import {
+  adSubTypes,
+  adTypes,
+  brands,
+  locations,
+  TAdType,
+  TLocation,
+} from "./ad.schema";
 
 // Outreach settings type for JSONB field
 type TOutreachSettings = {
@@ -46,10 +46,7 @@ type TMessageTemplateIds = {
   ringlessVoice?: string | null;
 };
 
-export const huntStatus = pgEnum(
-  "hunt_status",
-  HUNT_STATUS_VALUES as [string, ...string[]],
-);
+export const huntStatus = pgEnum("hunt_status", HUNT_STATUS_VALUES);
 
 export const hunts = pgTable(
   "hunts",

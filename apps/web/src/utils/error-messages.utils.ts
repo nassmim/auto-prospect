@@ -1,9 +1,9 @@
 import {
-  TErrorCode,
   EGeneralErrorCode,
-  EWhatsAppErrorCode,
   ESmsErrorCode,
-} from "@/config/error-codes";
+  EWhatsAppErrorCode,
+  TErrorCode,
+} from "@auto-prospect/shared/src/config/error-codes";
 
 /**
  * Error messages mapping for WhatsApp errors
@@ -28,8 +28,7 @@ const WHATSAPP_ERROR_MESSAGES: Record<EWhatsAppErrorCode, string> = {
     "Session WhatsApp non trouvée. Veuillez vous reconnecter.",
   [EWhatsAppErrorCode.SESSION_EXPIRED]:
     "Session WhatsApp expirée. Veuillez vous reconnecter.",
-  [EWhatsAppErrorCode.SESSION_SAVE_FAILED]:
-    "Échec de sauvegarde de la session",
+  [EWhatsAppErrorCode.SESSION_SAVE_FAILED]: "Échec de sauvegarde de la session",
   [EWhatsAppErrorCode.SESSION_DELETE_FAILED]:
     "Échec de suppression de la session",
 
@@ -98,6 +97,7 @@ const ERROR_MESSAGES: Record<TErrorCode, string> = {
  */
 export const getErrorMessage = (errorCode: TErrorCode): string => {
   return (
-    ERROR_MESSAGES[errorCode] || GENERAL_ERROR_MESSAGES[EGeneralErrorCode.UNKNOWN_ERROR]
+    ERROR_MESSAGES[errorCode] ||
+    GENERAL_ERROR_MESSAGES[EGeneralErrorCode.UNKNOWN_ERROR]
   );
 };
