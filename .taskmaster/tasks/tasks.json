@@ -1984,7 +1984,7 @@
         "id": "83",
         "title": "Implement Voice/Ringless Voicemail Worker",
         "description": "Create the Voice worker that integrates with the existing sendVoiceMessage() function from voice.actions.ts to process ringless voicemail delivery jobs using Voice Partner API.",
-        "status": "in-progress",
+        "status": "done",
         "dependencies": [
           "80"
         ],
@@ -2041,7 +2041,7 @@
             "updatedAt": "2026-02-10T12:34:40.691Z"
           }
         ],
-        "updatedAt": "2026-02-10T12:34:40.691Z"
+        "updatedAt": "2026-02-10T12:35:31.574Z"
       },
       {
         "id": "84",
@@ -2053,8 +2053,9 @@
         "dependencies": [
           "80"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "in-progress",
+        "subtasks": [],
+        "updatedAt": "2026-02-10T12:36:17.210Z"
       },
       {
         "id": "85",
@@ -2166,9 +2167,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-02-10T12:34:40.692Z",
+      "lastModified": "2026-02-10T12:36:17.211Z",
       "taskCount": 91,
-      "completedCount": 78,
+      "completedCount": 79,
       "tags": [
         "master"
       ]
