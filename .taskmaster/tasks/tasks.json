@@ -1830,15 +1830,15 @@
         "testStrategy": "1. Verify all constants are exported correctly with TypeScript strict mode\n2. Update hunt.ts and confirm no hardcoded job IDs remain\n3. Run TypeScript compilation to catch any type errors\n4. Manually verify the generated job ID format matches existing pattern",
         "priority": "high",
         "dependencies": [],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [],
-        "updatedAt": "2026-02-10T12:17:01.515Z"
+        "updatedAt": "2026-02-10T12:18:41.928Z"
       },
       {
         "id": "81",
         "title": "Implement SMS Worker with Provider Integration",
         "description": "Complete the SMS worker implementation by integrating with the EXISTING sendSms() function from the web app's message.service.ts. The worker must fetch the user's encrypted SMS API key from their account, decrypt it, and call the existing SMSMobileAPI integration.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "80"
         ],
@@ -1852,9 +1852,10 @@
             "description": "Move `encryptCredentials` and `decryptCredentials` functions from `apps/web/src/utils/crypto.utils.ts` to `packages/shared/src/utils/crypto.utils.ts` to enable reuse in the worker app.",
             "dependencies": [],
             "details": "1. Create `packages/shared/src/utils/crypto.utils.ts` with the existing crypto functions\n2. Export from `packages/shared/src/index.ts`\n3. Update `apps/web/src/utils/crypto.utils.ts` to re-export from shared package\n4. Verify existing web app imports still work",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Verify web app still compiles and crypto functions work as expected after refactoring",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-02-10T12:20:36.056Z"
           },
           {
             "id": 2,
@@ -1862,9 +1863,10 @@
             "description": "Extend the SmsJob interface in `apps/worker/src/workers/sms.ts` to include the required `accountId` field for fetching user's SMS API key.",
             "dependencies": [],
             "details": "Update interface to:\n```typescript\ninterface SmsJob {\n  recipientPhone: string;\n  message: string;\n  accountId: string; // Required to fetch user's SMS API key\n  metadata?: { huntId?: string; adId?: string; leadId?: string; };\n}\n```",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "TypeScript compilation should pass with new interface",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-02-10T12:21:06.653Z"
           },
           {
             "id": 3,
@@ -1875,9 +1877,10 @@
               2
             ],
             "details": "1. Import `createDrizzleAdmin` and `accounts` from `@auto-prospect/db`\n2. Import `decryptCredentials` from `@auto-prospect/shared`\n3. Copy the `sendSms` function from `apps/web/src/services/message.service.ts:260-286` or import if moved to shared\n4. Implement the worker following the pattern from `sendSmsAction` in `apps/web/src/actions/message.actions.ts:278-336`\n5. Fetch account by accountId, decrypt smsApiKey, call sendSms\n6. Return success with messageId from API response",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit test with mocked database and API calls to verify integration flow",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-02-10T12:21:59.820Z"
           },
           {
             "id": 4,
@@ -1885,9 +1888,10 @@
             "description": "Configure the worker app to use the SMS_API_KEY_ENCRYPTION_KEY environment variable for decrypting user API keys.",
             "dependencies": [],
             "details": "1. Add `SMS_API_KEY_ENCRYPTION_KEY` to `apps/worker/.env.example`\n2. Document that this must be the same 32-byte hex key used in the web app\n3. Verify the worker loads this env var correctly at startup",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Verify worker starts without error when env var is set",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-02-10T12:22:50.198Z"
           },
           {
             "id": 5,
@@ -1897,11 +1901,13 @@
               3
             ],
             "details": "1. Import `ESmsErrorCode` from `@auto-prospect/shared/src/config/error-codes`\n2. Throw descriptive errors for:\n   - Missing API key: `ESmsErrorCode.API_KEY_REQUIRED`\n   - Missing encryption key: `ESmsErrorCode.ENCRYPTION_KEY_MISSING`\n   - API call failure: `ESmsErrorCode.MESSAGE_SEND_FAILED`\n3. Ensure BullMQ can properly retry on transient failures vs permanent failures",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test each error condition and verify correct error code is thrown",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-02-10T12:23:48.600Z"
           }
-        ]
+        ],
+        "updatedAt": "2026-02-10T12:23:48.600Z"
       },
       {
         "id": "82",
@@ -1913,8 +1919,9 @@
         "dependencies": [
           "80"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "in-progress",
+        "subtasks": [],
+        "updatedAt": "2026-02-10T12:25:59.229Z"
       },
       {
         "id": "83",
@@ -2099,9 +2106,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-02-10T12:17:01.516Z",
+      "lastModified": "2026-02-10T12:25:59.230Z",
       "taskCount": 91,
-      "completedCount": 76,
+      "completedCount": 78,
       "tags": [
         "master"
       ]
