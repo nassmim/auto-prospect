@@ -41,7 +41,6 @@
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
-    "@dotenvx/dotenvx": "^1.51.4",
     "@tailwindcss/postcss": "^4",
     "@types/react": "^19",
     "@types/react-dom": "^19",

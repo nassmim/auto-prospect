@@ -6,6 +6,8 @@
     "dev:web": "turbo run dev --filter=web",
     "dev:worker": "turbo run dev --filter=worker",
     "build": "turbo run build",
+    "build:web": "turbo run build --filter=web",
+    "build:worker": "turbo run build --filter=worker",
     "lint": "turbo run lint",
     "format": "prettier --write .",
     "db:generate": "pnpm --filter @auto-prospect/db db:generate",
@@ -18,6 +20,7 @@
     "db:dump": "pnpm --filter @auto-prospect/db db:dump"
   },
   "devDependencies": {
+    "@dotenvx/dotenvx": "^1.52.0",
     "@types/node": "^25.2.2",
     "eslint": "^9",
     "eslint-config-prettier": "^10.1.8",

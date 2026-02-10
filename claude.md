@@ -112,6 +112,7 @@ Production (remote):
 - Early returns, descriptive names (`isLoading`, `handleClick`)
 - TypeScript strict (no `any`)
 - Comment only complex/non-obvious logic
+- **NEVER add historical comments** (e.g., "renamed from X", "previously was Y", "used to be Z") - code history belongs in git, not comments
 
 **Naming**: PascalCase (components/types), kebab-case (files/dirs), camelCase (vars/funcs), UPPERCASE (env/constants)
 **Validation**: react-hook-form + Zod (client AND server - reuse schema)

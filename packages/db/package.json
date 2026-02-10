@@ -24,7 +24,6 @@
   },
   "devDependencies": {
     "drizzle-kit": "^0.31.8",
-    "@dotenvx/dotenvx": "^1.51.4",
     "tsx": "^4.21.0"
   }
 }
