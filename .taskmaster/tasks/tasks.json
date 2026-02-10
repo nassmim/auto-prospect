@@ -1948,10 +1948,10 @@
             "description": "Create a new shared package containing core Baileys functions (createDBAuthState, connectWithCredentials, sendWhatsAppMessage) that can be imported by both web app and worker.",
             "dependencies": [],
             "details": "Create `packages/whatsapp/` with:\n1. `package.json` with dependencies: @whiskeysockets/baileys, @hapi/boom, qrcode, @auto-prospect/shared\n2. `src/index.ts` exporting all functions\n3. `src/auth.ts`: createDBAuthState, StoredAuthState type\n4. `src/connection.ts`: createWhatsAppConnection, connectWithCredentials, cleanup utilities\n5. `src/messaging.ts`: sendWhatsAppMessage, checkWhatsAppNumber\n6. `src/types.ts`: WhatsAppConnectionResult, WhatsAppEventHandlers\n7. Use crypto utils from @auto-prospect/shared for encryption/decryption\n8. Add package to workspace in root package.json",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": "Unit test each function with mocked Baileys socket and verify correct socket lifecycle management",
             "parentId": "undefined",
-            "updatedAt": "2026-02-10T12:47:58.272Z"
+            "updatedAt": "2026-02-10T12:55:31.147Z"
           },
           {
             "id": 4,
@@ -1961,9 +1961,10 @@
               3
             ],
             "details": "Update `apps/web/src/services/whatsapp.service.ts`:\n1. Import core functions from @auto-prospect/whatsapp: createDBAuthState, connectWithCredentials, sendWhatsAppMessage, etc.\n2. Keep database wrapper functions (getWhatsAppSession, saveWhatsAppSession) in web app since they handle RLS\n3. Re-export types for backward compatibility with existing web app code\n4. Remove duplicate implementations, keep only web-specific wrappers\n5. Update imports in any files using whatsapp.service.ts",
-            "status": "pending",
+            "status": "in-progress",
             "testStrategy": "Verify existing WhatsApp functionality in web app works after refactor (QR code pairing, message sending)",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-02-10T12:56:05.577Z"
           },
           {
             "id": 5,
@@ -1979,7 +1980,7 @@
             "parentId": "undefined"
           }
         ],
-        "updatedAt": "2026-02-10T12:47:58.272Z"
+        "updatedAt": "2026-02-10T12:56:05.577Z"
       },
       {
         "id": "83",
@@ -2240,7 +2241,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-02-10T12:47:58.273Z",
+      "lastModified": "2026-02-10T12:56:05.578Z",
       "taskCount": 91,
       "completedCount": 80,
       "tags": [
