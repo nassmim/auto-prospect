@@ -1821,12 +1821,286 @@
         "status": "done",
         "subtasks": [],
         "updatedAt": "2026-02-02T22:04:46.937Z"
+      },
+      {
+        "id": "80",
+        "title": "Create Worker Configuration System",
+        "description": "Create a centralized configuration system for workers following the pattern from apps/web/src/config/routes.ts. This will store all worker-related constants including job ID templates, retry configurations, timeout values, and API route paths.",
+        "details": "1. Create `apps/worker/src/config/worker.config.ts` file\n2. Export job ID templates as functions:\n   - `jobIds.hunt.whatsapp(huntId, adId)` → `hunt-${huntId}-whatsapp-${adId}`\n   - `jobIds.hunt.sms(huntId, adId)` → `hunt-${huntId}-sms-${adId}`\n   - `jobIds.hunt.voice(huntId, adId)` → `hunt-${huntId}-voice-${adId}`\n3. Export retry configuration object:\n   ```typescript\n   export const RETRY_CONFIG = {\n     MESSAGE_SEND: { attempts: 3, backoff: { type: 'exponential', delay: 2000 } },\n     SCRAPING: { attempts: 2, backoff: { type: 'fixed', delay: 5000 } },\n   } as const;\n   ```\n4. Export API routes constants:\n   ```typescript\n   export const API_ROUTES = {\n     whatsapp: { text: '/api/whatsapp/text', audio: '/api/whatsapp/audio' },\n     phone: { sms: '/api/phone/sms', ringlessVoice: '/api/phone/ringless-voice' },\n     hunt: { execute: '/api/hunt/execute', status: (jobId: string) => `/api/hunt/status/${jobId}` },\n     jobs: { status: (queue: string, jobId: string) => `/api/jobs/${queue}/${jobId}` },\n   } as const;\n   ```\n5. Export timeout constants: `TIMEOUTS = { CONNECTION: 30000, QR_CODE: 120000, MESSAGE_ACK: 10000 }`\n6. Update `apps/worker/src/workers/hunt.ts` to import and use `jobIds` and `RETRY_CONFIG` instead of hardcoded values\n7. Create barrel export in `apps/worker/src/config/index.ts`",
+        "testStrategy": "1. Verify all constants are exported correctly with TypeScript strict mode\n2. Update hunt.ts and confirm no hardcoded job IDs remain\n3. Run TypeScript compilation to catch any type errors\n4. Manually verify the generated job ID format matches existing pattern",
+        "priority": "high",
+        "dependencies": [],
+        "status": "in-progress",
+        "subtasks": [],
+        "updatedAt": "2026-02-10T12:17:01.515Z"
+      },
+      {
+        "id": "81",
+        "title": "Implement SMS Worker with Provider Integration",
+        "description": "Complete the SMS worker implementation by integrating with the EXISTING sendSms() function from the web app's message.service.ts. The worker must fetch the user's encrypted SMS API key from their account, decrypt it, and call the existing SMSMobileAPI integration.",
+        "status": "pending",
+        "dependencies": [
+          "80"
+        ],
+        "priority": "high",
+        "details": "**CRITICAL: This is an INTEGRATION-ONLY task. Do NOT implement a new SMS provider. Use the existing SMSMobileAPI integration.**\n\n1. Update `apps/worker/src/workers/sms.ts` to extend the existing interface:\n   ```typescript\n   interface SmsJob {\n     recipientPhone: string;\n     message: string;\n     accountId: string; // Required to fetch user's SMS API key\n     metadata?: { huntId?: string; adId?: string; leadId?: string; };\n   }\n   ```\n\n2. Import required utilities and services:\n   - Import `createDrizzleAdmin` from `@auto-prospect/db` for database access (worker uses admin client, no RLS)\n   - Import `accounts` schema from `@auto-prospect/db`\n   - Copy or import `decryptCredentials` utility from `apps/web/src/utils/crypto.utils.ts` (may need to move to shared package)\n   - Import `sendSms` function from web app or duplicate the simple implementation\n\n3. Implement `smsWorker` function following the pattern from `apps/web/src/actions/message.actions.ts:278-336`:\n   ```typescript\n   export async function smsWorker(job: Job<SmsJob>) {\n     const { recipientPhone, message, accountId, metadata } = job.data;\n     \n     // Step 1: Fetch user's account to get their encrypted SMS API key\n     const db = createDrizzleAdmin();\n     const account = await db.query.accounts.findFirst({\n       where: (table, { eq }) => eq(table.id, accountId),\n       columns: { smsApiKey: true },\n     });\n     \n     if (!account?.smsApiKey) {\n       throw new Error('ESmsErrorCode.API_KEY_REQUIRED');\n     }\n     \n     // Step 2: Decrypt the API key\n     const encryptionKey = process.env.SMS_API_KEY_ENCRYPTION_KEY;\n     if (!encryptionKey) {\n       throw new Error('ESmsErrorCode.ENCRYPTION_KEY_MISSING');\n     }\n     const decryptedApiKey = decryptCredentials(account.smsApiKey, encryptionKey);\n     \n     // Step 3: Call existing sendSms function (SMSMobileAPI)\n     const result = await sendSms({ to: recipientPhone, message, apiKey: decryptedApiKey });\n     \n     return { success: true, messageId: result.message_id, timestamp: new Date().toISOString() };\n   }\n   ```\n\n4. The `sendSms` function (from `apps/web/src/services/message.service.ts:260-286`) uses:\n   - API endpoint: `https://api.smsmobileapi.com/sendsms/`\n   - Content-Type: `application/x-www-form-urlencoded`\n   - Parameters: `apikey`, `recipients`, `message`, `sendsms=1`\n\n5. Add required environment variable to worker:\n   - `SMS_API_KEY_ENCRYPTION_KEY` - same 32-byte hex key used in web app\n\n6. Handle errors with appropriate error codes from `@auto-prospect/shared/src/config/error-codes.ts`:\n   - `ESmsErrorCode.API_KEY_REQUIRED` - when account has no SMS API key\n   - `ESmsErrorCode.ENCRYPTION_KEY_MISSING` - when env var not set\n   - `ESmsErrorCode.MESSAGE_SEND_FAILED` - when API call fails\n\n7. Optional: Move `decryptCredentials` from `apps/web/src/utils/crypto.utils.ts` to `packages/shared` for reuse across apps",
+        "testStrategy": "1. Unit test with mocked database returning encrypted API key and verify decryption is called\n2. Test error handling when account has no smsApiKey configured\n3. Test error handling when SMS_API_KEY_ENCRYPTION_KEY env var is missing\n4. Mock the SMSMobileAPI endpoint to verify correct request format (URLSearchParams with apikey, recipients, message, sendsms=1)\n5. Integration test with SMSMobileAPI test credentials if available\n6. Verify job retry behavior on transient API failures\n7. Test metadata propagation when huntId/leadId is provided",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Move crypto utilities to shared package for worker access",
+            "description": "Move `encryptCredentials` and `decryptCredentials` functions from `apps/web/src/utils/crypto.utils.ts` to `packages/shared/src/utils/crypto.utils.ts` to enable reuse in the worker app.",
+            "dependencies": [],
+            "details": "1. Create `packages/shared/src/utils/crypto.utils.ts` with the existing crypto functions\n2. Export from `packages/shared/src/index.ts`\n3. Update `apps/web/src/utils/crypto.utils.ts` to re-export from shared package\n4. Verify existing web app imports still work",
+            "status": "pending",
+            "testStrategy": "Verify web app still compiles and crypto functions work as expected after refactoring",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Update SmsJob interface with accountId field",
+            "description": "Extend the SmsJob interface in `apps/worker/src/workers/sms.ts` to include the required `accountId` field for fetching user's SMS API key.",
+            "dependencies": [],
+            "details": "Update interface to:\n```typescript\ninterface SmsJob {\n  recipientPhone: string;\n  message: string;\n  accountId: string; // Required to fetch user's SMS API key\n  metadata?: { huntId?: string; adId?: string; leadId?: string; };\n}\n```",
+            "status": "pending",
+            "testStrategy": "TypeScript compilation should pass with new interface",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Implement SMS worker with sendSms integration",
+            "description": "Complete the smsWorker function to fetch user's encrypted API key from database, decrypt it, and call the existing SMSMobileAPI sendSms function.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "1. Import `createDrizzleAdmin` and `accounts` from `@auto-prospect/db`\n2. Import `decryptCredentials` from `@auto-prospect/shared`\n3. Copy the `sendSms` function from `apps/web/src/services/message.service.ts:260-286` or import if moved to shared\n4. Implement the worker following the pattern from `sendSmsAction` in `apps/web/src/actions/message.actions.ts:278-336`\n5. Fetch account by accountId, decrypt smsApiKey, call sendSms\n6. Return success with messageId from API response",
+            "status": "pending",
+            "testStrategy": "Unit test with mocked database and API calls to verify integration flow",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Add SMS_API_KEY_ENCRYPTION_KEY to worker environment",
+            "description": "Configure the worker app to use the SMS_API_KEY_ENCRYPTION_KEY environment variable for decrypting user API keys.",
+            "dependencies": [],
+            "details": "1. Add `SMS_API_KEY_ENCRYPTION_KEY` to `apps/worker/.env.example`\n2. Document that this must be the same 32-byte hex key used in the web app\n3. Verify the worker loads this env var correctly at startup",
+            "status": "pending",
+            "testStrategy": "Verify worker starts without error when env var is set",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Add error handling with shared error codes",
+            "description": "Implement proper error handling using ESmsErrorCode from the shared package for consistent error messaging across apps.",
+            "dependencies": [
+              3
+            ],
+            "details": "1. Import `ESmsErrorCode` from `@auto-prospect/shared/src/config/error-codes`\n2. Throw descriptive errors for:\n   - Missing API key: `ESmsErrorCode.API_KEY_REQUIRED`\n   - Missing encryption key: `ESmsErrorCode.ENCRYPTION_KEY_MISSING`\n   - API call failure: `ESmsErrorCode.MESSAGE_SEND_FAILED`\n3. Ensure BullMQ can properly retry on transient failures vs permanent failures",
+            "status": "pending",
+            "testStrategy": "Test each error condition and verify correct error code is thrown",
+            "parentId": "undefined"
+          }
+        ]
+      },
+      {
+        "id": "82",
+        "title": "Implement WhatsApp Worker with Baileys Integration",
+        "description": "Complete the WhatsApp worker by integrating with the existing whatsapp.service.ts functions (getWhatsAppSession, connectWithCredentials, sendWhatsAppMessage) for actual message delivery.",
+        "details": "1. Update `apps/worker/src/workers/whatsapp.ts` imports:\n   ```typescript\n   import { getWhatsAppSession, connectWithCredentials, sendWhatsAppMessage, updateWhatsAppConnectionStatus } from '@auto-prospect/web/services/whatsapp.service';\n   import { createDrizzleSupabaseClient } from '@auto-prospect/db';\n   ```\n2. Implement `whatsappWorker` function flow:\n   - Get account from database using `metadata.accountId` or lookup by senderPhone\n   - Call `getWhatsAppSession(accountId, { bypassRLS: true })` to retrieve stored credentials\n   - Validate credentials exist, throw error with `EWhatsAppErrorCode.SESSION_NOT_FOUND` if not\n   - Call `connectWithCredentials(credentials)` to establish socket connection\n   - Call `socket.waitForConnection()` with timeout handling\n   - Call `sendWhatsAppMessage(socket, recipientPhone, message)` for actual send\n   - Update message status in database on success/failure\n   - Call `cleanup()` to close socket connection\n3. Handle WhatsApp-specific errors:\n   - `RECIPIENT_INVALID` - number not on WhatsApp\n   - `MESSAGE_SEND_FAILED` - delivery failure\n   - `SESSION_EXPIRED` - need to re-authenticate\n4. Implement session caching/pooling consideration for performance (optional optimization)\n5. Use `RETRY_CONFIG.MESSAGE_SEND` from worker config",
+        "testStrategy": "1. Unit test with mocked whatsapp.service functions\n2. Test session retrieval and connection flow\n3. Test error handling for missing session, expired session, invalid recipient\n4. Verify socket cleanup is always called (even on error)\n5. Integration test with test WhatsApp number in sandbox mode",
+        "priority": "high",
+        "dependencies": [
+          "80"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "83",
+        "title": "Implement Voice/Ringless Voicemail Worker",
+        "description": "Create the Voice worker that integrates with the existing sendVoiceMessage() function from voice.actions.ts to process ringless voicemail delivery jobs using Voice Partner API.",
+        "status": "pending",
+        "dependencies": [
+          "80"
+        ],
+        "priority": "high",
+        "details": "**INTEGRATION-ONLY TASK**: Use the existing `sendVoiceMessage()` function from `apps/web/src/actions/voice.actions.ts` (lines 27-87).\n\n## Existing Implementation Details\n- **API Endpoint**: `https://api.voicepartner.fr/v1/campaign/send`\n- **Environment Variable**: `VOICE_PARTNER_API_KEY`\n- **Audio Support**: Pre-recorded audio ONLY via `tokenAudio` parameter (NO TTS support)\n- **Function Signature**: `sendVoiceMessage(input: SendVoiceMessageInput): Promise<SendVoiceMessageResult>`\n\n## Implementation Steps\n\n1. **Update `apps/worker/src/workers/voice.ts` interface**:\n   ```typescript\n   interface VoiceJob {\n     recipientPhone: string; // Phone number(s) to call - sent as phoneNumbers to Voice Partner\n     tokenAudio: string; // Required: Pre-recorded audio token from Voice Partner\n     sender?: string; // Optional: Caller ID\n     emailForNotification?: string; // Optional: Email for delivery notifications\n     scheduledDate?: string; // Optional: Schedule for future delivery\n     metadata?: {\n       huntId?: string;\n       accountId?: string;\n       adId?: string;\n     };\n   }\n   ```\n\n2. **Import existing `sendVoiceMessage` function**:\n   ```typescript\n   import { sendVoiceMessage } from '@auto-prospect/web/actions/voice.actions';\n   ```\n\n3. **Implement `voiceWorker` function**:\n   - Extract job data: `recipientPhone`, `tokenAudio`, optional fields\n   - Validate required fields (recipientPhone and tokenAudio are mandatory)\n   - Call `sendVoiceMessage()` with proper input mapping:\n     ```typescript\n     const result = await sendVoiceMessage({\n       phoneNumbers: job.data.recipientPhone,\n       tokenAudio: job.data.tokenAudio,\n       sender: job.data.sender,\n       emailForNotification: job.data.emailForNotification,\n       scheduledDate: job.data.scheduledDate,\n     });\n     ```\n   - Handle response: check `result.success`, throw error if failed\n   - Return success data with Voice Partner response\n\n4. **Error Handling**:\n   - Missing `tokenAudio` → throw validation error (pre-recorded audio is REQUIRED)\n   - Missing `recipientPhone` → throw validation error\n   - API key missing → caught by existing function, throws error\n   - Voice Partner API errors → propagate from sendVoiceMessage result\n\n5. **Logging**:\n   - Log job start with job.id and metadata\n   - Log success/failure with Voice Partner response data\n   - Include huntId/adId in logs for traceability\n\n## DO NOT Implement\n- ❌ New voice provider integration (Twilio, Drop.co, Slybroadcast)\n- ❌ Text-to-Speech (TTS) functionality\n- ❌ Custom API calls to Voice Partner (use existing function)\n- ❌ Additional environment variables beyond VOICE_PARTNER_API_KEY",
+        "testStrategy": "1. **Unit tests** with mocked `sendVoiceMessage` function:\n   - Test successful voice message delivery\n   - Test with all optional parameters (sender, emailForNotification, scheduledDate)\n   - Test with minimal required parameters only\n\n2. **Validation tests**:\n   - Test missing `tokenAudio` throws validation error\n   - Test missing `recipientPhone` throws validation error\n\n3. **Error handling tests**:\n   - Test Voice Partner API error response handling\n   - Test API key missing scenario\n   - Verify errors are properly propagated for BullMQ retry logic\n\n4. **Integration test** with Voice Partner sandbox/test credentials:\n   - Verify actual API call succeeds with test token\n   - Verify response data is correctly returned\n\n5. **Metadata tracking test**:\n   - Verify huntId, accountId, adId are logged correctly\n   - Verify job completion returns expected data structure",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Update VoiceJob interface for Voice Partner integration",
+            "description": "Modify the VoiceJob interface in apps/worker/src/workers/voice.ts to match Voice Partner API requirements with tokenAudio (required) instead of message/audioUrl.",
+            "dependencies": [],
+            "details": "Replace current interface with:\n```typescript\ninterface VoiceJob {\n  recipientPhone: string;\n  tokenAudio: string; // Required: Pre-recorded audio token\n  sender?: string;\n  emailForNotification?: string;\n  scheduledDate?: string;\n  metadata?: { huntId?: string; accountId?: string; adId?: string; };\n}\n```\nRemove the `message` field as TTS is not supported. The `tokenAudio` is now required.",
+            "status": "pending",
+            "testStrategy": "Verify TypeScript compilation succeeds with new interface. Test that jobs missing tokenAudio fail type checking.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Import and integrate sendVoiceMessage function",
+            "description": "Import the existing sendVoiceMessage function from apps/web/src/actions/voice.actions.ts and wire it into the voiceWorker.",
+            "dependencies": [
+              1
+            ],
+            "details": "Add import statement:\n```typescript\nimport { sendVoiceMessage } from '@auto-prospect/web/actions/voice.actions';\n```\nThen call it in voiceWorker with mapped parameters:\n```typescript\nconst result = await sendVoiceMessage({\n  phoneNumbers: job.data.recipientPhone,\n  tokenAudio: job.data.tokenAudio,\n  sender: job.data.sender,\n  emailForNotification: job.data.emailForNotification,\n  scheduledDate: job.data.scheduledDate,\n});\n```",
+            "status": "pending",
+            "testStrategy": "Verify import resolves correctly. Mock sendVoiceMessage and verify it's called with correct parameters.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Implement error handling and response processing",
+            "description": "Add proper error handling for sendVoiceMessage responses and validation of required fields (tokenAudio, recipientPhone).",
+            "dependencies": [
+              2
+            ],
+            "details": "Handle the SendVoiceMessageResult:\n```typescript\nif (!result.success) {\n  throw new Error(result.error || 'Voice message delivery failed');\n}\nreturn {\n  success: true,\n  data: result.data,\n  timestamp: new Date().toISOString(),\n};\n```\nAdd validation at start:\n```typescript\nif (!job.data.tokenAudio) {\n  throw new Error('tokenAudio is required - TTS is not supported');\n}\nif (!job.data.recipientPhone) {\n  throw new Error('recipientPhone is required');\n}\n```",
+            "status": "pending",
+            "testStrategy": "Test with missing tokenAudio throws error. Test with failed API response throws error. Test successful response returns correct structure.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Add structured logging with metadata",
+            "description": "Add consistent logging throughout voiceWorker to track job processing, including huntId/adId from metadata for traceability.",
+            "dependencies": [
+              3
+            ],
+            "details": "Add logging:\n```typescript\nconsole.log(`Processing Voice job ${job.id}:`, {\n  recipientPhone: job.data.recipientPhone,\n  hasScheduledDate: !!job.data.scheduledDate,\n  metadata: job.data.metadata,\n});\n// After success:\nconsole.log(`Voice job ${job.id} completed:`, result.data);\n// On error:\nconsole.error(`Voice job ${job.id} failed:`, error);\n```\nFollow pattern from whatsapp.ts worker for consistency.",
+            "status": "pending",
+            "testStrategy": "Verify logs include job ID and metadata. Verify error logs include error details.",
+            "parentId": "undefined"
+          }
+        ]
+      },
+      {
+        "id": "84",
+        "title": "Implement Scraping/Lobstr Worker",
+        "description": "Create the scraping worker that processes Lobstr webhook results and saves ads to the database using the existing lobstr.service.ts functions.",
+        "details": "1. Update `apps/worker/src/workers/scraping.ts` interface:\n   ```typescript\n   interface ScrapingJob {\n     runId: string; // Lobstr run ID from webhook\n     huntId?: string; // Optional: associate with specific hunt\n   }\n   ```\n2. Implement `scrapingWorker` function:\n   - Import `handleLobstrWebhook` from `@auto-prospect/web/services/lobstr.service`\n   - Call `handleLobstrWebhook(runId)` which internally:\n     - Fetches results from Lobstr API\n     - Maps ads to database schema\n     - Inserts/updates ads in database\n   - On success, update hunt's `lastScanAt` timestamp if huntId provided:\n     ```typescript\n     await dbClient.admin.update(hunts)\n       .set({ lastScanAt: new Date() })\n       .where(eq(hunts.id, huntId));\n     ```\n3. Handle large batch processing:\n   - Lobstr returns up to 10,000 ads per run\n   - Consider chunking if needed for memory efficiency\n4. Error handling:\n   - Log Lobstr API failures\n   - Send admin alert on critical failures (already in lobstr.service)\n   - Retry on transient network errors\n5. Create webhook route in worker if not exists:\n   - `POST /api/webhooks/lobstr` → queue scraping job\n6. Use `RETRY_CONFIG.SCRAPING` from worker config",
+        "testStrategy": "1. Unit test with mocked Lobstr API response\n2. Test ad mapping and database insertion\n3. Test hunt lastScanAt update\n4. Test error handling for API failures\n5. Integration test with Lobstr sandbox/test cluster",
+        "priority": "high",
+        "dependencies": [
+          "80"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "85",
+        "title": "Integrate Message Sending into Daily Hunts Workflow",
+        "description": "Update the hunt.service.ts to dispatch actual messages through channel queues (SMS, WhatsApp, Voice) instead of just consuming credits. Connect the web app's daily hunt logic with the worker's message queues.",
+        "details": "1. Create worker API client in web app:\n   - Create `apps/web/src/services/worker-api.service.ts`\n   - Export `dispatchHuntMessages(huntId, accountId, contacts[])`\n   - Makes HTTP POST to worker's `/api/hunt/execute` endpoint\n   - Passes Bearer token from `API_SECRET` env var\n2. Update `apps/web/src/services/hunt.service.ts` `contactAdsOwners` function:\n   - After allocation loop, collect all allocated contacts with their channel assignments\n   - Build contact list matching `HuntContact` interface from hunt.ts:\n     ```typescript\n     { adId, recipientPhone, channel, message, senderPhone?, audioUrl? }\n     ```\n   - Fetch message template for the hunt and personalize per contact\n   - Call `dispatchHuntMessages(huntId, accountId, contacts)`\n   - Remove the TODO comment at line 134\n3. Update credit consumption flow:\n   - Option A: Consume credits before dispatch (current approach) - risk of credit loss on send failure\n   - Option B: Consume credits on worker success callback - requires webhook from worker\n   - Recommend Option A with compensation logic on job failure\n4. Add message template fetching:\n   - Get hunt's message template\n   - Personalize with ad data (title, price, owner name, etc.)\n5. Handle partial failures gracefully:\n   - If dispatch fails, credits already consumed need rollback consideration",
+        "testStrategy": "1. Unit test allocation to contact mapping\n2. Test message template personalization\n3. Integration test with worker endpoint mocked\n4. Test credit consumption/rollback flow\n5. End-to-end test: trigger daily hunt → verify jobs in Redis queues",
+        "priority": "high",
+        "dependencies": [
+          "81",
+          "82",
+          "83"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "86",
+        "title": "Create Active Hunts Fetch Worker",
+        "description": "Move the fetchAllActiveHunts function into a dedicated worker for background processing. This improves performance for accounts with many hunts by processing asynchronously.",
+        "details": "1. Create new queue for active hunts:\n   - Update `apps/worker/src/queues/index.ts`:\n     ```typescript\n     QUEUE_NAMES.ACTIVE_HUNTS = 'active-hunts';\n     export const activeHuntsQueue = new Queue(QUEUE_NAMES.ACTIVE_HUNTS, { connection, defaultJobOptions });\n     ```\n2. Create `apps/worker/src/workers/fetch-active-hunts.ts`:\n   ```typescript\n   interface FetchActiveHuntsJob {\n     triggeredAt: string; // ISO timestamp for tracking\n   }\n   ```\n3. Implement `fetchActiveHuntsWorker` function:\n   - Query all active hunts from database (using admin client, bypass RLS)\n   - For each hunt, dispatch to hunt queue for processing:\n     ```typescript\n     await huntQueue.add(`daily-hunt-${hunt.id}`, { huntId: hunt.id, accountId: hunt.accountId });\n     ```\n   - Implement pagination for large hunt counts (1000+ hunts)\n   - Log duration and hunt count for monitoring\n4. Create scheduled trigger:\n   - Add cron job in worker entry point or use BullMQ's `repeat` option:\n     ```typescript\n     activeHuntsQueue.add('daily-fetch', {}, { repeat: { cron: '0 8 * * *' } }); // 8 AM daily\n     ```\n5. Update QUEUE_NAMES constant and export new queue\n6. Add monitoring metrics: fetch duration, hunt count, error rate",
+        "testStrategy": "1. Unit test hunt fetching and queue dispatch\n2. Test pagination logic with large dataset\n3. Test cron scheduling configuration\n4. Verify jobs appear in hunt queue\n5. Performance test with 1000+ hunts",
+        "priority": "high",
+        "dependencies": [
+          "80"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "87",
+        "title": "Create Daily Hunts Orchestrator Worker",
+        "description": "Create a master orchestrator worker that coordinates the entire daily hunt process: triggering active hunt fetches, processing each hunt, managing concurrency, and tracking overall progress.",
+        "details": "1. Create new queue for orchestrator:\n   - Add to `QUEUE_NAMES`: `DAILY_ORCHESTRATOR = 'daily-orchestrator'`\n2. Create `apps/worker/src/workers/daily-orchestrator.ts`:\n   ```typescript\n   interface DailyOrchestratorJob {\n     triggeredAt: string;\n     source: 'cron' | 'manual';\n   }\n   ```\n3. Implement `dailyOrchestratorWorker` function:\n   - Create daily contact tracker instance (import from web app service)\n   - Fetch all active hunts (could delegate to fetch-active-hunts worker or do inline)\n   - Process hunts with controlled concurrency (5 parallel as in current bulkSend):\n     ```typescript\n     const pLimit = require('p-limit');\n     const limit = pLimit(5);\n     await Promise.all(hunts.map(hunt => limit(() => processHunt(hunt, dailyContactTracker))));\n     ```\n   - For each hunt, dispatch contacts to hunt queue\n   - Track overall progress: hunts processed, messages queued, errors\n   - Respect daily contact limits across all hunts\n4. Add comprehensive logging:\n   - Start/end timestamps\n   - Hunts processed count\n   - Total messages dispatched\n   - Error summary\n5. Create scheduled trigger:\n   - Cron at configured time (e.g., 8 AM local time)\n6. Add graceful error handling:\n   - One hunt failure shouldn't stop others\n   - Aggregate errors for post-run reporting",
+        "testStrategy": "1. Unit test orchestration flow with mocked workers\n2. Test concurrency limiting (max 5 parallel)\n3. Test daily contact tracker integration\n4. Test error isolation between hunts\n5. Integration test full daily run with test data",
+        "priority": "high",
+        "dependencies": [
+          "85",
+          "86"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "88",
+        "title": "Update Worker Routes to Use Configuration",
+        "description": "Refactor all worker route handlers to use the centralized configuration system instead of hardcoded values, ensuring consistency and maintainability.",
+        "details": "1. Update `apps/worker/src/routes/hunt.routes.ts`:\n   - Import `{ API_ROUTES, QUEUE_NAMES }` from config\n   - Replace hardcoded `/api/hunt/execute` with `API_ROUTES.hunt.execute`\n   - Replace queue name strings with `QUEUE_NAMES.HUNT`\n2. Update `apps/worker/src/routes/whatsapp.routes.ts`:\n   - Import config constants\n   - Replace `/api/whatsapp/text` with `API_ROUTES.whatsapp.text`\n   - Replace queue name with `QUEUE_NAMES.WHATSAPP`\n3. Update `apps/worker/src/routes/phone.routes.ts`:\n   - Replace `/api/phone/sms` with `API_ROUTES.phone.sms`\n   - Replace `/api/phone/ringless-voice` with `API_ROUTES.phone.ringlessVoice`\n   - Use `QUEUE_NAMES.SMS` and `QUEUE_NAMES.VOICE`\n4. Update `apps/worker/src/routes/jobs.routes.ts`:\n   - Replace hardcoded paths with config\n   - Use `QUEUE_NAMES` for queue validation\n5. Update error messages to use config values:\n   - `Queue ${QUEUE_NAMES.SMS} not found` instead of hardcoded strings\n6. Verify all route registrations in `apps/worker/src/index.ts` use config\n7. Run linter to ensure no unused imports from old hardcoded approach",
+        "testStrategy": "1. Verify TypeScript compilation passes\n2. Test each route endpoint responds correctly\n3. Verify error messages include correct config values\n4. No hardcoded queue names or paths remain (grep verification)\n5. Integration test all API endpoints",
+        "priority": "medium",
+        "dependencies": [
+          "80"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "89",
+        "title": "Create Worker Service Layer",
+        "description": "Create a service layer in the worker app that mirrors the web app pattern, containing reusable business logic for message sending, credit tracking, and queue management.",
+        "details": "1. Create `apps/worker/src/services/` directory structure\n2. Create `apps/worker/src/services/message.service.ts`:\n   - `formatPhoneNumber(phone: string): string` - normalize phone format\n   - `personalizeMessage(template: string, data: Record<string, string>): string`\n   - `trackMessageStatus(messageId: string, status: 'sent' | 'failed' | 'delivered')`\n   - Shared logic for all message types\n3. Create `apps/worker/src/services/credit.service.ts`:\n   - Import and re-export relevant functions from web app credit.service\n   - Or create worker-specific version using admin client (bypass RLS)\n   - `consumeCreditForMessage(huntId, channel, messageId)` - worker context\n4. Create `apps/worker/src/services/queue.service.ts`:\n   - `dispatchToChannel(channel: string, jobData: object)` - route to correct queue\n   - `getJobStatus(queueName: string, jobId: string)` - fetch job status\n   - `retryFailedJob(queueName: string, jobId: string)` - manual retry\n5. Create `apps/worker/src/services/db.service.ts`:\n   - Wrapper for database client with admin context\n   - Ensures workers always bypass RLS\n   - `getAdminClient()` - returns db client in admin mode\n6. Create `apps/worker/src/services/index.ts` barrel export\n7. Add TypeScript types for all service functions\n8. Update workers to use service layer instead of inline logic",
+        "testStrategy": "1. Unit test each service function\n2. Test phone number formatting edge cases\n3. Test message personalization with various templates\n4. Test credit consumption with mocked database\n5. Verify services work with worker-specific context (admin mode)",
+        "priority": "medium",
+        "dependencies": [
+          "80"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "90",
+        "title": "Implement Worker Error Tracking and Monitoring",
+        "description": "Add comprehensive error tracking, structured logging, and monitoring capabilities to all workers for production observability and debugging.",
+        "details": "1. Create `apps/worker/src/utils/logger.ts`:\n   - Use structured logging (pino or winston)\n   - Include context: workerId, jobId, queueName, timestamp\n   - Log levels: debug, info, warn, error\n   - Format: JSON for production, pretty for development\n   ```typescript\n   export const logger = pino({ level: process.env.LOG_LEVEL || 'info' });\n   export const createJobLogger = (queueName: string, jobId: string) => logger.child({ queueName, jobId });\n   ```\n2. Create `apps/worker/src/utils/metrics.ts`:\n   - Track job duration: start/end timestamps\n   - Track success/failure rates per queue\n   - Export metrics for Prometheus/DataDog/etc.\n   ```typescript\n   export const recordJobMetric = (queue: string, status: 'success' | 'failure', durationMs: number) => {...}\n   ```\n3. Integrate error tracking (Sentry):\n   - Add `@sentry/node` to worker dependencies\n   - Initialize in `apps/worker/src/index.ts`\n   - Capture exceptions in all workers with context\n   - Add breadcrumbs for job flow\n4. Create health check endpoint:\n   - `GET /health` - returns { status: 'ok', queues: {...}, uptime }\n   - Include Redis connection status\n   - Include queue stats (waiting, active, failed counts)\n5. Update all workers to use structured logging:\n   - Replace `console.log/error` with logger\n   - Add metrics recording on job completion\n6. Add BullMQ event listeners for global error tracking:\n   - `on('failed')` - log and report all failures\n   - `on('stalled')` - alert on stalled jobs\n7. Environment variables: `SENTRY_DSN`, `LOG_LEVEL`",
+        "testStrategy": "1. Verify structured logs are JSON formatted\n2. Test health endpoint returns correct status\n3. Verify Sentry captures errors (use test DSN)\n4. Test metrics collection accuracy\n5. Load test and verify no logging performance impact",
+        "priority": "medium",
+        "dependencies": [
+          "81",
+          "82",
+          "83",
+          "84"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "91",
+        "title": "Update Worker Documentation",
+        "description": "Document the worker architecture, job flows, deployment instructions, and create comprehensive README and architecture documentation.",
+        "details": "1. Update `apps/worker/ARCHITECTURE.md`:\n   - Document all workers (SMS, WhatsApp, Voice, Scraping, Hunt, Orchestrator)\n   - Include data flow diagrams (ASCII or Mermaid)\n   - Document queue structure and job data schemas\n   - Explain retry strategies and error handling\n   - Document session management (WhatsApp Baileys)\n   - Include rate limiting considerations\n2. Update `apps/worker/README.md`:\n   - Setup instructions (Redis, environment variables)\n   - Required environment variables list with descriptions\n   - Local development: `pnpm dev` commands\n   - Running with Docker\n   - Deployment process (CI/CD notes)\n   - Monitoring and observability setup\n3. Add JSDoc comments to complex worker logic:\n   - Document function parameters and return types\n   - Explain business logic decisions\n   - Note any edge cases or gotchas\n4. Create `apps/worker/docs/` directory (optional):\n   - `queue-schemas.md` - detailed job data schemas\n   - `troubleshooting.md` - common issues and solutions\n5. Update root README if needed to reference worker documentation",
+        "testStrategy": "1. Review documentation for accuracy against code\n2. Follow setup instructions on clean environment\n3. Verify all environment variables are documented\n4. Have team member review for clarity\n5. Test code examples in documentation compile",
+        "priority": "low",
+        "dependencies": [
+          "80",
+          "81",
+          "82",
+          "83",
+          "84",
+          "85",
+          "86",
+          "87",
+          "88",
+          "89",
+          "90"
+        ],
+        "status": "pending",
+        "subtasks": []
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-02-02T22:04:46.938Z",
-      "taskCount": 79,
+      "lastModified": "2026-02-10T12:17:01.516Z",
+      "taskCount": 91,
       "completedCount": 76,
       "tags": [
         "master"

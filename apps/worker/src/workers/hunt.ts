@@ -20,6 +20,7 @@
 
 import { Job } from "bullmq";
 import { whatsappQueue, smsQueue, voiceQueue } from "../queues";
+import { jobIds, RETRY_CONFIG } from "../config";
 
 /**
  * Contact represents a single prospect to be contacted during a hunt
@@ -91,7 +92,7 @@ export async function huntWorker(job: Job<HuntJob>) {
           }
 
           const whatsappJob = await whatsappQueue.add(
-            `hunt-${huntId}-whatsapp-${contact.adId}`,
+            jobIds.hunt.whatsapp(huntId, contact.adId),
             {
               recipientPhone: contact.recipientPhone,
               senderPhone: contact.senderPhone,
@@ -103,14 +104,7 @@ export async function huntWorker(job: Job<HuntJob>) {
                 adId: contact.adId,
               },
             },
-            {
-              // Retry configuration for individual messages
-              attempts: 3,
-              backoff: {
-                type: "exponential",
-                delay: 2000, // Start with 2 seconds, doubles each retry
-              },
-            }
+            RETRY_CONFIG.MESSAGE_SEND
           );
 
           channelJobId = whatsappJob.id;
@@ -119,7 +113,7 @@ export async function huntWorker(job: Job<HuntJob>) {
 
         case "sms": {
           const smsJob = await smsQueue.add(
-            `hunt-${huntId}-sms-${contact.adId}`,
+            jobIds.hunt.sms(huntId, contact.adId),
             {
               recipientPhone: contact.recipientPhone,
               message: contact.message,
@@ -129,13 +123,7 @@ export async function huntWorker(job: Job<HuntJob>) {
                 adId: contact.adId,
               },
             },
-            {
-              attempts: 3,
-              backoff: {
-                type: "exponential",
-                delay: 2000,
-              },
-            }
+            RETRY_CONFIG.MESSAGE_SEND
           );
 
           channelJobId = smsJob.id;
@@ -144,7 +132,7 @@ export async function huntWorker(job: Job<HuntJob>) {
 
         case "ringless_voice": {
           const voiceJob = await voiceQueue.add(
-            `hunt-${huntId}-voice-${contact.adId}`,
+            jobIds.hunt.voice(huntId, contact.adId),
             {
               recipientPhone: contact.recipientPhone,
               message: contact.message,
@@ -155,13 +143,7 @@ export async function huntWorker(job: Job<HuntJob>) {
                 adId: contact.adId,
               },
             },
-            {
-              attempts: 3,
-              backoff: {
-                type: "exponential",
-                delay: 2000,
-              },
-            }
+            RETRY_CONFIG.MESSAGE_SEND
           );
 
           channelJobId = voiceJob.id;
