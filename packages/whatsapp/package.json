@@ -1,0 +1,23 @@
+{
+  "name": "@auto-prospect/whatsapp",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "build": "echo 'no build needed'"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.11",
+    "@hapi/boom": "^10.0.1",
+    "qrcode": "^1.5.4",
+    "@auto-prospect/shared": "workspace:*",
+    "@auto-prospect/db": "workspace:*",
+    "drizzle-orm": "^0.37.0"
+  },
+  "devDependencies": {
+    "@types/qrcode": "^1.5.5",
+    "@types/node": "^25.2.2",
+    "typescript": "^5"
+  }
+}
