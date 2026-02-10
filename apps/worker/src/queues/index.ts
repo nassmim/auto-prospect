@@ -6,8 +6,6 @@ export const QUEUE_NAMES = {
   SMS: "sms",
   VOICE: "voice",
   SCRAPING: "scraping",
-  HUNT: "hunt",
-  ACTIVE_HUNTS: "active-hunts",
   DAILY_ORCHESTRATOR: "daily-orchestrator",
 } as const;
 
@@ -43,22 +41,6 @@ export const scrapingQueue = new Queue(QUEUE_NAMES.SCRAPING, {
   },
 });
 
-export const huntQueue = new Queue(QUEUE_NAMES.HUNT, {
-  connection,
-  defaultJobOptions: {
-    removeOnComplete: 100,
-    removeOnFail: 1000,
-  },
-});
-
-export const activeHuntsQueue = new Queue(QUEUE_NAMES.ACTIVE_HUNTS, {
-  connection,
-  defaultJobOptions: {
-    removeOnComplete: 100,
-    removeOnFail: 1000,
-  },
-});
-
 export const dailyOrchestratorQueue = new Queue(
   QUEUE_NAMES.DAILY_ORCHESTRATOR,
   {
@@ -75,8 +57,6 @@ export const queues = {
   [QUEUE_NAMES.SMS]: smsQueue,
   [QUEUE_NAMES.VOICE]: voiceQueue,
   [QUEUE_NAMES.SCRAPING]: scrapingQueue,
-  [QUEUE_NAMES.HUNT]: huntQueue,
-  [QUEUE_NAMES.ACTIVE_HUNTS]: activeHuntsQueue,
   [QUEUE_NAMES.DAILY_ORCHESTRATOR]: dailyOrchestratorQueue,
 };
 

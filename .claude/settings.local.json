@@ -1,8 +1,14 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(task-master remove-task:*)",
+      "Bash(task-master generate:*)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "filesystem",
     "next-devtools",
     "supabase"
-  ],
-  "enableAllProjectMcpServers": true
+  ]
 }

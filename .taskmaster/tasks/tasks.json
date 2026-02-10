@@ -2173,9 +2173,9 @@
           "85",
           "86"
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [],
-        "updatedAt": "2026-02-10T14:08:46.722Z"
+        "updatedAt": "2026-02-10T14:37:52.474Z"
       },
       {
         "id": "88",
@@ -2187,8 +2187,9 @@
         "dependencies": [
           "80"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-02-10T14:38:07.258Z"
       },
       {
         "id": "89",
@@ -2200,54 +2201,16 @@
         "dependencies": [
           "80"
         ],
-        "status": "pending",
-        "subtasks": []
-      },
-      {
-        "id": "90",
-        "title": "Implement Worker Error Tracking and Monitoring",
-        "description": "Add comprehensive error tracking, structured logging, and monitoring capabilities to all workers for production observability and debugging.",
-        "details": "1. Create `apps/worker/src/utils/logger.ts`:\n   - Use structured logging (pino or winston)\n   - Include context: workerId, jobId, queueName, timestamp\n   - Log levels: debug, info, warn, error\n   - Format: JSON for production, pretty for development\n   ```typescript\n   export const logger = pino({ level: process.env.LOG_LEVEL || 'info' });\n   export const createJobLogger = (queueName: string, jobId: string) => logger.child({ queueName, jobId });\n   ```\n2. Create `apps/worker/src/utils/metrics.ts`:\n   - Track job duration: start/end timestamps\n   - Track success/failure rates per queue\n   - Export metrics for Prometheus/DataDog/etc.\n   ```typescript\n   export const recordJobMetric = (queue: string, status: 'success' | 'failure', durationMs: number) => {...}\n   ```\n3. Integrate error tracking (Sentry):\n   - Add `@sentry/node` to worker dependencies\n   - Initialize in `apps/worker/src/index.ts`\n   - Capture exceptions in all workers with context\n   - Add breadcrumbs for job flow\n4. Create health check endpoint:\n   - `GET /health` - returns { status: 'ok', queues: {...}, uptime }\n   - Include Redis connection status\n   - Include queue stats (waiting, active, failed counts)\n5. Update all workers to use structured logging:\n   - Replace `console.log/error` with logger\n   - Add metrics recording on job completion\n6. Add BullMQ event listeners for global error tracking:\n   - `on('failed')` - log and report all failures\n   - `on('stalled')` - alert on stalled jobs\n7. Environment variables: `SENTRY_DSN`, `LOG_LEVEL`",
-        "testStrategy": "1. Verify structured logs are JSON formatted\n2. Test health endpoint returns correct status\n3. Verify Sentry captures errors (use test DSN)\n4. Test metrics collection accuracy\n5. Load test and verify no logging performance impact",
-        "priority": "medium",
-        "dependencies": [
-          "81",
-          "82",
-          "83",
-          "84"
-        ],
-        "status": "pending",
-        "subtasks": []
-      },
-      {
-        "id": "91",
-        "title": "Update Worker Documentation",
-        "description": "Document the worker architecture, job flows, deployment instructions, and create comprehensive README and architecture documentation.",
-        "details": "1. Update `apps/worker/ARCHITECTURE.md`:\n   - Document all workers (SMS, WhatsApp, Voice, Scraping, Hunt, Orchestrator)\n   - Include data flow diagrams (ASCII or Mermaid)\n   - Document queue structure and job data schemas\n   - Explain retry strategies and error handling\n   - Document session management (WhatsApp Baileys)\n   - Include rate limiting considerations\n2. Update `apps/worker/README.md`:\n   - Setup instructions (Redis, environment variables)\n   - Required environment variables list with descriptions\n   - Local development: `pnpm dev` commands\n   - Running with Docker\n   - Deployment process (CI/CD notes)\n   - Monitoring and observability setup\n3. Add JSDoc comments to complex worker logic:\n   - Document function parameters and return types\n   - Explain business logic decisions\n   - Note any edge cases or gotchas\n4. Create `apps/worker/docs/` directory (optional):\n   - `queue-schemas.md` - detailed job data schemas\n   - `troubleshooting.md` - common issues and solutions\n5. Update root README if needed to reference worker documentation",
-        "testStrategy": "1. Review documentation for accuracy against code\n2. Follow setup instructions on clean environment\n3. Verify all environment variables are documented\n4. Have team member review for clarity\n5. Test code examples in documentation compile",
-        "priority": "low",
-        "dependencies": [
-          "80",
-          "81",
-          "82",
-          "83",
-          "84",
-          "85",
-          "86",
-          "87",
-          "88",
-          "89",
-          "90"
-        ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-02-10T15:39:34.967Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-02-10T14:08:46.723Z",
-      "taskCount": 91,
-      "completedCount": 83,
+      "lastModified": "2026-02-10T15:39:34.968Z",
+      "taskCount": 89,
+      "completedCount": 86,
       "tags": [
         "master"
       ]
