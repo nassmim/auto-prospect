@@ -1937,9 +1937,9 @@
             "description": "Modify getWhatsAppSession and other database functions to accept a db client parameter instead of using Next.js-specific createDrizzleSupabaseClient, enabling use from both web app and worker.",
             "dependencies": [],
             "details": "Refactor functions in `apps/web/src/services/whatsapp.service.ts`:\n1. Change `getWhatsAppSession(accountId, options)` signature to accept db client as parameter\n2. Pattern: `getWhatsAppSession(db: DrizzleClient, accountId: string)` where DrizzleClient can be admin or RLS\n3. Update `saveWhatsAppSession` and `updateWhatsAppConnectionStatus` similarly\n4. Keep backward compatibility by providing optional parameter with default\n5. Import `whatsappSessions` from `@auto-prospect/db` instead of `@/schema`",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": "Test that refactored functions work with both createDrizzleAdmin() and createDrizzleSupabaseClient()",
-            "updatedAt": "2026-02-10T12:31:02.349Z",
+            "updatedAt": "2026-02-10T12:32:50.567Z",
             "parentId": "undefined"
           },
           {
@@ -1978,13 +1978,13 @@
             "parentId": "undefined"
           }
         ],
-        "updatedAt": "2026-02-10T12:31:02.349Z"
+        "updatedAt": "2026-02-10T12:32:50.567Z"
       },
       {
         "id": "83",
         "title": "Implement Voice/Ringless Voicemail Worker",
         "description": "Create the Voice worker that integrates with the existing sendVoiceMessage() function from voice.actions.ts to process ringless voicemail delivery jobs using Voice Partner API.",
-        "status": "pending",
+        "status": "in-progress",
         "dependencies": [
           "80"
         ],
@@ -1998,9 +1998,10 @@
             "description": "Modify the VoiceJob interface in apps/worker/src/workers/voice.ts to match Voice Partner API requirements with tokenAudio (required) instead of message/audioUrl.",
             "dependencies": [],
             "details": "Replace current interface with:\n```typescript\ninterface VoiceJob {\n  recipientPhone: string;\n  tokenAudio: string; // Required: Pre-recorded audio token\n  sender?: string;\n  emailForNotification?: string;\n  scheduledDate?: string;\n  metadata?: { huntId?: string; accountId?: string; adId?: string; };\n}\n```\nRemove the `message` field as TTS is not supported. The `tokenAudio` is now required.",
-            "status": "pending",
+            "status": "in-progress",
             "testStrategy": "Verify TypeScript compilation succeeds with new interface. Test that jobs missing tokenAudio fail type checking.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-02-10T12:33:51.342Z"
           },
           {
             "id": 2,
@@ -2034,11 +2035,13 @@
               3
             ],
             "details": "Add logging:\n```typescript\nconsole.log(`Processing Voice job ${job.id}:`, {\n  recipientPhone: job.data.recipientPhone,\n  hasScheduledDate: !!job.data.scheduledDate,\n  metadata: job.data.metadata,\n});\n// After success:\nconsole.log(`Voice job ${job.id} completed:`, result.data);\n// On error:\nconsole.error(`Voice job ${job.id} failed:`, error);\n```\nFollow pattern from whatsapp.ts worker for consistency.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Verify logs include job ID and metadata. Verify error logs include error details.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-02-10T12:34:40.691Z"
           }
-        ]
+        ],
+        "updatedAt": "2026-02-10T12:34:40.691Z"
       },
       {
         "id": "84",
@@ -2163,7 +2166,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-02-10T12:31:02.351Z",
+      "lastModified": "2026-02-10T12:34:40.692Z",
       "taskCount": 91,
       "completedCount": 78,
       "tags": [
