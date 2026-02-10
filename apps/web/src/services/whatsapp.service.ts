@@ -10,12 +10,10 @@ import {
   TDBClient,
   TDBOptions,
   TDBQuery,
-} from "@/lib/drizzle/dbClient";
-import {
   TWhatsappSession,
   whatsappSessions,
-} from "@/schema/whatsapp-session.schema";
-import { decryptCredentials, encryptCredentials } from "@/utils/crypto.utils";
+} from "@auto-prospect/db";
+import { decryptCredentials, encryptCredentials } from "@auto-prospect/shared";
 import {
   EGeneralErrorCode,
   EWhatsAppErrorCode,

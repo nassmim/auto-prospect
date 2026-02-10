@@ -1912,16 +1912,73 @@
       {
         "id": "82",
         "title": "Implement WhatsApp Worker with Baileys Integration",
-        "description": "Complete the WhatsApp worker by integrating with the existing whatsapp.service.ts functions (getWhatsAppSession, connectWithCredentials, sendWhatsAppMessage) for actual message delivery.",
-        "details": "1. Update `apps/worker/src/workers/whatsapp.ts` imports:\n   ```typescript\n   import { getWhatsAppSession, connectWithCredentials, sendWhatsAppMessage, updateWhatsAppConnectionStatus } from '@auto-prospect/web/services/whatsapp.service';\n   import { createDrizzleSupabaseClient } from '@auto-prospect/db';\n   ```\n2. Implement `whatsappWorker` function flow:\n   - Get account from database using `metadata.accountId` or lookup by senderPhone\n   - Call `getWhatsAppSession(accountId, { bypassRLS: true })` to retrieve stored credentials\n   - Validate credentials exist, throw error with `EWhatsAppErrorCode.SESSION_NOT_FOUND` if not\n   - Call `connectWithCredentials(credentials)` to establish socket connection\n   - Call `socket.waitForConnection()` with timeout handling\n   - Call `sendWhatsAppMessage(socket, recipientPhone, message)` for actual send\n   - Update message status in database on success/failure\n   - Call `cleanup()` to close socket connection\n3. Handle WhatsApp-specific errors:\n   - `RECIPIENT_INVALID` - number not on WhatsApp\n   - `MESSAGE_SEND_FAILED` - delivery failure\n   - `SESSION_EXPIRED` - need to re-authenticate\n4. Implement session caching/pooling consideration for performance (optional optimization)\n5. Use `RETRY_CONFIG.MESSAGE_SEND` from worker config",
-        "testStrategy": "1. Unit test with mocked whatsapp.service functions\n2. Test session retrieval and connection flow\n3. Test error handling for missing session, expired session, invalid recipient\n4. Verify socket cleanup is always called (even on error)\n5. Integration test with test WhatsApp number in sandbox mode",
-        "priority": "high",
+        "description": "Complete the WhatsApp worker by refactoring whatsapp.service.ts functions into a shared package, then integrating with the worker. Currently blocked: whatsapp.service.ts uses Next.js-specific imports (@/lib, @/schema, @/utils) that cannot be imported from the worker package.",
+        "status": "in-progress",
         "dependencies": [
           "80"
         ],
-        "status": "in-progress",
-        "subtasks": [],
-        "updatedAt": "2026-02-10T12:25:59.229Z"
+        "priority": "high",
+        "details": "## Current State\nThe WhatsApp worker structure is implemented at `apps/worker/src/workers/whatsapp.ts` with:\n- Database integration using `@auto-prospect/db` (createDrizzleAdmin, accounts schema)\n- Error handling with `EWhatsAppErrorCode` from `@auto-prospect/shared`\n- Placeholder implementation with commented-out Baileys integration code\n\n## Blocking Issue\n`apps/web/src/services/whatsapp.service.ts` cannot be imported from worker because it uses Next.js path aliases:\n- `@/lib/drizzle/dbClient` → createDrizzleSupabaseClient, TDBClient, TDBOptions, TDBQuery\n- `@/schema/whatsapp-session.schema` → TWhatsappSession, whatsappSessions (already in @auto-prospect/db)\n- `@/utils/crypto.utils` → decryptCredentials, encryptCredentials (already in @auto-prospect/shared)\n\n## Required Refactoring\n1. **Create `@auto-prospect/whatsapp` package** OR extend `@auto-prospect/shared`:\n   - Move core Baileys functions that don't need RLS (createDBAuthState, connectWithCredentials, sendWhatsAppMessage, etc.)\n   - Add `@whiskeysockets/baileys`, `@hapi/boom`, `qrcode` as dependencies\n   - Export types: StoredAuthState, WhatsAppConnectionResult, WhatsAppEventHandlers\n\n2. **Refactor database functions**:\n   - `getWhatsAppSession` needs to accept a db client parameter instead of creating one internally\n   - Pattern: Pass `createDrizzleAdmin()` from worker, `createDrizzleSupabaseClient()` from web app\n   - The `whatsappSessions` schema is already exported from `@auto-prospect/db`\n\n3. **Once refactored, update worker** (`apps/worker/src/workers/whatsapp.ts`):\n   ```typescript\n   import { connectWithCredentials, sendWhatsAppMessage, createDBAuthState } from '@auto-prospect/whatsapp';\n   import { createDrizzleAdmin, whatsappSessions } from '@auto-prospect/db';\n   import { decryptCredentials, EWhatsAppErrorCode } from '@auto-prospect/shared';\n   ```\n\n4. **Implement worker flow**:\n   - Query `whatsappSessions` directly using `createDrizzleAdmin()`\n   - Parse and decrypt credentials using `decryptCredentials` from shared\n   - Call `connectWithCredentials(credentials)` from whatsapp package\n   - Call `socket.waitForConnection()` with timeout handling\n   - Call `sendWhatsAppMessage(socket, recipientPhone, message)`\n   - Always cleanup socket connection in finally block\n\n## Alternative: Inline Baileys in Worker\nIf package refactoring is too complex, duplicate minimal Baileys logic in worker:\n- Copy `createDBAuthState` and `connectWithCredentials` logic\n- Add `@whiskeysockets/baileys` to worker package.json\n- Query whatsappSessions directly with admin client",
+        "testStrategy": "1. Unit test with mocked database and Baileys socket\n2. Test session retrieval from whatsappSessions table using admin client\n3. Test credential decryption using shared crypto utils\n4. Test error handling for: missing session, expired session, invalid recipient, connection timeout\n5. Verify socket cleanup is always called (even on error) in finally block\n6. Integration test with test WhatsApp number once refactoring is complete\n7. Test that worker correctly bypasses RLS when querying sessions",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement basic WhatsApp worker structure with database integration",
+            "description": "Create the WhatsApp worker skeleton with database connection, account lookup, and error handling framework using @auto-prospect/db and @auto-prospect/shared packages.",
+            "dependencies": [],
+            "details": "Already completed. Worker at `apps/worker/src/workers/whatsapp.ts` has:\n- WhatsAppJob interface with recipientPhone, senderPhone, message, metadata\n- Account lookup using createDrizzleAdmin and accounts schema\n- Error handling with EWhatsAppErrorCode from shared package\n- Placeholder for Baileys integration",
+            "status": "done",
+            "testStrategy": "Verify worker structure compiles and account lookup works with mocked database",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Refactor whatsapp.service.ts to use package-agnostic database pattern",
+            "description": "Modify getWhatsAppSession and other database functions to accept a db client parameter instead of using Next.js-specific createDrizzleSupabaseClient, enabling use from both web app and worker.",
+            "dependencies": [],
+            "details": "Refactor functions in `apps/web/src/services/whatsapp.service.ts`:\n1. Change `getWhatsAppSession(accountId, options)` signature to accept db client as parameter\n2. Pattern: `getWhatsAppSession(db: DrizzleClient, accountId: string)` where DrizzleClient can be admin or RLS\n3. Update `saveWhatsAppSession` and `updateWhatsAppConnectionStatus` similarly\n4. Keep backward compatibility by providing optional parameter with default\n5. Import `whatsappSessions` from `@auto-prospect/db` instead of `@/schema`",
+            "status": "in-progress",
+            "testStrategy": "Test that refactored functions work with both createDrizzleAdmin() and createDrizzleSupabaseClient()",
+            "updatedAt": "2026-02-10T12:31:02.349Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Create @auto-prospect/whatsapp package with Baileys integration",
+            "description": "Create a new shared package containing core Baileys functions (createDBAuthState, connectWithCredentials, sendWhatsAppMessage) that can be imported by both web app and worker.",
+            "dependencies": [],
+            "details": "Create `packages/whatsapp/` with:\n1. `package.json` with dependencies: @whiskeysockets/baileys, @hapi/boom, qrcode, @auto-prospect/shared\n2. `src/index.ts` exporting all functions\n3. `src/auth.ts`: createDBAuthState, StoredAuthState type\n4. `src/connection.ts`: createWhatsAppConnection, connectWithCredentials, cleanup utilities\n5. `src/messaging.ts`: sendWhatsAppMessage, checkWhatsAppNumber\n6. `src/types.ts`: WhatsAppConnectionResult, WhatsAppEventHandlers\n7. Use crypto utils from @auto-prospect/shared for encryption/decryption\n8. Add package to workspace in root package.json",
+            "status": "pending",
+            "testStrategy": "Unit test each function with mocked Baileys socket and verify correct socket lifecycle management",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Update web app to use @auto-prospect/whatsapp package",
+            "description": "Refactor apps/web/src/services/whatsapp.service.ts to import core functions from the new @auto-prospect/whatsapp package instead of implementing them locally.",
+            "dependencies": [
+              3
+            ],
+            "details": "Update `apps/web/src/services/whatsapp.service.ts`:\n1. Import core functions from @auto-prospect/whatsapp: createDBAuthState, connectWithCredentials, sendWhatsAppMessage, etc.\n2. Keep database wrapper functions (getWhatsAppSession, saveWhatsAppSession) in web app since they handle RLS\n3. Re-export types for backward compatibility with existing web app code\n4. Remove duplicate implementations, keep only web-specific wrappers\n5. Update imports in any files using whatsapp.service.ts",
+            "status": "pending",
+            "testStrategy": "Verify existing WhatsApp functionality in web app works after refactor (QR code pairing, message sending)",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Complete WhatsApp worker Baileys integration",
+            "description": "Update the WhatsApp worker to use the new @auto-prospect/whatsapp package functions for actual message delivery, replacing the placeholder implementation.",
+            "dependencies": [
+              3,
+              4
+            ],
+            "details": "Update `apps/worker/src/workers/whatsapp.ts`:\n1. Import from @auto-prospect/whatsapp: connectWithCredentials, sendWhatsAppMessage\n2. Import from @auto-prospect/shared: decryptCredentials, EWhatsAppErrorCode\n3. Query whatsappSessions directly using createDrizzleAdmin()\n4. Implement full flow:\n   - Fetch session: `db.query.whatsappSessions.findFirst({ where: eq(whatsappSessions.accountId, accountId) })`\n   - Parse credentials: `JSON.parse(session.credentials) as StoredAuthState`\n   - Connect: `const { socket, waitForConnection, cleanup } = await connectWithCredentials(credentials)`\n   - Wait: `const connected = await waitForConnection()`\n   - Send: `await sendWhatsAppMessage(socket, formattedPhone, message)`\n   - Cleanup in finally block\n5. Remove placeholder setTimeout and console.logs",
+            "status": "pending",
+            "testStrategy": "Integration test with test WhatsApp number; unit test with mocked @auto-prospect/whatsapp functions",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2026-02-10T12:31:02.349Z"
       },
       {
         "id": "83",
@@ -2106,7 +2163,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-02-10T12:25:59.230Z",
+      "lastModified": "2026-02-10T12:31:02.351Z",
       "taskCount": 91,
       "completedCount": 78,
       "tags": [
