@@ -11,15 +11,11 @@ import { consumeCredit } from "@/services/credit.service";
 import { createDailyContactTracker } from "@/services/daily-contact-tracker.service";
 import { getContactedLeads, getTotalLeads } from "@/services/lead.service";
 import { getUserPlan } from "@/services/subscription.service";
-import { dispatchHuntMessages, WorkerHuntContact } from "@/services/worker-api.service";
-import { renderMessageTemplate } from "@/utils/message.utils";
 import { THuntSummary } from "@/types/hunt.types";
 import { TDailyContactTracker } from "@/types/message.types";
 import { EHuntStatus } from "@auto-prospect/shared/src/config/hunt.config";
 import { ELeadStage } from "@auto-prospect/shared/src/config/lead.config";
-import { EContactChannel } from "@auto-prospect/shared/src/config/message.config";
 import { cacheTag, updateTag } from "next/cache";
-import { eq } from "drizzle-orm";
 
 export const runDailyHunts = async () => {
   const dbClient = await createDrizzleSupabaseClient();
@@ -87,44 +83,8 @@ async function bulkSend(
 }
 
 /**
- * Processes a single hunt by ID: fetches hunt, finds matching ads, sends messages, creates leads
- * This is the exported version for API routes and workers
- */
-export async function processSingleHunt(
-  huntId: string,
-  accountId: string
-): Promise<{ messagesDispatched: number }> {
-  const dbClient = await createDrizzleSupabaseClient();
-  const dailyContactTracker = createDailyContactTracker();
-
-  // Fetch the hunt with relations
-  const hunt = await dbClient.admin.query.hunts.findFirst({
-    where: (table, { eq }) => eq(table.id, huntId),
-    with: {
-      location: true,
-      subTypes: true,
-      brands: true,
-    },
-  });
-
-  if (!hunt) {
-    throw new Error(`Hunt not found: ${huntId}`);
-  }
-
-  if (hunt.accountId !== accountId) {
-    throw new Error("Hunt does not belong to this account");
-  }
-
-  await contactAdsOwners(hunt, dbClient, dailyContactTracker);
-
-  // Return the count of messages dispatched
-  return {
-    messagesDispatched: dailyContactTracker.getCount(huntId),
-  };
-}
-
-/**
  * Processes a single hunt: finds matching ads, sends messages, creates leads
+ * NOTE: This is NOT used by daily automated hunts (those use the worker)
  */
 async function contactAdsOwners(
   hunt: THunt,
@@ -170,92 +130,11 @@ async function contactAdsOwners(
     return; // No allocations possible (no credits or at daily limit)
   }
 
-  // Get account info for WhatsApp sender phone
-  const account = await dbClient.admin.query.accounts.findFirst({
-    where: (table, { eq }) => eq(table.id, accountId),
-    columns: {
-      id: true,
-      whatsappPhoneNumber: true,
-    },
-  });
+  // NOTE: This web app service is NOT used by daily hunts.
+  // Daily hunts are processed entirely by the worker (daily-orchestrator.ts)
+  // This remains here only as reference or for potential user-triggered features
 
-  // Fetch message templates for this hunt
-  const messageTemplates = await dbClient.admin.query.messageTemplates.findMany({
-    where: (table, { eq, and }) =>
-      and(
-        eq(table.accountId, accountId),
-        eq(table.isDefault, true)
-      ),
-  });
-
-  // Build contact list with personalized messages
-  const contacts: WorkerHuntContact[] = [];
-
-  for (const allocation of allocations) {
-    // Find the ad for this allocation
-    const ad = matchingAds.find((a) => a.id === allocation.adId);
-    if (!ad || !ad.phoneNumber) continue;
-
-    // Get template for this channel
-    const template = messageTemplates.find((t) => t.channel === allocation.channel);
-    if (!template) continue;
-
-    // Fetch ad relations for template variables
-    const adWithRelations = await dbClient.admin.query.ads.findFirst({
-      where: (table, { eq }) => eq(table.id, ad.id),
-      with: {
-        brand: true,
-        location: true,
-      },
-    });
-
-    if (!adWithRelations) continue;
-
-    // Build template variables
-    const variables = {
-      titre_annonce: ad.title,
-      prix: ad.price ? `${ad.price.toLocaleString("fr-FR")} €` : "",
-      marque: adWithRelations.brand?.name || "",
-      modele: ad.model || "",
-      annee: ad.modelYear?.toString() || "",
-      ville: adWithRelations.location.name,
-      vendeur_nom: ad.ownerName,
-    };
-
-    // Render personalized message
-    const personalizedMessage = renderMessageTemplate(template.body, variables);
-
-    // Build contact for worker
-    const contact: WorkerHuntContact = {
-      adId: ad.id,
-      recipientPhone: ad.phoneNumber,
-      channel: allocation.channel as "whatsapp_text" | "sms" | "ringless_voice",
-      message: personalizedMessage,
-    };
-
-    // Add senderPhone for WhatsApp
-    if (allocation.channel === EContactChannel.WHATSAPP_TEXT) {
-      if (!account?.whatsappPhoneNumber) {
-        continue; // Skip if no WhatsApp phone configured
-      }
-      contact.senderPhone = account.whatsappPhoneNumber;
-    }
-
-    contacts.push(contact);
-  }
-
-  // Dispatch messages to worker if we have any contacts
-  if (contacts.length > 0) {
-    try {
-      await dispatchHuntMessages(hunt.id, accountId, contacts);
-    } catch (error) {
-      return;
-    }
-  }
-
-  // Consume credits and track contacts
-  // NOTE: We consume credits upfront. If message send fails in worker,
-  // the worker should notify us via webhook to refund credits (future work)
+  // Process each allocation: consume credit, track contact
   for (const allocation of allocations) {
     // Consume credit for this channel
     const creditResult = await consumeCredit({
