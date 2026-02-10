@@ -5,7 +5,7 @@
  * Workers ALWAYS use admin context (bypass RLS)
  */
 
-import { createDrizzleAdmin } from "@auto-prospect/db";
+import { getDBAdminClient } from "@auto-prospect/db";
 
 /**
  * Gets admin database client for worker operations
@@ -14,5 +14,5 @@ import { createDrizzleAdmin } from "@auto-prospect/db";
  * @returns Database client with admin privileges
  */
 export function getAdminClient() {
-  return createDrizzleAdmin();
+  return getDBAdminClient();
 }

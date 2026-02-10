@@ -18,7 +18,7 @@ if (!databaseUrl) {
   throw new Error("SUPABASE_DATABASE_URL environment variable is not set");
 }
 
-const postgresClient = postgres(databaseUrl, { prepare: false });
+export const postgresClient = postgres(databaseUrl, { prepare: false });
 
 const config = {
   casing: "snake_case",
@@ -26,29 +26,16 @@ const config = {
   logger: false,
 } satisfies DrizzleConfig<typeof schema>;
 
-const defaultDBClient = drizzle({
+export const defaultDBClient = drizzle({
   client: postgresClient,
   ...config,
 });
 
-// Version AVEC RLS — prend un access token en paramètre
-// C'est l'app appelante qui fournit le token
-function createDrizzleWithRLS(accessToken: string) {
-  return createDrizzle(decode(accessToken), {
-    admin: defaultDBClient,
-    client: defaultDBClient,
-  });
-}
-
-// Version SANS RLS — accès admin direct (pour le worker)
-function createDrizzleAdmin() {
-  return defaultDBClient;
-}
-
-export { createDrizzleAdmin, createDrizzleWithRLS, postgresClient };
+// Export RLS utilities for use in db.ts wrapper
+export { createDrizzle, decode };
 
 type TDBModel = keyof typeof defaultDBClient.query;
-type TDBClient = Awaited<ReturnType<typeof createDrizzleWithRLS>>;
+type TDBClient = ReturnType<typeof createDrizzle>;
 type TDBQuery =
   | PgTransaction<
       PostgresJsQueryResultHKT,
