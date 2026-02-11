@@ -16,7 +16,10 @@ import {
   EHuntStatus,
   THuntStatus,
 } from "@auto-prospect/shared/src/config/hunt.config";
-import { EContactChannel } from "@auto-prospect/shared/src/config/message.config";
+import {
+  EContactChannel,
+  WHATSAPP_DAILY_LIMIT,
+} from "@auto-prospect/shared/src/config/message.config";
 import { eq } from "drizzle-orm";
 import { updateTag } from "next/cache";
 import { createClient } from "../../../../packages/db/src/supabase/server";
@@ -119,14 +122,12 @@ export async function createHunt(data: unknown) {
       });
     }
 
-    if (
-      validatedData.channelCredits?.whatsapp &&
-      validatedData.channelCredits.whatsapp > 0
-    ) {
+    // WhatsApp: auto-allocate daily limit (unlimited for users, hard limit to prevent abuse)
+    if (validatedData.outreachSettings?.whatsapp) {
       channelCreditsToInsert.push({
         huntId: newHunt.id,
         channel: EContactChannel.WHATSAPP_TEXT,
-        creditsAllocated: validatedData.channelCredits.whatsapp,
+        creditsAllocated: WHATSAPP_DAILY_LIMIT,
         creditsConsumed: 0,
       });
     }
@@ -252,30 +253,32 @@ export async function updateHuntChannelCredits(
       }
     }
 
-    // Handle WhatsApp credits
+    // Handle WhatsApp credits - always set to daily limit (unlimited for users)
+    // Note: This function may not be called for WhatsApp anymore since it's auto-allocated
+    // Keeping this for backward compatibility and manual adjustments if needed
     if (channelCredits.whatsapp !== undefined) {
-      if (channelCredits.whatsapp > 0) {
-        const existing = await tx.query.huntChannelCredits.findFirst({
-          where: (table, { and, eq }) =>
-            and(
-              eq(table.huntId, huntId),
-              eq(table.channel, EContactChannel.WHATSAPP_TEXT),
-            ),
-        });
+      const creditsToAllocate = WHATSAPP_DAILY_LIMIT; // Always use hard-coded limit
 
-        if (existing) {
-          await tx
-            .update(huntChannelCredits)
-            .set({ creditsAllocated: channelCredits.whatsapp })
-            .where(eq(huntChannelCredits.id, existing.id));
-        } else {
-          await tx.insert(huntChannelCredits).values({
-            huntId,
-            channel: EContactChannel.WHATSAPP_TEXT,
-            creditsAllocated: channelCredits.whatsapp,
-            creditsConsumed: 0,
-          });
-        }
+      const existing = await tx.query.huntChannelCredits.findFirst({
+        where: (table, { and, eq }) =>
+          and(
+            eq(table.huntId, huntId),
+            eq(table.channel, EContactChannel.WHATSAPP_TEXT),
+          ),
+      });
+
+      if (existing) {
+        await tx
+          .update(huntChannelCredits)
+          .set({ creditsAllocated: creditsToAllocate })
+          .where(eq(huntChannelCredits.id, existing.id));
+      } else {
+        await tx.insert(huntChannelCredits).values({
+          huntId,
+          channel: EContactChannel.WHATSAPP_TEXT,
+          creditsAllocated: creditsToAllocate,
+          creditsConsumed: 0,
+        });
       }
     }
 

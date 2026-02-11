@@ -82,10 +82,8 @@ export const huntFormSchema = z
       if (!settings || !credits) return true;
 
       // If a channel is enabled, it must have credits > 0
+      // WhatsApp is excluded - it has unlimited usage with 1000/day hard limit
       if (settings.sms && (!credits.sms || credits.sms <= 0)) {
-        return false;
-      }
-      if (settings.whatsapp && (!credits.whatsapp || credits.whatsapp <= 0)) {
         return false;
       }
       if (
@@ -154,10 +152,8 @@ export const createHuntSchema = huntFormSchema
       if (!settings || !credits) return true;
 
       // If a channel is enabled, it must have credits > 0
+      // WhatsApp is excluded - it has unlimited usage with 1000/day hard limit
       if (settings.sms && (!credits.sms || credits.sms <= 0)) {
-        return false;
-      }
-      if (settings.whatsapp && (!credits.whatsapp || credits.whatsapp <= 0)) {
         return false;
       }
       if (

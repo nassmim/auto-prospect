@@ -1,9 +1,16 @@
 import { getDBAdminClient, TDBAdminClient } from "@auto-prospect/db";
-import { TContactChannel } from "@auto-prospect/shared";
+import {
+  EContactChannel,
+  TContactChannel,
+  WHATSAPP_DAILY_LIMIT,
+} from "@auto-prospect/shared";
 
 /**
  * Gets hunt channel credits with remaining balance calculated
  * Returns Map of channel -> remaining credits
+ *
+ * Special handling for WhatsApp: Always returns WHATSAPP_DAILY_LIMIT (1000)
+ * regardless of database values, since WhatsApp is unlimited for users
  */
 export async function getHuntChannelCreditsMap(
   huntId: string,
@@ -16,12 +23,19 @@ export async function getHuntChannelCreditsMap(
   });
 
   // Calculate remaining credits per channel
-  return new Map(
-    channelCreditsRaw.map((cc) => [
-      cc.channel as string,
-      cc.creditsAllocated - cc.creditsConsumed,
-    ]),
+  const creditsMap = new Map(
+    channelCreditsRaw.map((cc) => {
+      // WhatsApp: always use hard-coded limit (unlimited for users)
+      if (cc.channel === EContactChannel.WHATSAPP_TEXT) {
+        return [cc.channel as string, WHATSAPP_DAILY_LIMIT];
+      }
+
+      // Other channels: use actual credits from database
+      return [cc.channel as string, cc.creditsAllocated - cc.creditsConsumed];
+    }),
   );
+
+  return creditsMap;
 }
 
 /**
@@ -94,7 +108,7 @@ export async function allocateAdsToChannels({
     if (adsToAllocate.length === 0) break;
 
     // Skip if channel is disabled (user doesn't have required setup)
-    if (disabledChannels.includes(channel as TContactChannel)) continue;
+    if (disabledChannels.includes(channel)) continue;
 
     // Check if we've hit the daily limit
     if (
@@ -128,7 +142,7 @@ export async function allocateAdsToChannels({
       const adId = adsToAllocate.shift()!;
       allocations.push({
         adId,
-        channel: channel as TChannelAllocation["channel"],
+        channel,
       });
       currentDailyCount++;
     }

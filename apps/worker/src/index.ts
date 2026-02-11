@@ -1,9 +1,10 @@
-import express, { Request, Response, NextFunction } from "express";
-import cors from "cors";
-import { Server } from "http";
 import { Worker } from "bullmq";
-import { startAllWorkers, connection } from "./workers";
+import cors from "cors";
+import express, { NextFunction, Request, Response } from "express";
+import { Server } from "http";
+import { connection } from "./redis";
 import routes from "./routes";
+import { startAllWorkers } from "./workers";
 
 // Environment variables are loaded by dotenvx in package.json scripts
 
@@ -89,7 +90,7 @@ const gracefulShutdown = async (signal: string) => {
           } catch (error) {
             console.error(`Error closing worker ${worker.name}:`, error);
           }
-        })
+        }),
       );
       console.log("All workers closed");
     } catch (error) {

@@ -3,25 +3,25 @@
  * Handles sending messages and checking phone numbers
  */
 
-import { WASocket, WAMessageUpdate } from "@whiskeysockets/baileys";
-import { TErrorCode, EWhatsAppErrorCode } from "@auto-prospect/shared";
+import { EWhatsAppErrorCode, TErrorCode } from "@auto-prospect/shared";
+import { WASocket } from "@whiskeysockets/baileys";
 
 /**
  * Sends a text message via WhatsApp
  * Uses Baileys functions: onWhatsApp, sendMessage
+ *
+ * Dedicated server: No need to wait for status acknowledgment.
+ * Socket remains open and WhatsApp servers have time to receive the message.
  */
 export const sendWhatsAppMessage = async (
   socket: WASocket,
-  phoneNumber: string, // Format: 33612345678 (no +)
+  jid: string,
   message: string,
 ): Promise<{ success: boolean; errorCode?: TErrorCode }> => {
-  console.log("Sending WhatsApp message");
   try {
-    const jid = `${phoneNumber}@s.whatsapp.net`;
-
     // Check if number exists on WhatsApp
     const results = await socket.onWhatsApp(jid);
-    console.log(results);
+
     if (!results || results.length === 0) {
       return {
         success: false,
@@ -35,48 +35,12 @@ export const sendWhatsAppMessage = async (
         errorCode: EWhatsAppErrorCode.RECIPIENT_INVALID,
       };
     }
-    console.log(result);
-    console.log(message);
 
-    // Send message and wait for confirmation
-    const sentMessage = await socket.sendMessage(result.jid, { text: message });
-    console.log("Message sent:", sentMessage);
-    console.log("Initial status:", sentMessage?.status);
+    // Send message - no need to wait for acknowledgment on dedicated server
+    await socket.sendMessage(result.jid, { text: message });
 
-    // Wait for message acknowledgment from WhatsApp servers
-    // Status 1 = PENDING, 2 = SERVER_ACK, 3 = DELIVERY_ACK, 4 = READ
-    return new Promise((resolve) => {
-      let acknowledged = false;
-
-      // Listen for message status updates
-      const messageUpdateListener = (updates: WAMessageUpdate[]) => {
-        for (const update of updates) {
-          if (update.key?.id === sentMessage?.key?.id) {
-            console.log("Message update:", update);
-            if (update.update?.status && update.update.status >= 2) {
-              // Status >= 2 means server acknowledged (sent to WhatsApp servers)
-              acknowledged = true;
-              socket.ev.off("messages.update", messageUpdateListener);
-              resolve({ success: true });
-            }
-          }
-        }
-      };
-
-      socket.ev.on("messages.update", messageUpdateListener);
-
-      // Timeout after 10 seconds - if no acknowledgment, still consider it sent
-      // (Baileys may not always emit status updates)
-      setTimeout(() => {
-        socket.ev.off("messages.update", messageUpdateListener);
-        if (!acknowledged) {
-          console.log("Timeout waiting for ack - proceeding anyway");
-          resolve({ success: true });
-        }
-      }, 10000);
-    });
-  } catch (error) {
-    console.error("Failed to send WhatsApp message:", error);
+    return { success: true };
+  } catch {
     return {
       success: false,
       errorCode: EWhatsAppErrorCode.MESSAGE_SEND_FAILED,
@@ -93,7 +57,7 @@ export const checkWhatsAppNumber = async (
   phoneNumber: string,
 ): Promise<{ exists: boolean; jid?: string }> => {
   try {
-    const jid = `${phoneNumber}@s.whatsapp.net`;
+    const jid = getWhatsAppJID(phoneNumber);
     const results = await socket.onWhatsApp(jid);
     if (!results || results.length === 0) {
       return { exists: false };
@@ -104,3 +68,12 @@ export const checkWhatsAppNumber = async (
     return { exists: false };
   }
 };
+
+/**
+ * Extracts WhatsApp JID from phone number
+ * Converts "+33612345678" to "33612345678@s.whatsapp.net"
+ */
+export function getWhatsAppJID(phone: string): string {
+  const cleaned = phone.replace(/^\+/, "");
+  return `${cleaned}@s.whatsapp.net`;
+}

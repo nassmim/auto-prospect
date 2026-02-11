@@ -4,8 +4,11 @@
  * BullMQ queue management utilities
  */
 
-import { Queue, Job } from "bullmq";
-import { TContactChannel, EContactChannel } from "@auto-prospect/shared/src/config/message.config";
+import {
+  EContactChannel,
+  TContactChannel,
+} from "@auto-prospect/shared/src/config/message.config";
+import { Job, JobState, Queue } from "bullmq";
 
 const REDIS_CONNECTION = {
   host: process.env.REDIS_HOST || "localhost",
@@ -25,14 +28,14 @@ const QUEUE_NAMES = {
 /**
  * Dispatches a job to the appropriate channel queue
  */
-export async function dispatchToChannel<T = any>(
+export async function dispatchToChannel<T>(
   channel: TContactChannel,
   jobData: T,
   options?: {
     delay?: number;
     priority?: number;
     attempts?: number;
-  }
+  },
 ): Promise<Job<T>> {
   const queueName = QUEUE_NAMES[channel];
 
@@ -64,10 +67,10 @@ export async function dispatchToChannel<T = any>(
  */
 export async function getJobStatus(
   queueName: string,
-  jobId: string
+  jobId: string,
 ): Promise<{
-  status: "completed" | "failed" | "delayed" | "active" | "waiting" | "unknown";
-  data?: any;
+  status: JobState | unknown;
+  data?: Job["data"];
   error?: string;
 }> {
   const queue = new Queue(queueName, {
@@ -77,9 +80,7 @@ export async function getJobStatus(
   try {
     const job = await queue.getJob(jobId);
 
-    if (!job) {
-      return { status: "unknown" };
-    }
+    if (!job) return { status: "unknown" };
 
     const state = await job.getState();
     const data = job.data;
@@ -88,7 +89,7 @@ export async function getJobStatus(
     await queue.close();
 
     return {
-      status: state as any,
+      status: state,
       data,
       error,
     };
@@ -103,7 +104,7 @@ export async function getJobStatus(
  */
 export async function retryFailedJob(
   queueName: string,
-  jobId: string
+  jobId: string,
 ): Promise<void> {
   const queue = new Queue(queueName, {
     connection: REDIS_CONNECTION,

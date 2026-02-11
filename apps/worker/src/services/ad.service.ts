@@ -7,10 +7,10 @@ import {
   gearBoxes,
   locations,
   TAdReferenceData,
+  TDBAdminClient,
   vehicleSeats,
   vehicleStates,
 } from "@auto-prospect/db";
-import { TDBClient } from "./db.service";
 
 /**
  * Platform field type - which platform-specific value field to use for lookups
@@ -26,7 +26,7 @@ export type TPlatformValue = "lobstrValue";
  * by using the platformField parameter to select the correct lookup field
  */
 export const fetchAllReferenceData = async (
-  dbClient: TDBClient,
+  dbClient: TDBAdminClient,
   platformField: TPlatformValue,
 ): Promise<TAdReferenceData> => {
   const [

@@ -1,7 +1,7 @@
-import { getAdminClient } from "./db.service";
+import { getDBAdminClient } from "@auto-prospect/db";
 
 export const sendAlertToAdmin = async (message: string): Promise<void> => {
-  const dbClient = getAdminClient();
+  const dbClient = getDBAdminClient();
 
   const appSettings = await dbClient.query.appSettings.findFirst();
   if (appSettings?.smsAlerts) {

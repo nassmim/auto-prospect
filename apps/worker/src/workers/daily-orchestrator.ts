@@ -212,10 +212,10 @@ async function processHunt(
   db: TDBAdminClient,
   dailyContactTracker: ReturnType<typeof createDailyContactTracker>,
 ): Promise<number> {
-  const accountId = hunt.accountId;
+  const { accountId, id: huntId } = hunt;
 
   // Check if we haven't already contacted more ads than requested by the user
-  if (dailyContactTracker.isAtLimit(hunt.id, hunt.dailyPacingLimit)) {
+  if (dailyContactTracker.isAtLimit(huntId, hunt.dailyPacingLimit)) {
     return 0;
   }
 
@@ -267,10 +267,10 @@ async function processHunt(
   // Allocate ads to channels based on priority, credits, and daily limits
   // This will skip disabled channels entirely
   const allocations = await allocateAdsToChannels({
-    huntId: hunt.id,
+    huntId,
     adIds: matchingAds.map((ad) => ad.id),
     dailyPacingLimit: hunt.dailyPacingLimit,
-    dailyContactCount: dailyContactTracker.getCount(hunt.id),
+    dailyContactCount: dailyContactTracker.getCount(huntId),
     disabledChannels,
     db,
   });
@@ -296,43 +296,55 @@ async function processHunt(
   for (const allocation of allocations) {
     // Find the ad for this allocation
     const ad = matchingAds.find((a) => a.id === allocation.adId);
+
     if (!ad || !ad.phoneNumber) continue;
+
+    const {
+      id: adId,
+      title,
+      phoneNumber: recipientPhone,
+      price,
+      brand,
+      model,
+      modelYear,
+      location,
+      ownerName,
+    } = ad;
 
     // Get template for this channel
     const template = templatesByChannel.get(allocation.channel);
     if (!template) continue;
 
-    // Build template variables
-    const variables = {
-      titre_annonce: ad.title,
-      prix: ad.price ? `${ad.price.toLocaleString("fr-FR")} €` : "",
-      marque: ad.brand?.name || "",
-      modele: ad.model || "",
-      annee: ad.modelYear?.toString() || "",
-      ville: ad.location?.name || "",
-      vendeur_nom: ad.ownerName,
-    };
-
-    // Render personalized message
-    const personalizedMessage = personalizeMessage(
-      template.content!,
-      variables,
-    );
-
     // Dispatch to appropriate queue based on channel
     const channel = allocation.channel;
+
+    let personalizedMessage = "";
+    if (channel !== EContactChannel.RINGLESS_VOICE) {
+      // Build template variables
+      const variables = {
+        titre_annonce: title,
+        prix: price ? `${price.toLocaleString("fr-FR")} €` : "",
+        marque: brand?.name || "",
+        modele: model || "",
+        annee: modelYear?.toString() || "",
+        ville: location?.name || "",
+        vendeur_nom: ownerName,
+      };
+
+      // Render personalized message
+      personalizedMessage = personalizeMessage(template.content!, variables);
+    }
 
     try {
       switch (channel) {
         case EContactChannel.WHATSAPP_TEXT:
           // WhatsApp phone number is guaranteed to exist (checked in disabledChannels)
           await whatsappQueue.add(
-            jobIds.hunt.whatsapp(hunt.id, ad.id),
+            jobIds.hunt.whatsapp(huntId, adId),
             {
-              recipientPhone: ad.phoneNumber,
-              senderPhone: account!.whatsappPhoneNumber!,
+              recipientPhone,
               message: personalizedMessage,
-              metadata: { huntId: hunt.id, accountId, adId: ad.id },
+              metadata: { huntId, accountId, adId },
             },
             RETRY_CONFIG.MESSAGE_SEND,
           );
@@ -341,31 +353,24 @@ async function processHunt(
         case EContactChannel.SMS:
           // SMS API key is guaranteed to exist (checked in disabledChannels)
           await smsQueue.add(
-            jobIds.hunt.sms(hunt.id, ad.id),
+            jobIds.hunt.sms(huntId, adId),
             {
-              recipientPhone: ad.phoneNumber,
+              recipientPhone,
               message: personalizedMessage,
-              metadata: { huntId: hunt.id, accountId, adId: ad.id },
+              metadata: { huntId, accountId, adId },
             },
             RETRY_CONFIG.MESSAGE_SEND,
           );
           break;
 
         case EContactChannel.RINGLESS_VOICE:
-          // Voice requires audioUrl (token) and fixed phone number as sender
-          if (!template.audioUrl) {
-            console.error(
-              `Template ${template.id} for voice channel has no audioUrl`,
-            );
-            continue;
-          }
           await voiceQueue.add(
-            jobIds.hunt.voice(hunt.id, ad.id),
+            jobIds.hunt.voice(huntId, adId),
             {
-              recipientPhone: ad.phoneNumber,
+              recipientPhone,
               tokenAudio: template.audioUrl,
               sender: account!.fixedPhoneNumber!,
-              metadata: { huntId: hunt.id, accountId, adId: ad.id },
+              metadata: { huntId, accountId, adId },
             },
             RETRY_CONFIG.MESSAGE_SEND,
           );
@@ -373,31 +378,30 @@ async function processHunt(
       }
 
       // Track contact
-      dailyContactTracker.increment(hunt.id, channel);
+      dailyContactTracker.increment(huntId, channel);
 
       // Track in contactedAds
       await db.insert(contactedAds).values({
-        adId: ad.id,
-        accountId: accountId,
-        channel: channel,
+        adId,
+        accountId,
+        channel,
       });
 
       // Create lead
       await db
         .insert(leads)
         .values({
-          accountId: accountId,
-          huntId: hunt.id,
-          adId: ad.id,
+          accountId,
+          huntId,
+          adId,
           stage: ELeadStage.CONTACTED,
           position: 0,
         })
         .onConflictDoNothing();
 
       messagesDispatched++;
-    } catch (error) {
-      // Log error but continue with other ads
-      console.error(`Failed to dispatch message for ad ${ad.id}:`, error);
+    } catch {
+      continue;
     }
   }
 

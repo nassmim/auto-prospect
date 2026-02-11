@@ -4,6 +4,17 @@
  */
 
 // ============================================================================
+// CHANNEL LIMITS
+// ============================================================================
+
+/**
+ * WhatsApp messages are unlimited for users (competitive positioning)
+ * Hard limit of 1000 per day per hunt to prevent abuse
+ * This limit is auto-allocated when WhatsApp is enabled
+ */
+export const WHATSAPP_DAILY_LIMIT = 1000;
+
+// ============================================================================
 // CONTACT CHANNELS
 // ============================================================================
 

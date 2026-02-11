@@ -1,17 +1,20 @@
 import { accounts, getDBAdminClient } from "@auto-prospect/db";
 import {
   decryptCredentials,
+  EContactChannel,
   ESmsErrorCode,
   EWhatsAppErrorCode,
 } from "@auto-prospect/shared";
 import {
   connectWithCredentials,
+  getWhatsAppJID,
   sendWhatsAppMessage,
   StoredAuthState,
 } from "@auto-prospect/whatsapp";
 import { Job } from "bullmq";
 import { eq } from "drizzle-orm";
-import { sendSms } from "../services/message.service";
+import { consumeCredit } from "../services/credit.service";
+import { sendSms, sendVoiceMessage } from "../services/message.service";
 
 interface SmsJob {
   recipientPhone: string;
@@ -57,6 +60,16 @@ export async function smsWorker(job: Job<SmsJob>) {
       apiKey: decryptedApiKey,
     });
 
+    // Step 4: Consume credit after successful send
+    if (metadata?.huntId) {
+      await consumeCredit({
+        huntId: metadata.huntId,
+        channel: EContactChannel.SMS,
+        messageId: result.message_id,
+        recipient: recipientPhone,
+      });
+    }
+
     return {
       success: true,
       messageId: result.message_id,
@@ -88,81 +101,9 @@ interface VoiceJob {
   };
 }
 
-/**
- * Sends a voice message via Voice Partner API
- */
-async function sendVoiceMessage(input: {
-  phoneNumbers: string;
-  tokenAudio: string;
-  sender?: string;
-  emailForNotification?: string;
-  scheduledDate?: string;
-}): Promise<{
-  success: boolean;
-  error?: string;
-  data?: Record<string, unknown>;
-}> {
-  const apiKey = process.env.VOICE_PARTNER_API_KEY;
-  if (!apiKey) {
-    return { success: false, error: "API key missing" };
-  }
-
-  const payload: Record<string, string> = {
-    apiKey,
-    tokenAudio: input.tokenAudio,
-    phoneNumbers: input.phoneNumbers,
-    emailForNotification:
-      input.emailForNotification || "noreply@auto-prospect.com",
-  };
-
-  if (input.sender) {
-    payload.sender = input.sender;
-  }
-
-  if (input.scheduledDate) {
-    payload.scheduledDate = input.scheduledDate;
-  }
-
-  try {
-    const response = await fetch(
-      "https://api.voicepartner.fr/v1/campaign/send",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Cache-Control": "no-cache",
-        },
-        body: JSON.stringify(payload),
-      },
-    );
-
-    const data = (await response.json()) as Record<string, unknown>;
-
-    if (!response.ok) {
-      return {
-        success: false,
-        error: (data.message as string) || "Voice Partner API error",
-      };
-    }
-
-    return { success: true, data };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Internal error",
-    };
-  }
-}
-
 export async function voiceWorker(job: Job<VoiceJob>) {
-  const {
-    recipientPhone,
-    tokenAudio,
-    sender,
-    emailForNotification,
-    scheduledDate,
-    metadata,
-  } = job.data;
+  const { recipientPhone, tokenAudio, sender, scheduledDate, metadata } =
+    job.data;
 
   // Validate required fields
   if (!recipientPhone) {
@@ -180,12 +121,20 @@ export async function voiceWorker(job: Job<VoiceJob>) {
       phoneNumbers: recipientPhone,
       tokenAudio,
       sender,
-      emailForNotification,
       scheduledDate,
     });
 
     if (!result.success) {
       throw new Error(result.error || "Voice message send failed");
+    }
+
+    // Consume credit after successful send
+    if (metadata?.huntId) {
+      await consumeCredit({
+        huntId: metadata.huntId,
+        channel: EContactChannel.RINGLESS_VOICE,
+        recipient: recipientPhone,
+      });
     }
 
     return {
@@ -200,16 +149,21 @@ export async function voiceWorker(job: Job<VoiceJob>) {
 }
 
 /**
- * WhatsApp Worker
+ * WhatsApp Worker with Connection Pooling
  *
  * Sends WhatsApp messages using the Baileys library (WhatsApp Web API).
  *
+ * Connection Pooling Strategy:
+ * - Maintains one persistent socket per account
+ * - Reuses existing connections across multiple jobs
+ * - Avoids WhatsApp anti-bot detection from frequent connect/disconnect
+ * - Better performance by eliminating connection overhead
+ *
  * Process:
- * 1. Retrieve sender's WhatsApp account from database
- * 2. Initialize/restore Baileys connection (socket)
- * 3. Send text message
- * 4. Update message status in database
- * 5. Handle delivery receipts and errors
+ * 1. Check if account has active connection in pool
+ * 2. If not, create new connection and add to pool
+ * 3. Send message using pooled connection
+ * 4. Keep connection alive for future messages
  *
  * Important:
  * - Each sender account has its own Baileys connection/session
@@ -220,7 +174,6 @@ export async function voiceWorker(job: Job<VoiceJob>) {
 
 interface WhatsAppJob {
   recipientPhone: string; // Phone in international format (e.g., "+33612345678")
-  senderPhone: string; // Your WhatsApp Business account phone
   message: string; // Text content to send
   metadata?: {
     // Optional tracking metadata from hunt
@@ -230,8 +183,17 @@ interface WhatsAppJob {
   };
 }
 
+// Connection pool: accountId -> socket
+const activeConnections = new Map<
+  string,
+  {
+    socket: Awaited<ReturnType<typeof connectWithCredentials>>["socket"];
+    cleanup: () => void;
+  }
+>();
+
 export async function whatsappWorker(job: Job<WhatsAppJob>) {
-  const { recipientPhone, senderPhone, message, metadata } = job.data;
+  const { recipientPhone, message, metadata } = job.data;
 
   const accountId = metadata?.accountId;
   if (!accountId) {
@@ -239,60 +201,89 @@ export async function whatsappWorker(job: Job<WhatsAppJob>) {
   }
 
   try {
-    // Step 1: Get account from database
-    const db = getDBAdminClient();
-    const account = await db.query.accounts.findFirst({
-      where: eq(accounts.id, accountId),
-      columns: { id: true, whatsappPhoneNumber: true },
-      with: {
-        whatsappSession: true,
-      },
-    });
+    // Step 1: Check if we have an active connection for this account
+    let connection = activeConnections.get(accountId);
 
-    if (!account) {
-      throw new Error(EWhatsAppErrorCode.ACCOUNT_NOT_FOUND);
-    }
+    if (!connection) {
+      // Step 2: Get account from database
+      const db = getDBAdminClient();
+      const account = await db.query.accounts.findFirst({
+        where: eq(accounts.id, accountId),
+        columns: { id: true },
+        with: { whatsappSession: true },
+      });
 
-    // Step 2: Get WhatsApp session/credentials
-    const session = account.whatsappSession;
-    if (!session || !session.credentials) {
-      throw new Error(EWhatsAppErrorCode.SESSION_NOT_FOUND);
-    }
+      if (!account) {
+        throw new Error(EWhatsAppErrorCode.ACCOUNT_NOT_FOUND);
+      }
 
-    // Parse stored credentials
-    const credentials = JSON.parse(session.credentials) as StoredAuthState;
+      // Step 3: Get WhatsApp session/credentials
+      const session = account.whatsappSession;
+      if (!session || !session.credentials) {
+        throw new Error(EWhatsAppErrorCode.SESSION_NOT_FOUND);
+      }
 
-    // Step 3: Connect with existing credentials (no QR code)
-    const { socket, waitForConnection, cleanup } =
-      await connectWithCredentials(credentials);
+      // Parse stored credentials
+      const credentials = JSON.parse(session.credentials) as StoredAuthState;
 
-    try {
-      // Step 4: Wait for connection to establish
+      // Step 4: Create new connection
+      const { socket, waitForConnection, cleanup } =
+        await connectWithCredentials(credentials);
+
+      // Wait for connection to establish
       const connected = await waitForConnection();
       if (!connected) {
+        cleanup();
         throw new Error(EWhatsAppErrorCode.CONNECTION_TIMEOUT);
       }
 
-      // Step 5: Send message
-      // Format phone: remove + and @s.whatsapp.net suffix
-      const formattedPhone = recipientPhone.replace(/^\+/, "");
-      const result = await sendWhatsAppMessage(socket, formattedPhone, message);
+      // Store connection in pool
+      connection = { socket, cleanup };
+      activeConnections.set(accountId, connection);
 
-      if (!result.success) {
-        throw new Error(
-          result.errorCode || EWhatsAppErrorCode.MESSAGE_SEND_FAILED,
-        );
-      }
-
-      return {
-        success: true,
-        timestamp: new Date().toISOString(),
-        metadata,
-      };
-    } finally {
-      cleanup();
+      // Listen for disconnections to clean up pool
+      socket.ev.on("connection.update", (update) => {
+        if (update.connection === "close") {
+          activeConnections.delete(accountId);
+          cleanup();
+        }
+      });
     }
+
+    // Step 5: Send message using pooled connection
+    // Format phone: remove + and @s.whatsapp.net suffix
+    const jid = getWhatsAppJID(recipientPhone);
+    const result = await sendWhatsAppMessage(connection.socket, jid, message);
+
+    if (!result.success) {
+      throw new Error(
+        result.errorCode || EWhatsAppErrorCode.MESSAGE_SEND_FAILED,
+      );
+    }
+
+    // Step 6: Consume credit after successful send
+    if (metadata?.huntId) {
+      await consumeCredit({
+        huntId: metadata.huntId,
+        channel: EContactChannel.WHATSAPP_TEXT,
+        recipient: recipientPhone,
+      });
+    }
+
+    return {
+      success: true,
+      timestamp: new Date().toISOString(),
+      metadata,
+    };
   } catch (error) {
+    // If connection failed, remove from pool so next attempt creates fresh connection
+    if (activeConnections.has(accountId)) {
+      const connection = activeConnections.get(accountId);
+      if (connection) {
+        connection.cleanup();
+      }
+      activeConnections.delete(accountId);
+    }
     throw error;
   }
 }

@@ -4,7 +4,11 @@
  * Reusable message utilities for workers
  */
 
-import { ESmsErrorCode } from "@auto-prospect/shared";
+import {
+  EContactChannel,
+  ESmsErrorCode,
+  TContactChannel,
+} from "@auto-prospect/shared";
 import parsePhoneNumber, { CountryCode, E164Number } from "libphonenumber-js";
 
 /**
@@ -72,29 +76,20 @@ export function personalizeMessage(
 }
 
 /**
- * Extracts WhatsApp JID from phone number
- * Converts "+33612345678" to "33612345678@s.whatsapp.net"
- */
-export function getWhatsAppJID(phone: string): string {
-  const cleaned = phone.replace(/^\+/, "");
-  return `${cleaned}@s.whatsapp.net`;
-}
-
-/**
  * Validates message content length for different channels
  */
 export function validateMessageLength(
   message: string,
-  channel: "sms" | "whatsapp" | "voice",
+  channel: TContactChannel,
 ): {
   valid: boolean;
   maxLength: number;
   currentLength: number;
 } {
   const limits = {
-    sms: 160,
-    whatsapp: 4096,
-    voice: 1000,
+    [EContactChannel.SMS]: 160,
+    [EContactChannel.WHATSAPP_TEXT]: 4096,
+    [EContactChannel.RINGLESS_VOICE]: 1000,
   };
 
   const maxLength = limits[channel];
@@ -105,4 +100,70 @@ export function validateMessageLength(
     maxLength,
     currentLength,
   };
+}
+
+/**
+ * Sends a voice message via Voice Partner API
+ */
+export async function sendVoiceMessage({
+  phoneNumbers,
+  tokenAudio,
+  sender,
+  emailForNotification,
+  scheduledDate,
+}: {
+  phoneNumbers: string;
+  tokenAudio: string;
+  sender?: string;
+  emailForNotification?: string;
+  scheduledDate?: string;
+}): Promise<{
+  success: boolean;
+  error?: string;
+  data?: Record<string, unknown>;
+}> {
+  const apiKey = process.env.VOICE_PARTNER_API_KEY;
+  if (!apiKey) {
+    return { success: false, error: "API key missing" };
+  }
+
+  const payload: Record<string, string> = {
+    apiKey,
+    tokenAudio,
+    phoneNumbers,
+  };
+
+  if (sender) payload.sender = sender;
+  if (scheduledDate) payload.scheduledDate = scheduledDate;
+  if (emailForNotification) payload.emailForNotification = emailForNotification;
+
+  try {
+    const response = await fetch(
+      "https://api.voicepartner.fr/v1/campaign/send",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-cache",
+        },
+        body: JSON.stringify(payload),
+      },
+    );
+
+    const data = (await response.json()) as Record<string, unknown>;
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error: (data.message as string) || "Voice Partner API error",
+      };
+    }
+
+    return { success: true, data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Internal error",
+    };
+  }
 }

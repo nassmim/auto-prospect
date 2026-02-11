@@ -9,7 +9,11 @@ import {
   getDBAdminClient,
   huntChannelCredits,
 } from "@auto-prospect/db";
-import { TContactChannel } from "@auto-prospect/shared/src/config/message.config";
+import {
+  EContactChannel,
+  TContactChannel,
+  WHATSAPP_DAILY_LIMIT,
+} from "@auto-prospect/shared/src/config/message.config";
 import { ETransactionType } from "@auto-prospect/shared/src/config/payment.config";
 import { eq, sql } from "drizzle-orm";
 
@@ -28,6 +32,9 @@ export type TConsumeCreditsResult =
  * Consumes one credit for a successful message send (worker context)
  * Uses database transaction with row-level locking to prevent race conditions
  * ALWAYS bypasses RLS using admin client (workers operate in system context)
+ *
+ * Special handling for WhatsApp: Credits are tracked but never fail due to
+ * insufficient balance (WhatsApp is unlimited for users with 1000/day hard limit)
  */
 export async function consumeCredit({
   huntId,
@@ -55,13 +62,15 @@ export async function consumeCredit({
       const remainingCredits =
         channelCredit.creditsAllocated - channelCredit.creditsConsumed;
 
-      if (remainingCredits <= 0) {
+      // WhatsApp: track consumption but never fail (unlimited for users)
+      // Other channels: fail if insufficient credits
+      if (channel !== EContactChannel.WHATSAPP_TEXT && remainingCredits <= 0) {
         throw new Error(
           `Insufficient credits for channel ${channel}. Allocated: ${channelCredit.creditsAllocated}, Consumed: ${channelCredit.creditsConsumed}`,
         );
       }
 
-      // Increment consumed credits atomically
+      // Increment consumed credits atomically (tracking for all channels including WhatsApp)
       await tx
         .update(huntChannelCredits)
         .set({
@@ -111,6 +120,9 @@ export async function consumeCredit({
 
 /**
  * Gets remaining credits for a channel (worker context)
+ *
+ * Special handling for WhatsApp: Always returns WHATSAPP_DAILY_LIMIT (1000)
+ * regardless of database values, since WhatsApp is unlimited for users
  */
 export async function getRemainingCredits(
   huntId: string,
@@ -125,6 +137,11 @@ export async function getRemainingCredits(
 
   if (!channelCredit) {
     return 0;
+  }
+
+  // WhatsApp: always return hard-coded limit (unlimited for users)
+  if (channel === EContactChannel.WHATSAPP_TEXT) {
+    return WHATSAPP_DAILY_LIMIT;
   }
 
   return channelCredit.creditsAllocated - channelCredit.creditsConsumed;
