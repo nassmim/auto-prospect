@@ -6,13 +6,13 @@
  * - Ringless Voice: Voice messages delivered directly to voicemail without ringing
  *
  * These channels are grouped together as they both use phone numbers as the
- * primary contact method and often share the same SMS/Voice provider (e.g., Twilio, Vonage).
+ * primary contact method
  */
 
-import { Router, Request, Response } from "express";
-import { smsQueue, voiceQueue } from "../queues";
-import { JOB_TYPES } from "../config";
 import { EWorkerErrorCode } from "@auto-prospect/shared";
+import { Request, Response, Router } from "express";
+import { JOB_TYPES } from "../config";
+import { smsQueue, voiceQueue } from "../queues";
 
 const router = Router();
 
@@ -33,15 +33,6 @@ const router = Router();
  * - success: boolean
  * - jobId: string - BullMQ job ID for tracking
  *
- * Example:
- * ```
- * POST /api/phone/sms
- * {
- *   "recipientPhone": "+33612345678",
- *   "message": "Bonjour, j'ai vu votre annonce sur LeBonCoin..."
- * }
- * ```
- *
  * Note: SMS provider (Twilio, Vonage, etc.) must be configured in worker environment
  */
 router.post("/sms", async (req: Request, res: Response) => {
@@ -52,7 +43,7 @@ router.post("/sms", async (req: Request, res: Response) => {
     if (!recipientPhone || !message) {
       return res.status(400).json({
         error: EWorkerErrorCode.MISSING_REQUIRED_FIELDS,
-        message: "Missing required fields: recipientPhone, message"
+        message: "Missing required fields: recipientPhone, message",
       });
     }
 
@@ -66,7 +57,7 @@ router.post("/sms", async (req: Request, res: Response) => {
   } catch (error) {
     res.status(500).json({
       error: EWorkerErrorCode.SMS_QUEUE_FAILED,
-      message: error instanceof Error ? error.message : "Unknown error"
+      message: error instanceof Error ? error.message : "Unknown error",
     });
   }
 });
@@ -82,31 +73,11 @@ router.post("/sms", async (req: Request, res: Response) => {
  *
  * Body:
  * - recipientPhone: string - Phone number in international format
- * - message: string - Text to be converted to speech (TTS)
- * OR
  * - audioUrl: string - URL to pre-recorded audio file
  *
  * Returns:
  * - success: boolean
  * - jobId: string - BullMQ job ID for tracking
- *
- * Example with TTS:
- * ```
- * POST /api/phone/ringless-voice
- * {
- *   "recipientPhone": "+33612345678",
- *   "message": "Bonjour, je vous contacte au sujet de votre annonce..."
- * }
- * ```
- *
- * Example with audio file:
- * ```
- * POST /api/phone/ringless-voice
- * {
- *   "recipientPhone": "+33612345678",
- *   "audioUrl": "https://cdn.example.com/voice-message.mp3"
- * }
- * ```
  *
  * Note: Ringless voice provider must be configured in worker environment
  */
@@ -118,7 +89,8 @@ router.post("/ringless-voice", async (req: Request, res: Response) => {
     if (!recipientPhone || (!message && !audioUrl)) {
       return res.status(400).json({
         error: EWorkerErrorCode.MISSING_REQUIRED_FIELDS,
-        message: "Missing required fields: recipientPhone and either message or audioUrl"
+        message:
+          "Missing required fields: recipientPhone and either message or audioUrl",
       });
     }
 
@@ -133,7 +105,7 @@ router.post("/ringless-voice", async (req: Request, res: Response) => {
   } catch (error) {
     res.status(500).json({
       error: EWorkerErrorCode.VOICE_QUEUE_FAILED,
-      message: error instanceof Error ? error.message : "Unknown error"
+      message: error instanceof Error ? error.message : "Unknown error",
     });
   }
 });

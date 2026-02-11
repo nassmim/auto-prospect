@@ -8,7 +8,6 @@
  * These are the first argument to queue.add()
  */
 export const JOB_TYPES = {
-  HUNT_EXECUTE: "execute-hunt",
   WHATSAPP_SEND_TEXT: "send-text",
   SMS_SEND: "send-sms",
   VOICE_SEND: "send-ringless-voice",
@@ -58,12 +57,8 @@ export const API_ROUTES = {
     sms: '/api/phone/sms',
     ringlessVoice: '/api/phone/ringless-voice',
   },
-  hunt: {
-    execute: '/api/hunt/execute',
-    status: (jobId: string) => `/api/hunt/status/${jobId}`,
-  },
-  jobs: {
-    status: (queue: string, jobId: string) => `/api/jobs/${queue}/${jobId}`,
+  cron: {
+    dailyHunts: '/api/cron/daily-hunts',
   },
 } as const;
 

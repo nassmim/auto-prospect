@@ -28,7 +28,7 @@ export async function startAllWorkers() {
     new Worker(QUEUE_NAMES.SMS, smsWorker, { connection }),
     new Worker(QUEUE_NAMES.VOICE, voiceWorker, { connection }),
     new Worker(QUEUE_NAMES.SCRAPING, scrapingWorker, { connection }),
-    new Worker(QUEUE_NAMES.DAILY_ORCHESTRATOR, dailyOrchestratorWorker, {
+    new Worker(QUEUE_NAMES.DAILY_HUNTS_ORCHESTRATOR, dailyOrchestratorWorker, {
       connection,
     }),
   ];

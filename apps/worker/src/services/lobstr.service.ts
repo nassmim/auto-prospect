@@ -1,20 +1,20 @@
 import {
   ads as adsTable,
-  adTypes,
   adSubTypes,
+  adTypes,
   brands,
-  locations,
-  gearBoxes,
   drivingLicences,
   fuels,
-  vehicleSeats,
-  vehicleStates,
+  gearBoxes,
+  getDBAdminClient,
+  locations,
   TAdInsert,
   TAdReferenceData,
+  vehicleSeats,
+  vehicleStates,
 } from "@auto-prospect/db";
 import { sql } from "drizzle-orm";
 import parsePhoneNumber from "libphonenumber-js";
-import { getAdminClient } from "./db.service";
 
 // Platform value field name for Lobstr
 const LOBSTR_PLATFORM_FIELD = "lobstrValue" as const;
@@ -61,7 +61,7 @@ async function sendAlertToAdmin(message: string): Promise<void> {
  * Fetches all reference data for mapping Lobstr values to DB IDs
  */
 async function fetchAllReferenceData(
-  db: ReturnType<typeof getAdminClient>
+  db: ReturnType<typeof getDBAdminClient>,
 ): Promise<TAdReferenceData> {
   const [
     adTypesData,
@@ -90,7 +90,10 @@ async function fetchAllReferenceData(
       adTypesData.map((item) => [item[LOBSTR_PLATFORM_FIELD] || "", item.id]),
     ),
     adSubTypes: new Map(
-      adSubTypesData.map((item) => [item[LOBSTR_PLATFORM_FIELD] || "", item.id]),
+      adSubTypesData.map((item) => [
+        item[LOBSTR_PLATFORM_FIELD] || "",
+        item.id,
+      ]),
     ),
     brands: new Map(
       brandsData.map((item) => [item[LOBSTR_PLATFORM_FIELD] || "", item.id]),
@@ -102,16 +105,25 @@ async function fetchAllReferenceData(
       gearBoxesData.map((item) => [item[LOBSTR_PLATFORM_FIELD] || "", item.id]),
     ),
     drivingLicences: new Map(
-      drivingLicencesData.map((item) => [item[LOBSTR_PLATFORM_FIELD] || "", item.id]),
+      drivingLicencesData.map((item) => [
+        item[LOBSTR_PLATFORM_FIELD] || "",
+        item.id,
+      ]),
     ),
     fuels: new Map(
       fuelsData.map((item) => [item[LOBSTR_PLATFORM_FIELD] || "", item.id]),
     ),
     vehicleSeats: new Map(
-      vehicleSeatsData.map((item) => [item[LOBSTR_PLATFORM_FIELD] || "", item.id]),
+      vehicleSeatsData.map((item) => [
+        item[LOBSTR_PLATFORM_FIELD] || "",
+        item.id,
+      ]),
     ),
     vehicleStates: new Map(
-      vehicleStatesData.map((item) => [item[LOBSTR_PLATFORM_FIELD] || "", item.id]),
+      vehicleStatesData.map((item) => [
+        item[LOBSTR_PLATFORM_FIELD] || "",
+        item.id,
+      ]),
     ),
   };
 }
@@ -273,7 +285,7 @@ export const handleLobstrWebhook = async (runId: string): Promise<void> => {
  * runId is the id sent by lobstr
  */
 const saveAdsFromLobstr = async (runId: string): Promise<void> => {
-  const dbClient = getAdminClient();
+  const dbClient = getDBAdminClient();
 
   const fetchedResults = await getResultsFromRun(runId);
 

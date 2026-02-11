@@ -1,22 +1,17 @@
 /**
  * WhatsApp Routes
  *
- * Handles all WhatsApp-related messaging through the WhatsApp Business API (via Baileys).
+ * Handles all WhatsApp-related messaging through the WhatsApp API (via Baileys).
  *
  * Current capabilities:
  * - Text messages
  *
- * Future capabilities (to be implemented):
- * - Audio messages
- * - Video messages
- * - Document sharing
- * - Media messages (images, etc.)
  */
 
-import { Router, Request, Response } from "express";
-import { whatsappQueue } from "../queues";
-import { JOB_TYPES } from "../config";
 import { EWorkerErrorCode } from "@auto-prospect/shared";
+import { Request, Response, Router } from "express";
+import { JOB_TYPES } from "../config";
+import { whatsappQueue } from "../queues";
 
 const router = Router();
 
@@ -34,15 +29,6 @@ const router = Router();
  * - success: boolean
  * - jobId: string - BullMQ job ID for tracking
  *
- * Example:
- * ```
- * POST /api/whatsapp/text
- * {
- *   "recipientPhone": "+33612345678",
- *   "senderPhone": "+33601020304",
- *   "message": "Bonjour, j'ai vu votre annonce..."
- * }
- * ```
  */
 router.post("/text", async (req: Request, res: Response) => {
   try {
@@ -52,7 +38,8 @@ router.post("/text", async (req: Request, res: Response) => {
     if (!recipientPhone || !senderPhone || !message) {
       return res.status(400).json({
         error: EWorkerErrorCode.MISSING_REQUIRED_FIELDS,
-        message: "Missing required fields: recipientPhone, senderPhone, message"
+        message:
+          "Missing required fields: recipientPhone, senderPhone, message",
       });
     }
 
@@ -67,43 +54,9 @@ router.post("/text", async (req: Request, res: Response) => {
   } catch (error) {
     res.status(500).json({
       error: EWorkerErrorCode.WHATSAPP_QUEUE_FAILED,
-      message: error instanceof Error ? error.message : "Unknown error"
+      message: error instanceof Error ? error.message : "Unknown error",
     });
   }
-});
-
-/**
- * POST /whatsapp/audio (PLANNED - Not yet implemented)
- *
- * Will send an audio message via WhatsApp
- *
- * Body (planned):
- * - recipientPhone: string
- * - senderPhone: string
- * - audioUrl: string - URL to the audio file
- */
-router.post("/audio", async (_req: Request, res: Response) => {
-  res.status(501).json({
-    error: "Audio messages not yet implemented",
-    message: "This feature is planned for future release"
-  });
-});
-
-/**
- * POST /whatsapp/video (PLANNED - Not yet implemented)
- *
- * Will send a video message via WhatsApp
- *
- * Body (planned):
- * - recipientPhone: string
- * - senderPhone: string
- * - videoUrl: string - URL to the video file
- */
-router.post("/video", async (_req: Request, res: Response) => {
-  res.status(501).json({
-    error: "Video messages not yet implemented",
-    message: "This feature is planned for future release"
-  });
 });
 
 export default router;

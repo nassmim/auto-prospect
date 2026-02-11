@@ -6,7 +6,7 @@ export const QUEUE_NAMES = {
   SMS: "sms",
   VOICE: "voice",
   SCRAPING: "scraping",
-  DAILY_ORCHESTRATOR: "daily-orchestrator",
+  DAILY_HUNTS_ORCHESTRATOR: "daily-hunts-orchestrator",
 } as const;
 
 export const whatsappQueue = new Queue(QUEUE_NAMES.WHATSAPP, {
@@ -41,8 +41,8 @@ export const scrapingQueue = new Queue(QUEUE_NAMES.SCRAPING, {
   },
 });
 
-export const dailyOrchestratorQueue = new Queue(
-  QUEUE_NAMES.DAILY_ORCHESTRATOR,
+export const dailyHuntsOrchestratorQueue = new Queue(
+  QUEUE_NAMES.DAILY_HUNTS_ORCHESTRATOR,
   {
     connection,
     defaultJobOptions: {
@@ -57,7 +57,7 @@ export const queues = {
   [QUEUE_NAMES.SMS]: smsQueue,
   [QUEUE_NAMES.VOICE]: voiceQueue,
   [QUEUE_NAMES.SCRAPING]: scrapingQueue,
-  [QUEUE_NAMES.DAILY_ORCHESTRATOR]: dailyOrchestratorQueue,
+  [QUEUE_NAMES.DAILY_HUNTS_ORCHESTRATOR]: dailyHuntsOrchestratorQueue,
 };
 
 export async function getQueueStats(queueName: string) {

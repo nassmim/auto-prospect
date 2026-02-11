@@ -4,11 +4,14 @@
  * Credit consumption for message workers (admin context)
  */
 
-import { creditTransactions, huntChannelCredits } from "@auto-prospect/db";
+import {
+  creditTransactions,
+  getDBAdminClient,
+  huntChannelCredits,
+} from "@auto-prospect/db";
 import { TContactChannel } from "@auto-prospect/shared/src/config/message.config";
 import { ETransactionType } from "@auto-prospect/shared/src/config/payment.config";
 import { eq, sql } from "drizzle-orm";
-import { getAdminClient } from "./db.service";
 
 export type TConsumeCreditsParams = {
   huntId: string;
@@ -32,7 +35,7 @@ export async function consumeCredit({
   messageId,
   recipient,
 }: TConsumeCreditsParams): Promise<TConsumeCreditsResult> {
-  const db = getAdminClient();
+  const db = getDBAdminClient();
 
   try {
     const result = await db.transaction(async (tx) => {
@@ -111,9 +114,9 @@ export async function consumeCredit({
  */
 export async function getRemainingCredits(
   huntId: string,
-  channel: TContactChannel
+  channel: TContactChannel,
 ): Promise<number> {
-  const db = getAdminClient();
+  const db = getDBAdminClient();
 
   const channelCredit = await db.query.huntChannelCredits.findFirst({
     where: (table, { and, eq }) =>
