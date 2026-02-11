@@ -22,14 +22,14 @@ import {
 // Import core functions from whatsapp package
 import { createDrizzleSupabaseClient } from "@/lib/db";
 import {
-  StoredAuthState,
-  WhatsAppConnectionResult,
-  WhatsAppEventHandlers,
   checkWhatsAppNumber,
   connectWithCredentials,
   createDBAuthState,
   createWhatsAppConnection,
   sendWhatsAppMessage,
+  StoredAuthState,
+  WhatsAppConnectionResult,
+  WhatsAppEventHandlers,
 } from "@auto-prospect/whatsapp";
 
 // =============================================================================

@@ -1,15 +1,18 @@
-import { createDrizzleSupabaseClient, TDBQuery } from "@/lib/drizzle/dbClient";
+import { createDrizzleSupabaseClient } from "@/lib/db";
 import {
   creditTransactions,
+  desc,
+  eq,
   huntChannelCredits,
+  sql,
   TCreditTransaction,
-} from "@/schema/credits.schema";
+  TDBQuery,
+} from "@auto-prospect/db";
 import { TContactChannel } from "@auto-prospect/shared/src/config/message.config";
 import {
   type TransactionType,
   ETransactionType,
 } from "@auto-prospect/shared/src/config/payment.config";
-import { desc, eq, sql } from "@auto-prospect/db";
 
 export type TConsumeCreditsParams = {
   huntId: string;

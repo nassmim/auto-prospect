@@ -1,9 +1,5 @@
-import { HUNT_WITH_RELATIONS } from "@/constants/hunt.constants";
-import { CACHE_TAGS } from "@/lib/cache/cache.config";
-import { createDrizzleSupabaseClient, TDBClient } from "@/lib/drizzle/dbClient";
-import { contactedAds } from "@/schema/ad.schema";
-import { THunt } from "@/schema/hunt.schema";
-import { leads } from "@/schema/lead.schema";
+import { CACHE_TAGS } from "@/lib/cache.config";
+import { createDrizzleSupabaseClient } from "@/lib/db";
 import { getUserAccount } from "@/services/account.service";
 import { getAdsContactedByUser, getMatchingAds } from "@/services/ad.service";
 import { allocateAdsToChannels } from "@/services/channel-allocator.service";
@@ -11,8 +7,17 @@ import { consumeCredit } from "@/services/credit.service";
 import { createDailyContactTracker } from "@/services/daily-contact-tracker.service";
 import { getContactedLeads, getTotalLeads } from "@/services/lead.service";
 import { getUserPlan } from "@/services/subscription.service";
-import { THuntSummary } from "@/types/hunt.types";
-import { TDailyContactTracker } from "@/types/message.types";
+import {
+  contactedAds,
+  leads,
+  TDBWithTokenClient,
+  THunt,
+} from "@auto-prospect/db";
+import {
+  HUNT_WITH_RELATIONS,
+  TDailyContactTracker,
+  THuntSummary,
+} from "@auto-prospect/shared";
 import { EHuntStatus } from "@auto-prospect/shared/src/config/hunt.config";
 import { ELeadStage } from "@auto-prospect/shared/src/config/lead.config";
 import { cacheTag, updateTag } from "next/cache";
@@ -35,9 +40,11 @@ export const runDailyHunts = async () => {
 /**
  * Fetches all active hunts (baseFilters)
  */
-const fetchAllActiveHunts = async (dbClient: TDBClient): Promise<THunt[]> => {
+const fetchAllActiveHunts = async (
+  dbClient: TDBWithTokenClient,
+): Promise<THunt[]> => {
   return await dbClient.admin.query.hunts.findMany({
-    where: (table, { eq }) => eq(table.isActive, true),
+    where: (table, { eq }) => eq(table.status, EHuntStatus.ACTIVE),
     with: {
       location: true,
       subTypes: true,
@@ -52,7 +59,7 @@ const fetchAllActiveHunts = async (dbClient: TDBClient): Promise<THunt[]> => {
  */
 async function bulkSend(
   hunts: THunt[],
-  dbClient: TDBClient,
+  dbClient: TDBWithTokenClient,
   dailyContactTracker: TDailyContactTracker,
 ): Promise<void> {
   const concurrency = 5;
@@ -88,7 +95,7 @@ async function bulkSend(
  */
 async function contactAdsOwners(
   hunt: THunt,
-  dbClient: TDBClient,
+  dbClient: TDBWithTokenClient,
   dailyContactTracker: TDailyContactTracker,
 ): Promise<void> {
   const accountId = hunt.accountId;
@@ -182,7 +189,7 @@ async function contactAdsOwners(
  */
 export async function getHuntDailyPacingLimit(
   huntId: string,
-  dbClient: TDBClient,
+  dbClient: TDBWithTokenClient,
 ): Promise<number | null> {
   // Define query once, reuse for both modes
   const hunt = await dbClient.admin.query.hunts.findFirst({
@@ -379,7 +386,7 @@ export async function getActiveHunts(): Promise<THuntSummary[]> {
 }
 
 export const updateAccountHuntsCache = async (
-  dbClient: TDBClient,
+  dbClient: TDBWithTokenClient,
   huntId?: string,
   accountId?: string,
 ) => {

@@ -1,8 +1,8 @@
 "use server";
 
 import { pages } from "@/config/routes";
+import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { createClient } from "../../../../packages/db/src/supabase/server";
 
 /**
  * Send a magic link to the user's email

@@ -1,13 +1,8 @@
 "use server";
 
-import { CACHE_TAGS } from "@/lib/cache/cache.config";
-import {
-  createDrizzleSupabaseClient,
-  TANDperator,
-} from "@/lib/drizzle/dbClient";
+import { CACHE_TAGS } from "@/lib/cache.config";
+import { createDrizzleSupabaseClient } from "@/lib/db";
 import { formatZodError } from "@/lib/validation";
-import { accounts } from "@/schema/account.schema";
-import { messageTemplates } from "@/schema/message.schema";
 import { getUserAccount } from "@/services/account.service";
 import {
   getDefaultWhatsAppTemplate as getDefaultWhatsAppTemplateService,
@@ -23,6 +18,8 @@ import {
   TSaveSmsApiKeySchema,
   TSendSmsSchema,
 } from "@/validation-schemas/settings.validation";
+import type { BinaryOperator, TANDperator } from "@auto-prospect/db";
+import { accounts, and, eq, messageTemplates } from "@auto-prospect/db";
 import {
   EGeneralErrorCode,
   ESmsErrorCode,
@@ -32,8 +29,6 @@ import {
   EContactChannel,
   TContactChannel,
 } from "@auto-prospect/shared/src/config/message.config";
-import { and, eq } from "@auto-prospect/db";
-import type { BinaryOperator } from "@auto-prospect/db";
 import { updateTag } from "next/cache";
 import { z } from "zod";
 
@@ -82,29 +77,31 @@ async function createTemplate<
       );
     }
 
+    let templateValues = {
+      accountId,
+      name: validatedData.name,
+      channel: validatedData.channel as TContactChannel,
+      isDefault: validatedData.isDefault || false,
+      audioUrl: "",
+      audioDuration: 0,
+      content: "",
+    };
+
     // Build template values based on type
-    const templateValues =
+    templateValues =
       channel === EContactChannel.RINGLESS_VOICE
         ? {
-            accountId,
-            name: validatedData.name,
-            channel: (validatedData as z.infer<typeof voiceTemplateSchema>)
-              .channel,
+            ...templateValues,
             audioUrl: (validatedData as z.infer<typeof voiceTemplateSchema>)
               .audioUrl,
             audioDuration: (
               validatedData as z.infer<typeof voiceTemplateSchema>
             ).audioDuration,
-            isDefault: validatedData.isDefault || false,
           }
         : {
-            accountId,
-            name: validatedData.name,
-            channel: (validatedData as z.infer<typeof textTemplateSchema>)
-              .channel,
+            ...templateValues,
             content: (validatedData as z.infer<typeof textTemplateSchema>)
               .content,
-            isDefault: validatedData.isDefault || false,
           };
 
     // Create template
@@ -115,8 +112,7 @@ async function createTemplate<
     updateTag(CACHE_TAGS.templatesByAccount(accountId));
 
     return { success: true, template };
-  } catch (error) {
-    console.error(`Error creating ${channel} template:`, error);
+  } catch {
     throw new Error("Failed to create template");
   }
 }

@@ -4,10 +4,10 @@
  * Database operations delegated to server actions
  */
 
-import { TDBClient } from "@/lib/drizzle/dbClient";
 import { getHuntChannelCreditsMap } from "@/services/channel.service";
 import { getHuntDailyPacingLimit } from "@/services/hunt.service";
-import { TDailyContactTracker } from "@/types/message.types";
+import { TDBWithTokenClient } from "@auto-prospect/db";
+import { TDailyContactTracker } from "@auto-prospect/shared";
 import { TContactChannel } from "@auto-prospect/shared/src/config/message.config";
 
 type TChannelAllocation = {
@@ -38,7 +38,7 @@ export async function allocateAdsToChannels({
   adIds,
   dailyContactTracker,
   dbClient,
-}: TAllocateAdsToChannelsParams & { dbClient: TDBClient }): Promise<
+}: TAllocateAdsToChannelsParams & { dbClient: TDBWithTokenClient }): Promise<
   TChannelAllocation[]
 > {
   // Get hunt daily pacing limit from database (bypass RLS for background job)
@@ -112,7 +112,7 @@ export async function allocateAdsToChannels({
 /**
  * Gets channel priorities ordered by priority (lowest number = highest priority)
  */
-export async function getChannelPriorities(dbClient: TDBClient) {
+export async function getChannelPriorities(dbClient: TDBWithTokenClient) {
   // Define query once, reuse for both modes
   return dbClient.admin.query.channelPriorities.findMany({
     orderBy: (table, { asc }) => [asc(table.priority)],

@@ -1,9 +1,8 @@
 "use server";
 
 import { pages } from "@/config/routes";
-import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
+import { createDrizzleSupabaseClient } from "@/lib/db";
 import { formatZodError } from "@/lib/validation";
-import { leadNotes, leadReminders, leads } from "@/schema/lead.schema";
 import {
   getLeadActivities,
   getLeadAssociatedTeamMembers,
@@ -12,8 +11,14 @@ import {
   getPipelineLeads,
 } from "@/services/lead.service";
 import { leadNoteSchema, leadReminderSchema } from "@/validation-schemas";
+import {
+  eq,
+  inArray,
+  leadNotes,
+  leadReminders,
+  leads,
+} from "@auto-prospect/db";
 import { TLeadStage } from "@auto-prospect/shared/src/config/lead.config";
-import { eq, inArray } from "@auto-prospect/db";
 import { revalidatePath } from "next/cache";
 import { createClient } from "../../../../packages/db/src/supabase/server";
 

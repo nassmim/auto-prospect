@@ -1,8 +1,6 @@
 "use server";
 
-import { createDrizzleSupabaseClient, TDBClient } from "@/lib/drizzle/dbClient";
-import { accounts } from "@/schema/account.schema";
-import { whatsappSessions } from "@/schema/whatsapp-session.schema";
+import { createDrizzleSupabaseClient } from "@/lib/db";
 import {
   connectWithCredentials,
   createWhatsAppConnection,
@@ -18,18 +16,23 @@ import {
   TSendWhatsAppTextMessageSchema,
 } from "@/validation-schemas/whatsapp.validation";
 import {
+  accounts,
+  eq,
+  TDBWithTokenClient,
+  whatsappSessions,
+} from "@auto-prospect/db";
+import {
   EGeneralErrorCode,
   EWhatsAppErrorCode,
   TErrorCode,
 } from "@auto-prospect/shared/src/config/error-codes";
-import { eq } from "@auto-prospect/db";
 
 /**
  * Deletes the WhatsApp session for an account (logout)
  */
 export const deleteWhatsAppSession = async (
   accountId: string,
-  dbClient?: TDBClient,
+  dbClient?: TDBWithTokenClient,
 ): Promise<{ success: boolean; errorCode?: TErrorCode }> => {
   const client = dbClient || (await createDrizzleSupabaseClient());
 
@@ -60,7 +63,7 @@ export const deleteWhatsAppSession = async (
 export const updateWhatsAppPhoneNumber = async (
   accountId: string,
   phoneNumber: string,
-  options?: { dbClient?: TDBClient },
+  options?: { dbClient?: TDBWithTokenClient },
 ): Promise<{
   success: boolean;
   formattedNumber?: string;

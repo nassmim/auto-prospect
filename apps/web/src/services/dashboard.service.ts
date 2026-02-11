@@ -1,11 +1,10 @@
-import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
-import { messages } from "@/schema/message.schema";
+import { createDrizzleSupabaseClient } from "@/lib/db";
 import { getContactedLeads, getTodayNewLeads } from "@/services/lead.service";
+import { eq, messages, sql } from "@auto-prospect/db";
 import {
   EContactChannel,
   TContactChannel,
 } from "@auto-prospect/shared/src/config/message.config";
-import { eq, sql } from "@auto-prospect/db";
 
 /**
  * Dashboard statistics for the account

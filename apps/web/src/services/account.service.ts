@@ -1,7 +1,12 @@
-import { createDrizzleSupabaseClient, TDBClient } from "@/lib/drizzle/dbClient";
-import { TAccount, TAccountSelectedKeys } from "@/schema/account.schema";
-import { Session, User } from "@supabase/supabase-js";
-import { createClient } from "../../../../packages/db/src/supabase/server";
+import { createDrizzleSupabaseClient } from "@/lib/db";
+import { createClient } from "@/lib/supabase/server";
+import {
+  Session,
+  TAccount,
+  TAccountSelectedKeys,
+  TDBWithTokenClient,
+  User,
+} from "@auto-prospect/db";
 
 /**
  * Gets the current user's session
@@ -42,7 +47,9 @@ export async function getAuthser(): Promise<User | { id: "" }> {
 /**
  * Gets the current user's primary account (overload for no columns - returns full account)
  */
-export async function getUserAccount(dbClient?: TDBClient): Promise<TAccount>;
+export async function getUserAccount(
+  dbClient?: TDBWithTokenClient,
+): Promise<TAccount>;
 
 /**
  * Gets the current user's primary account (overload for selected columns)
@@ -50,7 +57,7 @@ export async function getUserAccount(dbClient?: TDBClient): Promise<TAccount>;
 export async function getUserAccount<
   T extends Partial<Record<keyof TAccount, boolean>>,
 >(
-  dbClient: TDBClient | undefined,
+  dbClient: TDBWithTokenClient | undefined,
   options: { columnsToKeep: T },
 ): Promise<Pick<TAccount, TAccountSelectedKeys<T>>>;
 
@@ -58,7 +65,7 @@ export async function getUserAccount<
  * Implementation
  */
 export async function getUserAccount(
-  dbClient?: TDBClient,
+  dbClient?: TDBWithTokenClient,
   options?: { columnsToKeep?: Partial<Record<keyof TAccount, boolean>> },
 ): Promise<TAccount | Partial<TAccount>> {
   const client = dbClient || (await createDrizzleSupabaseClient());

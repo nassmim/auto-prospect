@@ -1,14 +1,8 @@
-import {
-  createDrizzleSupabaseClient,
-  TDBClient,
-  TDBQuery,
-} from "@/lib/drizzle/dbClient";
-import { leads } from "@/schema/lead.schema";
-import { messages } from "@/schema/message.schema";
+import { createDrizzleSupabaseClient } from "@/lib/db";
+import { createClient } from "@/lib/supabase/server";
+import type { SQL, TDBQuery, TDBWithTokenClient } from "@auto-prospect/db";
+import { and, eq, gte, leads, messages, sql } from "@auto-prospect/db";
 import { ELeadStage } from "@auto-prospect/shared/src/config/lead.config";
-import { and, eq, gte, sql } from "@auto-prospect/db";
-import type { SQL } from "@auto-prospect/db";
-import { createClient } from "../../../../packages/db/src/supabase/server";
 
 type TLeadsSummaryStats = {
   todayLeadsCount: number;
@@ -178,7 +172,7 @@ export async function getLeadActivities(leadId: string) {
  */
 export async function getTodayNewLeads(options?: {
   huntId?: string;
-  dbClient?: TDBClient;
+  dbClient?: TDBWithTokenClient;
   tx?: TDBQuery;
 }): Promise<{ todayLeadsCount: number }> {
   const { huntId, dbClient, tx } = options || {};
@@ -223,7 +217,7 @@ export async function getTodayNewLeads(options?: {
  */
 export async function getContactedLeads(options?: {
   huntId?: string;
-  dbClient?: TDBClient;
+  dbClient?: TDBWithTokenClient;
   tx?: TDBQuery;
 }): Promise<{ contactedLeadsCount: number }> {
   const { huntId, dbClient, tx } = options || {};
@@ -265,7 +259,7 @@ export async function getContactedLeads(options?: {
  */
 export async function getTotalLeads(options?: {
   huntId?: string;
-  dbClient?: TDBClient;
+  dbClient?: TDBWithTokenClient;
   tx?: TDBQuery;
 }): Promise<{ totalLeads: number }> {
   const { huntId, dbClient, tx } = options || {};

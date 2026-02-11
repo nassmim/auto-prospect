@@ -53,22 +53,22 @@ export { and, eq };
 
 // Re-export commonly used Drizzle operators and types
 export {
-  desc,
   asc,
-  sql,
-  inArray,
-  isNull,
-  isNotNull,
-  like,
-  ilike,
-  gte,
-  lte,
+  desc,
   gt,
+  gte,
+  ilike,
+  inArray,
+  isNotNull,
+  isNull,
+  like,
   lt,
+  lte,
   ne,
+  sql,
 } from "drizzle-orm";
 
-export type { SQL, BinaryOperator } from "drizzle-orm";
+export type { BinaryOperator, SQL } from "drizzle-orm";
 export type { PgColumn } from "drizzle-orm/pg-core";
 
 // Types
@@ -86,7 +86,7 @@ type TDBQuery =
 
 type TEqOperator = typeof eq;
 type TANDperator = typeof and;
-type TDBOptions = { dbClient?: TDBClient; bypassRLS?: boolean };
+type TDBOptions = { dbClient?: TDBWithTokenClient; bypassRLS?: boolean };
 
 export type {
   TANDperator,

@@ -1,8 +1,5 @@
-import {
-  createDrizzleSupabaseClient,
-  TDBClient,
-  TDBQuery,
-} from "@/lib/drizzle/dbClient";
+import { createDrizzleSupabaseClient } from "@/lib/db";
+import { TDBQuery, TDBWithTokenClient } from "@auto-prospect/db";
 
 /**
  * Gets hunt channel credits with remaining balance calculated
@@ -11,7 +8,7 @@ import {
  */
 export async function getHuntChannelCreditsMap(
   huntId: string,
-  dbClient: TDBClient,
+  dbClient: TDBWithTokenClient,
   bypassRLS: boolean = false,
 ): Promise<Map<string, number>> {
   const client = dbClient || (await createDrizzleSupabaseClient());

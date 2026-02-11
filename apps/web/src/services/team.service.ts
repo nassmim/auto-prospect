@@ -1,10 +1,11 @@
-import { createDrizzleSupabaseClient, TDBClient } from "@/lib/drizzle/dbClient";
+import { createDrizzleSupabaseClient } from "@/lib/db";
 import { getUserAccount } from "@/services/account.service";
+import { TDBWithTokenClient } from "@auto-prospect/db";
 
 /**
  * Gets all members of the current account - CACHED
  */
-export async function getTeamMembers(dbClient?: TDBClient) {
+export async function getTeamMembers(dbClient?: TDBWithTokenClient) {
   // If dbClient is provided, it's being called from settings page with existing client
   // In that case, get accountId first then use cached version
   if (!dbClient) {
@@ -41,7 +42,7 @@ async function getCachedTeamMembers(accountId: string) {
   "use cache";
 
   const { cacheTag } = await import("next/cache");
-  const { CACHE_TAGS } = await import("@/lib/cache/cache.config");
+  const { CACHE_TAGS } = await import("@/lib/cache.config");
 
   cacheTag(CACHE_TAGS.teamMembersByAccount(accountId));
 

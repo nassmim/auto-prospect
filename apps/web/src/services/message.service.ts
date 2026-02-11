@@ -4,15 +4,18 @@
  */
 
 import { pages } from "@/config/routes";
-import { CACHE_TAGS } from "@/lib/cache/cache.config";
-import { createDrizzleSupabaseClient, TDBClient } from "@/lib/drizzle/dbClient";
-import { creditTransactions } from "@/schema/credits.schema";
-import { leadNotes } from "@/schema/lead.schema";
-import { messages } from "@/schema/message.schema";
+import { CACHE_TAGS } from "@/lib/cache.config";
+import { createDrizzleSupabaseClient } from "@/lib/db";
 import { getUserAccount } from "@/services/account.service";
 import { consumeCredit } from "@/services/credit.service";
+import {
+  creditTransactions,
+  eq,
+  leadNotes,
+  messages,
+  TDBWithTokenClient,
+} from "@auto-prospect/db";
 import { EContactChannel } from "@auto-prospect/shared/src/config/message.config";
-import { eq } from "@auto-prospect/db";
 import { revalidatePath, updateTag } from "next/cache";
 
 export type TTemplateVariables = {
@@ -130,7 +133,7 @@ export async function logWhatsAppMessage(
         .values({
           leadId,
           templateId: templateId || null,
-          channel: "whatsapp",
+          channel: EContactChannel.WHATSAPP_TEXT,
           content: renderedMessage,
           status: "sent", // MVP: assume sent immediately
           sentAt: new Date(),
@@ -190,7 +193,7 @@ async function getCachedAccountTemplates(accountId: string) {
   "use cache";
 
   const { cacheTag } = await import("next/cache");
-  const { CACHE_TAGS } = await import("@/lib/cache/cache.config");
+  const { CACHE_TAGS } = await import("@/lib/cache.config");
 
   cacheTag(CACHE_TAGS.templatesByAccount(accountId));
 
@@ -286,7 +289,7 @@ export const sendSms = async ({
 };
 
 export const updateAccountTemplatesCache = async (
-  dbClient: TDBClient,
+  dbClient: TDBWithTokenClient,
   accountId?: string,
 ) => {
   let accountIdToUse = accountId;

@@ -19,7 +19,6 @@
     "drizzle-orm": "^0.45.1",
     "postgres": "^3.4.8",
     "@supabase/supabase-js": "^2.90.1",
-    "@supabase/ssr": "^0.8.0",
     "jwt-decode": "^4.0.0"
   },
   "devDependencies": {

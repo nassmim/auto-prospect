@@ -1,10 +1,9 @@
 "use server";
 
-import { CACHE_TAGS } from "@/lib/cache/cache.config";
-import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
+import { CACHE_TAGS } from "@/lib/cache.config";
+import { createDrizzleSupabaseClient } from "@/lib/db";
+import { createClient } from "@/lib/supabase/server";
 import { formatZodError } from "@/lib/validation";
-import { huntChannelCredits } from "@/schema/credits.schema";
-import { brandsHunts, hunts, subTypesHunts } from "@/schema/hunt.schema";
 import { getUserAccount } from "@/services/account.service";
 import {
   getAccountHunts,
@@ -13,6 +12,13 @@ import {
 } from "@/services/hunt.service";
 import { createHuntSchema, updateHuntSchema } from "@/validation-schemas";
 import {
+  brandsHunts,
+  eq,
+  huntChannelCredits,
+  hunts,
+  subTypesHunts,
+} from "@auto-prospect/db";
+import {
   EHuntStatus,
   THuntStatus,
 } from "@auto-prospect/shared/src/config/hunt.config";
@@ -20,9 +26,7 @@ import {
   EContactChannel,
   WHATSAPP_DAILY_LIMIT,
 } from "@auto-prospect/shared/src/config/message.config";
-import { eq } from "@auto-prospect/db";
 import { updateTag } from "next/cache";
-import { createClient } from "../../../../packages/db/src/supabase/server";
 
 /**
  * Fetches all hunts for the current user's account

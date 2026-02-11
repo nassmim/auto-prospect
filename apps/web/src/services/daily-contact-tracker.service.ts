@@ -1,4 +1,4 @@
-import { TDailyContactTracker } from "@/types/message.types";
+import { TDailyContactTracker } from "@auto-prospect/shared";
 
 /**
  * Creates a new daily contact tracker instance
