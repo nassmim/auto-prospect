@@ -1,5 +1,4 @@
 import { createDrizzleSupabaseClient } from "@/lib/db";
-import { createClient } from "@/lib/supabase/server";
 import type { SQL, TDBQuery, TDBWithTokenClient } from "@auto-prospect/db";
 import { and, eq, gte, leads, messages, sql } from "@auto-prospect/db";
 import { ELeadStage } from "@auto-prospect/shared/src/config/lead.config";
@@ -15,6 +14,8 @@ type TLeadsSummaryStats = {
  * Used by lead drawer and full page view
  */
 export async function getLeadDetails(leadId: string) {
+  // This function can be cached
+  // Will be invalidated when the user performs an action on this specific lead
   const dbClient = await createDrizzleSupabaseClient();
 
   try {
@@ -67,40 +68,32 @@ export async function getLeadDetails(leadId: string) {
  * Fetch all members of the lead's account for assignment dropdown
  */
 export async function getLeadAssociatedTeamMembers(leadId: string) {
-  const supabase = await createClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (!session) {
-    throw new Error("Unauthorized");
-  }
-
+  // This function can be cached
+  // Will be invalidated when the user associates another member or removes the member association
   const dbClient = await createDrizzleSupabaseClient();
 
   try {
     // First, get the lead's account
-    const lead = await dbClient.rls(async (tx) => {
-      return tx.query.leads.findFirst({
+    const lead = await dbClient.rls((tx) =>
+      tx.query.leads.findFirst({
         where: eq(leads.id, leadId),
         columns: {
           accountId: true,
         },
-      });
-    });
+      }),
+    );
 
     if (!lead) {
       throw new Error("Lead not found");
     }
 
     // Fetch all members of this account
-    return await dbClient.rls(async (tx) =>
+    return await dbClient.rls((tx) =>
       tx.query.teamMembers.findMany({
         where: (table, { eq }) => eq(table.accountId, lead.accountId),
       }),
     );
-  } catch (error) {
-    console.error("Error fetching account members:", error);
+  } catch {
     throw new Error("Failed to fetch account members");
   }
 }
@@ -109,6 +102,8 @@ export async function getLeadAssociatedTeamMembers(leadId: string) {
  * Fetch message history for a lead
  */
 export async function getLeadMessages(leadId: string) {
+  // This function can be cached
+  // Will be invalidated when the user sends a new message to this lead
   const dbClient = await createDrizzleSupabaseClient();
 
   try {
@@ -128,8 +123,7 @@ export async function getLeadMessages(leadId: string) {
     });
 
     return messagesList;
-  } catch (error) {
-    console.error("Error fetching lead messages:", error);
+  } catch {
     throw new Error("Failed to fetch messages");
   }
 }
@@ -161,8 +155,7 @@ export async function getLeadActivities(leadId: string) {
     });
 
     return activitiesList;
-  } catch (error) {
-    console.error("Error fetching lead activities:", error);
+  } catch {
     throw new Error("Failed to fetch activities");
   }
 }

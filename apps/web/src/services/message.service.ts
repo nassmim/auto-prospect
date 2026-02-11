@@ -29,29 +29,6 @@ export type TTemplateVariables = {
 };
 
 /**
- * Sends a message to a Slack channel via webhook
- */
-export async function sendSlackMessage(message: string): Promise<void> {
-  const webhook = process.env.SLACK_WEBHOOK_URL;
-
-  if (!webhook) {
-    throw new Error("SLACK_WEBHOOK_URL environment variable is not configured");
-  }
-
-  const payload = {
-    text: message,
-  };
-
-  await fetch(webhook, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
-}
-
-/**
  * Get the default WhatsApp template for the account
  */
 export async function getDefaultWhatsAppTemplate(leadId: string) {
@@ -85,8 +62,7 @@ export async function getDefaultWhatsAppTemplate(leadId: string) {
     });
 
     return template;
-  } catch (error) {
-    console.error("Error fetching WhatsApp template:", error);
+  } catch {
     throw new Error("Failed to fetch WhatsApp template");
   }
 }
@@ -168,7 +144,6 @@ export async function logWhatsAppMessage(
 
     return { success: true };
   } catch (error) {
-    console.error("Error logging WhatsApp message:", error);
     throw new Error(
       error instanceof Error ? error.message : "Failed to log WhatsApp message",
     );
@@ -183,13 +158,16 @@ export async function getAccountTemplates() {
   const account = await getUserAccount(dbClient, {
     columnsToKeep: { id: true },
   });
-  return getCachedAccountTemplates(account.id);
+  return getCachedAccountTemplates(account.id, dbClient);
 }
 
 /**
  * Internal cached function for account templates
  */
-async function getCachedAccountTemplates(accountId: string) {
+async function getCachedAccountTemplates(
+  accountId: string,
+  dbClient: TDBWithTokenClient,
+) {
   "use cache";
 
   const { cacheTag } = await import("next/cache");
@@ -197,11 +175,11 @@ async function getCachedAccountTemplates(accountId: string) {
 
   cacheTag(CACHE_TAGS.templatesByAccount(accountId));
 
-  const dbClient = await createDrizzleSupabaseClient();
+  const client = dbClient || (await createDrizzleSupabaseClient());
 
   try {
     // Fetch all templates for this account
-    const templates = await dbClient.rls(async (tx) => {
+    const templates = await client.rls(async (tx) => {
       return tx.query.messageTemplates.findMany({
         where: (table, { eq }) => eq(table.accountId, accountId),
         with: {
@@ -256,37 +234,6 @@ export async function isSmsApiAllowedAction(): Promise<boolean> {
     return false;
   }
 }
-
-/**
- * Send SMS via SMSMobileAPI
- */
-export const sendSms = async ({
-  to,
-  message,
-  apiKey,
-}: {
-  to: string;
-  message: string;
-  apiKey: string;
-}) => {
-  if (!apiKey) throw new Error("API key is required");
-
-  const body = new URLSearchParams();
-  body.set("apikey", apiKey);
-  body.set("recipients", to);
-  body.set("message", message);
-  body.set("sendsms", "1");
-
-  const res = await fetch("https://api.smsmobileapi.com/sendsms/", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body,
-  });
-
-  if (!res.ok) throw new Error("Failed to send SMS");
-
-  return res.json();
-};
 
 export const updateAccountTemplatesCache = async (
   dbClient: TDBWithTokenClient,

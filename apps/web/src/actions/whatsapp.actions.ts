@@ -2,12 +2,8 @@
 
 import { createDrizzleSupabaseClient } from "@/lib/db";
 import {
-  connectWithCredentials,
-  createWhatsAppConnection,
   getWhatsAppSession,
   saveWhatsAppSession,
-  sendWhatsAppMessage,
-  StoredAuthState,
   updateWhatsAppConnectionStatus,
 } from "@/services/whatsapp.service";
 import { validateWhatsAppNumber } from "@/utils/validation.utils";
@@ -26,6 +22,10 @@ import {
   EWhatsAppErrorCode,
   TErrorCode,
 } from "@auto-prospect/shared/src/config/error-codes";
+import {
+  createWhatsAppConnection,
+  StoredAuthState,
+} from "@auto-prospect/whatsapp";
 
 /**
  * Deletes the WhatsApp session for an account (logout)
@@ -139,7 +139,7 @@ export const initiateWhatsAppConnection = async (
 
     // Get existing session if any
     const { session, credentials: storedCredentials } =
-      await getWhatsAppSession(accountId, { dbClient });
+      await getWhatsAppSession(accountId, dbClient);
 
     // If session is marked as disconnected, ignore old credentials and start fresh
     const credentialsToUse = session?.isConnected ? storedCredentials : null;
@@ -161,8 +161,10 @@ export const initiateWhatsAppConnection = async (
             try {
               const credentials = saveStateFn();
 
-              await saveWhatsAppSession(accountId, credentials);
-              await updateWhatsAppConnectionStatus(accountId, true, {
+              await saveWhatsAppSession(accountId, credentials, dbClient);
+              await updateWhatsAppConnectionStatus({
+                accountId,
+                isConnected: true,
                 dbClient,
               });
             } catch {
@@ -236,7 +238,7 @@ export const sendWhatsAppTextMessage = async (
     return { success: false, errorCode: EGeneralErrorCode.VALIDATION_FAILED };
   }
 
-  const { recipientPhone, senderPhone, message } = validation.data;
+  const { recipientPhone, message } = validation.data;
 
   // Validate recipient phone number format
   const recipientValidation = validateWhatsAppNumber(recipientPhone);
@@ -247,71 +249,8 @@ export const sendWhatsAppTextMessage = async (
     };
   }
 
-  const dbClient = await createDrizzleSupabaseClient();
-
   try {
-    // Find account by sender phone number
-    const account = await dbClient.admin.query.accounts.findFirst({
-      where: eq(accounts.whatsappPhoneNumber, senderPhone),
-    });
-
-    if (!account) {
-      return {
-        success: false,
-        errorCode: EWhatsAppErrorCode.ACCOUNT_NOT_FOUND,
-      };
-    }
-
-    // Get WhatsApp session credentials
-    const { credentials } = await getWhatsAppSession(account.id, {
-      dbClient,
-      bypassRLS: true,
-    });
-
-    if (!credentials) {
-      return {
-        success: false,
-        errorCode: EWhatsAppErrorCode.SESSION_NOT_FOUND,
-      };
-    }
-
-    // Connect to WhatsApp with stored credentials
-    const { socket, cleanup, waitForConnection } =
-      await connectWithCredentials(credentials);
-
-    try {
-      // Wait for connection to be established
-      const isConnected = await waitForConnection();
-
-      if (!isConnected) {
-        cleanup();
-        // Session expired or disconnected from phone - update DB status
-        await updateWhatsAppConnectionStatus(account.id, false, {
-          dbClient,
-        });
-        return {
-          success: false,
-          errorCode: EWhatsAppErrorCode.SESSION_EXPIRED,
-          needsReconnect: true,
-        };
-      }
-
-      // Send the message (use validated & formatted recipient number)
-      // Note: sendWhatsAppMessage includes a delay to ensure message delivery
-      const result = await sendWhatsAppMessage(
-        socket,
-        recipientValidation.formatted!,
-        message,
-      );
-
-      // Cleanup connection after message is sent (delay is already included in sendWhatsAppMessage)
-      cleanup();
-
-      return result;
-    } catch (error) {
-      cleanup();
-      throw error;
-    }
+    // Call endpoint
   } catch {
     return {
       success: false,

@@ -1,4 +1,5 @@
 import { getDBAdminClient } from "@auto-prospect/db";
+import { sendSlackMessage } from "./message.service";
 
 export const sendAlertToAdmin = async (message: string): Promise<void> => {
   const dbClient = getDBAdminClient();
@@ -8,7 +9,6 @@ export const sendAlertToAdmin = async (message: string): Promise<void> => {
     // TODO: send sms alert
   }
   if (appSettings?.slackAlerts) {
-    // TODO: send slack message
-    console.warn("Slack alert:", message);
+    await sendSlackMessage(message);
   }
 };

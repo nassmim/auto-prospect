@@ -7,8 +7,6 @@
 
 import {
   eq,
-  TDBOptions,
-  TDBQuery,
   TDBWithTokenClient,
   TWhatsappSession,
   whatsappSessions,
@@ -21,33 +19,7 @@ import {
 
 // Import core functions from whatsapp package
 import { createDrizzleSupabaseClient } from "@/lib/db";
-import {
-  checkWhatsAppNumber,
-  connectWithCredentials,
-  createDBAuthState,
-  createWhatsAppConnection,
-  sendWhatsAppMessage,
-  StoredAuthState,
-  WhatsAppConnectionResult,
-  WhatsAppEventHandlers,
-} from "@auto-prospect/whatsapp";
-
-// =============================================================================
-// RE-EXPORTS for backward compatibility
-// =============================================================================
-
-export {
-  checkWhatsAppNumber,
-  connectWithCredentials,
-  createDBAuthState,
-  createWhatsAppConnection,
-  sendWhatsAppMessage,
-};
-export type {
-  StoredAuthState,
-  WhatsAppConnectionResult,
-  WhatsAppEventHandlers,
-};
+import { StoredAuthState } from "@auto-prospect/whatsapp";
 
 // =============================================================================
 // DATABASE FUNCTIONS (web app specific - handle RLS)
@@ -59,21 +31,18 @@ export type {
  */
 export const getWhatsAppSession = async (
   accountId: string,
-  options: TDBOptions = { bypassRLS: false },
+  dbClient: TDBWithTokenClient,
 ): Promise<{
   session: TWhatsappSession | null;
   credentials: StoredAuthState | null;
 }> => {
-  const client = options?.dbClient || (await createDrizzleSupabaseClient());
+  const client = dbClient || (await createDrizzleSupabaseClient());
 
-  const query = (tx: TDBQuery) =>
+  const session = await client.rls((tx) =>
     tx.query.whatsappSessions.findFirst({
       where: (table, { eq }) => eq(table.accountId, accountId),
-    });
-
-  const session = options?.bypassRLS
-    ? await query(client.admin)
-    : await client.rls(query);
+    }),
+  );
 
   if (!session || !session.credentials) {
     return { session: session || null, credentials: null };
@@ -134,28 +103,30 @@ export const saveWhatsAppSession = async (
 /**
  * Updates the connection status of a WhatsApp session
  */
-export const updateWhatsAppConnectionStatus = async (
-  accountId: string,
-  isConnected: boolean,
-  options?: TDBOptions,
-): Promise<{ success: boolean; errorCode?: TErrorCode }> => {
-  const client = options?.dbClient || (await createDrizzleSupabaseClient());
-
-  const query = (tx: TDBQuery) =>
-    tx
-      .update(whatsappSessions)
-      .set({
-        isConnected,
-        lastConnectedAt: isConnected
-          ? new Date()
-          : whatsappSessions.lastConnectedAt,
-        updatedAt: new Date(),
-      })
-      .where(eq(whatsappSessions.accountId, accountId));
+export const updateWhatsAppConnectionStatus = async ({
+  accountId,
+  isConnected,
+  dbClient,
+}: {
+  accountId: string;
+  isConnected: boolean;
+  dbClient?: TDBWithTokenClient;
+}): Promise<{ success: boolean; errorCode?: TErrorCode }> => {
+  const client = dbClient || (await createDrizzleSupabaseClient());
 
   try {
-    if (options?.bypassRLS) await query(client.admin);
-    else await client.rls(query);
+    await client.rls((tx) =>
+      tx
+        .update(whatsappSessions)
+        .set({
+          isConnected,
+          lastConnectedAt: isConnected
+            ? new Date()
+            : whatsappSessions.lastConnectedAt,
+          updatedAt: new Date(),
+        })
+        .where(eq(whatsappSessions.accountId, accountId)),
+    );
 
     return { success: true };
   } catch {
@@ -164,15 +135,4 @@ export const updateWhatsAppConnectionStatus = async (
       errorCode: EGeneralErrorCode.DATABASE_ERROR,
     };
   }
-};
-
-/**
- * Checks if an account has an active WhatsApp connection
- */
-export const isWhatsAppConnected = async (
-  accountId: string,
-  options: TDBOptions = { bypassRLS: false },
-): Promise<boolean> => {
-  const { session } = await getWhatsAppSession(accountId, options);
-  return session?.isConnected ?? false;
 };

@@ -1,48 +1,9 @@
 import { createDrizzleSupabaseClient } from "@/lib/db";
-import { createClient } from "@/lib/supabase/server";
 import {
-  Session,
   TAccount,
   TAccountSelectedKeys,
   TDBWithTokenClient,
-  User,
 } from "@auto-prospect/db";
-
-/**
- * Gets the current user's session
- */
-export async function getUserSession(): Promise<
-  Session | { user: { id: "" } }
-> {
-  const supabase = await createClient();
-  const {
-    data: { session },
-    error,
-  } = await supabase.auth.getSession();
-
-  if (error) throw new Error(error.message);
-
-  if (!session) return { user: { id: "" } };
-
-  return session;
-}
-
-/**
- * Gets the current user
- */
-export async function getAuthser(): Promise<User | { id: "" }> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-
-  if (error) throw new Error(error.message);
-
-  if (!user) return { id: "" };
-
-  return user;
-}
 
 /**
  * Gets the current user's primary account (overload for no columns - returns full account)

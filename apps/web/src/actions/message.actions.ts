@@ -7,10 +7,9 @@ import { getUserAccount } from "@/services/account.service";
 import {
   getDefaultWhatsAppTemplate as getDefaultWhatsAppTemplateService,
   logWhatsAppMessage as logWhatsAppMessageService,
-  sendSms,
   updateAccountTemplatesCache,
 } from "@/services/message.service";
-import { decryptCredentials, encryptCredentials } from "@/utils/crypto.utils";
+import { encryptCredentials } from "@/utils/crypto.utils";
 import { textTemplateSchema, voiceTemplateSchema } from "@/validation-schemas";
 import {
   saveSmsApiKeySchema,
@@ -295,35 +294,7 @@ export async function sendSmsAction(
       columnsToKeep: { smsApiKey: true },
     });
 
-    if (!account.smsApiKey) {
-      return {
-        success: false,
-        errorCode: ESmsErrorCode.API_KEY_REQUIRED,
-      };
-    }
-
-    // Decrypt the API key before using it
-    const encryptionKey = process.env.SMS_API_KEY_ENCRYPTION_KEY;
-    if (!encryptionKey) {
-      return {
-        success: false,
-        errorCode: ESmsErrorCode.ENCRYPTION_KEY_MISSING,
-      };
-    }
-
-    const decryptedApiKey = decryptCredentials(
-      account.smsApiKey,
-      encryptionKey,
-    );
-
-    // Call the service with user's decrypted API key
-    const result = await sendSms({
-      to,
-      message,
-      apiKey: decryptedApiKey,
-    });
-
-    return { success: true, data: result };
+    // call endpoint
   } catch {
     return {
       success: false,
