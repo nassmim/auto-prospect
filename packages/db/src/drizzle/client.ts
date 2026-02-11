@@ -31,9 +31,6 @@ export const defaultDBClient = drizzle({
   ...config,
 });
 
-// Export RLS utilities for use in db.ts wrapper
-export { createDrizzle, decode };
-
 type TDBModel = keyof typeof defaultDBClient.query;
 type TDBClient = ReturnType<typeof createDrizzle>;
 type TDBQuery =
@@ -56,3 +53,5 @@ export type {
   TDBQuery,
   TEqOperator,
 };
+
+export { createDrizzle, decode };

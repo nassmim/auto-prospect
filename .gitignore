@@ -37,6 +37,8 @@ yarn-error.log*
 # Env files with secrets (never commit)
 .env.local
 .env.*.local
+apps/worker/.env
+packages/db/.env
 
 # vercel
 .vercel
@@ -51,8 +53,6 @@ logs
 dev-debug.log
 # Dependency directories
 node_modules/
-# Environment variables
-.env
 # Editor directories and files
 .idea
 .vscode
