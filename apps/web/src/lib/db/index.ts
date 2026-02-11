@@ -1,12 +1,12 @@
 // apps/web/src/lib/db.ts
 import { createClient } from "@/lib/supabase/server";
-import { getDBWithRLSClient } from "@auto-prospect/db";
+import { getDBWithTokenClient } from "@auto-prospect/db";
 
-// C'est le remplacement de ton ancien createDrizzleSupabaseClient()
+// Creates the drizzle client, with RLS through supabase token
 export async function createDrizzleSupabaseClient() {
   const supabase = await createClient();
   const {
     data: { session },
   } = await supabase.auth.getSession();
-  return getDBWithRLSClient(session?.access_token ?? "");
+  return getDBWithTokenClient(session?.access_token ?? "");
 }

@@ -45,8 +45,32 @@ function getDBAdminClient() {
   return defaultDBClient;
 }
 
+// Export database clients
 export { getDBAdminClient, getDBWithTokenClient, postgresClient };
 
+// Export Drizzle operators and utilities
+export { and, eq };
+
+// Re-export commonly used Drizzle operators and types
+export {
+  desc,
+  asc,
+  sql,
+  inArray,
+  isNull,
+  isNotNull,
+  like,
+  ilike,
+  gte,
+  lte,
+  gt,
+  lt,
+  ne,
+} from "drizzle-orm";
+
+export type { SQL, BinaryOperator } from "drizzle-orm";
+
+// Types
 type TDBModel = keyof typeof defaultDBClient.query;
 type TDBAdminClient = Awaited<ReturnType<typeof getDBAdminClient>>;
 type TDBWithTokenClient = Awaited<ReturnType<typeof getDBWithTokenClient>>;

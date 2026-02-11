@@ -6,10 +6,10 @@
  */
 
 import {
-  createDrizzleSupabaseClient,
-  TDBClient,
+  eq,
   TDBOptions,
   TDBQuery,
+  TDBWithTokenClient,
   TWhatsappSession,
   whatsappSessions,
 } from "@auto-prospect/db";
@@ -18,31 +18,35 @@ import {
   EWhatsAppErrorCode,
   TErrorCode,
 } from "@auto-prospect/shared/src/config/error-codes";
-import { eq } from "drizzle-orm";
 
 // Import core functions from whatsapp package
+import { createDrizzleSupabaseClient } from "@/lib/db";
 import {
   StoredAuthState,
   WhatsAppConnectionResult,
   WhatsAppEventHandlers,
+  checkWhatsAppNumber,
+  connectWithCredentials,
   createDBAuthState,
   createWhatsAppConnection,
-  connectWithCredentials,
   sendWhatsAppMessage,
-  checkWhatsAppNumber,
 } from "@auto-prospect/whatsapp";
 
 // =============================================================================
 // RE-EXPORTS for backward compatibility
 // =============================================================================
 
-export type { StoredAuthState, WhatsAppConnectionResult, WhatsAppEventHandlers };
 export {
+  checkWhatsAppNumber,
+  connectWithCredentials,
   createDBAuthState,
   createWhatsAppConnection,
-  connectWithCredentials,
   sendWhatsAppMessage,
-  checkWhatsAppNumber,
+};
+export type {
+  StoredAuthState,
+  WhatsAppConnectionResult,
+  WhatsAppEventHandlers,
 };
 
 // =============================================================================
@@ -91,7 +95,7 @@ export const getWhatsAppSession = async (
 export const saveWhatsAppSession = async (
   accountId: string,
   credentials: StoredAuthState,
-  dbClient?: TDBClient,
+  dbClient?: TDBWithTokenClient,
 ): Promise<{ success: boolean; errorCode?: TErrorCode }> => {
   const client = dbClient || (await createDrizzleSupabaseClient());
 
