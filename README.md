@@ -14,30 +14,37 @@ pnpm install
 
 ### 2. Set Up Environment Variables
 
-This project uses multiple environment files to separate secrets and public variables across different environments. You'll need to create 5 environment files:
-
-#### Create the environment files:
+This monorepo uses **separate `.env` files** for each component:
 
 ```bash
-# 1. Shared secrets (both dev and prod)
+# 1. Database CLI tools (for migrations, schema generation)
+cd packages/db
+cp .env.example .env
+# Fill in SUPABASE_DATABASE_URL
+
+# 2. Web app (Next.js)
+cd ../../apps/web
 cp .env.example .env.local
+# Fill in all required vars including NEXT_PUBLIC_* and SUPABASE_DATABASE_URL
 
-# 2. Development-specific files
-cp .env.node_env.example .env.development
-cp .env.node_env.example .env.development.local
-
-# 3. Production-specific files
-cp .env.node_env.example .env.production
-cp .env.node_env.example .env.production.local
+# 3. Worker app (background jobs)
+cd ../worker
+cp .env.example .env.local
+# Fill in all required vars including SUPABASE_DATABASE_URL
 ```
 
-#### Environment files structure:
+#### Why separate `.env` files?
 
-- **`.env.local`** - Shared secrets for both development and production
-- **`.env.development`** - Public development variables (can be committed)
-- **`.env.development.local`** - Secret development variables (gitignored)
-- **`.env.production`** - Public production variables (can be committed)
-- **`.env.production.local`** - Secret production variables (gitignored)
+- **packages/db/.env** - Used by CLI commands (`pnpm db:migrate`, `pnpm db:generate`)
+  - These run as standalone processes and need their own database connection
+
+- **apps/web/.env.local** - Used by Next.js app at runtime
+  - Includes `NEXT_PUBLIC_*` vars for client-side access
+
+- **apps/worker/.env.local** - Used by worker processes at runtime
+  - Worker-specific configuration
+
+**Note:** `SUPABASE_DATABASE_URL` will be duplicated across files - this is normal and expected. The CLI tools and runtime apps are separate processes.
 
 ### 3. Start Supabase Local Instance
 
