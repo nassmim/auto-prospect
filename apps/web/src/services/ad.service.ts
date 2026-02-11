@@ -22,8 +22,8 @@ import {
   vehicleSeats,
   vehicleStates,
 } from "@/schema";
-import { BinaryOperator, sql } from "drizzle-orm";
-import { PgColumn } from "drizzle-orm/pg-core";
+import { sql } from "@auto-prospect/db";
+import type { BinaryOperator, PgColumn } from "@auto-prospect/db";
 
 export const setAdUpdateOnConflict = Object.fromEntries(
   DB_COLUMS_TO_UPDATE.map((col) => [col, sql.raw(`excluded.${col}`)]),

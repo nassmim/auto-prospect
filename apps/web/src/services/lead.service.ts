@@ -6,7 +6,8 @@ import {
 import { leads } from "@/schema/lead.schema";
 import { messages } from "@/schema/message.schema";
 import { ELeadStage } from "@auto-prospect/shared/src/config/lead.config";
-import { and, eq, gte, SQL, sql } from "drizzle-orm";
+import { and, eq, gte, sql } from "@auto-prospect/db";
+import type { SQL } from "@auto-prospect/db";
 import { createClient } from "../../../../packages/db/src/supabase/server";
 
 type TLeadsSummaryStats = {

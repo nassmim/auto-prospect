@@ -5,7 +5,7 @@ import {
   EContactChannel,
   TContactChannel,
 } from "@auto-prospect/shared/src/config/message.config";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql } from "@auto-prospect/db";
 
 /**
  * Dashboard statistics for the account

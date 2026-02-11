@@ -5,7 +5,7 @@ import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
 import { accounts } from "@/schema/account.schema";
 import { getUserAccount } from "@/services/account.service";
 import { TAccountSettings } from "@/types/account.types";
-import { eq } from "drizzle-orm";
+import { eq } from "@auto-prospect/db";
 import { revalidatePath } from "next/cache";
 
 /**

@@ -69,6 +69,7 @@ export {
 } from "drizzle-orm";
 
 export type { SQL, BinaryOperator } from "drizzle-orm";
+export type { PgColumn } from "drizzle-orm/pg-core";
 
 // Types
 type TDBModel = keyof typeof defaultDBClient.query;

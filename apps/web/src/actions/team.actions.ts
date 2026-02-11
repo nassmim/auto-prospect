@@ -4,7 +4,7 @@ import { CACHE_TAGS } from "@/lib/cache/cache.config";
 import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
 import { teamMembers } from "@/schema/team.schema";
 import { getUserAccount } from "@/services/account.service";
-import { and, eq } from "drizzle-orm";
+import { and, eq } from "@auto-prospect/db";
 import { updateTag } from "next/cache";
 
 /**

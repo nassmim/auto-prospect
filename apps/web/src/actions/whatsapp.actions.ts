@@ -22,7 +22,7 @@ import {
   EWhatsAppErrorCode,
   TErrorCode,
 } from "@auto-prospect/shared/src/config/error-codes";
-import { eq } from "drizzle-orm";
+import { eq } from "@auto-prospect/db";
 
 /**
  * Deletes the WhatsApp session for an account (logout)

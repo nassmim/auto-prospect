@@ -13,7 +13,7 @@ import {
 } from "@/services/lead.service";
 import { leadNoteSchema, leadReminderSchema } from "@/validation-schemas";
 import { TLeadStage } from "@auto-prospect/shared/src/config/lead.config";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray } from "@auto-prospect/db";
 import { revalidatePath } from "next/cache";
 import { createClient } from "../../../../packages/db/src/supabase/server";
 

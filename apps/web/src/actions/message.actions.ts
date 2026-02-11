@@ -32,7 +32,8 @@ import {
   EContactChannel,
   TContactChannel,
 } from "@auto-prospect/shared/src/config/message.config";
-import { and, BinaryOperator, eq } from "drizzle-orm";
+import { and, eq } from "@auto-prospect/db";
+import type { BinaryOperator } from "@auto-prospect/db";
 import { updateTag } from "next/cache";
 import { z } from "zod";
 

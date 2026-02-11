@@ -9,7 +9,7 @@ import {
   type TransactionType,
   ETransactionType,
 } from "@auto-prospect/shared/src/config/payment.config";
-import { desc, eq, sql } from "drizzle-orm";
+import { desc, eq, sql } from "@auto-prospect/db";
 
 export type TConsumeCreditsParams = {
   huntId: string;

@@ -20,7 +20,7 @@ import {
   EContactChannel,
   WHATSAPP_DAILY_LIMIT,
 } from "@auto-prospect/shared/src/config/message.config";
-import { eq } from "drizzle-orm";
+import { eq } from "@auto-prospect/db";
 import { updateTag } from "next/cache";
 import { createClient } from "../../../../packages/db/src/supabase/server";
 
