@@ -18,7 +18,7 @@ if (!databaseUrl) {
   throw new Error("SUPABASE_DATABASE_URL environment variable is not set");
 }
 
-export const postgresClient = postgres(databaseUrl, { prepare: false });
+const postgresClient = postgres(databaseUrl, { prepare: false });
 
 const config = {
   casing: "snake_case",
@@ -26,13 +26,31 @@ const config = {
   logger: false,
 } satisfies DrizzleConfig<typeof schema>;
 
-export const defaultDBClient = drizzle({
+const defaultDBClient = drizzle({
   client: postgresClient,
   ...config,
 });
 
+// Version AVEC RLS — prend un access token en paramètre
+// C'est l'app appelante qui fournit le token
+function getDBWithTokenClient(accessToken: string) {
+  return createDrizzle(decode(accessToken), {
+    admin: defaultDBClient,
+    client: defaultDBClient,
+  });
+}
+
+// Version SANS RLS — accès admin direct (pour le worker)
+function getDBAdminClient() {
+  return defaultDBClient;
+}
+
+export { getDBAdminClient, getDBWithTokenClient, postgresClient };
+
 type TDBModel = keyof typeof defaultDBClient.query;
-type TDBClient = ReturnType<typeof createDrizzle>;
+type TDBAdminClient = Awaited<ReturnType<typeof getDBAdminClient>>;
+type TDBWithTokenClient = Awaited<ReturnType<typeof getDBWithTokenClient>>;
+type TDBClient = TDBAdminClient | TDBWithTokenClient;
 type TDBQuery =
   | PgTransaction<
       PostgresJsQueryResultHKT,
@@ -47,11 +65,11 @@ type TDBOptions = { dbClient?: TDBClient; bypassRLS?: boolean };
 
 export type {
   TANDperator,
+  TDBAdminClient,
   TDBClient,
   TDBModel,
   TDBOptions,
   TDBQuery,
+  TDBWithTokenClient,
   TEqOperator,
 };
-
-export { createDrizzle, decode };

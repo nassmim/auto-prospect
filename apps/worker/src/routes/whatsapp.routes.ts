@@ -38,8 +38,6 @@ router.post("/text", async (req: Request, res: Response) => {
     if (!recipientPhone || !senderPhone || !message) {
       return res.status(400).json({
         error: EWorkerErrorCode.MISSING_REQUIRED_FIELDS,
-        message:
-          "Missing required fields: recipientPhone, senderPhone, message",
       });
     }
 
@@ -51,10 +49,9 @@ router.post("/text", async (req: Request, res: Response) => {
     });
 
     res.json({ success: true, jobId: job.id });
-  } catch (error) {
+  } catch {
     res.status(500).json({
       error: EWorkerErrorCode.WHATSAPP_QUEUE_FAILED,
-      message: error instanceof Error ? error.message : "Unknown error",
     });
   }
 });

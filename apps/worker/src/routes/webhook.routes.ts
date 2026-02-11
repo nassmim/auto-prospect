@@ -17,7 +17,7 @@ const router = Router();
  */
 router.post("/lobstr", async (req: Request, res: Response) => {
   try {
-    const { runId, huntId } = req.body;
+    const { runId } = req.body;
 
     if (!runId) {
       return res.status(400).json({
@@ -30,7 +30,6 @@ router.post("/lobstr", async (req: Request, res: Response) => {
       `lobstr-run-${runId}`,
       {
         runId,
-        huntId: huntId || undefined,
       },
       {
         // Prevent duplicate processing of same run

@@ -1,4 +1,3 @@
-export * from "./drizzle/client";
+export * from "./drizzle";
 export * from "./schema";
 export * from "./supabase";
-export * from "./db";

@@ -2,6 +2,7 @@ import {
   EGeneralErrorCode,
   ESmsErrorCode,
   EWhatsAppErrorCode,
+  EWorkerErrorCode,
   TErrorCode,
 } from "@auto-prospect/shared/src/config/error-codes";
 
@@ -82,12 +83,41 @@ const SMS_ERROR_MESSAGES: Record<ESmsErrorCode, string> = {
 };
 
 /**
+ * Error messages mapping for Worker API errors
+ * Maps error codes to user-friendly French messages
+ */
+const WORKER_API_ERROR_MESSAGES: Record<EWorkerErrorCode, string> = {
+  // Queue errors
+  [EWorkerErrorCode.HUNT_EXECUTION_FAILED]:
+    "Échec de l'exécution de la chasse. Réessaie.",
+  [EWorkerErrorCode.HUNT_STATUS_FETCH_FAILED]:
+    "Impossible de récupérer le statut. Réessaie.",
+  [EWorkerErrorCode.SMS_QUEUE_FAILED]: "Échec de l'envoi du SMS. Réessaie.",
+  [EWorkerErrorCode.VOICE_QUEUE_FAILED]:
+    "Échec de l'envoi du message vocal. Réessaie.",
+  [EWorkerErrorCode.WHATSAPP_QUEUE_FAILED]:
+    "Échec de l'envoi WhatsApp. Réessaie.",
+  [EWorkerErrorCode.JOB_STATUS_FETCH_FAILED]:
+    "Impossible de récupérer le statut du job. Réessaie.",
+  [EWorkerErrorCode.QUEUE_STATS_FETCH_FAILED]:
+    "Impossible de récupérer les statistiques. Réessaie.",
+
+  // Validation errors
+  [EWorkerErrorCode.MISSING_REQUIRED_FIELDS]:
+    "Informations manquantes. Vérifie les données.",
+  [EWorkerErrorCode.INVALID_QUEUE_NAME]: "Nom de file invalide",
+  [EWorkerErrorCode.JOB_NOT_FOUND]: "Job introuvable",
+  [EWorkerErrorCode.QUEUE_NOT_FOUND]: "File introuvable",
+};
+
+/**
  * Complete error messages mapping
  */
 const ERROR_MESSAGES: Record<TErrorCode, string> = {
   ...WHATSAPP_ERROR_MESSAGES,
   ...GENERAL_ERROR_MESSAGES,
   ...SMS_ERROR_MESSAGES,
+  ...WORKER_API_ERROR_MESSAGES,
 };
 
 /**

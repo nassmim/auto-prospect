@@ -64,7 +64,7 @@ export const hunts = pgTable(
       .notNull(),
     radiusInKm: smallint("radius_in_km").default(0).notNull(),
     name: varchar({ length: 255 }).notNull(),
-    status: huntStatus().notNull().default(EHuntStatus.PAUSED),
+    status: huntStatus().notNull().default(EHuntStatus.ACTIVE),
     autoRefresh: boolean("auto_refresh").notNull().default(true),
     dailyPacingLimit: smallint("daily_pacing_limit"),
     outreachSettings: jsonb("outreach_settings")
@@ -88,7 +88,6 @@ export const hunts = pgTable(
     hasBeenBoosted: boolean("has_been_boosted").default(false).notNull(),
     isLowPrice: boolean("is_low_price").default(false).notNull(),
     priceMax: real("price_max"),
-    isActive: boolean("is_active").default(true).notNull(),
   },
   (table) => [
     foreignKey({

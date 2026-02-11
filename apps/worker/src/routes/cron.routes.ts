@@ -5,9 +5,9 @@
  * These endpoints should be protected by authentication in production.
  */
 
-import { Router, Request, Response } from "express";
-import { dailyHuntsOrchestratorQueue } from "../queues";
 import { EWorkerErrorCode } from "@auto-prospect/shared";
+import { Request, Response, Router } from "express";
+import { dailyHuntsOrchestratorQueue } from "../queues";
 
 const router = Router();
 
@@ -57,11 +57,9 @@ router.post("/daily-hunts", async (_req: Request, res: Response) => {
         source: "cron",
       },
       {
-        // Prevent duplicate runs - only one daily orchestrator at a time
+        // Prevent duplicate runs on the same day
         jobId: `daily-hunts-${triggeredAt.split("T")[0]}`, // e.g., daily-hunts-2024-01-15
-        removeOnComplete: 100,
-        removeOnFail: 1000,
-      }
+      },
     );
 
     res.json({
@@ -70,7 +68,6 @@ router.post("/daily-hunts", async (_req: Request, res: Response) => {
       triggeredAt,
     });
   } catch (error) {
-    console.error("Daily hunts cron trigger error:", error);
     res.status(500).json({
       error: EWorkerErrorCode.HUNT_EXECUTION_FAILED,
       message: error instanceof Error ? error.message : "Unknown error",

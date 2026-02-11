@@ -14,13 +14,11 @@
  */
 
 import { Worker } from "bullmq";
-import { connection } from "../redis";
 import { QUEUE_NAMES } from "../queues";
-import { whatsappWorker } from "./whatsapp";
-import { smsWorker } from "./sms";
-import { voiceWorker } from "./voice";
-import { scrapingWorker } from "./scraping";
+import { connection } from "../redis";
 import { dailyOrchestratorWorker } from "./daily-orchestrator";
+import { smsWorker, voiceWorker, whatsappWorker } from "./message.worker";
+import { scrapingWorker } from "./scraping";
 
 export async function startAllWorkers() {
   const workers = [

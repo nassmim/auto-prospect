@@ -1,20 +1,14 @@
 import {
   ads as adsTable,
-  adSubTypes,
-  adTypes,
-  brands,
-  drivingLicences,
-  fuels,
-  gearBoxes,
   getDBAdminClient,
-  locations,
   TAdInsert,
   TAdReferenceData,
-  vehicleSeats,
-  vehicleStates,
 } from "@auto-prospect/db";
 import { sql } from "drizzle-orm";
 import parsePhoneNumber from "libphonenumber-js";
+import { fetchAllReferenceData } from "./ad.service";
+import { sendAlertToAdmin } from "./general.service";
+import { customParseInt } from "../utils/general.utils";
 
 // Platform value field name for Lobstr
 const LOBSTR_PLATFORM_FIELD = "lobstrValue" as const;
@@ -39,94 +33,6 @@ const DB_COLUMNS_TO_UPDATE = [
 const setAdUpdateOnConflict = Object.fromEntries(
   DB_COLUMNS_TO_UPDATE.map((col) => [col, sql.raw(`excluded.${col}`)]),
 );
-
-/**
- * Custom parseInt that returns null on invalid input instead of NaN
- */
-function customParseInt(value: string | null | undefined): number | null {
-  if (!value) return null;
-  const parsed = parseInt(value, 10);
-  return isNaN(parsed) ? null : parsed;
-}
-
-/**
- * Sends alert to admin (stub - implement actual notification logic)
- */
-async function sendAlertToAdmin(message: string): Promise<void> {
-  console.error(`[ADMIN ALERT] ${message}`);
-  // TODO: Implement actual admin notification (email, Slack, etc.)
-}
-
-/**
- * Fetches all reference data for mapping Lobstr values to DB IDs
- */
-async function fetchAllReferenceData(
-  db: ReturnType<typeof getDBAdminClient>,
-): Promise<TAdReferenceData> {
-  const [
-    adTypesData,
-    adSubTypesData,
-    brandsData,
-    zipcodesData,
-    gearBoxesData,
-    drivingLicencesData,
-    fuelsData,
-    vehicleSeatsData,
-    vehicleStatesData,
-  ] = await Promise.all([
-    db.select().from(adTypes),
-    db.select().from(adSubTypes),
-    db.select().from(brands),
-    db.select().from(locations),
-    db.select().from(gearBoxes),
-    db.select().from(drivingLicences),
-    db.select().from(fuels),
-    db.select().from(vehicleSeats),
-    db.select().from(vehicleStates),
-  ]);
-
-  return {
-    adTypes: new Map(
-      adTypesData.map((item) => [item[LOBSTR_PLATFORM_FIELD] || "", item.id]),
-    ),
-    adSubTypes: new Map(
-      adSubTypesData.map((item) => [
-        item[LOBSTR_PLATFORM_FIELD] || "",
-        item.id,
-      ]),
-    ),
-    brands: new Map(
-      brandsData.map((item) => [item[LOBSTR_PLATFORM_FIELD] || "", item.id]),
-    ),
-    zipcodes: new Map(
-      zipcodesData.map((item) => [item.zipcode || "", item.id]),
-    ),
-    gearBoxes: new Map(
-      gearBoxesData.map((item) => [item[LOBSTR_PLATFORM_FIELD] || "", item.id]),
-    ),
-    drivingLicences: new Map(
-      drivingLicencesData.map((item) => [
-        item[LOBSTR_PLATFORM_FIELD] || "",
-        item.id,
-      ]),
-    ),
-    fuels: new Map(
-      fuelsData.map((item) => [item[LOBSTR_PLATFORM_FIELD] || "", item.id]),
-    ),
-    vehicleSeats: new Map(
-      vehicleSeatsData.map((item) => [
-        item[LOBSTR_PLATFORM_FIELD] || "",
-        item.id,
-      ]),
-    ),
-    vehicleStates: new Map(
-      vehicleStatesData.map((item) => [
-        item[LOBSTR_PLATFORM_FIELD] || "",
-        item.id,
-      ]),
-    ),
-  };
-}
 
 type TAdFromLobstr = {
   id: string;
@@ -285,16 +191,16 @@ export const handleLobstrWebhook = async (runId: string): Promise<void> => {
  * runId is the id sent by lobstr
  */
 const saveAdsFromLobstr = async (runId: string): Promise<void> => {
-  const dbClient = getDBAdminClient();
+  const db = getDBAdminClient();
 
   const fetchedResults = await getResultsFromRun(runId);
 
-  const results = await fetchedResults.json();
+  const results = (await fetchedResults.json()) as { data: TAdFromLobstr[] };
   const ads: TAdFromLobstr[] = results.data;
 
   // Fetch all reference data so that we know which fields to use given
   // that the ads are coming from Lobstr
-  const referenceData = await fetchAllReferenceData(dbClient);
+  const referenceData = await fetchAllReferenceData(db, LOBSTR_PLATFORM_FIELD);
 
   // for each ad, we map the platform values with the appropriate values that our db accepts
   const getAdsData = ads.map((ad) => getAdData(ad, referenceData));
@@ -313,7 +219,7 @@ const saveAdsFromLobstr = async (runId: string): Promise<void> => {
 
   // Insertion with update - if the id of the ad and the url
   // (we use the url as well as a provider could have same id for different categories)
-  await dbClient
+  await db
     .insert(adsTable)
     .values(adsToPersist)
     .onConflictDoUpdate({

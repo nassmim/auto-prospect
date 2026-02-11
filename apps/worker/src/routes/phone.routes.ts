@@ -43,7 +43,6 @@ router.post("/sms", async (req: Request, res: Response) => {
     if (!recipientPhone || !message) {
       return res.status(400).json({
         error: EWorkerErrorCode.MISSING_REQUIRED_FIELDS,
-        message: "Missing required fields: recipientPhone, message",
       });
     }
 
@@ -54,10 +53,9 @@ router.post("/sms", async (req: Request, res: Response) => {
     });
 
     res.json({ success: true, jobId: job.id });
-  } catch (error) {
+  } catch {
     res.status(500).json({
       error: EWorkerErrorCode.SMS_QUEUE_FAILED,
-      message: error instanceof Error ? error.message : "Unknown error",
     });
   }
 });
@@ -89,8 +87,6 @@ router.post("/ringless-voice", async (req: Request, res: Response) => {
     if (!recipientPhone || (!message && !audioUrl)) {
       return res.status(400).json({
         error: EWorkerErrorCode.MISSING_REQUIRED_FIELDS,
-        message:
-          "Missing required fields: recipientPhone and either message or audioUrl",
       });
     }
 
@@ -102,10 +98,9 @@ router.post("/ringless-voice", async (req: Request, res: Response) => {
     });
 
     res.json({ success: true, jobId: job.id });
-  } catch (error) {
+  } catch {
     res.status(500).json({
       error: EWorkerErrorCode.VOICE_QUEUE_FAILED,
-      message: error instanceof Error ? error.message : "Unknown error",
     });
   }
 });

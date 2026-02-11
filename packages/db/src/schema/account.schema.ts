@@ -29,6 +29,7 @@ export const accounts = pgTable(
     name: varchar({ length: 255 }),
     email: varchar({ length: 320 }).notNull(),
     pictureUrl: varchar("picture_url", { length: 1000 }),
+    fixedPhoneNumber: varchar("fixed_phone_number", { length: 14 }),
     phoneNumber: varchar("phone_number", { length: 14 }),
     whatsappPhoneNumber: varchar("whatsapp_phone_number", { length: 20 }),
     smsMobileAPiAllowed: boolean("sms_mobile_api_allowed")
