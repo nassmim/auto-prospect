@@ -35,11 +35,13 @@ import {
   TLocation,
 } from "@auto-prospect/db";
 import {
+  decryptCredentials,
   EContactChannel,
   EHuntStatus,
   ELeadStage,
   TContactChannel,
 } from "@auto-prospect/shared";
+import { StoredAuthState } from "@auto-prospect/whatsapp";
 import { Job } from "bullmq";
 import { and, desc, eq, gte, inArray, lte, notInArray, sql } from "drizzle-orm";
 import { jobIds, RETRY_CONFIG } from "../config";
@@ -235,7 +237,8 @@ async function processHunt(
 
   if (matchingAds.length === 0) return 0;
 
-  // Get account info to check which channels are available
+  // ===== VALIDATION PHASE (for background jobs) =====
+  // Get account info and validate credentials for all channels
   const account = await db.query.accounts.findFirst({
     where: eq(accounts.id, accountId),
     columns: {
@@ -244,23 +247,51 @@ async function processHunt(
       smsApiKey: true,
       fixedPhoneNumber: true,
     },
+    with: {
+      whatsappSession: {
+        columns: { credentials: true },
+      },
+    },
   });
 
   // Determine which channels are disabled based on account configuration
   const disabledChannels: TContactChannel[] = [];
 
-  // WhatsApp requires a WhatsApp phone number
-  if (!account?.whatsappPhoneNumber) {
-    disabledChannels.push(EContactChannel.WHATSAPP_TEXT);
-  }
+  // Validate and prepare credentials for each channel
 
-  // SMS requires an API key
+  // SMS: decrypt API key
+  let decryptedSmsApiKey: string | undefined;
   if (!account?.smsApiKey) {
     disabledChannels.push(EContactChannel.SMS);
+  } else {
+    const encryptionKey = process.env.SMS_API_KEY_ENCRYPTION_KEY;
+    if (!encryptionKey) {
+      disabledChannels.push(EContactChannel.SMS);
+    } else {
+      try {
+        decryptedSmsApiKey = decryptCredentials(account.smsApiKey, encryptionKey);
+      } catch {
+        disabledChannels.push(EContactChannel.SMS);
+      }
+    }
   }
 
-  // Ringless voice requires a fixed phone number
-  if (!account?.fixedPhoneNumber) {
+  // WhatsApp: parse session credentials
+  let whatsappCredentials: StoredAuthState | undefined;
+  if (!account?.whatsappPhoneNumber || !account.whatsappSession?.credentials) {
+    disabledChannels.push(EContactChannel.WHATSAPP_TEXT);
+  } else {
+    try {
+      whatsappCredentials = JSON.parse(account.whatsappSession.credentials) as StoredAuthState;
+    } catch {
+      disabledChannels.push(EContactChannel.WHATSAPP_TEXT);
+    }
+  }
+
+  // Voice: validate API credentials from environment
+  const voiceApiKey = process.env.VOICE_PARTNER_API_KEY;
+  const voiceApiSecret = process.env.VOICE_PARTNER_API_SECRET;
+  if (!account?.fixedPhoneNumber || !voiceApiKey || !voiceApiSecret) {
     disabledChannels.push(EContactChannel.RINGLESS_VOICE);
   }
 
@@ -338,38 +369,45 @@ async function processHunt(
     try {
       switch (channel) {
         case EContactChannel.WHATSAPP_TEXT:
-          // WhatsApp phone number is guaranteed to exist (checked in disabledChannels)
+          // WhatsApp credentials validated above
           await whatsappQueue.add(
             jobIds.hunt.whatsapp(huntId, adId),
             {
               recipientPhone,
               message: personalizedMessage,
-              metadata: { huntId, accountId, adId },
+              accountId,
+              credentials: whatsappCredentials!,
+              metadata: { huntId, adId },
             },
             RETRY_CONFIG.MESSAGE_SEND,
           );
           break;
 
         case EContactChannel.SMS:
-          // SMS API key is guaranteed to exist (checked in disabledChannels)
+          // SMS API key validated and decrypted above
           await smsQueue.add(
             jobIds.hunt.sms(huntId, adId),
             {
               recipientPhone,
               message: personalizedMessage,
-              metadata: { huntId, accountId, adId },
+              accountId,
+              decryptedApiKey: decryptedSmsApiKey!,
+              metadata: { huntId, adId },
             },
             RETRY_CONFIG.MESSAGE_SEND,
           );
           break;
 
         case EContactChannel.RINGLESS_VOICE:
+          // Voice API credentials validated above
           await voiceQueue.add(
             jobIds.hunt.voice(huntId, adId),
             {
               recipientPhone,
               tokenAudio: template.audioUrl,
               sender: account!.fixedPhoneNumber!,
+              apiKey: voiceApiKey!,
+              apiSecret: voiceApiSecret!,
               metadata: { huntId, accountId, adId },
             },
             RETRY_CONFIG.MESSAGE_SEND,

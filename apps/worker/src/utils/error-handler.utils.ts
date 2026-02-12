@@ -1,47 +1,75 @@
 /**
  * BullMQ Worker Error Handling System
  *
- * This module provides error classification for BullMQ workers to distinguish between:
- * - **Retryable errors**: Temporary failures (network issues, rate limits, server errors)
- * - **Non-retryable errors**: Permanent failures (invalid credentials, bad data, missing config)
+ * ## Complete Error Handling Flow
  *
- * ## How It Works (Complete Flow):
+ * ### 1. How BullMQ Decides to Retry
  *
- * 1. **Worker catches error** during job execution
- * 2. **Worker throws custom error**:
- *    - `NonRetryableError` → BullMQ fails job immediately (no retry)
- *    - `RetryableError` → BullMQ retries job per RETRY_CONFIG
- *    - Generic `Error` → BullMQ treats as retryable (default behavior)
+ * BullMQ checks error types:
+ * - **Worker throws UnrecoverableError** → Never retry (permanent failure)
+ * - **Worker throws any other error** → Retry (if attempts < max)
+ * - **Worker returns** → Success
  *
- * 3. **BullMQ behavior**:
- *    - On `NonRetryableError`: Marks job as "failed", moves to failed queue
- *    - On `RetryableError`: Increments attempt count, waits backoff delay, retries
- *    - After max attempts: Marks job as "failed" even for retryable errors
- *
- * ## Usage in Workers:
+ * ### 2. Retry Configuration (Set in Worker Constructor)
  *
  * ```typescript
- * export async function smsWorker(job: Job) {
- *   // Validation phase - throw NonRetryableError for config issues
+ * new Worker(QUEUE_NAME, workerFn, {
+ *   connection,
+ *   attempts: 3,              // Max retry attempts
+ *   backoff: {
+ *     type: 'exponential',    // Delay: 2s, 4s, 8s...
+ *     delay: 2000             // Base delay in ms
+ *   }
+ * })
+ * ```
+ *
+ * ### 3. Our Error Handling Pattern
+ *
+ * Use BullMQ's `UnrecoverableError` for permanent failures:
+ *
+ * ```typescript
+ * import { UnrecoverableError } from 'bullmq';
+ *
+ * export async function smsWorker(job: Job<SmsJob>) {
+ *   // Validation: Non-retryable errors
  *   if (!apiKey) {
- *     throw new NonRetryableError('API key missing', ESmsErrorCode.API_KEY_REQUIRED);
+ *     throw new UnrecoverableError('API key missing'); // ← Prevents retry
  *   }
  *
  *   try {
- *     // Execution phase - API calls that might fail temporarily
+ *     // Execution: May throw retryable errors (network, rate limit, etc.)
  *     await sendSms({ to, message, apiKey });
+ *     return { success: true };
  *   } catch (error) {
- *     // handleWorkerError classifies the error automatically
- *     handleWorkerError(error, 'SMS'); // throws NonRetryableError or RetryableError
+ *     // Classify error
+ *     if (error.response?.status === 401) {
+ *       throw new UnrecoverableError('Invalid API key'); // ← Prevents retry
+ *     }
+ *     throw error; // BullMQ will retry
  *   }
  * }
  * ```
  *
- * ## What Happens After Throwing:
+ * ### 4. What Actually Happens
  *
- * - **NonRetryableError thrown** → BullMQ catches → Job fails immediately → No retry
- * - **RetryableError thrown** → BullMQ catches → Job retries (2s, 4s, 8s delays) → Max 3 attempts
- * - **After max retries** → Job moves to "failed" queue → Can be manually retried or investigated
+ * **Non-retryable error (API key missing):**
+ * 1. Worker throws `UnrecoverableError`
+ * 2. BullMQ sees UnrecoverableError → Marks job as failed (no retry)
+ *
+ * **Retryable error (network timeout):**
+ * 1. Worker throws standard Error
+ * 2. BullMQ retries: wait 2s → retry → wait 4s → retry → wait 8s → retry
+ * 3. After 3 attempts → Marks job as failed
+ *
+ * ### 5. Legacy Helper Functions
+ *
+ * These are kept for backwards compatibility but should not be used in new code.
+ * Use BullMQ's UnrecoverableError directly instead.
+ *
+ * - `isNonRetryable(error)` - Check if error is permanent failure (legacy)
+ * - `NonRetryableError` class - Documents permanent failures (legacy)
+ * - `RetryableError` class - Documents temporary failures (legacy)
+ * - `NON_RETRYABLE_ERROR_CODES` - List of error codes that should not retry (legacy)
  */
 
 import {
@@ -113,57 +141,38 @@ export function isRetryableErrorCode(code: string): boolean {
 }
 
 /**
- * Wraps API call errors with proper classification for BullMQ retry logic
+ * Checks if an error is non-retryable and should fail the job immediately
  *
- * This function determines if an error should trigger job retry or fail immediately:
- * - NonRetryableError → Job fails immediately (no retry)
- * - RetryableError → BullMQ retries job according to RETRY_CONFIG
+ * Use this to determine whether to:
+ * - Call job.discard() and throw (non-retryable)
+ * - Just throw (retryable - BullMQ will retry)
  *
- * Error Classification Flow:
- * 1. If error is already NonRetryableError → re-throw (fail immediately)
- * 2. Try to extract error code from error message (e.g., "API_KEY_INVALID")
- * 3. Check if error code is in NON_RETRYABLE_ERROR_CODES list
- * 4. If non-retryable → throw NonRetryableError (fail immediately)
- * 5. Otherwise → throw RetryableError (trigger retry)
- *
- * @param error - The caught error from API call or operation
- * @param channel - Which channel this error is from (for logging)
- * @throws {NonRetryableError} - For permanent failures (no retry)
- * @throws {RetryableError} - For temporary failures (will retry)
+ * @param error - The error to check
+ * @returns true if error is non-retryable (permanent failure)
  *
  * @example
- * // In worker processor catch block:
- * try {
- *   const result = await sendSms({ to, message, apiKey });
- *   return { success: true, ...result };
- * } catch (error) {
- *   // This will throw either NonRetryableError or RetryableError
- *   // BullMQ will then either fail immediately or retry the job
- *   handleWorkerError(error, 'SMS');
+ * // In worker catch block:
+ * catch (error) {
+ *   if (isNonRetryable(error)) {
+ *     await job.discard(); // Prevent retry
+ *     throw error;
+ *   }
+ *   // For retryable errors, just throw
+ *   throw error;
  * }
  */
-export function handleWorkerError(
-  error: unknown,
-  channel: "SMS" | "WhatsApp" | "Voice",
-): never {
+export function isNonRetryable(error: unknown): boolean {
   if (error instanceof NonRetryableError) {
-    // Re-throw to fail job immediately without retry
-    throw error;
+    return true;
   }
 
   if (error instanceof Error) {
     // Check if error message contains known non-retryable codes
     const errorCode = extractErrorCode(error.message);
-
-    if (errorCode && !isRetryableErrorCode(errorCode)) {
-      throw new NonRetryableError(error.message, errorCode, error);
-    }
-
-    // Default: treat as retryable
-    throw new RetryableError(`${channel} send failed: ${error.message}`, error);
+    return errorCode ? !isRetryableErrorCode(errorCode) : false;
   }
 
-  throw new RetryableError(`${channel} send failed: Unknown error`);
+  return false;
 }
 
 function extractErrorCode(message: string): string | null {

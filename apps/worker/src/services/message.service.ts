@@ -111,21 +111,21 @@ export async function sendVoiceMessage({
   sender,
   emailForNotification,
   scheduledDate,
+  apiKey,
+  apiSecret,
 }: {
   phoneNumbers: string;
   tokenAudio: string;
   sender?: string;
   emailForNotification?: string;
   scheduledDate?: string;
+  apiKey: string;
+  apiSecret: string;
 }): Promise<{
   success: boolean;
   error?: string;
   data?: Record<string, unknown>;
 }> {
-  const apiKey = process.env.VOICE_PARTNER_API_KEY;
-  if (!apiKey) {
-    return { success: false, error: "API key missing" };
-  }
 
   const payload: Record<string, string> = {
     apiKey,

@@ -9,10 +9,11 @@
  * primary contact method
  */
 
-import { EWorkerErrorCode } from "@auto-prospect/shared";
-import { Request, Response, Router } from "express";
-import { JOB_TYPES } from "../config";
-import { smsQueue, voiceQueue } from "../queues";
+import { Router } from "express";
+import {
+  sendSmsController,
+  sendVoiceController,
+} from "../controllers/phone.controller";
 
 const router = Router();
 
@@ -28,37 +29,17 @@ const router = Router();
  * Body:
  * - recipientPhone: string - Phone number in international format (e.g., "+33612345678")
  * - message: string - Text content (max 160 characters for single SMS, longer messages are split)
+ * - accountId: string - Account ID for API key lookup
+ * - metadata?: object - Optional tracking metadata (huntId, adId, leadId)
  *
  * Returns:
  * - success: boolean
  * - jobId: string - BullMQ job ID for tracking
+ * - error?: string - Error code if validation fails
  *
- * Note: SMS provider (Twilio, Vonage, etc.) must be configured in worker environment
+ * Note: Controller validates API key exists BEFORE queueing job
  */
-router.post("/sms", async (req: Request, res: Response) => {
-  try {
-    const { recipientPhone, message } = req.body;
-
-    // Validate required fields
-    if (!recipientPhone || !message) {
-      return res.status(400).json({
-        error: EWorkerErrorCode.MISSING_REQUIRED_FIELDS,
-      });
-    }
-
-    // Add job to SMS queue
-    const job = await smsQueue.add(JOB_TYPES.SMS_SEND, {
-      recipientPhone,
-      message,
-    });
-
-    res.json({ success: true, jobId: job.id });
-  } catch {
-    res.status(500).json({
-      error: EWorkerErrorCode.SMS_QUEUE_FAILED,
-    });
-  }
-});
+router.post("/sms", sendSmsController);
 
 // ============================================================================
 // RINGLESS VOICE ROUTES
@@ -71,38 +52,18 @@ router.post("/sms", async (req: Request, res: Response) => {
  *
  * Body:
  * - recipientPhone: string - Phone number in international format
- * - audioUrl: string - URL to pre-recorded audio file
+ * - tokenAudio: string - Pre-recorded audio token from Voice Partner
+ * - sender?: string - Optional caller ID
+ * - scheduledDate?: string - Optional schedule for future delivery
+ * - metadata?: object - Optional tracking metadata (huntId, accountId, adId)
  *
  * Returns:
  * - success: boolean
  * - jobId: string - BullMQ job ID for tracking
+ * - error?: string - Error code if validation fails
  *
- * Note: Ringless voice provider must be configured in worker environment
+ * Note: Controller validates API credentials exist BEFORE queueing job
  */
-router.post("/ringless-voice", async (req: Request, res: Response) => {
-  try {
-    const { recipientPhone, message, audioUrl } = req.body;
-
-    // Validate required fields
-    if (!recipientPhone || (!message && !audioUrl)) {
-      return res.status(400).json({
-        error: EWorkerErrorCode.MISSING_REQUIRED_FIELDS,
-      });
-    }
-
-    // Add job to voice queue
-    const job = await voiceQueue.add(JOB_TYPES.VOICE_SEND, {
-      recipientPhone,
-      message,
-      audioUrl,
-    });
-
-    res.json({ success: true, jobId: job.id });
-  } catch {
-    res.status(500).json({
-      error: EWorkerErrorCode.VOICE_QUEUE_FAILED,
-    });
-  }
-});
+router.post("/ringless-voice", sendVoiceController);
 
 export default router;

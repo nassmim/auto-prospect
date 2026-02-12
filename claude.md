@@ -19,6 +19,45 @@
 - Execute silently: no announcements, verbose logs, or commentary
 - Output only: errors, user questions, completion confirmations
 
+## Worker Architecture (SMS/Voice/WhatsApp)
+
+**CRITICAL CONTEXT: Dual Usage Pattern**
+Workers are called from TWO different sources:
+1. **User-initiated (synchronous)**: User clicks "Send SMS" → needs immediate validation feedback
+2. **Background jobs (async)**: Daily hunt orchestrator → can fail silently and retry
+
+**Architecture Layers**:
+
+**1. Controller Layer (Validation + Orchestration)**
+- ALL user-facing validation happens HERE (before queueing)
+- Fetch necessary data (API keys, account settings) upfront
+- Pass validated data as arguments to workers (avoid duplication)
+- **Return** for validation errors (4xx) - never throw
+- **Throw** only for unexpected server errors (5xx)
+
+**2. Worker Layer (Execution Only)**
+- NO validation here - controller already validated
+- Accept all necessary data as arguments (no re-fetching)
+- Execute API calls with provided data
+- **Throw** retryable errors (429 rate limit, 5xx server errors) → BullMQ retries
+- **Throw UnrecoverableError** for permanent failures → job marked failed, no retry
+
+**Error Handling Pattern**:
+```typescript
+// Controller: Validation errors
+if (!apiKey) {
+  return res.status(400).json({ success: false, error: ErrorCode.API_KEY_REQUIRED });
+}
+
+// Worker: Retryable errors
+if (error.response?.status === 429) {
+  throw error; // BullMQ retries
+}
+
+// Worker: Permanent failures
+throw new UnrecoverableError(`SMS send failed: ${ErrorCode.MESSAGE_SEND_FAILED}`);
+```
+
 ## Tech Stack
 Next.js 16.1.1 (App Router) • React 19 • TypeScript • Supabase (PostgreSQL + Auth) • Drizzle ORM • Tailwind CSS 4 • shadcn/ui • react-hook-form + Zod • SWR • pnpm (not npm)
 

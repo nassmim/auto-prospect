@@ -6,7 +6,7 @@
  * when scraping completes.
  */
 
-import { Job } from "bullmq";
+import { Job, UnrecoverableError } from "bullmq";
 import { handleLobstrWebhook } from "../services/lobstr.service";
 
 interface ScrapingJob {
@@ -17,19 +17,15 @@ export async function scrapingWorker(job: Job<ScrapingJob>) {
   const { runId } = job.data;
 
   if (!runId) {
-    throw new Error("Lobstr run ID is required");
+    throw new UnrecoverableError("Lobstr run ID is required");
   }
 
-  try {
-    // Process Lobstr webhook and save ads
-    await handleLobstrWebhook(runId);
+  // Process Lobstr webhook and save ads
+  await handleLobstrWebhook(runId);
 
-    return {
-      success: true,
-      runId,
-      timestamp: new Date().toISOString(),
-    };
-  } catch (error) {
-    throw error;
-  }
+  return {
+    success: true,
+    runId,
+    timestamp: new Date().toISOString(),
+  };
 }
