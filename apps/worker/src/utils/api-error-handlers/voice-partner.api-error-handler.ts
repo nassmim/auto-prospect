@@ -20,7 +20,7 @@ import { NonRetryableError, RetryableError } from "../error-handler.utils";
  */
 export function handleVoiceApiResponse(
   response: Response,
-  data: Record<string, unknown>,
+  _data: Record<string, unknown>,
 ): void {
   if (!response.ok) {
     if (response.status === 401) {
@@ -41,5 +41,5 @@ export function handleVoiceApiResponse(
   }
 
   // Placeholder for Voice Partner specific error handling
-  // TODO: Add actual API response parsing
+  // TODO: Add actual API response parsing using _data object
 }

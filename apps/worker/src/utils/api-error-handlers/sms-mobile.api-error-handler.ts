@@ -27,7 +27,10 @@ import { NonRetryableError, RetryableError } from "../error-handler.utils";
  *   throw new NonRetryableError('Invalid phone number', ESmsErrorCode.PHONE_NUMBER_INVALID);
  * }
  */
-export function handleSmsApiResponse(response: Response, data: unknown): void {
+export function handleSmsApiResponse(
+  response: Response,
+  _data: unknown,
+): void {
   if (!response.ok) {
     if (response.status === 401) {
       throw new NonRetryableError(
@@ -46,5 +49,5 @@ export function handleSmsApiResponse(response: Response, data: unknown): void {
     );
   }
 
-  // TODO: Parse API-specific error responses from data object
+  // TODO: Parse API-specific error responses from _data object
 }

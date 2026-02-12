@@ -4,6 +4,7 @@ import {
   EContactChannel,
   ESmsErrorCode,
   EWhatsAppErrorCode,
+  EVoiceErrorCode,
 } from "@auto-prospect/shared";
 import {
   connectWithCredentials,
@@ -15,6 +16,7 @@ import { Job } from "bullmq";
 import { eq } from "drizzle-orm";
 import { consumeCredit } from "../services/credit.service";
 import { sendSms, sendVoiceMessage } from "../services/message.service";
+import { NonRetryableError } from "../utils/error-handler.utils";
 
 interface SmsJob {
   recipientPhone: string;
@@ -30,37 +32,51 @@ interface SmsJob {
 export async function smsWorker(job: Job<SmsJob>) {
   const { recipientPhone, message, accountId, metadata } = job.data;
 
+  // ===== VALIDATION PHASE (Non-retryable errors) =====
+  // These errors indicate permanent failures - don't retry
+  const db = getDBAdminClient();
+  const account = await db.query.accounts.findFirst({
+    where: eq(accounts.id, accountId),
+    columns: { smsApiKey: true },
+  });
+
+  if (!account?.smsApiKey) {
+    // Non-retryable: Missing API key is a configuration issue
+    throw new NonRetryableError(
+      "SMS API key not configured",
+      ESmsErrorCode.API_KEY_REQUIRED,
+    );
+  }
+
+  const encryptionKey = process.env.SMS_API_KEY_ENCRYPTION_KEY;
+  if (!encryptionKey) {
+    // Non-retryable: Server misconfiguration
+    throw new NonRetryableError(
+      "Encryption key not configured",
+      ESmsErrorCode.ENCRYPTION_KEY_MISSING,
+    );
+  }
+
+  // ===== EXECUTION PHASE (May be retryable) =====
+  // Network errors, rate limits, server errors should retry
   try {
-    // Step 1: Fetch user's account to get encrypted SMS API key
-    const db = getDBAdminClient();
-    const account = await db.query.accounts.findFirst({
-      where: eq(accounts.id, accountId),
-      columns: { smsApiKey: true },
-    });
-
-    if (!account?.smsApiKey) {
-      throw new Error(ESmsErrorCode.API_KEY_REQUIRED);
-    }
-
-    // Step 2: Decrypt the API key
-    const encryptionKey = process.env.SMS_API_KEY_ENCRYPTION_KEY;
-    if (!encryptionKey) {
-      throw new Error(ESmsErrorCode.ENCRYPTION_KEY_MISSING);
-    }
-
     const decryptedApiKey = decryptCredentials(
       account.smsApiKey,
       encryptionKey,
     );
 
-    // Step 3: Call SMSMobileAPI
+    // TODO: Add error handling using handleSmsApiResponse
+    // Example:
+    // const response = await fetch(SMS_API_URL, { ... });
+    // const data = await response.json();
+    // handleSmsApiResponse(response, data); // Will throw NonRetryableError or RetryableError
     const result = await sendSms({
       to: recipientPhone,
       message,
       apiKey: decryptedApiKey,
     });
 
-    // Step 4: Consume credit after successful send
+    // Consume credit after successful send
     if (metadata?.huntId) {
       await consumeCredit({
         huntId: metadata.huntId,
@@ -77,6 +93,17 @@ export async function smsWorker(job: Job<SmsJob>) {
       metadata,
     };
   } catch (error) {
+    // ===== ERROR CLASSIFICATION =====
+    // TODO: Add SMSMobileAPI-specific error parsing here
+    // Example:
+    // if (error.response?.status === 401) {
+    //   throw new NonRetryableError('Invalid API key', ESmsErrorCode.API_KEY_INVALID);
+    // }
+    // if (error.response?.status === 400) {
+    //   throw new NonRetryableError('Invalid phone number', ESmsErrorCode.PHONE_NUMBER_INVALID);
+    // }
+
+    // Default: Re-throw to trigger retry for unknown errors
     throw error;
   }
 }
@@ -105,18 +132,28 @@ export async function voiceWorker(job: Job<VoiceJob>) {
   const { recipientPhone, tokenAudio, sender, scheduledDate, metadata } =
     job.data;
 
-  // Validate required fields
+  // ===== VALIDATION PHASE (Non-retryable errors) =====
   if (!recipientPhone) {
-    throw new Error("Recipient phone number is required");
-  }
-
-  if (!tokenAudio) {
-    throw new Error(
-      "Audio token is required - pre-recorded audio must be provided",
+    throw new NonRetryableError(
+      "Recipient phone number is required",
+      EVoiceErrorCode.PHONE_NUMBER_REQUIRED,
     );
   }
 
+  if (!tokenAudio) {
+    throw new NonRetryableError(
+      "Audio token is required - pre-recorded audio must be provided",
+      EVoiceErrorCode.AUDIO_TOKEN_REQUIRED,
+    );
+  }
+
+  // ===== EXECUTION PHASE (May be retryable) =====
   try {
+    // TODO: Add error handling using handleVoiceApiResponse
+    // Example:
+    // const response = await fetch(VOICE_API_URL, { ... });
+    // const data = await response.json();
+    // handleVoiceApiResponse(response, data); // Will throw NonRetryableError or RetryableError
     const result = await sendVoiceMessage({
       phoneNumbers: recipientPhone,
       tokenAudio,
@@ -144,6 +181,14 @@ export async function voiceWorker(job: Job<VoiceJob>) {
       metadata,
     };
   } catch (error) {
+    // ===== ERROR CLASSIFICATION =====
+    // TODO: Add Voice Partner API-specific error parsing here
+    // Example:
+    // if (error.response?.status === 401) {
+    //   throw new NonRetryableError('Invalid API key', EVoiceErrorCode.API_KEY_INVALID);
+    // }
+
+    // Default: Re-throw to trigger retry for unknown errors
     throw error;
   }
 }
@@ -195,9 +240,13 @@ const activeConnections = new Map<
 export async function whatsappWorker(job: Job<WhatsAppJob>) {
   const { recipientPhone, message, metadata } = job.data;
 
+  // ===== VALIDATION PHASE (Non-retryable errors) =====
   const accountId = metadata?.accountId;
   if (!accountId) {
-    throw new Error("Account ID is required in metadata");
+    throw new NonRetryableError(
+      "Account ID is required in metadata",
+      EWhatsAppErrorCode.ACCOUNT_NOT_FOUND,
+    );
   }
 
   try {
@@ -214,18 +263,27 @@ export async function whatsappWorker(job: Job<WhatsAppJob>) {
       });
 
       if (!account) {
-        throw new Error(EWhatsAppErrorCode.ACCOUNT_NOT_FOUND);
+        // Non-retryable: Account doesn't exist
+        throw new NonRetryableError(
+          "Account not found",
+          EWhatsAppErrorCode.ACCOUNT_NOT_FOUND,
+        );
       }
 
       // Step 3: Get WhatsApp session/credentials
       const session = account.whatsappSession;
       if (!session || !session.credentials) {
-        throw new Error(EWhatsAppErrorCode.SESSION_NOT_FOUND);
+        // Non-retryable: No WhatsApp session - user needs to reconnect via UI
+        throw new NonRetryableError(
+          "WhatsApp session not found - reconnect required",
+          EWhatsAppErrorCode.SESSION_NOT_FOUND,
+        );
       }
 
       // Parse stored credentials
       const credentials = JSON.parse(session.credentials) as StoredAuthState;
 
+      // ===== EXECUTION PHASE (May be retryable) =====
       // Step 4: Create new connection
       const { socket, waitForConnection, cleanup } =
         await connectWithCredentials(credentials);
@@ -234,6 +292,8 @@ export async function whatsappWorker(job: Job<WhatsAppJob>) {
       const connected = await waitForConnection();
       if (!connected) {
         cleanup();
+        // TODO: Determine if CONNECTION_TIMEOUT should be retryable
+        // Could be temporary network issue - consider using RetryableError
         throw new Error(EWhatsAppErrorCode.CONNECTION_TIMEOUT);
       }
 
@@ -256,6 +316,11 @@ export async function whatsappWorker(job: Job<WhatsAppJob>) {
     const result = await sendWhatsAppMessage(connection.socket, jid, message);
 
     if (!result.success) {
+      // TODO: Add error classification based on errorCode
+      // Example:
+      // if (result.errorCode === EWhatsAppErrorCode.RECIPIENT_INVALID) {
+      //   throw new NonRetryableError('Invalid recipient', result.errorCode);
+      // }
       throw new Error(
         result.errorCode || EWhatsAppErrorCode.MESSAGE_SEND_FAILED,
       );
@@ -284,6 +349,10 @@ export async function whatsappWorker(job: Job<WhatsAppJob>) {
       }
       activeConnections.delete(accountId);
     }
+
+    // ===== ERROR CLASSIFICATION =====
+    // TODO: Add WhatsApp-specific error parsing
+    // Use handleWhatsAppApiResponse when calling WhatsApp Web API
     throw error;
   }
 }
