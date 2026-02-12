@@ -16,7 +16,10 @@ import { Job } from "bullmq";
 import { eq } from "drizzle-orm";
 import { consumeCredit } from "../services/credit.service";
 import { sendSms, sendVoiceMessage } from "../services/message.service";
-import { NonRetryableError } from "../utils/error-handler.utils";
+import {
+  NonRetryableError,
+  handleWorkerError,
+} from "../utils/error-handler.utils";
 
 interface SmsJob {
   recipientPhone: string;
@@ -94,7 +97,13 @@ export async function smsWorker(job: Job<SmsJob>) {
     };
   } catch (error) {
     // ===== ERROR CLASSIFICATION =====
-    // TODO: Add SMSMobileAPI-specific error parsing here
+    // handleWorkerError will:
+    // 1. Check if it's already a NonRetryableError → re-throw immediately (no retry)
+    // 2. Try to extract error code from error message
+    // 3. If error code is non-retryable → throw NonRetryableError (no retry)
+    // 4. Otherwise → throw RetryableError (triggers BullMQ retry)
+    //
+    // TODO: Add SMSMobileAPI-specific error parsing before calling handleWorkerError
     // Example:
     // if (error.response?.status === 401) {
     //   throw new NonRetryableError('Invalid API key', ESmsErrorCode.API_KEY_INVALID);
@@ -103,8 +112,8 @@ export async function smsWorker(job: Job<SmsJob>) {
     //   throw new NonRetryableError('Invalid phone number', ESmsErrorCode.PHONE_NUMBER_INVALID);
     // }
 
-    // Default: Re-throw to trigger retry for unknown errors
-    throw error;
+    // Use handleWorkerError as fallback for uncaught errors
+    handleWorkerError(error, "SMS");
   }
 }
 
@@ -188,8 +197,8 @@ export async function voiceWorker(job: Job<VoiceJob>) {
     //   throw new NonRetryableError('Invalid API key', EVoiceErrorCode.API_KEY_INVALID);
     // }
 
-    // Default: Re-throw to trigger retry for unknown errors
-    throw error;
+    // Use handleWorkerError as fallback for uncaught errors
+    handleWorkerError(error, "Voice");
   }
 }
 
@@ -353,6 +362,8 @@ export async function whatsappWorker(job: Job<WhatsAppJob>) {
     // ===== ERROR CLASSIFICATION =====
     // TODO: Add WhatsApp-specific error parsing
     // Use handleWhatsAppApiResponse when calling WhatsApp Web API
-    throw error;
+
+    // Use handleWorkerError as fallback for uncaught errors
+    handleWorkerError(error, "WhatsApp");
   }
 }

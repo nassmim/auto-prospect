@@ -1,3 +1,49 @@
+/**
+ * BullMQ Worker Error Handling System
+ *
+ * This module provides error classification for BullMQ workers to distinguish between:
+ * - **Retryable errors**: Temporary failures (network issues, rate limits, server errors)
+ * - **Non-retryable errors**: Permanent failures (invalid credentials, bad data, missing config)
+ *
+ * ## How It Works (Complete Flow):
+ *
+ * 1. **Worker catches error** during job execution
+ * 2. **Worker throws custom error**:
+ *    - `NonRetryableError` → BullMQ fails job immediately (no retry)
+ *    - `RetryableError` → BullMQ retries job per RETRY_CONFIG
+ *    - Generic `Error` → BullMQ treats as retryable (default behavior)
+ *
+ * 3. **BullMQ behavior**:
+ *    - On `NonRetryableError`: Marks job as "failed", moves to failed queue
+ *    - On `RetryableError`: Increments attempt count, waits backoff delay, retries
+ *    - After max attempts: Marks job as "failed" even for retryable errors
+ *
+ * ## Usage in Workers:
+ *
+ * ```typescript
+ * export async function smsWorker(job: Job) {
+ *   // Validation phase - throw NonRetryableError for config issues
+ *   if (!apiKey) {
+ *     throw new NonRetryableError('API key missing', ESmsErrorCode.API_KEY_REQUIRED);
+ *   }
+ *
+ *   try {
+ *     // Execution phase - API calls that might fail temporarily
+ *     await sendSms({ to, message, apiKey });
+ *   } catch (error) {
+ *     // handleWorkerError classifies the error automatically
+ *     handleWorkerError(error, 'SMS'); // throws NonRetryableError or RetryableError
+ *   }
+ * }
+ * ```
+ *
+ * ## What Happens After Throwing:
+ *
+ * - **NonRetryableError thrown** → BullMQ catches → Job fails immediately → No retry
+ * - **RetryableError thrown** → BullMQ catches → Job retries (2s, 4s, 8s delays) → Max 3 attempts
+ * - **After max retries** → Job moves to "failed" queue → Can be manually retried or investigated
+ */
+
 import {
   ESmsErrorCode,
   EVoiceErrorCode,
@@ -67,15 +113,33 @@ export function isRetryableErrorCode(code: string): boolean {
 }
 
 /**
- * Wraps API call errors with proper classification
+ * Wraps API call errors with proper classification for BullMQ retry logic
+ *
+ * This function determines if an error should trigger job retry or fail immediately:
+ * - NonRetryableError → Job fails immediately (no retry)
+ * - RetryableError → BullMQ retries job according to RETRY_CONFIG
+ *
+ * Error Classification Flow:
+ * 1. If error is already NonRetryableError → re-throw (fail immediately)
+ * 2. Try to extract error code from error message (e.g., "API_KEY_INVALID")
+ * 3. Check if error code is in NON_RETRYABLE_ERROR_CODES list
+ * 4. If non-retryable → throw NonRetryableError (fail immediately)
+ * 5. Otherwise → throw RetryableError (trigger retry)
+ *
+ * @param error - The caught error from API call or operation
+ * @param channel - Which channel this error is from (for logging)
+ * @throws {NonRetryableError} - For permanent failures (no retry)
+ * @throws {RetryableError} - For temporary failures (will retry)
  *
  * @example
- * // In worker processor:
+ * // In worker processor catch block:
  * try {
  *   const result = await sendSms({ to, message, apiKey });
  *   return { success: true, ...result };
  * } catch (error) {
- *   return handleWorkerError(error, 'SMS');
+ *   // This will throw either NonRetryableError or RetryableError
+ *   // BullMQ will then either fail immediately or retry the job
+ *   handleWorkerError(error, 'SMS');
  * }
  */
 export function handleWorkerError(
