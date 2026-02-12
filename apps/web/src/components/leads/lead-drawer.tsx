@@ -47,6 +47,7 @@ import Image from "next/image";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import useSWR from "swr";
+import { LeadDrawerSkeleton } from "./lead-drawer-skeleton";
 
 type LeadDrawerProps = {
   leadId: string | null;
@@ -300,11 +301,7 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
 
         {/* Scrollable content */}
         <div className="h-[calc(100vh-73px)] overflow-y-auto">
-          {isLoading && (
-            <div className="flex h-full items-center justify-center">
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-800 border-t-amber-500" />
-            </div>
-          )}
+          {isLoading && <LeadDrawerSkeleton />}
 
           {error && (
             <div className="flex h-full items-center justify-center px-6">

@@ -1,7 +1,7 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import { HuntCardSkeleton } from "@/components/hunts/hunt-card-skeleton";
+import { TemplateCardSkeleton } from "@/components/templates/template-card-skeleton";
 
-export default function HuntsLoading() {
+export default function TemplatesLoading() {
   return (
     <div className="space-y-6 p-6">
       {/* Header */}
@@ -10,12 +10,12 @@ export default function HuntsLoading() {
           <Skeleton className="h-9 w-48" />
           <Skeleton className="h-4 w-64" />
         </div>
-        <Skeleton className="h-10 w-40" />
+        <Skeleton className="h-10 w-48" />
       </div>
 
-      {/* Hunt cards grid */}
+      {/* Template cards grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <HuntCardSkeleton count={6} />
+        <TemplateCardSkeleton count={6} />
       </div>
     </div>
   );

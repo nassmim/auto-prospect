@@ -1,4 +1,6 @@
 import { Skeleton } from "@/components/ui/skeleton";
+import { StatCardSkeleton } from "@/components/dashboard/stat-card-skeleton";
+import { HuntListItemSkeleton } from "@/components/dashboard/hunt-list-item-skeleton";
 
 export default function DashboardLoading() {
   return (
@@ -14,18 +16,17 @@ export default function DashboardLoading() {
 
       {/* Stats cards */}
       <div className="grid gap-4 md:grid-cols-4">
-        {[1, 2, 3, 4].map((i) => (
-          <Skeleton key={i} className="h-24 rounded-xl" />
-        ))}
+        <StatCardSkeleton />
+        <StatCardSkeleton />
+        <StatCardSkeleton />
+        <StatCardSkeleton />
       </div>
 
       {/* Active hunts section */}
       <div className="space-y-4">
         <Skeleton className="h-7 w-48" />
         <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-20 rounded-lg" />
-          ))}
+          <HuntListItemSkeleton count={3} />
         </div>
       </div>
     </div>

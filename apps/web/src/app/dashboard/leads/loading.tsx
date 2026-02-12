@@ -1,4 +1,5 @@
 import { Skeleton } from "@/components/ui/skeleton";
+import { KanbanColumnSkeleton } from "@/components/leads/kanban-column-skeleton";
 
 export default function LeadsLoading() {
   return (
@@ -10,17 +11,11 @@ export default function LeadsLoading() {
       </div>
 
       {/* Kanban columns */}
-      <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4">
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="space-y-3">
-            <Skeleton className="h-8 w-full rounded-lg" />
-            <div className="space-y-2">
-              {[1, 2, 3].map((j) => (
-                <Skeleton key={j} className="h-32 rounded-lg" />
-              ))}
-            </div>
-          </div>
-        ))}
+      <div className="flex gap-4 overflow-x-auto pb-4">
+        <KanbanColumnSkeleton cardCount={3} />
+        <KanbanColumnSkeleton cardCount={3} />
+        <KanbanColumnSkeleton cardCount={3} />
+        <KanbanColumnSkeleton cardCount={3} />
       </div>
     </div>
   );
