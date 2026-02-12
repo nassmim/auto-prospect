@@ -3,6 +3,7 @@
 import { CACHE_TAGS } from "@/lib/cache.config";
 import { createDrizzleSupabaseClient } from "@/lib/db";
 import { formatZodError } from "@/lib/validation";
+import { sendSms } from "@/lib/worker-client";
 import { getUserAccount } from "@/services/account.service";
 import {
   getDefaultWhatsAppTemplate as getDefaultWhatsAppTemplateService,
@@ -294,7 +295,24 @@ export async function sendSmsAction(
       columnsToKeep: { smsApiKey: true },
     });
 
-    // call endpoint
+    if (!account.smsApiKey) {
+      return {
+        success: false,
+        errorCode: ESmsErrorCode.API_KEY_REQUIRED,
+      };
+    }
+
+    // Call worker endpoint
+    const result = await sendSms({
+      recipientPhone: to,
+      message,
+    });
+
+    if (!result.success) {
+      return { success: false, errorCode: result.error };
+    }
+
+    return { success: true, data: { jobId: result.jobId } };
   } catch {
     return {
       success: false,

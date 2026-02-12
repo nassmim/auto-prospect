@@ -1,6 +1,7 @@
 "use server";
 
 import { createDrizzleSupabaseClient } from "@/lib/db";
+import { sendWhatsAppText } from "@/lib/worker-client";
 import {
   getWhatsAppSession,
   saveWhatsAppSession,
@@ -250,7 +251,33 @@ export const sendWhatsAppTextMessage = async (
   }
 
   try {
-    // Call endpoint
+    // Get sender phone number from current user's account
+    const dbClient = await createDrizzleSupabaseClient();
+    const account = await dbClient.rls((tx) =>
+      tx.query.accounts.findFirst({
+        columns: { whatsappPhoneNumber: true },
+      }),
+    );
+
+    if (!account?.whatsappPhoneNumber) {
+      return {
+        success: false,
+        errorCode: EWhatsAppErrorCode.ACCOUNT_NOT_FOUND,
+      };
+    }
+
+    // Call worker endpoint
+    const result = await sendWhatsAppText({
+      recipientPhone: recipientValidation.formatted!,
+      senderPhone: account.whatsappPhoneNumber,
+      message,
+    });
+
+    if (!result.success) {
+      return { success: false, errorCode: result.error };
+    }
+
+    return { success: true };
   } catch {
     return {
       success: false,
