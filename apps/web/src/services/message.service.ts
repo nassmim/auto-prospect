@@ -8,6 +8,7 @@ import { CACHE_TAGS } from "@/lib/cache.config";
 import { createDrizzleSupabaseClient } from "@/lib/db";
 import { getUserAccount } from "@/services/account.service";
 import { consumeCredit } from "@/services/credit.service";
+import { updateLeadMessagesCache } from "@/services/lead.service";
 import {
   creditTransactions,
   eq,
@@ -140,6 +141,7 @@ export async function logWhatsAppMessage(
         .where(eq(creditTransactions.id, creditResult.transaction.id));
     }
 
+    await updateLeadMessagesCache(leadId);
     revalidatePath(pages.leads.detail(leadId));
 
     return { success: true };

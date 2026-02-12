@@ -1,7 +1,10 @@
+import { CACHE_TAGS } from "@/lib/cache.config";
 import { createDrizzleSupabaseClient } from "@/lib/db";
+import { getUserAccount } from "@/services/account.service";
 import type { SQL, TDBQuery, TDBWithTokenClient } from "@auto-prospect/db";
 import { and, eq, gte, leads, messages, sql } from "@auto-prospect/db";
 import { ELeadStage } from "@auto-prospect/shared/src/config/lead.config";
+import { cacheTag, updateTag } from "next/cache";
 
 type TLeadsSummaryStats = {
   todayLeadsCount: number;
@@ -14,13 +17,30 @@ type TLeadsSummaryStats = {
  * Used by lead drawer and full page view
  */
 export async function getLeadDetails(leadId: string) {
-  // This function can be cached
-  // Will be invalidated when the user performs an action on this specific lead
   const dbClient = await createDrizzleSupabaseClient();
+  const account = await getUserAccount(dbClient, {
+    columnsToKeep: { id: true },
+  });
+  return getCachedLeadDetails(leadId, account.id, dbClient);
+}
+
+/**
+ * Internal cached function for lead details
+ */
+async function getCachedLeadDetails(
+  leadId: string,
+  accountId: string,
+  dbClient?: TDBWithTokenClient,
+) {
+  "use cache";
+
+  cacheTag(CACHE_TAGS.lead(leadId));
+
+  const client = dbClient || (await createDrizzleSupabaseClient());
 
   try {
     // Fetch lead with all ad relations
-    const leadData = await dbClient.rls(async (tx) => {
+    const leadData = await client.rls(async (tx) => {
       return tx.query.leads.findFirst({
         where: eq(leads.id, leadId),
         with: {
@@ -68,8 +88,6 @@ export async function getLeadDetails(leadId: string) {
  * Fetch all members of the lead's account for assignment dropdown
  */
 export async function getLeadAssociatedTeamMembers(leadId: string) {
-  // This function can be cached
-  // Will be invalidated when the user associates another member or removes the member association
   const dbClient = await createDrizzleSupabaseClient();
 
   try {
@@ -87,11 +105,10 @@ export async function getLeadAssociatedTeamMembers(leadId: string) {
       throw new Error("Lead not found");
     }
 
-    // Fetch all members of this account
-    return await dbClient.rls((tx) =>
-      tx.query.teamMembers.findMany({
-        where: (table, { eq }) => eq(table.accountId, lead.accountId),
-      }),
+    return getCachedLeadAssociatedTeamMembers(
+      leadId,
+      lead.accountId,
+      dbClient,
     );
   } catch {
     throw new Error("Failed to fetch account members");
@@ -99,15 +116,54 @@ export async function getLeadAssociatedTeamMembers(leadId: string) {
 }
 
 /**
+ * Internal cached function for lead associated team members
+ */
+async function getCachedLeadAssociatedTeamMembers(
+  leadId: string,
+  accountId: string,
+  dbClient?: TDBWithTokenClient,
+) {
+  "use cache";
+
+  cacheTag(CACHE_TAGS.teamMembersByAccount(accountId));
+
+  const client = dbClient || (await createDrizzleSupabaseClient());
+
+  // Fetch all members of this account
+  return await client.rls((tx) =>
+    tx.query.teamMembers.findMany({
+      where: (table, { eq }) => eq(table.accountId, accountId),
+    }),
+  );
+}
+
+/**
  * Fetch message history for a lead
  */
 export async function getLeadMessages(leadId: string) {
-  // This function can be cached
-  // Will be invalidated when the user sends a new message to this lead
   const dbClient = await createDrizzleSupabaseClient();
+  const account = await getUserAccount(dbClient, {
+    columnsToKeep: { id: true },
+  });
+  return getCachedLeadMessages(leadId, account.id, dbClient);
+}
+
+/**
+ * Internal cached function for lead messages
+ */
+async function getCachedLeadMessages(
+  leadId: string,
+  accountId: string,
+  dbClient?: TDBWithTokenClient,
+) {
+  "use cache";
+
+  cacheTag(CACHE_TAGS.messagesByLead(leadId));
+
+  const client = dbClient || (await createDrizzleSupabaseClient());
 
   try {
-    const messagesList = await dbClient.rls(async (tx) => {
+    const messagesList = await client.rls(async (tx) => {
       return tx.query.messages.findMany({
         where: eq(messages.leadId, leadId),
         with: {
@@ -363,3 +419,17 @@ export async function getPipelineLeads() {
 export type TPipelineLead = Awaited<
   ReturnType<typeof getPipelineLeads>
 >[number];
+
+/**
+ * Cache invalidation for lead data
+ */
+export const updateLeadCache = async (leadId: string) => {
+  updateTag(CACHE_TAGS.lead(leadId));
+};
+
+/**
+ * Cache invalidation for lead messages
+ */
+export const updateLeadMessagesCache = async (leadId: string) => {
+  updateTag(CACHE_TAGS.messagesByLead(leadId));
+};

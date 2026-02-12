@@ -9,6 +9,7 @@ import {
   getLeadDetails,
   getLeadMessages,
   getPipelineLeads,
+  updateLeadCache,
 } from "@/services/lead.service";
 import { leadNoteSchema, leadReminderSchema } from "@/validation-schemas";
 import {
@@ -97,6 +98,7 @@ export async function updateLeadStage(leadId: string, newStage: TLeadStage) {
       });
     });
 
+    await updateLeadCache(leadId);
     revalidatePath(pages.leads.list);
 
     return { success: true };
@@ -143,6 +145,7 @@ export async function updateLeadPosition(
       await tx.update(leads).set(updateData).where(eq(leads.id, leadId));
     });
 
+    await updateLeadCache(leadId);
     revalidatePath(pages.leads.list);
 
     return { success: true };
@@ -214,6 +217,7 @@ export async function bulkUpdateLeads(
       }
     });
 
+    await Promise.all(leadIds.map((id) => updateLeadCache(id)));
     revalidatePath(pages.leads.list);
 
     return { success: true, count: leadIds.length };
@@ -255,6 +259,7 @@ export async function assignLead(leadId: string, userId: string | null) {
       });
     });
 
+    await updateLeadCache(leadId);
     revalidatePath(pages.leads.list);
 
     return { success: true };
@@ -300,6 +305,7 @@ export async function addLeadNote(leadId: string, content: unknown) {
       return newNote;
     });
 
+    await updateLeadCache(leadId);
     revalidatePath(pages.leads.detail(leadId));
 
     return { success: true, note };
@@ -350,6 +356,7 @@ export async function addLeadReminder(
       return newReminder;
     });
 
+    await updateLeadCache(leadId);
     revalidatePath(pages.leads.detail(leadId));
 
     return { success: true, reminder };
@@ -375,10 +382,25 @@ export async function deleteLeadReminder(reminderId: string) {
   const dbClient = await createDrizzleSupabaseClient();
 
   try {
+    // First, get the reminder to find its leadId
+    const reminder = await dbClient.rls(async (tx) => {
+      return tx.query.leadReminders.findFirst({
+        where: eq(leadReminders.id, reminderId),
+        columns: {
+          leadId: true,
+        },
+      });
+    });
+
+    if (!reminder) {
+      throw new Error("Reminder not found");
+    }
+
     await dbClient.rls(async (tx) => {
       await tx.delete(leadReminders).where(eq(leadReminders.id, reminderId));
     });
 
+    await updateLeadCache(reminder.leadId);
     revalidatePath(pages.leads.list);
 
     return { success: true };

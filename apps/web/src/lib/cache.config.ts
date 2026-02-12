@@ -15,4 +15,8 @@ export const CACHE_TAGS = {
 
   // Account-specific data
   account: (id: string) => `account:${id}`,
+
+  // Lead-specific data
+  lead: (id: string) => `lead:${id}`,
+  messagesByLead: (leadId: string) => `messages:lead:${leadId}`,
 } as const;
