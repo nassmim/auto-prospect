@@ -52,6 +52,13 @@ const GENERAL_ERROR_MESSAGES: Record<EGeneralErrorCode, string> = {
   [EGeneralErrorCode.DATABASE_ERROR]:
     "Erreur de base de données. Réessaie plus tard.",
   [EGeneralErrorCode.UNKNOWN_ERROR]: "Une erreur inattendue s'est produite",
+  [EGeneralErrorCode.NOT_FOUND]:
+    "La ressource demandée n'a pas été trouvée",
+  [EGeneralErrorCode.FORBIDDEN]: "Vous n'avez pas accès à cette ressource",
+  [EGeneralErrorCode.RATE_LIMITED]:
+    "Trop de requêtes. Réessaie dans quelques instants.",
+  [EGeneralErrorCode.SERVER_ERROR]:
+    "Une erreur serveur est survenue. Réessaie plus tard.",
 };
 
 /**
