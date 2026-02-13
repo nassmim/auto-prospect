@@ -1,5 +1,13 @@
 import z from "zod";
 
+export const whatsappPhoneNumberSchema = z.object({
+  phoneNumber: z.string().min(1, "Le numéro de téléphone est requis"),
+});
+
+export type TWhatsAppPhoneNumberSchema = z.infer<
+  typeof whatsappPhoneNumberSchema
+>;
+
 export const sendWhatsAppTextMessageSchema = z.object({
   recipientPhone: z.string().min(1, "Le numéro du destinataire est requis"),
   senderPhone: z.string().min(1, "Le numéro de l'expéditeur est requis"),

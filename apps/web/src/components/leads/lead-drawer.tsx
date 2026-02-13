@@ -90,6 +90,14 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
     },
   });
 
+  const {
+    control: noteControl,
+    handleSubmit: handleNoteSubmit,
+    reset: resetNote,
+    setError: setNoteError,
+    formState: { isSubmitting: isSubmittingNote, errors: noteErrors },
+  } = noteForm;
+
   // Reminders form
   const reminderForm = useForm<TLeadReminderFormData>({
     resolver: zodResolver(leadReminderFormSchema),
@@ -97,6 +105,14 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
       dueAt: new Date(),
     },
   });
+
+  const {
+    control: reminderControl,
+    handleSubmit: handleReminderSubmit,
+    reset: resetReminder,
+    setError: setReminderError,
+    formState: { isSubmitting: isSubmittingReminder, errors: reminderErrors },
+  } = reminderForm;
 
   const handleStageChange = async (newStage: string | null) => {
     if (!lead || !newStage) return;
@@ -188,7 +204,7 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
     }
   };
 
-  const handleAddNote = async (data: TLeadNoteFormData) => {
+  const onAddNote = async (data: TLeadNoteFormData) => {
     if (!lead) return;
 
     try {
@@ -198,15 +214,15 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
       mutate();
 
       // Reset form
-      noteForm.reset();
+      resetNote();
     } catch (err) {
-      noteForm.setError("root", {
+      setNoteError("root", {
         message: err instanceof Error ? err.message : "Failed to add note",
       });
     }
   };
 
-  const handleAddReminder = async (data: TLeadReminderFormData) => {
+  const onAddReminder = async (data: TLeadReminderFormData) => {
     if (!lead) return;
 
     try {
@@ -216,9 +232,9 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
       mutate();
 
       // Reset form
-      reminderForm.reset();
+      resetReminder();
     } catch (err) {
-      reminderForm.setError("root", {
+      setReminderError("root", {
         message: err instanceof Error ? err.message : "Failed to add reminder",
       });
     }
@@ -661,11 +677,11 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
                 {/* Add Note Form */}
                 <Form {...noteForm}>
                   <form
-                    onSubmit={noteForm.handleSubmit(handleAddNote)}
+                    onSubmit={handleNoteSubmit(onAddNote)}
                     className="space-y-2"
                   >
                     <FormField
-                      control={noteForm.control}
+                      control={noteControl}
                       name="content"
                       render={({ field }) => (
                         <FormItem>
@@ -681,19 +697,17 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
                         </FormItem>
                       )}
                     />
-                    {noteForm.formState.errors.root && (
+                    {noteErrors.root && (
                       <p className="text-xs text-red-400">
-                        {noteForm.formState.errors.root.message}
+                        {noteErrors.root.message}
                       </p>
                     )}
                     <button
                       type="submit"
-                      disabled={noteForm.formState.isSubmitting}
+                      disabled={isSubmittingNote}
                       className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      {noteForm.formState.isSubmitting
-                        ? "Enregistrement..."
-                        : "Sauvegarder"}
+                      {isSubmittingNote ? "Enregistrement..." : "Sauvegarder"}
                     </button>
                   </form>
                 </Form>
@@ -731,11 +745,11 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
                 {/* Add Reminder Form */}
                 <Form {...reminderForm}>
                   <form
-                    onSubmit={reminderForm.handleSubmit(handleAddReminder)}
+                    onSubmit={handleReminderSubmit(onAddReminder)}
                     className="space-y-2"
                   >
                     <FormField
-                      control={reminderForm.control}
+                      control={reminderControl}
                       name="dueAt"
                       render={({ field }) => (
                         <FormItem>
@@ -761,7 +775,7 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
                       )}
                     />
                     <FormField
-                      control={reminderForm.control}
+                      control={reminderControl}
                       name="note"
                       render={({ field }) => (
                         <FormItem>
@@ -780,19 +794,17 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
                         </FormItem>
                       )}
                     />
-                    {reminderForm.formState.errors.root && (
+                    {reminderErrors.root && (
                       <p className="text-xs text-red-400">
-                        {reminderForm.formState.errors.root.message}
+                        {reminderErrors.root.message}
                       </p>
                     )}
                     <button
                       type="submit"
-                      disabled={reminderForm.formState.isSubmitting}
+                      disabled={isSubmittingReminder}
                       className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      {reminderForm.formState.isSubmitting
-                        ? "Ajout..."
-                        : "Ajouter"}
+                      {isSubmittingReminder ? "Ajout..." : "Ajouter"}
                     </button>
                   </form>
                 </Form>

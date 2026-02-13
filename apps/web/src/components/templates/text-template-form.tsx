@@ -68,8 +68,8 @@ export function TextTemplateForm({ defaultChannel }: TextTemplateFormProps) {
     setValue,
     getValues,
     watch,
-    formState: { isSubmitting },
     handleSubmit,
+    formState: { isSubmitting },
   } = form;
 
   const handleInsertVariable = (variable: string) => {

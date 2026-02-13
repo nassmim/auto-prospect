@@ -4,7 +4,15 @@ import { updateAccountSettings } from "@/actions/account.actions";
 import { addTeamMember, removeTeamMember } from "@/actions/team.actions";
 import type { TAccount } from "@/schema/account.schema";
 import type { TTeamMembersWithAccount } from "@/types/team.types";
+import {
+  organizationNameSchema,
+  teamInvitationSchema,
+  type TOrganizationNameFormData,
+  type TTeamInvitationFormData,
+} from "@/validation-schemas";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useState, useTransition } from "react";
+import { useForm } from "react-hook-form";
 
 type TeamTabProps = {
   account: TAccount;
@@ -21,10 +29,37 @@ export function TeamTab({ account, userRole, initialMembers }: TeamTabProps) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // account name
-  const [orgName, setOrgName] = useState(account.name || "");
+  // Organization name form
+  const orgNameForm = useForm<TOrganizationNameFormData>({
+    resolver: zodResolver(organizationNameSchema),
+    defaultValues: {
+      name: account.name || "",
+    },
+  });
 
-  // Team settings
+  const {
+    register: registerOrgName,
+    handleSubmit: handleSubmitOrgName,
+    formState: { errors: orgNameErrors, isSubmitting: isSubmittingOrgName },
+  } = orgNameForm;
+
+  // Team invitation form
+  const inviteForm = useForm<TTeamInvitationFormData>({
+    resolver: zodResolver(teamInvitationSchema),
+    defaultValues: {
+      email: "",
+      role: "user",
+    },
+  });
+
+  const {
+    register: registerInvite,
+    handleSubmit: handleSubmitInvite,
+    reset: resetInvite,
+    formState: { errors: inviteErrors, isSubmitting: isSubmittingInvite },
+  } = inviteForm;
+
+  // Team settings (non-form state)
   const [allowReassignment, setAllowReassignment] = useState(
     account.settings?.allowReassignment ?? true,
   );
@@ -32,17 +67,13 @@ export function TeamTab({ account, userRole, initialMembers }: TeamTabProps) {
     account.settings?.restrictVisibility ?? false,
   );
 
-  // Invitation form
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState<"user" | "admin">("user");
-
   // Local state for members
   const [members, setMembers] = useState(initialMembers);
 
   const canEdit = userRole === "owner" || userRole === "admin";
   const isOwner = userRole === "owner";
 
-  const handleSaveOrgName = () => {
+  const onSubmitOrgName = (data: TOrganizationNameFormData) => {
     if (!isOwner) return;
 
     setError(null);
@@ -82,7 +113,7 @@ export function TeamTab({ account, userRole, initialMembers }: TeamTabProps) {
     });
   };
 
-  const handleInvite = () => {
+  const onSubmitInvite = (data: TTeamInvitationFormData) => {
     if (!canEdit) return;
 
     setError(null);
@@ -90,8 +121,8 @@ export function TeamTab({ account, userRole, initialMembers }: TeamTabProps) {
 
     startTransition(async () => {
       try {
-        const result = await addTeamMember(inviteEmail);
-        setInviteEmail("");
+        const result = await addTeamMember(data.email);
+        resetInvite();
         setSuccess("Invitation envoyée");
         setTimeout(() => setSuccess(null), 3000);
       } catch (err) {
@@ -135,36 +166,44 @@ export function TeamTab({ account, userRole, initialMembers }: TeamTabProps) {
         </div>
 
         <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-6">
-          <label
-            htmlFor="org-name"
-            className="block text-sm font-medium text-zinc-300"
-          >
-            Nom de l&apos;organisation
-          </label>
-          <div className="mt-2 flex gap-3">
-            <input
-              id="org-name"
-              type="text"
-              value={orgName}
-              onChange={(e) => setOrgName(e.target.value)}
-              disabled={!isOwner || isPending}
-              className="flex-1 rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 disabled:opacity-50"
-            />
-            {isOwner && (
-              <button
-                onClick={handleSaveOrgName}
-                disabled={isPending || orgName === account.name}
-                className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-zinc-950 transition-colors hover:bg-amber-400 disabled:opacity-50"
-              >
-                Enregistrer
-              </button>
+          <form onSubmit={handleSubmitOrgName(onSubmitOrgName)}>
+            <label
+              htmlFor="org-name"
+              className="block text-sm font-medium text-zinc-300"
+            >
+              Nom de l&apos;organisation
+            </label>
+            <div className="mt-2 flex gap-3">
+              <div className="flex-1">
+                <input
+                  id="org-name"
+                  type="text"
+                  {...registerOrgName("name")}
+                  disabled={!isOwner || isPending}
+                  className="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 disabled:opacity-50"
+                />
+                {orgNameErrors.name && (
+                  <p className="mt-1.5 text-xs text-red-400">
+                    {orgNameErrors.name.message}
+                  </p>
+                )}
+              </div>
+              {isOwner && (
+                <button
+                  type="submit"
+                  disabled={isPending || isSubmittingOrgName}
+                  className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-zinc-950 transition-colors hover:bg-amber-400 disabled:opacity-50"
+                >
+                  Enregistrer
+                </button>
+              )}
+            </div>
+            {!isOwner && (
+              <p className="mt-2 text-xs text-zinc-500">
+                Seul le propriétaire peut modifier le nom de l&apos;organisation
+              </p>
             )}
-          </div>
-          {!isOwner && (
-            <p className="mt-2 text-xs text-zinc-500">
-              Seul le propriétaire peut modifier le nom de l&apos;organisation
-            </p>
-          )}
+          </form>
         </div>
       </div>
 
@@ -314,34 +353,42 @@ export function TeamTab({ account, userRole, initialMembers }: TeamTabProps) {
           </div>
 
           <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-6">
-            <div className="flex gap-3">
-              <input
-                type="email"
-                placeholder="email@exemple.com"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-                disabled={isPending}
-                className="flex-1 rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 disabled:opacity-50"
-              />
-              <select
-                value={inviteRole}
-                onChange={(e) =>
-                  setInviteRole(e.target.value as "user" | "admin")
-                }
-                disabled={isPending}
-                className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-2 text-sm text-zinc-100 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 disabled:opacity-50"
-              >
-                <option value="user">Utilisateur</option>
-                <option value="admin">Admin</option>
-              </select>
-              <button
-                onClick={handleInvite}
-                disabled={isPending || !inviteEmail}
-                className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-zinc-950 transition-colors hover:bg-amber-400 disabled:opacity-50"
-              >
-                Inviter
-              </button>
-            </div>
+            <form
+              onSubmit={handleSubmitInvite(onSubmitInvite)}
+              className="space-y-3"
+            >
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <input
+                    type="email"
+                    placeholder="email@exemple.com"
+                    {...registerInvite("email")}
+                    disabled={isPending}
+                    className="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 disabled:opacity-50"
+                  />
+                  {inviteErrors.email && (
+                    <p className="mt-1.5 text-xs text-red-400">
+                      {inviteErrors.email.message}
+                    </p>
+                  )}
+                </div>
+                <select
+                  {...registerInvite("role")}
+                  disabled={isPending}
+                  className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-2 text-sm text-zinc-100 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 disabled:opacity-50"
+                >
+                  <option value="user">Utilisateur</option>
+                  <option value="admin">Admin</option>
+                </select>
+                <button
+                  type="submit"
+                  disabled={isPending || isSubmittingInvite}
+                  className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-zinc-950 transition-colors hover:bg-amber-400 disabled:opacity-50"
+                >
+                  Inviter
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

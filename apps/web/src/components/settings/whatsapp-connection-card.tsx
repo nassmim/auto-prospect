@@ -4,9 +4,15 @@ import {
   initiateWhatsAppConnection,
   updateWhatsAppPhoneNumber,
 } from "@/actions/whatsapp.actions";
+import {
+  whatsappPhoneNumberSchema,
+  type TWhatsAppPhoneNumberSchema,
+} from "@/validation-schemas";
 import { getErrorMessage } from "@/utils/error-messages.utils";
+import { zodResolver } from "@hookform/resolvers/zod";
 import Image from "next/image";
 import { useState } from "react";
+import { useForm } from "react-hook-form";
 
 type WhatsAppConnectionCardProps = {
   accountId: string;
@@ -28,11 +34,21 @@ export function WhatsAppConnectionCard({
   const [error, setError] = useState<string | null>(null);
 
   // Phone number state
-  const [phoneNumber, setPhoneNumber] = useState(initialPhoneNumber || "");
   const [savedPhoneNumber, setSavedPhoneNumber] = useState<string | null>(
     initialPhoneNumber,
   );
-  const [phoneLoading, setPhoneLoading] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<TWhatsAppPhoneNumberSchema>({
+    resolver: zodResolver(whatsappPhoneNumberSchema),
+    defaultValues: {
+      phoneNumber: initialPhoneNumber || "",
+    },
+  });
 
   // WhatsApp connection state
   const [qrCode, setQrCode] = useState<string | null>(null);
@@ -41,15 +57,17 @@ export function WhatsAppConnectionCard({
   const [connectionLoading, setConnectionLoading] = useState(false);
 
   // Save phone number
-  const handleSavePhone = async () => {
-    setPhoneLoading(true);
+  const onSubmitPhone = async (data: TWhatsAppPhoneNumberSchema) => {
     setError(null);
 
-    const result = await updateWhatsAppPhoneNumber(accountId, phoneNumber);
+    const result = await updateWhatsAppPhoneNumber(
+      accountId,
+      data.phoneNumber,
+    );
 
     if (result.success) {
       setSavedPhoneNumber(result.formattedNumber!);
-      setPhoneNumber(result.formattedNumber!);
+      setValue("phoneNumber", result.formattedNumber!);
       setConnected(false);
       setIsDisconnected(false);
       setQrCode(null);
@@ -60,7 +78,6 @@ export function WhatsAppConnectionCard({
           : "Erreur lors de la sauvegarde",
       );
     }
-    setPhoneLoading(false);
   };
 
   // Connect WhatsApp
@@ -183,26 +200,34 @@ export function WhatsAppConnectionCard({
         </div>
 
         <div className="ml-10 space-y-3">
-          <div className="flex gap-3">
-            <input
-              type="tel"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-              placeholder="+33 6 12 34 56 78"
-              className="flex-1 rounded-lg border border-zinc-700 bg-zinc-800/50 px-4 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-            />
-            <button
-              onClick={handleSavePhone}
-              disabled={phoneLoading || !phoneNumber}
-              className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-zinc-950 transition-colors hover:bg-amber-400 disabled:opacity-50"
-            >
-              {phoneLoading
-                ? "..."
-                : savedPhoneNumber
-                  ? "Modifier"
-                  : "Enregistrer"}
-            </button>
-          </div>
+          <form onSubmit={handleSubmit(onSubmitPhone)} className="space-y-3">
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <input
+                  type="tel"
+                  {...register("phoneNumber")}
+                  placeholder="+33 6 12 34 56 78"
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-4 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                />
+                {errors.phoneNumber && (
+                  <p className="mt-1.5 text-xs text-red-400">
+                    {errors.phoneNumber.message}
+                  </p>
+                )}
+              </div>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-zinc-950 transition-colors hover:bg-amber-400 disabled:opacity-50"
+              >
+                {isSubmitting
+                  ? "..."
+                  : savedPhoneNumber
+                    ? "Modifier"
+                    : "Enregistrer"}
+              </button>
+            </div>
+          </form>
 
           {savedPhoneNumber && (
             <p className="text-xs text-green-400">

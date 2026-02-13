@@ -104,26 +104,33 @@ export function HuntForm({ templates, hunt }: HuntFormProps) {
     },
   });
 
+  const {
+    control,
+    handleSubmit,
+    setValue,
+    formState: { isSubmitting },
+  } = form;
+
   // Watch form values for OutreachSettings component
   const outreachSettings = useWatch({
-    control: form.control,
+    control,
     name: "outreachSettings",
     defaultValue: { leboncoin: false, whatsapp: false, sms: false, ringlessVoice: false },
   });
 
   const templateIds = useWatch({
-    control: form.control,
+    control,
     name: "templateIds",
     defaultValue: { leboncoin: null, whatsapp: null, sms: null, ringlessVoice: null },
   });
 
   const channelCredits = useWatch({
-    control: form.control,
+    control,
     name: "channelCredits",
     defaultValue: { sms: 0, whatsapp: 0, ringlessVoice: 0 },
   });
 
-  const handleSubmit = async (data: THuntFormData) => {
+  const onSubmit = async (data: THuntFormData) => {
     setError(null);
 
     // For MVP, we only support URL paste for new hunts
@@ -167,7 +174,7 @@ export function HuntForm({ templates, hunt }: HuntFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {error && (
           <div className="rounded-lg border border-red-900/50 bg-red-950/30 p-4">
             <p className="text-sm text-red-400">{error}</p>
@@ -177,7 +184,7 @@ export function HuntForm({ templates, hunt }: HuntFormProps) {
         {/* Name input */}
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
           <FormField
-            control={form.control}
+            control={control}
             name="name"
             render={({ field }) => (
               <FormItem>
@@ -230,7 +237,7 @@ export function HuntForm({ templates, hunt }: HuntFormProps) {
         {/* Auto-refresh toggle */}
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
           <FormField
-            control={form.control}
+            control={control}
             name="autoRefresh"
             render={({ field }) => (
               <FormItem>
@@ -260,7 +267,7 @@ export function HuntForm({ templates, hunt }: HuntFormProps) {
         {/* Daily Pacing Limit */}
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
           <FormField
-            control={form.control}
+            control={control}
             name="dailyPacingLimit"
             render={({ field }) => (
               <FormItem>
@@ -308,9 +315,9 @@ export function HuntForm({ templates, hunt }: HuntFormProps) {
           channelCredits={
             channelCredits ?? { sms: 0, whatsapp: 0, ringlessVoice: 0 }
           }
-          onOutreachChange={(value) => form.setValue("outreachSettings", value)}
-          onTemplateChange={(value) => form.setValue("templateIds", value)}
-          onChannelCreditsChange={(value) => form.setValue("channelCredits", value)}
+          onOutreachChange={(value) => setValue("outreachSettings", value)}
+          onTemplateChange={(value) => setValue("templateIds", value)}
+          onChannelCreditsChange={(value) => setValue("channelCredits", value)}
         />
 
         {/* Actions */}
@@ -325,10 +332,10 @@ export function HuntForm({ templates, hunt }: HuntFormProps) {
           </Button>
           <Button
             type="submit"
-            disabled={form.formState.isSubmitting}
+            disabled={isSubmitting}
             className="flex-1 rounded-lg bg-amber-500 px-4 py-2 font-medium text-black transition-colors hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {form.formState.isSubmitting
+            {isSubmitting
               ? "Création..."
               : hunt
                 ? "Enregistrer"

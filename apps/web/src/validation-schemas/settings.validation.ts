@@ -13,6 +13,18 @@ export const teamInvitationSchema = z.object({
 
 export type TTeamInvitationFormData = z.infer<typeof teamInvitationSchema>;
 
+// Organization name schema
+export const organizationNameSchema = z.object({
+  name: z
+    .string()
+    .min(1, "Le nom de l'organisation est requis")
+    .max(100, "Le nom ne peut pas dépasser 100 caractères"),
+});
+
+export type TOrganizationNameFormData = z.infer<
+  typeof organizationNameSchema
+>;
+
 // account settings schema (for future use)
 export const accountSettingsSchema = z.object({
   name: z

@@ -52,6 +52,12 @@ export function VoiceTemplateForm({ defaultChannel }: VoiceTemplateFormProps) {
     },
   });
 
+  const {
+    control,
+    handleSubmit,
+    formState: { isSubmitting },
+  } = form;
+
   const handleRecordingComplete = (blob: Blob, duration: number) => {
     setAudioBlob(blob);
     setAudioDuration(duration);
@@ -86,7 +92,7 @@ export function VoiceTemplateForm({ defaultChannel }: VoiceTemplateFormProps) {
     audio.src = url;
   };
 
-  const handleSubmit = async (data: VoiceTemplateFormValues) => {
+  const onSubmit = async (data: VoiceTemplateFormValues) => {
     setError(null);
 
     // Validate audio separately (can't be in form schema)
@@ -141,7 +147,7 @@ export function VoiceTemplateForm({ defaultChannel }: VoiceTemplateFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {error && (
           <div className="rounded-lg border border-red-900/50 bg-red-950/30 p-4">
             <p className="text-sm text-red-400">{error}</p>
@@ -150,7 +156,7 @@ export function VoiceTemplateForm({ defaultChannel }: VoiceTemplateFormProps) {
 
         {/* Name input */}
         <FormField
-          control={form.control}
+          control={control}
           name="name"
           render={({ field }) => (
             <FormItem>
@@ -226,7 +232,7 @@ export function VoiceTemplateForm({ defaultChannel }: VoiceTemplateFormProps) {
 
         {/* Is default checkbox */}
         <FormField
-          control={form.control}
+          control={control}
           name="isDefault"
           render={({ field }) => (
             <FormItem>
@@ -258,12 +264,10 @@ export function VoiceTemplateForm({ defaultChannel }: VoiceTemplateFormProps) {
           </Button>
           <Button
             type="submit"
-            disabled={
-              form.formState.isSubmitting || !audioBlob || !audioDuration
-            }
+            disabled={isSubmitting || !audioBlob || !audioDuration}
             className="flex-1 rounded-lg bg-amber-500 px-4 py-2 font-medium text-black transition-colors hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {form.formState.isSubmitting ? "Création..." : "Créer le template"}
+            {isSubmitting ? "Création..." : "Créer le template"}
           </Button>
         </div>
       </form>

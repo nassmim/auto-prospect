@@ -1,9 +1,23 @@
 "use client";
 
 import { saveSmsApiKeyAction } from "@/actions/message.actions";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { getErrorMessage } from "@/utils/error-messages.utils";
+import {
+  saveSmsApiKeySchema,
+  type TSaveSmsApiKeySchema,
+} from "@/validation-schemas";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useForm } from "react-hook-form";
 
 type SmsApiKeyFormProps = {
   hasExistingKey?: boolean;
@@ -13,23 +27,31 @@ export default function SmsApiKeyForm({
   hasExistingKey = false,
 }: SmsApiKeyFormProps) {
   const router = useRouter();
-  const [apiKey, setApiKey] = useState("");
-  const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{
     type: "success" | "error";
     text: string;
   } | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  const form = useForm<TSaveSmsApiKeySchema>({
+    resolver: zodResolver(saveSmsApiKeySchema),
+    defaultValues: {
+      apiKey: "",
+    },
+  });
+
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { isSubmitting },
+  } = form;
+
+  const onSubmit = async (data: TSaveSmsApiKeySchema) => {
     setMessage(null);
 
     const result = await saveSmsApiKeyAction({
-      apiKey: apiKey.trim(),
+      apiKey: data.apiKey.trim(),
     });
-
-    setLoading(false);
 
     if (result.success) {
       setMessage({
@@ -38,8 +60,8 @@ export default function SmsApiKeyForm({
           ? "Ta clé a bien été mise à jour"
           : "Ta clé a bien été sauvegardée",
       });
-      setApiKey(""); // Clear input on success
-      router.refresh(); // Refresh server component data
+      reset();
+      router.refresh();
     } else {
       setMessage({
         type: "error",
@@ -78,37 +100,43 @@ export default function SmsApiKeyForm({
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label
-            htmlFor="apiKey"
-            className="block text-sm font-medium text-black mb-2"
-          >
-            Ta clé api
-          </label>
-          <input
-            id="apiKey"
-            type="text"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            placeholder="Entrer ta clé API"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-            disabled={loading}
+      <Form {...form}>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={control}
+            name="apiKey"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="block text-sm font-medium text-black">
+                  Ta clé api
+                </FormLabel>
+                <FormControl>
+                  <input
+                    {...field}
+                    type="text"
+                    placeholder="Entrer ta clé API"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    disabled={isSubmitting}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
 
-        <button
-          type="submit"
-          disabled={loading || !apiKey.trim()}
-          className="w-full px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-        >
-          {loading
-            ? "Enregistrement..."
-            : hasExistingKey
-              ? "Mettre à jour"
-              : "Connecter"}
-        </button>
-      </form>
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+          >
+            {isSubmitting
+              ? "Enregistrement..."
+              : hasExistingKey
+                ? "Mettre à jour"
+                : "Connecter"}
+          </button>
+        </form>
+      </Form>
 
       {/* Message display */}
       {message && (
