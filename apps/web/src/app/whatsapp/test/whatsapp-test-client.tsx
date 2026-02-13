@@ -5,10 +5,10 @@ import {
   sendWhatsAppTextMessage,
   updateWhatsAppPhoneNumber,
 } from "@/actions/whatsapp.actions";
+import { createClient } from "@/lib/supabase/client";
 import { getErrorMessage } from "@/utils/error-messages.utils";
 import Image from "next/image";
 import { useState } from "react";
-import { createClient } from "../../../../../../packages/db/src/supabase/client";
 
 type InitialData = {
   userId: string;

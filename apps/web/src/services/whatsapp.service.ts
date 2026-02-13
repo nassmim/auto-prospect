@@ -31,7 +31,7 @@ import { StoredAuthState } from "@auto-prospect/whatsapp";
  */
 export const getWhatsAppSession = async (
   accountId: string,
-  dbClient: TDBWithTokenClient,
+  dbClient?: TDBWithTokenClient,
 ): Promise<{
   session: TWhatsappSession | null;
   credentials: StoredAuthState | null;

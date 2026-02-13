@@ -3,7 +3,6 @@
 import { CACHE_TAGS } from "@/lib/cache.config";
 import { createDrizzleSupabaseClient } from "@/lib/db";
 import { formatZodError } from "@/lib/validation";
-import { sendSms } from "@/lib/worker-client";
 import { getUserAccount } from "@/services/account.service";
 import {
   getDefaultWhatsAppTemplate as getDefaultWhatsAppTemplateService,
@@ -23,8 +22,10 @@ import { accounts, and, eq, messageTemplates } from "@auto-prospect/db";
 import {
   EGeneralErrorCode,
   ESmsErrorCode,
+  EVoiceErrorCode,
   TErrorCode,
-} from "@auto-prospect/shared/src/config/error-codes";
+  WORKER_ROUTES,
+} from "@auto-prospect/shared";
 import {
   EContactChannel,
   TContactChannel,
@@ -269,13 +270,16 @@ type SendSmsResult = {
 };
 
 /**
- * Sends an SMS message via SMS Mobile API using the user's own API key
- * Validates input, fetches user's API key from their account, and calls the messaging service
+ * Sends an SMS message via worker API
+ * Web app does ALL validation
  */
 export async function sendSmsAction(
   data: TSendSmsSchema,
 ): Promise<SendSmsResult> {
-  // Validate data
+  // ===== VALIDATION PHASE =====
+  // All validation happens HERE in the web app
+
+  // Validate input schema
   const validation = sendSmsSchema.safeParse(data);
   if (!validation.success) {
     return {
@@ -287,14 +291,13 @@ export async function sendSmsAction(
   const { to, message } = validation.data;
 
   try {
-    // Fetch user's account to get their SMS API key
+    // Fetch account and SMS API key
     const dbClient = await createDrizzleSupabaseClient();
-
-    // Use admin client to bypass RLS (server action is already authenticated)
     const account = await getUserAccount(dbClient, {
-      columnsToKeep: { smsApiKey: true },
+      columnsToKeep: { id: true, smsApiKey: true },
     });
 
+    // Verify SMS API key exists
     if (!account.smsApiKey) {
       return {
         success: false,
@@ -302,14 +305,52 @@ export async function sendSmsAction(
       };
     }
 
-    // Call worker endpoint
-    const result = await sendSms({
-      recipientPhone: to,
-      message,
-    });
+    // Verify encryption key is configured
+    const encryptionKey = process.env.SMS_API_KEY_ENCRYPTION_KEY;
+    if (!encryptionKey) {
+      throw new Error();
+    }
 
-    if (!result.success) {
-      return { success: false, errorCode: result.error };
+    // Decrypt API key to validate it's properly encrypted
+    let decryptedApiKey: string;
+    try {
+      const { decryptCredentials } = await import("@/utils/crypto.utils");
+      decryptedApiKey = decryptCredentials(account.smsApiKey, encryptionKey);
+    } catch {
+      return {
+        success: false,
+        errorCode: ESmsErrorCode.API_KEY_INVALID,
+      };
+    }
+
+    // ===== EXECUTION PHASE =====
+    // Validation passed, call endpoint with ALL validated data
+    const response = await fetch(
+      `${process.env.WORKER_API_URL}${WORKER_ROUTES.PHONE_SMS}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.WORKER_API_SECRET}`,
+        },
+        body: JSON.stringify({
+          recipientPhone: to,
+          message,
+          decryptedApiKey, // Pass decrypted API key
+          metadata: {
+            accountId: account.id,
+          },
+        }),
+      },
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      return {
+        success: false,
+        errorCode: result.error || ESmsErrorCode.MESSAGE_SEND_FAILED,
+      };
     }
 
     return { success: true, data: { jobId: result.jobId } };
@@ -353,17 +394,14 @@ export async function saveSmsApiKeyAction(
     // Encrypt the API key before storing
     const encryptionKey = process.env.SMS_API_KEY_ENCRYPTION_KEY;
     if (!encryptionKey) {
-      return {
-        success: false,
-        errorCode: ESmsErrorCode.ENCRYPTION_KEY_MISSING,
-      };
+      throw new Error();
     }
 
     const encryptedApiKey = encryptCredentials(apiKey, encryptionKey);
 
     // Update the account with the encrypted API key
     // Use admin client to bypass RLS (server action is already authenticated)
-    const result = await dbClient.rls((tx) =>
+    const updatedAccount = await dbClient.rls((tx) =>
       tx
         .update(accounts)
         .set({ smsApiKey: encryptedApiKey })
@@ -371,7 +409,7 @@ export async function saveSmsApiKeyAction(
         .returning({ id: accounts.id }),
     );
 
-    if (!result || result.length === 0) {
+    if (!updatedAccount || updatedAccount.length === 0) {
       return {
         success: false,
         errorCode: ESmsErrorCode.ACCOUNT_NOT_FOUND,
@@ -383,6 +421,103 @@ export async function saveSmsApiKeyAction(
     return {
       success: false,
       errorCode: ESmsErrorCode.API_KEY_SAVE_FAILED,
+    };
+  }
+}
+
+// =============================================================================
+// RINGLESS VOICE MESSAGES
+// =============================================================================
+
+const sendVoiceMessageSchema = z.object({
+  phoneNumbers: z.string().min(1, "Le numéro de téléphone est requis"),
+  tokenAudio: z.string().min(1, "Le token audio est requis"),
+  sender: z.string().optional(),
+  scheduledDate: z.string().optional(),
+});
+
+export type SendVoiceMessageInput = z.infer<typeof sendVoiceMessageSchema>;
+
+type SendVoiceMessageResult = {
+  success: boolean;
+  errorCode?: TErrorCode;
+  data?: { jobId: string };
+};
+
+/**
+ * Sends a ringless voice message via worker API
+ * Web app does ALL validation
+ */
+export async function sendVoiceMessage(
+  input: SendVoiceMessageInput,
+): Promise<SendVoiceMessageResult> {
+  // ===== VALIDATION PHASE =====
+  // All validation happens HERE in the web app
+
+  // Validate input schema
+  const validation = sendVoiceMessageSchema.safeParse(input);
+  if (!validation.success) {
+    return {
+      success: false,
+      errorCode: EGeneralErrorCode.VALIDATION_FAILED,
+    };
+  }
+
+  const { phoneNumbers, tokenAudio, sender, scheduledDate } = validation.data;
+
+  try {
+    // Get accountId from session
+    const dbClient = await createDrizzleSupabaseClient();
+    const account = await getUserAccount(dbClient, {
+      columnsToKeep: { id: true },
+    });
+
+    // Verify Voice Partner API credentials are configured
+    const apiKey = process.env.VOICE_PARTNER_API_KEY;
+    const apiSecret = process.env.VOICE_PARTNER_API_SECRET;
+
+    if (!apiKey || !apiSecret) {
+      throw new Error();
+    }
+
+    // ===== EXECUTION PHASE =====
+    // Validation passed, call endpoint with ALL validated data
+    const response = await fetch(
+      `${process.env.WORKER_API_URL}${WORKER_ROUTES.PHONE_RINGLESS_VOICE}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.WORKER_API_SECRET}`,
+        },
+        body: JSON.stringify({
+          recipientPhone: phoneNumbers,
+          tokenAudio,
+          sender,
+          scheduledDate,
+          apiKey, // Pass API credentials
+          apiSecret,
+          metadata: {
+            accountId: account.id,
+          },
+        }),
+      },
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      return {
+        success: false,
+        errorCode: result.error || EVoiceErrorCode.MESSAGE_SEND_FAILED,
+      };
+    }
+
+    return { success: true, data: { jobId: result.jobId } };
+  } catch {
+    return {
+      success: false,
+      errorCode: EVoiceErrorCode.MESSAGE_SEND_FAILED,
     };
   }
 }

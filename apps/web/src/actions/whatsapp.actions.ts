@@ -1,7 +1,6 @@
 "use server";
 
 import { createDrizzleSupabaseClient } from "@/lib/db";
-import { sendWhatsAppText } from "@/lib/worker-client";
 import {
   getWhatsAppSession,
   saveWhatsAppSession,
@@ -22,7 +21,8 @@ import {
   EGeneralErrorCode,
   EWhatsAppErrorCode,
   TErrorCode,
-} from "@auto-prospect/shared/src/config/error-codes";
+  WORKER_ROUTES,
+} from "@auto-prospect/shared";
 import {
   createWhatsAppConnection,
   StoredAuthState,
@@ -227,13 +227,16 @@ export type SendWhatsAppTextMessageResult = {
 };
 
 /**
- * Sends a WhatsApp text message to a recipient
- * Finds the sender account by phone number, connects with stored credentials, and sends the message
+ * Sends a WhatsApp text message via worker API
+ * Web app does ALL validation
  */
 export const sendWhatsAppTextMessage = async (
   data: TSendWhatsAppTextMessageSchema,
 ): Promise<SendWhatsAppTextMessageResult> => {
-  // Validate data
+  // ===== VALIDATION PHASE =====
+  // All validation happens HERE in the web app
+
+  // Validate input schema
   const validation = sendWhatsAppTextMessageSchema.safeParse(data);
   if (!validation.success) {
     return { success: false, errorCode: EGeneralErrorCode.VALIDATION_FAILED };
@@ -251,30 +254,72 @@ export const sendWhatsAppTextMessage = async (
   }
 
   try {
-    // Get sender phone number from current user's account
+    // Get account and WhatsApp session
     const dbClient = await createDrizzleSupabaseClient();
     const account = await dbClient.rls((tx) =>
       tx.query.accounts.findFirst({
-        columns: { whatsappPhoneNumber: true },
+        columns: { id: true },
+        with: {
+          whatsappSession: {
+            columns: { credentials: true },
+          },
+        },
       }),
     );
 
-    if (!account?.whatsappPhoneNumber) {
+    if (!account) {
       return {
         success: false,
         errorCode: EWhatsAppErrorCode.ACCOUNT_NOT_FOUND,
       };
     }
 
-    // Call worker endpoint
-    const result = await sendWhatsAppText({
-      recipientPhone: recipientValidation.formatted!,
-      senderPhone: account.whatsappPhoneNumber,
-      message,
-    });
+    // Verify WhatsApp session exists
+    const session = account.whatsappSession;
+    if (!session || !session.credentials) {
+      return {
+        success: false,
+        errorCode: EWhatsAppErrorCode.SESSION_NOT_FOUND,
+      };
+    }
 
-    if (!result.success) {
-      return { success: false, errorCode: result.error };
+    // Parse and validate session credentials
+    let credentials;
+    try {
+      credentials = JSON.parse(session.credentials);
+    } catch {
+      return {
+        success: false,
+        errorCode: EWhatsAppErrorCode.SESSION_EXPIRED,
+      };
+    }
+
+    // ===== EXECUTION PHASE =====
+    // Validation passed, call endpoint with ALL validated data
+    const response = await fetch(
+      `${process.env.WORKER_API_URL}${WORKER_ROUTES.WHATSAPP_TEXT}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.WORKER_API_SECRET}`,
+        },
+        body: JSON.stringify({
+          recipientPhone: recipientValidation.formatted!,
+          message,
+          accountId: account.id,
+          credentials, // Pass validated credentials
+        }),
+      },
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      return {
+        success: false,
+        errorCode: result.error || EWhatsAppErrorCode.MESSAGE_SEND_FAILED,
+      };
     }
 
     return { success: true };

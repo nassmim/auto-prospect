@@ -12,12 +12,12 @@ import { sendSms, sendVoiceMessage } from "../services/message.service";
 interface SmsJob {
   recipientPhone: string;
   message: string;
-  accountId: string;
-  decryptedApiKey?: string; // Pre-validated by controller (user-initiated) or undefined (background job)
+  decryptedApiKey: string; // Always provided by web app (validated and decrypted)
   metadata?: {
     huntId?: string;
     adId?: string;
     leadId?: string;
+    accountId?: string;
   };
 }
 
@@ -25,14 +25,14 @@ export async function smsWorker(job: Job<SmsJob>) {
   const { recipientPhone, message, decryptedApiKey, metadata } = job.data;
 
   // ===== EXECUTION PHASE =====
-  // Controller already validated credentials before queueing
+  // Web app already validated and decrypted credentials before queueing
   // Service layer handles error classification and throws appropriate errors
   // BullMQ catches errors: UnrecoverableError = fail, Error = retry
 
   const result = await sendSms({
     to: recipientPhone,
     message,
-    apiKey: decryptedApiKey!,
+    apiKey: decryptedApiKey,
   });
 
   // Consume credit after successful send
@@ -65,8 +65,8 @@ interface VoiceJob {
   tokenAudio: string; // Required: Pre-recorded audio token from Voice Partner
   sender?: string; // Optional: Caller ID
   scheduledDate?: string; // Optional: Schedule for future delivery
-  apiKey?: string; // Pre-validated by controller (user-initiated) or undefined (background job)
-  apiSecret?: string; // Pre-validated by controller (user-initiated) or undefined (background job)
+  apiKey: string; // Always provided by web app (validated)
+  apiSecret: string; // Always provided by web app (validated)
   metadata?: {
     huntId?: string;
     accountId?: string;
@@ -85,7 +85,7 @@ export async function voiceWorker(job: Job<VoiceJob>) {
   } = job.data;
 
   // ===== EXECUTION PHASE =====
-  // Controller already validated credentials before queueing
+  // Web app already validated credentials before queueing
   // Service layer handles error classification and throws appropriate errors
   // BullMQ catches errors: UnrecoverableError = fail, Error = retry
 
@@ -94,7 +94,7 @@ export async function voiceWorker(job: Job<VoiceJob>) {
     tokenAudio,
     sender,
     scheduledDate,
-    apiKey: apiKey!,
+    apiKey,
   });
 
   // Consume credit after successful send
@@ -142,7 +142,7 @@ interface WhatsAppJob {
   recipientPhone: string; // Phone in international format (e.g., "+33612345678")
   message: string; // Text content to send
   accountId: string; // Always required
-  credentials?: StoredAuthState; // Pre-validated by controller (user-initiated) or undefined (background job)
+  credentials: StoredAuthState; // Always provided by web app (validated)
   metadata?: {
     huntId?: string;
     adId?: string;
@@ -163,7 +163,7 @@ export async function whatsappWorker(job: Job<WhatsAppJob>) {
     job.data;
 
   // ===== EXECUTION PHASE =====
-  // Controller already validated credentials before queueing
+  // Web app already validated credentials before queueing
   // Error classification happens inline below
   // BullMQ catches errors: UnrecoverableError = fail, Error = retry
 
@@ -174,7 +174,7 @@ export async function whatsappWorker(job: Job<WhatsAppJob>) {
     if (!connection) {
       // Step 2: Create new connection with provided credentials
       const { socket, waitForConnection, cleanup } =
-        await connectWithCredentials(credentials!);
+        await connectWithCredentials(credentials);
 
       // Wait for connection to establish
       const connected = await waitForConnection();

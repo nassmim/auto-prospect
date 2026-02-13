@@ -1,23 +1,16 @@
 /**
  * Phone Channel Controllers
  *
- * Validates user-initiated SMS and voice requests BEFORE queueing jobs.
- * This ensures users get immediate feedback on validation errors.
+ * Thin passthrough controllers for SMS and voice.
+ * Web app does ALL validation - these just queue jobs.
  *
  * Architecture:
- * - User clicks "Send" → Route → THIS CONTROLLER
- * - Controller validates: phone format, API keys, account settings
- * - If validation fails → return error immediately (400)
- * - If validation passes → queue job with ALL necessary data
+ * - User clicks "Send" → Web app validates → Calls THIS CONTROLLER
+ * - Controller does minimal request validation
+ * - Queues job with all validated data from web app
  */
 
-import { accounts, getDBAdminClient } from "@auto-prospect/db";
-import {
-  decryptCredentials,
-  EGeneralErrorCode,
-  ESmsErrorCode,
-} from "@auto-prospect/shared";
-import { eq } from "drizzle-orm";
+import { EGeneralErrorCode } from "@auto-prospect/shared";
 import { Request, Response } from "express";
 import { JOB_TYPES } from "../config";
 import { smsQueue, voiceQueue } from "../queues";
@@ -25,70 +18,21 @@ import { smsQueue, voiceQueue } from "../queues";
 /**
  * POST /phone/sms
  *
- * Sends an SMS text message via cellular network
- *
- * Validation phase (happens here):
- * - Check required fields (recipientPhone, message, accountId)
- * - Fetch account and verify SMS API key exists
- * - Verify encryption key is configured
- * - Decrypt API key to ensure it's valid
- *
- * Execution phase:
- * - Queue job with ALL validated data (including decrypted API key)
+ * Thin passthrough controller for SMS sending.
+ * Web app already validated everything - just queue the job.
  */
 export async function sendSmsController(req: Request, res: Response) {
-  const { recipientPhone, message, accountId, metadata } = req.body;
+  const { recipientPhone, message, decryptedApiKey, metadata } = req.body;
 
-  // ===== VALIDATION PHASE =====
-  // All user-facing validation happens HERE (before queueing)
-  if (!recipientPhone || !message) {
+  // Basic request validation only
+  if (!recipientPhone || !message || !decryptedApiKey) {
     return res.status(400).json({
       success: false,
       error: EGeneralErrorCode.VALIDATION_FAILED,
     });
   }
 
-  // Fetch account to validate SMS API key exists
-  const db = getDBAdminClient();
-  const account = await db.query.accounts.findFirst({
-    where: eq(accounts.id, accountId),
-    columns: { id: true, smsApiKey: true },
-  });
-
-  if (!account) {
-    return res.status(400).json({
-      success: false,
-      error: ESmsErrorCode.ACCOUNT_NOT_FOUND,
-    });
-  }
-
-  if (!account.smsApiKey) {
-    return res.status(400).json({
-      success: false,
-      error: ESmsErrorCode.API_KEY_REQUIRED,
-    });
-  }
-
-  // Verify encryption key is configured
-  const encryptionKey = process.env.SMS_API_KEY_ENCRYPTION_KEY;
-  if (!encryptionKey) {
-    throw new Error();
-  }
-
-  // Decrypt API key to validate it's properly encrypted
-  let decryptedApiKey = "";
-  try {
-    decryptedApiKey = decryptCredentials(account.smsApiKey, encryptionKey);
-  } catch {
-    // Decryption failed - bad encryption or corrupted data
-    return res.status(400).json({
-      success: false,
-      error: ESmsErrorCode.API_KEY_INVALID,
-    });
-  }
-
-  // ===== EXECUTION PHASE =====
-  // Validation passed, queue the job with ALL necessary data
+  // Queue job with validated data from web app
   const job = await smsQueue.add(JOB_TYPES.SMS_SEND, {
     recipientPhone,
     message,
@@ -102,52 +46,28 @@ export async function sendSmsController(req: Request, res: Response) {
 /**
  * POST /phone/ringless-voice
  *
- * Sends a ringless voice message (delivered directly to voicemail without ringing)
- *
- * Validation phase (happens here):
- * - Check required fields (recipientPhone, tokenAudio)
- * - Validate Voice Partner API credentials are configured
- *
- * Execution phase:
- * - Queue job with validated data
- * - Worker receives everything it needs
+ * Thin passthrough controller for ringless voice sending.
+ * Web app already validated everything - just queue the job.
  */
 export async function sendVoiceController(req: Request, res: Response) {
-  const { recipientPhone, tokenAudio, sender, scheduledDate, metadata } =
+  const { recipientPhone, tokenAudio, sender, scheduledDate, apiKey, apiSecret, metadata } =
     req.body;
 
-  // ===== VALIDATION PHASE =====
-
-  if (!recipientPhone) {
+  // Basic request validation only
+  if (!recipientPhone || !tokenAudio || !apiKey || !apiSecret) {
     return res.status(400).json({
       success: false,
       error: EGeneralErrorCode.VALIDATION_FAILED,
     });
   }
 
-  if (!tokenAudio) {
-    return res.status(400).json({
-      success: false,
-      error: EGeneralErrorCode.VALIDATION_FAILED,
-    });
-  }
-
-  // Verify Voice Partner API credentials are configured
-  const apiKey = process.env.VOICE_PARTNER_API_KEY;
-  const apiSecret = process.env.VOICE_PARTNER_API_SECRET;
-
-  if (!apiKey || !apiSecret) {
-    throw new Error();
-  }
-
-  // ===== EXECUTION PHASE =====
-  // Validation passed, queue the job
+  // Queue job with validated data from web app
   const job = await voiceQueue.add(JOB_TYPES.VOICE_SEND, {
     recipientPhone,
     tokenAudio,
     sender,
     scheduledDate,
-    apiKey, // Pass API credentials to avoid env access in worker
+    apiKey,
     apiSecret,
     metadata,
   });
