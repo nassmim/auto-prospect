@@ -5,7 +5,7 @@ import {
   sendWhatsAppMessage,
   StoredAuthState,
 } from "@auto-prospect/whatsapp";
-import { Job } from "bullmq";
+import { Job, UnrecoverableError } from "bullmq";
 import { consumeCredit } from "../services/credit.service";
 import { sendSms, sendVoiceMessage } from "../services/message.service";
 
@@ -22,43 +22,35 @@ interface SmsJob {
 }
 
 export async function smsWorker(job: Job<SmsJob>) {
-  const { recipientPhone, message, accountId, decryptedApiKey, metadata } =
-    job.data;
+  const { recipientPhone, message, decryptedApiKey, metadata } = job.data;
 
   // ===== EXECUTION PHASE =====
-  // Controller/orchestrator already validated credentials
-  // Worker receives validated data and executes API call
+  // Controller already validated credentials before queueing
+  // Service layer handles error classification and throws appropriate errors
+  // BullMQ catches errors: UnrecoverableError = fail, Error = retry
 
-  try {
-    const result = await sendSms({
-      to: recipientPhone,
-      message,
-      apiKey: decryptedApiKey!,
-    });
+  const result = await sendSms({
+    to: recipientPhone,
+    message,
+    apiKey: decryptedApiKey!,
+  });
 
-    // Consume credit after successful send
-    if (metadata?.huntId) {
-      await consumeCredit({
-        huntId: metadata.huntId,
-        channel: EContactChannel.SMS,
-        messageId: result.message_id,
-        recipient: recipientPhone,
-      });
-    }
-
-    return {
-      success: true,
+  // Consume credit after successful send
+  if (metadata?.huntId) {
+    await consumeCredit({
+      huntId: metadata.huntId,
+      channel: EContactChannel.SMS,
       messageId: result.message_id,
-      timestamp: new Date().toISOString(),
-      metadata,
-    };
-  } catch (error) {
-    // ===== ERROR CLASSIFICATION =====
-    // Classify API errors: retryable vs permanent
-
-    // Re-throw for BullMQ to handle (will retry unless UnrecoverableError)
-    throw error;
+      recipient: recipientPhone,
+    });
   }
+
+  return {
+    success: true,
+    messageId: result.message_id,
+    timestamp: new Date().toISOString(),
+    metadata,
+  };
 }
 
 /**
@@ -89,50 +81,37 @@ export async function voiceWorker(job: Job<VoiceJob>) {
     sender,
     scheduledDate,
     apiKey,
-    apiSecret,
     metadata,
   } = job.data;
 
   // ===== EXECUTION PHASE =====
-  // Controller/orchestrator already validated credentials
-  // Worker receives validated data and executes API call
+  // Controller already validated credentials before queueing
+  // Service layer handles error classification and throws appropriate errors
+  // BullMQ catches errors: UnrecoverableError = fail, Error = retry
 
-  try {
-    const result = await sendVoiceMessage({
-      phoneNumbers: recipientPhone,
-      tokenAudio,
-      sender,
-      scheduledDate,
-      apiKey: apiKey!,
-      apiSecret: apiSecret!,
+  const result = await sendVoiceMessage({
+    phoneNumbers: recipientPhone,
+    tokenAudio,
+    sender,
+    scheduledDate,
+    apiKey: apiKey!,
+  });
+
+  // Consume credit after successful send
+  if (metadata?.huntId) {
+    await consumeCredit({
+      huntId: metadata.huntId,
+      channel: EContactChannel.RINGLESS_VOICE,
+      recipient: recipientPhone,
     });
-
-    if (!result.success) {
-      throw new Error(result.error || "Voice message send failed");
-    }
-
-    // Consume credit after successful send
-    if (metadata?.huntId) {
-      await consumeCredit({
-        huntId: metadata.huntId,
-        channel: EContactChannel.RINGLESS_VOICE,
-        recipient: recipientPhone,
-      });
-    }
-
-    return {
-      success: true,
-      timestamp: new Date().toISOString(),
-      data: result.data,
-      metadata,
-    };
-  } catch (error) {
-    // ===== ERROR CLASSIFICATION =====
-    // Classify API errors: retryable vs permanent
-
-    // Re-throw for BullMQ to handle (will retry unless UnrecoverableError)
-    throw error;
   }
+
+  return {
+    success: true,
+    timestamp: new Date().toISOString(),
+    data: result,
+    metadata,
+  };
 }
 
 /**
@@ -184,8 +163,9 @@ export async function whatsappWorker(job: Job<WhatsAppJob>) {
     job.data;
 
   // ===== EXECUTION PHASE =====
-  // Controller/orchestrator already validated credentials
-  // Worker receives validated data and executes API call
+  // Controller already validated credentials before queueing
+  // Error classification happens inline below
+  // BullMQ catches errors: UnrecoverableError = fail, Error = retry
 
   try {
     // Step 1: Check if we have an active connection for this account
@@ -221,9 +201,26 @@ export async function whatsappWorker(job: Job<WhatsAppJob>) {
     const result = await sendWhatsAppMessage(connection.socket, jid, message);
 
     if (!result.success) {
-      throw new Error(
-        result.errorCode || EWhatsAppErrorCode.MESSAGE_SEND_FAILED,
-      );
+      // ===== WHATSAPP ERROR HANDLING =====
+      // Baileys library returns error codes, not HTTP responses
+      // Each error needs specific handling strategy
+      const errorCode = result.errorCode || EWhatsAppErrorCode.MESSAGE_SEND_FAILED;
+
+      // PERMANENT FAILURES - Do not retry
+      // These indicate configuration/data issues that won't resolve with retry
+      if (errorCode === EWhatsAppErrorCode.RECIPIENT_INVALID ||
+          errorCode === EWhatsAppErrorCode.SESSION_NOT_FOUND ||
+          errorCode === EWhatsAppErrorCode.SESSION_EXPIRED ||
+          errorCode === EWhatsAppErrorCode.ACCOUNT_NOT_FOUND) {
+        throw new UnrecoverableError(errorCode);
+      }
+
+      // TEMPORARY FAILURES - Let BullMQ retry
+      // Connection issues, rate limits, etc.
+      // TODO: Some errors might need custom retry strategies:
+      // - CONNECTION_TIMEOUT: Maybe longer delay between retries?
+      // - RATE_LIMITED: Custom backoff based on WhatsApp's rate limit window?
+      throw new Error(errorCode);
     }
 
     // Step 5: Consume credit after successful send
@@ -241,7 +238,8 @@ export async function whatsappWorker(job: Job<WhatsAppJob>) {
       metadata,
     };
   } catch (error) {
-    // If connection failed, remove from pool so next attempt creates fresh connection
+    // Clean up failed connection from pool
+    // Next retry will create a fresh connection
     if (activeConnections.has(accountId)) {
       const connection = activeConnections.get(accountId);
       if (connection) {
@@ -250,10 +248,7 @@ export async function whatsappWorker(job: Job<WhatsAppJob>) {
       activeConnections.delete(accountId);
     }
 
-    // ===== ERROR CLASSIFICATION =====
-    // Classify API errors: retryable vs permanent
-
-    // Re-throw for BullMQ to handle (will retry unless UnrecoverableError)
+    // Re-throw for BullMQ to handle
     throw error;
   }
 }

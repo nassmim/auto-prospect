@@ -16,7 +16,6 @@ import {
   decryptCredentials,
   EGeneralErrorCode,
   ESmsErrorCode,
-  EVoiceErrorCode,
 } from "@auto-prospect/shared";
 import { eq } from "drizzle-orm";
 import { Request, Response } from "express";
@@ -93,7 +92,6 @@ export async function sendSmsController(req: Request, res: Response) {
   const job = await smsQueue.add(JOB_TYPES.SMS_SEND, {
     recipientPhone,
     message,
-    accountId,
     decryptedApiKey,
     metadata,
   });
@@ -123,14 +121,14 @@ export async function sendVoiceController(req: Request, res: Response) {
   if (!recipientPhone) {
     return res.status(400).json({
       success: false,
-      error: EVoiceErrorCode.PHONE_NUMBER_REQUIRED,
+      error: EGeneralErrorCode.VALIDATION_FAILED,
     });
   }
 
   if (!tokenAudio) {
     return res.status(400).json({
       success: false,
-      error: EVoiceErrorCode.AUDIO_TOKEN_REQUIRED,
+      error: EGeneralErrorCode.VALIDATION_FAILED,
     });
   }
 

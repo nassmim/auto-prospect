@@ -13,13 +13,10 @@
  */
 
 import { accounts, getDBAdminClient } from "@auto-prospect/db";
-import {
-  EGeneralErrorCode,
-  EWhatsAppErrorCode,
-} from "@auto-prospect/shared";
+import { EGeneralErrorCode, EWhatsAppErrorCode } from "@auto-prospect/shared";
 import { StoredAuthState } from "@auto-prospect/whatsapp";
-import { Request, Response } from "express";
 import { eq } from "drizzle-orm";
+import { Request, Response } from "express";
 import { JOB_TYPES } from "../config";
 import { whatsappQueue } from "../queues";
 
@@ -44,7 +41,7 @@ export async function sendWhatsAppController(req: Request, res: Response) {
   // ===== VALIDATION PHASE =====
   // All user-facing validation happens HERE (before queueing)
 
-  if (!recipientPhone || !message || !accountId) {
+  if (!recipientPhone || !message) {
     return res.status(400).json({
       success: false,
       error: EGeneralErrorCode.VALIDATION_FAILED,
@@ -96,7 +93,7 @@ export async function sendWhatsAppController(req: Request, res: Response) {
     recipientPhone,
     message,
     accountId,
-    credentials, // Pass session credentials to avoid re-fetching
+    credentials,
     metadata,
   });
 
