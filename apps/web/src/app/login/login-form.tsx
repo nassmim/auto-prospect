@@ -1,106 +1,76 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-
-function isValidEmail(email: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  return emailRegex.test(email)
-}
+import { signInWithGoogle, signInWithMagicLink } from "@/actions/auth.actions";
+import { Input } from "@/components/ui/input";
+import { magicLinkSchema, type TMagicLinkFormData } from "@/validation-schemas";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useSearchParams } from "next/navigation";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
 
 function getFriendlyError(error: string): string {
-  const lower = error.toLowerCase()
+  const lower = error.toLowerCase();
 
-  if (error === 'signup_not_allowed' || lower.includes('signups not allowed'))
-    return "Vous n'êtes pas encore inscrit. Veuillez réserver un appel avec notre équipe."
+  if (
+    error === "signup_not_allowed" ||
+    lower.includes("signups not allowed") ||
+    lower.includes("flow state not found")
+  )
+    return "Tu n'es pas encore inscrit. Réserve un appel avec notre équipe.";
 
-  if (lower.includes('flow state not found'))
-    return "Vous n'êtes pas encore inscrit. Veuillez réserver un appel avec notre équipe."
-
-  return error
+  return "Une erreur est survenue. Ré-essaie ou contacte-nous pour qu'on résolve le problème.";
 }
 
 export function LoginForm() {
-  const searchParams = useSearchParams()
-  const [email, setEmail] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [isSuccess, setIsSuccess] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
+  const searchParams = useSearchParams();
+  const urlError = searchParams.get("error") || "";
+  const [error, setError] = useState<string | null>(getFriendlyError(urlError));
+  const [isSuccess, setIsSuccess] = useState(false);
 
-  // Read error from URL (e.g., from OAuth callback)
-  useEffect(() => {
-    const urlError = searchParams.get('error')
-    if (urlError) {
-      setError(getFriendlyError(urlError))
-    }
-  }, [searchParams])
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<TMagicLinkFormData>({
+    resolver: zodResolver(magicLinkSchema),
+    defaultValues: {
+      email: "",
+    },
+  });
 
-  const validateEmail = (): boolean => {
-    if (!email.trim()) {
-      setError("L'email doit être renseigné")
-      return false
-    }
-    if (!isValidEmail(email)) {
-      setError("L'email ne semble pas valide")
-      return false
-    }
-    return true
-  }
+  const onSubmit = async (data: TMagicLinkFormData) => {
+    setError(null);
+    setIsSuccess(false);
 
-  const handleMagicLinkSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
-    setIsSuccess(false)
+    const result = await signInWithMagicLink(data);
 
-    if (!validateEmail()) return
-
-    setIsLoading(true)
-
-    const supabase = createClient()
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        shouldCreateUser: false,
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
-    })
-
-    setIsLoading(false)
-
-    if (error) {
-      setError(getFriendlyError(error.message))
-      return
+    if (result.error) {
+      setError(getFriendlyError(result.error));
+      return;
     }
 
-    setIsSuccess(true)
-  }
+    setIsSuccess(true);
+  };
 
   const handleGoogleLogin = async () => {
-    setError(null)
-    setIsSuccess(false)
+    setError(null);
+    setIsSuccess(false);
 
-    const supabase = createClient()
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    })
+    const result = await signInWithGoogle();
 
-    if (error) {
-      setError(getFriendlyError(error.message))
-    }
-  }
+    if (result?.error) setError(getFriendlyError(result.error));
+  };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-sm">
         {/* Header */}
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-semibold text-gray-900">Auto-Prospect</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">
+            Auto-Prospect
+          </h1>
           <p className="mt-2 text-sm text-gray-600">
-            Connectez-vous à votre compte
+            Connecte-toi à ton compte
           </p>
         </div>
 
@@ -116,12 +86,13 @@ export function LoginForm() {
           {/* Success Message */}
           {isSuccess && (
             <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
-              Un lien de connexion a été envoyé à votre adresse email. Vérifiez votre boîte de réception.
+              Un lien de connexion a été envoyé sur ton adresse email. Vérifie
+              ta boîte de réception.
             </div>
           )}
 
           {/* Magic Link Form */}
-          <form onSubmit={handleMagicLinkSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
               <label
                 htmlFor="email"
@@ -129,26 +100,28 @@ export function LoginForm() {
               >
                 Email
               </label>
-              <input
+              <Input
                 id="email"
                 type="email"
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value)
-                  if (error) setError(null)
-                  if (isSuccess) setIsSuccess(false)
-                }}
+                {...register("email")}
                 className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
-                placeholder="votre@email.com"
+                placeholder="tonemail@gmail.com"
               />
+              {errors.email && (
+                <p className="mt-1.5 text-sm text-red-600">
+                  {errors.email.message}
+                </p>
+              )}
             </div>
 
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isSubmitting}
               className="w-full rounded-lg bg-gray-900 py-2.5 font-medium text-white hover:bg-gray-800 disabled:opacity-50"
             >
-              {isLoading ? 'Envoi en cours...' : 'Recevoir le lien de connexion'}
+              {isSubmitting
+                ? "Envoi en cours..."
+                : "Recevoir le lien de connexion"}
             </button>
           </form>
 
@@ -188,5 +161,5 @@ export function LoginForm() {
         </div>
       </div>
     </div>
-  )
+  );
 }

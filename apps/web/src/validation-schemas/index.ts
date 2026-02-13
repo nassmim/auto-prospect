@@ -67,3 +67,9 @@ export {
   sendWhatsAppTextMessageSchema,
   type TSendWhatsAppTextMessageSchema,
 } from "./whatsapp.validation";
+
+// Auth schemas
+export {
+  magicLinkSchema,
+  type TMagicLinkFormData,
+} from "./auth.validation";

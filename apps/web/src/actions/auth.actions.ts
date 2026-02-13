@@ -2,23 +2,53 @@
 
 import { pages } from "@/config/routes";
 import { createClient } from "@/lib/supabase/server";
+import { magicLinkSchema } from "@/validation-schemas";
 import { redirect } from "next/navigation";
 
 /**
  * Send a magic link to the user's email
  */
-export async function signInWithMagicLink(email: string) {
+export async function signInWithMagicLink(formData: { email: string }) {
+  // Validate input
+  const result = magicLinkSchema.safeParse(formData);
+  if (!result.success) {
+    return { error: result.error.errors[0].message };
+  }
+
   const supabase = await createClient();
 
   const { error } = await supabase.auth.signInWithOtp({
-    email,
+    email: result.data.email,
     options: {
+      shouldCreateUser: false,
       emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/api/auth/callback`,
+    },
+  });
+
+  if (error) return { error: error.message };
+
+  return { success: true };
+}
+
+/**
+ * Initiate Google OAuth sign-in
+ */
+export async function signInWithGoogle() {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
     },
   });
 
   if (error) {
     return { error: error.message };
+  }
+
+  if (data.url) {
+    redirect(data.url);
   }
 
   return { success: true };
