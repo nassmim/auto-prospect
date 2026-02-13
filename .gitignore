@@ -14,11 +14,14 @@
 /coverage
 
 # next.js
-/.next/
-/out/
+.next
+out
+.turbo
+
 
 # production
-/build
+build
+dist
 
 # misc
 .DS_Store
@@ -34,6 +37,8 @@ yarn-error.log*
 # Env files with secrets (never commit)
 .env.local
 .env.*.local
+apps/worker/.env
+packages/db/.env
 
 # vercel
 .vercel
@@ -48,8 +53,6 @@ logs
 dev-debug.log
 # Dependency directories
 node_modules/
-# Environment variables
-.env
 # Editor directories and files
 .idea
 .vscode
@@ -71,3 +74,11 @@ seed.sql
 _seed.sql
 # Ignore Supabase auto-migrations (we use Drizzle)
 supabase/migrations/*.sql
+
+# Documentation/Guide files (keep only README files)
+**/ARCHITECTURE.md
+**/architecture.md
+MIGRATION-STATUS.md
+mono-repo-guide.md
+!README.md
+!**/README.md

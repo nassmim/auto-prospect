@@ -1,0 +1,35 @@
+{
+  "node": {
+    "4021a21e2ebc3b11b9eb361dc13b8c8d3a462ac830": {
+      "workers": {
+        "app/dashboard/templates/new/page": {
+          "moduleId": 41976,
+          "async": false,
+          "exportedName": "createTextTemplate",
+          "filename": "Projets/auto-prospect-worktrees/config/mono-repo/apps/web/src/actions/message.actions.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/templates/new/page": "action-browser"
+      },
+      "exportedName": "createTextTemplate",
+      "filename": "Projets/auto-prospect-worktrees/config/mono-repo/apps/web/src/actions/message.actions.ts"
+    },
+    "4011379d0dcc2d6611e72de9b36fb3e2cb4cf29d76": {
+      "workers": {
+        "app/dashboard/templates/new/page": {
+          "moduleId": 41976,
+          "async": false,
+          "exportedName": "createVoiceTemplate",
+          "filename": "Projets/auto-prospect-worktrees/config/mono-repo/apps/web/src/actions/message.actions.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/templates/new/page": "action-browser"
+      },
+      "exportedName": "createVoiceTemplate",
+      "filename": "Projets/auto-prospect-worktrees/config/mono-repo/apps/web/src/actions/message.actions.ts"
+    }
+  },
+  "edge": {}
+}
