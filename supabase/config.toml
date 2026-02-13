@@ -163,6 +163,7 @@ web3 = 30
 
 [auth.email]
 # Allow/disallow new user signups via email to your project.
+# shouldCreateUser: false in the app code prevents new user creation via magic link.
 enable_signup = true
 # If enabled, a user will be required to confirm any email change on both the old, and new email
 # addresses. If disabled, only the new email is required to confirm.
@@ -179,8 +180,10 @@ otp_length = 6
 otp_expiry = 3600
 
 # Use a production-ready SMTP server
+# Disabled for local dev (uses Mailpit at http://localhost:54324)
+# Enable for production with valid RESEND_API_KEY
 [auth.email.smtp]
-enabled = true
+enabled = false
 host = "smtp.resend.com"
 port = 465
 user = "resend"

@@ -41,6 +41,7 @@ export const accounts = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    confirmedByAdmin: boolean("confirmed_by_admin").default(false).notNull(),
   },
   (table) => [
     pgPolicy("enable update for account owners", {
