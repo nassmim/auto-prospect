@@ -5,8 +5,17 @@ import { customFormatDate } from "@/utils/general.utils";
 import { useState } from "react";
 import { Header } from "./header";
 import { Sidebar } from "./sidebar";
+import { WhatsAppDisconnectionBanner } from "./whatsapp-disconnection-banner";
 
-export function AppLayoutClient({ children }: { children: React.ReactNode }) {
+type AppLayoutClientProps = {
+  children: React.ReactNode;
+  whatsappDisconnected: boolean;
+};
+
+export function AppLayoutClient({
+  children,
+  whatsappDisconnected,
+}: AppLayoutClientProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const getTodayDate = () => new Date();
@@ -24,6 +33,9 @@ export function AppLayoutClient({ children }: { children: React.ReactNode }) {
         <div className="flex flex-1 flex-col md:pl-64">
           {/* Header */}
           <Header onMenuClick={() => setIsMobileMenuOpen(true)} />
+
+          {/* Global WhatsApp Disconnection Warning */}
+          <WhatsAppDisconnectionBanner isDisconnected={whatsappDisconnected} />
 
           {/* Page content */}
           <main className="flex-1 overflow-y-auto">

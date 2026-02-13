@@ -2,7 +2,10 @@ import { ConnectedAccountsTab } from "@/components/settings/connected-accounts-t
 import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
 import { getUserAccount } from "@/services/account.service";
 import { getTeamMembers } from "@/services/team.service";
-import { isWhatsAppConnected } from "@/services/whatsapp.service";
+import {
+  isWhatsAppConnected,
+  isWhatsAppDisconnected,
+} from "@/services/whatsapp.service";
 import { SettingsPageClient } from "./settings-page-client";
 
 export default async function SettingsPage() {
@@ -15,7 +18,10 @@ export default async function SettingsPage() {
   ]);
 
   // Get connection statuses (depends on account)
-  const whatsappConnected = await isWhatsAppConnected(account.id, { dbClient });
+  const [whatsappConnected, whatsappDisconnected] = await Promise.all([
+    isWhatsAppConnected(account.id, { dbClient }),
+    isWhatsAppDisconnected(account.id, { dbClient }),
+  ]);
 
   const { smsApiKey, smsMobileAPiAllowed: smsApiAllowed } = account;
   const smsApiKeyConfigured = !!smsApiKey;
@@ -30,6 +36,7 @@ export default async function SettingsPage() {
           accountId={account.id}
           whatsappPhoneNumber={account.whatsappPhoneNumber}
           whatsappConnected={whatsappConnected}
+          whatsappDisconnected={whatsappDisconnected}
           smsApiKeyConfigured={smsApiKeyConfigured}
           smsApiAllowed={smsApiAllowed}
         />

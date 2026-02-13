@@ -12,6 +12,7 @@ type WhatsAppConnectionCardProps = {
   accountId: string;
   initialPhoneNumber: string | null;
   initialIsConnected: boolean;
+  initialIsDisconnected: boolean;
 };
 
 /**
@@ -22,6 +23,7 @@ export function WhatsAppConnectionCard({
   accountId,
   initialPhoneNumber,
   initialIsConnected,
+  initialIsDisconnected,
 }: WhatsAppConnectionCardProps) {
   const [error, setError] = useState<string | null>(null);
 
@@ -35,6 +37,7 @@ export function WhatsAppConnectionCard({
   // WhatsApp connection state
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [connected, setConnected] = useState(initialIsConnected);
+  const [isDisconnected, setIsDisconnected] = useState(initialIsDisconnected);
   const [connectionLoading, setConnectionLoading] = useState(false);
 
   // Save phone number
@@ -48,6 +51,7 @@ export function WhatsAppConnectionCard({
       setSavedPhoneNumber(result.formattedNumber!);
       setPhoneNumber(result.formattedNumber!);
       setConnected(false);
+      setIsDisconnected(false);
       setQrCode(null);
     } else {
       setError(
@@ -72,6 +76,7 @@ export function WhatsAppConnectionCard({
         setQrCode(result.qrCode);
       } else {
         setConnected(true);
+        setIsDisconnected(false);
       }
     } else {
       setError(
@@ -123,6 +128,37 @@ export function WhatsAppConnectionCard({
           </div>
         </div>
       </div>
+
+      {/* Disconnection Warning Banner */}
+      {isDisconnected && savedPhoneNumber && !connected && (
+        <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4">
+          <div className="flex items-start gap-3">
+            <svg
+              className="h-5 w-5 flex-shrink-0 text-amber-500"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+            <div className="flex-1">
+              <h4 className="text-sm font-semibold text-amber-400">
+                WhatsApp déconnecté
+              </h4>
+              <p className="mt-1 text-xs text-amber-300/90">
+                Votre session WhatsApp a été déconnectée. Vous devez vous
+                reconnecter pour continuer à envoyer des messages. Cliquez sur
+                le bouton ci-dessous pour générer un nouveau QR code.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Error Message */}
       {error && (

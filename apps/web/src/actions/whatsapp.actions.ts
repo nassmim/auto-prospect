@@ -223,7 +223,6 @@ export const initiateWhatsAppConnection = async (
 export type SendWhatsAppTextMessageResult = {
   success: boolean;
   errorCode?: TErrorCode;
-  needsReconnect?: boolean;
 };
 
 /**

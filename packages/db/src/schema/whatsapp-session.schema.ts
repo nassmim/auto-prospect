@@ -21,6 +21,7 @@ export const whatsappSessions = pgTable(
     // Encrypted JSON containing Baileys auth credentials
     credentials: text("credentials"),
     isConnected: boolean("is_connected").default(false).notNull(),
+    isDisconnected: boolean("is_disconnected").default(false).notNull(),
     lastConnectedAt: timestamp("last_connected_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()

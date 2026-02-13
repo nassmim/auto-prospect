@@ -2,6 +2,7 @@ import { EContactChannel, EWhatsAppErrorCode } from "@auto-prospect/shared";
 import {
   connectWithCredentials,
   getWhatsAppJID,
+  markWhatsAppAsDisconnected,
   sendWhatsAppMessage,
   StoredAuthState,
 } from "@auto-prospect/whatsapp";
@@ -180,6 +181,8 @@ export async function whatsappWorker(job: Job<WhatsAppJob>) {
       const connected = await waitForConnection();
       if (!connected) {
         cleanup();
+        // Mark session as disconnected in database
+        await markWhatsAppAsDisconnected(accountId);
         throw new Error(EWhatsAppErrorCode.CONNECTION_TIMEOUT);
       }
 
@@ -204,14 +207,24 @@ export async function whatsappWorker(job: Job<WhatsAppJob>) {
       // ===== WHATSAPP ERROR HANDLING =====
       // Baileys library returns error codes, not HTTP responses
       // Each error needs specific handling strategy
-      const errorCode = result.errorCode || EWhatsAppErrorCode.MESSAGE_SEND_FAILED;
+      const errorCode =
+        result.errorCode || EWhatsAppErrorCode.MESSAGE_SEND_FAILED;
 
       // PERMANENT FAILURES - Do not retry
       // These indicate configuration/data issues that won't resolve with retry
-      if (errorCode === EWhatsAppErrorCode.RECIPIENT_INVALID ||
-          errorCode === EWhatsAppErrorCode.SESSION_NOT_FOUND ||
+      if (
+        errorCode === EWhatsAppErrorCode.RECIPIENT_INVALID ||
+        errorCode === EWhatsAppErrorCode.SESSION_NOT_FOUND ||
+        errorCode === EWhatsAppErrorCode.SESSION_EXPIRED ||
+        errorCode === EWhatsAppErrorCode.ACCOUNT_NOT_FOUND
+      ) {
+        // Mark session as disconnected for session-related errors
+        if (
           errorCode === EWhatsAppErrorCode.SESSION_EXPIRED ||
-          errorCode === EWhatsAppErrorCode.ACCOUNT_NOT_FOUND) {
+          errorCode === EWhatsAppErrorCode.SESSION_NOT_FOUND
+        ) {
+          await markWhatsAppAsDisconnected(accountId);
+        }
         throw new UnrecoverableError(errorCode);
       }
 

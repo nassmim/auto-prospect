@@ -5,6 +5,7 @@ type ConnectedAccountsTabProps = {
   accountId: string;
   whatsappPhoneNumber: string | null;
   whatsappConnected: boolean;
+  whatsappDisconnected: boolean;
   smsApiKeyConfigured: boolean;
   smsApiAllowed: boolean;
 };
@@ -17,6 +18,7 @@ export function ConnectedAccountsTab({
   accountId,
   whatsappPhoneNumber,
   whatsappConnected,
+  whatsappDisconnected,
   smsApiKeyConfigured,
   smsApiAllowed,
 }: ConnectedAccountsTabProps) {
@@ -80,6 +82,7 @@ export function ConnectedAccountsTab({
         accountId={accountId}
         initialPhoneNumber={whatsappPhoneNumber}
         initialIsConnected={whatsappConnected}
+        initialIsDisconnected={whatsappDisconnected}
       />
 
       {/* SMS API Connection */}

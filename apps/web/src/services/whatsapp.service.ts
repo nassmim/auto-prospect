@@ -58,6 +58,44 @@ export const getWhatsAppSession = async (
 };
 
 /**
+ * Checks if WhatsApp is connected for an account
+ */
+export const isWhatsAppConnected = async (
+  accountId: string,
+  options?: { dbClient?: TDBWithTokenClient },
+): Promise<boolean> => {
+  const client = options?.dbClient || (await createDrizzleSupabaseClient());
+
+  const session = await client.rls((tx) =>
+    tx.query.whatsappSessions.findFirst({
+      where: (table, { eq }) => eq(table.accountId, accountId),
+      columns: { isConnected: true },
+    }),
+  );
+
+  return session?.isConnected ?? false;
+};
+
+/**
+ * Checks if WhatsApp session is disconnected for an account
+ */
+export const isWhatsAppDisconnected = async (
+  accountId: string,
+  options?: { dbClient?: TDBWithTokenClient },
+): Promise<boolean> => {
+  const client = options?.dbClient || (await createDrizzleSupabaseClient());
+
+  const session = await client.rls((tx) =>
+    tx.query.whatsappSessions.findFirst({
+      where: (table, { eq }) => eq(table.accountId, accountId),
+      columns: { isDisconnected: true },
+    }),
+  );
+
+  return session?.isDisconnected ?? false;
+};
+
+/**
  * Creates or updates the WhatsApp session for an account
  * Stores encrypted credentials as JSON
  */
@@ -78,6 +116,7 @@ export const saveWhatsAppSession = async (
           accountId,
           credentials: credentialsJson,
           isConnected: true,
+          isDisconnected: false,
           lastConnectedAt: new Date(),
           updatedAt: new Date(),
         })
@@ -86,6 +125,7 @@ export const saveWhatsAppSession = async (
           set: {
             credentials: credentialsJson,
             isConnected: true,
+            isDisconnected: false,
             lastConnectedAt: new Date(),
             updatedAt: new Date(),
           },
@@ -136,3 +176,4 @@ export const updateWhatsAppConnectionStatus = async ({
     };
   }
 };
+

@@ -12,8 +12,7 @@
     "@hapi/boom": "^10.0.1",
     "qrcode": "^1.5.4",
     "@auto-prospect/shared": "workspace:*",
-    "@auto-prospect/db": "workspace:*",
-    "drizzle-orm": "^0.37.0"
+    "@auto-prospect/db": "workspace:*"
   },
   "devDependencies": {
     "@types/qrcode": "^1.5.5",
