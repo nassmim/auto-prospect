@@ -11,8 +11,7 @@
     "db:migrate": "drizzle-kit generate && dotenvx run --env-file=../../apps/web/.env.development.local -- tsx scripts/migrate.ts",
     "db:studio": "drizzle-kit studio",
     "db:dump": "docker exec -it supabase_db_auto-prospect pg_dump -U postgres -d postgres --data-only --schema=auth --schema=public > supabase/seed.sql",
-    "supabase:start": "npx dotenvx run --env-file=.env --env-file=.env.local --env-file=.env.development --env-file=.env.development.local -- supabase start",
-    "create-user": "dotenvx run --env-file=.env.development.local -- tsx scripts/create-user.ts"    
+    "supabase:start": "npx dotenvx run --env-file=.env -- supabase start"
   },
   "dependencies": {
     "@auto-prospect/shared": "workspace:*",
