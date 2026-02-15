@@ -180,10 +180,10 @@ otp_length = 6
 otp_expiry = 3600
 
 # Use a production-ready SMTP server
-# Disabled for local dev (uses Mailpit at http://localhost:54324)
-# Enable for production with valid RESEND_API_KEY
+# Set enabled = true to use Resend for emails (requires RESEND_API_KEY in .env)
+# Set enabled = false to use Inbucket/Mailpit at http://localhost:54324
 [auth.email.smtp]
-enabled = false
+enabled = true
 host = "smtp.resend.com"
 port = 465
 user = "resend"
@@ -191,10 +191,10 @@ pass = "env(RESEND_API_KEY)"
 admin_email = "env(EMAIL_SENDER)"
 sender_name = "env(SENDER_NAME)"
 
-# Uncomment to customize email template
-# [auth.email.template.invite]
-# subject = "You have been invited"
-# content_path = "./supabase/templates/invite.html"
+# Customize email template for invitations
+[auth.email.template.invite]
+subject = "Vous avez été invité à rejoindre Auto-Prospect"
+content_path = "./supabase/templates/invite.html"
 
 [auth.sms]
 # Allow/disallow new user signups via SMS to your project.

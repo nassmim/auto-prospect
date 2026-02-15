@@ -2,29 +2,20 @@
 
 import { signInWithGoogle, signInWithMagicLink } from "@/actions/auth.actions";
 import { Input } from "@/components/ui/input";
+import { getErrorMessage } from "@/utils/error-messages.utils";
 import { magicLinkSchema, type TMagicLinkFormData } from "@/validation-schemas";
+import type { TErrorCode } from "@auto-prospect/shared/src/config/error-codes";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
-function getFriendlyError(error: string): string {
-  const lower = error.toLowerCase();
-
-  if (
-    error === "signup_not_allowed" ||
-    lower.includes("signups not allowed") ||
-    lower.includes("flow state not found")
-  )
-    return "Tu n'es pas encore inscrit. Réserve un appel avec notre équipe.";
-
-  return "Une erreur est survenue. Ré-essaie ou contacte-nous pour qu'on résolve le problème.";
-}
-
 export function LoginForm() {
   const searchParams = useSearchParams();
   const urlError = searchParams.get("error") || "";
-  const [error, setError] = useState<string | null>(getFriendlyError(urlError));
+  const [error, setError] = useState<string | null>(
+    urlError ? getErrorMessage(urlError as TErrorCode) : null,
+  );
   const [isSuccess, setIsSuccess] = useState(false);
 
   const {
@@ -45,7 +36,7 @@ export function LoginForm() {
     const result = await signInWithMagicLink(data);
 
     if (result.error) {
-      setError(getFriendlyError(result.error));
+      setError(getErrorMessage(result.error as TErrorCode));
       return;
     }
 
@@ -58,7 +49,7 @@ export function LoginForm() {
 
     const result = await signInWithGoogle();
 
-    if (result?.error) setError(getFriendlyError(result.error));
+    if (result?.error) setError(getErrorMessage(result.error as TErrorCode));
   };
 
   return (
@@ -117,7 +108,7 @@ export function LoginForm() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full rounded-lg bg-gray-900 py-2.5 font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+              className="w-full rounded-lg bg-gray-900 py-2.5 font-medium text-white hover:bg-gray-800 disabled:opacity-50 cursor-pointer"
             >
               {isSubmitting
                 ? "Envoi en cours..."
@@ -136,7 +127,7 @@ export function LoginForm() {
           <button
             type="button"
             onClick={handleGoogleLogin}
-            className="flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 py-2.5 font-medium text-gray-700 hover:bg-gray-50"
+            className="flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 py-2.5 font-medium text-gray-700 hover:bg-gray-50 cursor-pointer"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24">
               <path

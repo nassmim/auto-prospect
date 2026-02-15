@@ -1,4 +1,5 @@
 import {
+  EAuthErrorCode,
   EGeneralErrorCode,
   ESmsErrorCode,
   EWhatsAppErrorCode,
@@ -90,6 +91,17 @@ const SMS_ERROR_MESSAGES: Record<ESmsErrorCode, string> = {
 };
 
 /**
+ * Error messages mapping for Auth errors
+ * Maps error codes to user-friendly French messages
+ */
+const AUTH_ERROR_MESSAGES: Record<EAuthErrorCode, string> = {
+  [EAuthErrorCode.SIGNUP_NOT_ALLOWED]:
+    "Tu n'es pas encore inscrit. Réserve un appel avec notre équipe.",
+  [EAuthErrorCode.AUTH_ERROR]:
+    "Une erreur est survenue. Ré-essaie ou contacte-nous pour qu'on résolve le problème.",
+};
+
+/**
  * Error messages mapping for Worker API errors
  * Maps error codes to user-friendly French messages
  */
@@ -124,6 +136,7 @@ const ERROR_MESSAGES: Record<TErrorCode, string> = {
   ...WHATSAPP_ERROR_MESSAGES,
   ...GENERAL_ERROR_MESSAGES,
   ...SMS_ERROR_MESSAGES,
+  ...AUTH_ERROR_MESSAGES,
   ...WORKER_API_ERROR_MESSAGES,
 };
 

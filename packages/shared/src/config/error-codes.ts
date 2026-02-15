@@ -103,6 +103,18 @@ export enum EVoiceErrorCode {
 export type TVoiceErrorCode = EVoiceErrorCode;
 
 // =============================================================================
+// AUTH ERROR CODES
+// =============================================================================
+
+export enum EAuthErrorCode {
+  // Authentication errors
+  SIGNUP_NOT_ALLOWED = "SIGNUP_NOT_ALLOWED",
+  AUTH_ERROR = "AUTH_ERROR",
+}
+
+export type TAuthErrorCode = EAuthErrorCode;
+
+// =============================================================================
 // WORKER ERROR CODES (for API routes)
 // =============================================================================
 
@@ -134,4 +146,5 @@ export type TErrorCode =
   | TGeneralErrorCode
   | TSmsErrorCode
   | TVoiceErrorCode
+  | TAuthErrorCode
   | TWorkerErrorCode;
