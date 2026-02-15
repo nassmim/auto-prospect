@@ -75,7 +75,7 @@ export const creditBalances = pgTable(
       as: "permissive",
       for: "insert",
       to: authenticatedRole,
-      using: sql`true`,
+      withCheck: sql`true`,
     }),
     pgPolicy("enable read for credit walet owners", {
       as: "permissive",

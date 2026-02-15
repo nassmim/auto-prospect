@@ -435,7 +435,7 @@ CREATE POLICY "enable read for authenticated users" ON "gear_boxes" AS PERMISSIV
 CREATE POLICY "enable read for authenticated users" ON "locations" AS PERMISSIVE FOR SELECT TO "authenticated" USING (true);--> statement-breakpoint
 CREATE POLICY "enable read for authenticated users" ON "vehicle_seats" AS PERMISSIVE FOR SELECT TO "authenticated" USING (true);--> statement-breakpoint
 CREATE POLICY "enable read for authenticated users" ON "vehicle_states" AS PERMISSIVE FOR SELECT TO "authenticated" USING (true);--> statement-breakpoint
-CREATE POLICY "enable insert for authenticated users" ON "credit_balances" AS PERMISSIVE FOR INSERT TO "authenticated" USING (true);--> statement-breakpoint
+CREATE POLICY "enable insert for authenticated users" ON "credit_balances" AS PERMISSIVE FOR INSERT TO "authenticated" WITH CHECK (true);--> statement-breakpoint
 CREATE POLICY "enable read for credit walet owners" ON "credit_balances" AS PERMISSIVE FOR SELECT TO "authenticated" USING ("credit_balances"."account_id" = (select auth.uid()));--> statement-breakpoint
 CREATE POLICY "enable update for credit walet owners" ON "credit_balances" AS PERMISSIVE FOR UPDATE TO "authenticated" USING ("credit_balances"."account_id" = (select auth.uid())) WITH CHECK ("credit_balances"."account_id" = (select auth.uid()));--> statement-breakpoint
 CREATE POLICY "enable read for authenticated users" ON "credit_packs" AS PERMISSIVE FOR SELECT TO "authenticated" USING (true);--> statement-breakpoint

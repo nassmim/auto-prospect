@@ -1,5 +1,5 @@
 {
-  "id": "fca8f3dd-d4fa-42b0-b0e9-9ec758b0cddc",
+  "id": "fd3cf199-b7b4-4529-a5d1-d7f4ee524c2d",
   "prevId": "2909760f-ac45-4913-a990-d18e060e06ef",
   "version": "7",
   "dialect": "postgresql",
@@ -1397,7 +1397,7 @@
           "to": [
             "authenticated"
           ],
-          "using": "true"
+          "withCheck": "true"
         },
         "enable read for credit walet owners": {
           "name": "enable read for credit walet owners",
