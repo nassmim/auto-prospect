@@ -213,7 +213,7 @@ export function DashboardView({
               Aucune recherche active
             </h3>
             <p className="mt-2 text-sm text-zinc-500">
-              Créez votre première recherche pour commencer à trouver des leads
+              Crée ta première recherche pour commencer à trouver des leads
             </p>
             <Link
               href={pages.hunts.new}
