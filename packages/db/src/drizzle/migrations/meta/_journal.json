@@ -12,64 +12,15 @@
     {
       "idx": 1,
       "version": "7",
-      "when": 1770258773205,
-      "tag": "0001_ambitious_onslaught",
+      "when": 1771083180904,
+      "tag": "0001_furry_skaar",
       "breakpoints": true
     },
     {
       "idx": 2,
       "version": "7",
-      "when": 1770258777600,
-      "tag": "0002_vengeful_champions",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1770258790526,
-      "tag": "0003_solid_miek",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1770395623840,
-      "tag": "0004_chilly_jocasta",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1770420327451,
-      "tag": "0005_flat_harrier",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1770530054602,
-      "tag": "0006_groovy_hydra",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1770532040199,
-      "tag": "0007_aspiring_killer_shrike",
-      "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "7",
-      "when": 1738857600000,
-      "tag": "0009_delete_user_function",
-      "breakpoints": true
-    },
-    {
-      "idx": 10,
-      "version": "7",
-      "when": 1770421677094,
-      "tag": "0010_married_leader",
+      "when": 1771083239932,
+      "tag": "0002_overrated_dark_phoenix",
       "breakpoints": true
     }
   ]

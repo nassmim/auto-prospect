@@ -1,6 +1,7 @@
 {
   "name": "auto-prospect",
   "private": true,
+  "packageManager": "pnpm@9.15.1",
   "scripts": {
     "dev": "turbo run dev",
     "dev:web": "turbo run dev --filter=web",
@@ -12,10 +13,8 @@
     "format": "prettier --write .",
     "db:generate": "pnpm --filter @auto-prospect/db db:generate",
     "db:migrate": "pnpm --filter @auto-prospect/db db:migrate",
-    "db:push": "pnpm --filter @auto-prospect/db db:push",
+    "db:drop": "pnpm --filter @auto-prospect/db db:drop",
     "db:studio": "pnpm --filter @auto-prospect/db db:studio",
-    "db:fresh": "pnpm --filter @auto-prospect/db db:fresh",
-    "db:seed": "pnpm --filter @auto-prospect/db db:seed",
     "supabase:start": "pnpm --filter @auto-prospect/db supabase:start",
     "db:dump": "pnpm --filter @auto-prospect/db db:dump"
   },

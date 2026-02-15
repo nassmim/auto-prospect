@@ -118,12 +118,23 @@ export const messageTemplates = pgTable(
 export type TMessageTemplateInsert = InferInsertModel<typeof messageTemplates>;
 
 // Template variables table - static reference for available variables
-export const templateVariables = pgTable("template_variables", {
-  id: serial().primaryKey(),
-  key: text().notNull().unique(), // e.g., 'titre_annonce'
-  label: text().notNull(), // Display name in French
-  description: text(),
-});
+export const templateVariables = pgTable(
+  "template_variables",
+  {
+    id: serial().primaryKey(),
+    key: text().notNull().unique(), // e.g., 'titre_annonce'
+    label: text().notNull(), // Display name in French
+    description: text(),
+  },
+  () => [
+    pgPolicy("enable read for authenticated users", {
+      as: "permissive",
+      for: "select",
+      to: authenticatedRole,
+      using: sql`true`,
+    }),
+  ],
+);
 
 // Messages table - tracks all sent messages to leads
 export const messages = pgTable(
@@ -162,20 +173,21 @@ export const messages = pgTable(
     index("messages_lead_id_created_at_idx").on(table.leadId, table.createdAt),
     index("messages_status_idx").on(table.status),
     index("messages_external_id_idx").on(table.externalId),
-    pgPolicy("enable all for account owners", {
+    pgPolicy("enable read for account owners", {
       as: "permissive",
-      for: "all",
+      for: "select",
       to: authenticatedRole,
       using: sql`exists (
         select 1 from leads l
         where l.id = ${table.leadId}
         and l.account_id = ${authUid}
       )`,
-      withCheck: sql`exists (
-        select 1 from leads l
-        where l.id = ${table.leadId}
-        and l.account_id = ${authUid}
-      )`,
+    }),
+    pgPolicy("enable insert for authenticated users", {
+      as: "permissive",
+      for: "insert",
+      to: authenticatedRole,
+      withCheck: sql`true`,
     }),
     // // RLS: Org members can access messages for leads in their org
     // pgPolicy("enable all for account members", {

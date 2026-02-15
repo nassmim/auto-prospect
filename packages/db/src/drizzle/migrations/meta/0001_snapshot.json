@@ -1,5 +1,5 @@
 {
-  "id": "ba77c59b-1c8a-4227-96cc-780c5f7a723e",
+  "id": "d2cadfc5-9a0a-48fc-8be5-7ee4a634235e",
   "prevId": "2909760f-ac45-4913-a990-d18e060e06ef",
   "version": "7",
   "dialect": "postgresql",
@@ -32,9 +32,34 @@
           "primaryKey": false,
           "notNull": false
         },
+        "fixed_phone_number": {
+          "name": "fixed_phone_number",
+          "type": "varchar(14)",
+          "primaryKey": false,
+          "notNull": false
+        },
         "phone_number": {
           "name": "phone_number",
           "type": "varchar(14)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "whatsapp_phone_number": {
+          "name": "whatsapp_phone_number",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sms_mobile_api_allowed": {
+          "name": "sms_mobile_api_allowed",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "sms_api_key": {
+          "name": "sms_api_key",
+          "type": "varchar(500)",
           "primaryKey": false,
           "notNull": false
         },
@@ -58,6 +83,13 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "confirmed_by_admin": {
+          "name": "confirmed_by_admin",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         }
       },
       "indexes": {},
@@ -858,8 +890,7 @@
         },
         "channel": {
           "name": "channel",
-          "type": "message_channel",
-          "typeSchema": "public",
+          "type": "channel",
           "primaryKey": false,
           "notNull": true
         },
@@ -1403,7 +1434,6 @@
         "channel": {
           "name": "channel",
           "type": "channel",
-          "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
@@ -1488,7 +1518,6 @@
         "channel": {
           "name": "channel",
           "type": "channel",
-          "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
@@ -1613,7 +1642,6 @@
         "channel": {
           "name": "channel",
           "type": "channel",
-          "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
@@ -1855,7 +1883,7 @@
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true,
-          "default": "'paused'"
+          "default": "'active'"
         },
         "auto_refresh": {
           "name": "auto_refresh",
@@ -1970,13 +1998,6 @@
           "type": "real",
           "primaryKey": false,
           "notNull": false
-        },
-        "is_active": {
-          "name": "is_active",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": true
         }
       },
       "indexes": {
@@ -2696,7 +2717,6 @@
         "channel": {
           "name": "channel",
           "type": "channel",
-          "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
@@ -2767,7 +2787,6 @@
         "channel": {
           "name": "channel",
           "type": "channel",
-          "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
@@ -2869,8 +2888,7 @@
         },
         "channel": {
           "name": "channel",
-          "type": "message_channel",
-          "typeSchema": "public",
+          "type": "channel",
           "primaryKey": false,
           "notNull": true
         },
@@ -3135,6 +3153,105 @@
       },
       "checkConstraints": {},
       "isRLSEnabled": false
+    },
+    "public.whatsapp_sessions": {
+      "name": "whatsapp_sessions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "account_id": {
+          "name": "account_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "credentials": {
+          "name": "credentials",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_connected": {
+          "name": "is_connected",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "is_disconnected": {
+          "name": "is_disconnected",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "last_connected_at": {
+          "name": "last_connected_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "whatsapp_sessions_account_id_accounts_id_fk": {
+          "name": "whatsapp_sessions_account_id_accounts_id_fk",
+          "tableFrom": "whatsapp_sessions",
+          "tableTo": "accounts",
+          "columnsFrom": [
+            "account_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "whatsapp_sessions_account_id_unique": {
+          "name": "whatsapp_sessions_account_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "account_id"
+          ]
+        }
+      },
+      "policies": {
+        "enable all for own session": {
+          "name": "enable all for own session",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "authenticated"
+          ],
+          "using": "(select auth.uid()) = \"whatsapp_sessions\".\"account_id\"",
+          "withCheck": "(select auth.uid()) = \"whatsapp_sessions\".\"account_id\""
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
     }
   },
   "enums": {
@@ -3189,15 +3306,6 @@
     },
     "public.channel": {
       "name": "channel",
-      "schema": "public",
-      "values": [
-        "whatsapp_text",
-        "sms",
-        "ringless_voice"
-      ]
-    },
-    "public.message_channel": {
-      "name": "message_channel",
       "schema": "public",
       "values": [
         "whatsapp_text",

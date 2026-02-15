@@ -110,9 +110,27 @@ export const leads = pgTable(
     ),
     index("leads_hunt_id_idx").on(table.huntId),
     index("leads_ad_id_idx").on(table.adId),
-    pgPolicy("enable all for owners of the associated account", {
+    pgPolicy("enable insert for authenticated users", {
       as: "permissive",
-      for: "all",
+      for: "insert",
+      to: authenticatedRole,
+      withCheck: sql`true`,
+    }),
+    pgPolicy("enable insert for authenticated users", {
+      as: "permissive",
+      for: "insert",
+      to: authenticatedRole,
+      withCheck: sql`true`,
+    }),
+    pgPolicy("enable read for owners of the associated account", {
+      as: "permissive",
+      for: "select",
+      to: authenticatedRole,
+      using: sql`${table.accountId} = ${authUid}`,
+    }),
+    pgPolicy("enable update for owners of the associated account", {
+      as: "permissive",
+      for: "update",
       to: authenticatedRole,
       using: sql`${table.accountId} = ${authUid}`,
       withCheck: sql`${table.accountId} = ${authUid}`,

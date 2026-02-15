@@ -21,7 +21,7 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
-import { authenticatedRole } from "drizzle-orm/supabase";
+import { authenticatedRole, authUid } from "drizzle-orm/supabase";
 import { accounts, TAccount } from "./account.schema";
 import { channel } from "./message.schema";
 
@@ -308,25 +308,25 @@ export const contactedAds = pgTable(
     channel: channel("channel").notNull(),
     createdAt: date("created_at").defaultNow().notNull(),
   },
-  () => [
-    pgPolicy("enable read for authenticated users", {
-      as: "permissive",
-      for: "select",
-      to: authenticatedRole,
-      using: sql`true`,
-    }),
-    pgPolicy("enable update for authenticated users", {
-      as: "permissive",
-      for: "update",
-      to: authenticatedRole,
-      using: sql`true`,
-      withCheck: sql`true`,
-    }),
+  (table) => [
     pgPolicy("enable insert for authenticated users", {
       as: "permissive",
       for: "insert",
       to: authenticatedRole,
       withCheck: sql`true`,
+    }),
+    pgPolicy("enable read for authenticated users", {
+      as: "permissive",
+      for: "select",
+      to: authenticatedRole,
+      using: sql`${table.accountId} = ${authUid}`,
+    }),
+    pgPolicy("enable update for authenticated users", {
+      as: "permissive",
+      for: "update",
+      to: authenticatedRole,
+      using: sql`${table.accountId} = ${authUid}`,
+      withCheck: sql`${table.accountId} = ${authUid}`,
     }),
   ],
 );

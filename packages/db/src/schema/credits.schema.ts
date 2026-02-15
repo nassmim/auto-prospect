@@ -67,15 +67,28 @@ export const creditBalances = pgTable(
     whatsappText: integer("whatsapp_text").notNull().default(0),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
-      .default(sql`now()`),
+      .defaultNow(),
   },
   (table) => [
     index("credit_balances_account_id_idx").on(table.accountId),
+    pgPolicy("enable insert for authenticated users", {
+      as: "permissive",
+      for: "insert",
+      to: authenticatedRole,
+      using: sql`true`,
+    }),
     pgPolicy("enable read for credit walet owners", {
       as: "permissive",
       for: "select",
       to: authenticatedRole,
       using: sql`${table.accountId} = ${authUid}`,
+    }),
+    pgPolicy("enable update for credit walet owners", {
+      as: "permissive",
+      for: "select",
+      to: authenticatedRole,
+      using: sql`${table.accountId} = ${authUid}`,
+      withCheck: sql`${table.accountId} = ${authUid}`,
     }),
     // // account members can read their balance
     // pgPolicy("enable read for account members", {
