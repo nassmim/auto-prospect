@@ -7,6 +7,14 @@ import {
   isWhatsAppDisconnected,
 } from "@/services/whatsapp.service";
 import { SettingsPageClient } from "./settings-page-client";
+import { getSEOTags } from "@/lib/seo";
+import { pages } from "@/config/routes";
+
+export const metadata = getSEOTags({
+  title: "Paramètres",
+  description: "Configurez votre compte, gérez les intégrations et les paramètres de votre équipe",
+  canonical: pages.settings,
+});
 
 export default async function SettingsPage() {
   const dbClient = await createDrizzleSupabaseClient();

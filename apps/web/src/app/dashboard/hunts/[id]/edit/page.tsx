@@ -2,6 +2,7 @@ import { EditHuntView } from "@/components/hunts/edit-hunt-view";
 import { getHuntById } from "@/services/hunt.service";
 import { getAccountTemplates } from "@/services/message.service";
 import { getSEOTags } from "@/lib/seo";
+import { pages } from "@/config/routes";
 import { notFound } from "next/navigation";
 
 export async function generateMetadata({
@@ -15,6 +16,7 @@ export async function generateMetadata({
   return getSEOTags({
     title: `Modifier ${hunt.name}`,
     description: "Modifiez les paramètres de votre recherche",
+    canonical: pages.hunts.edit(id),
   });
 }
 

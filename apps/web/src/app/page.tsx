@@ -1,4 +1,12 @@
 import Image from "next/image";
+import { getSEOTags } from "@/lib/seo";
+
+export const metadata = getSEOTags({
+  title: "Accueil",
+  description: "Outil de prospection automatisée pour revendeurs professionnels",
+  canonical: "/",
+  noIndex: false,
+});
 
 export default function Home() {
   return (
