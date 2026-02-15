@@ -16,6 +16,7 @@
     "db:drop": "pnpm --filter @auto-prospect/db db:drop",
     "db:studio": "pnpm --filter @auto-prospect/db db:studio",
     "supabase:start": "pnpm --filter @auto-prospect/db supabase:start",
+    "supabase:stop": "pnpm --filter @auto-prospect/db supabase:stop",
     "db:dump": "pnpm --filter @auto-prospect/db db:dump"
   },
   "devDependencies": {

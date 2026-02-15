@@ -116,12 +116,6 @@ export const leads = pgTable(
       to: authenticatedRole,
       withCheck: sql`true`,
     }),
-    pgPolicy("enable insert for authenticated users", {
-      as: "permissive",
-      for: "insert",
-      to: authenticatedRole,
-      withCheck: sql`true`,
-    }),
     pgPolicy("enable read for owners of the associated account", {
       as: "permissive",
       for: "select",

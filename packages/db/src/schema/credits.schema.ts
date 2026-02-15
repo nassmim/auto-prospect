@@ -85,7 +85,7 @@ export const creditBalances = pgTable(
     }),
     pgPolicy("enable update for credit walet owners", {
       as: "permissive",
-      for: "select",
+      for: "update",
       to: authenticatedRole,
       using: sql`${table.accountId} = ${authUid}`,
       withCheck: sql`${table.accountId} = ${authUid}`,

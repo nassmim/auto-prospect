@@ -1,6 +1,6 @@
 {
-  "id": "1ecd5cae-59e0-418b-9a37-93f010ce4314",
-  "prevId": "d2cadfc5-9a0a-48fc-8be5-7ee4a634235e",
+  "id": "459d1e75-72de-4919-904d-22be8f866815",
+  "prevId": "fca8f3dd-d4fa-42b0-b0e9-9ec758b0cddc",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -97,33 +97,15 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {
-        "enable update for account owners": {
-          "name": "enable update for account owners",
+        "enable all for account owners": {
+          "name": "enable all for account owners",
           "as": "PERMISSIVE",
-          "for": "UPDATE",
+          "for": "ALL",
           "to": [
             "authenticated"
           ],
-          "using": "\n        (select auth.uid()) = \"accounts\".\"id\"",
+          "using": "\n        (select auth.uid()) = \"accounts\".\"id\" ",
           "withCheck": "\n        (select auth.uid()) = \"accounts\".\"id\""
-        },
-        "enable delete for account owners": {
-          "name": "enable delete for account owners",
-          "as": "PERMISSIVE",
-          "for": "DELETE",
-          "to": [
-            "authenticated"
-          ],
-          "using": "\n        (select auth.uid()) = \"accounts\".\"id\" \n      "
-        },
-        "enable read for account owners": {
-          "name": "enable read for account owners",
-          "as": "PERMISSIVE",
-          "for": "SELECT",
-          "to": [
-            "authenticated"
-          ],
-          "using": "\n        (select auth.uid()) = \"accounts\".\"id\" "
         }
       },
       "checkConstraints": {},
@@ -934,25 +916,6 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {
-        "enable read for authenticated users": {
-          "name": "enable read for authenticated users",
-          "as": "PERMISSIVE",
-          "for": "SELECT",
-          "to": [
-            "authenticated"
-          ],
-          "using": "true"
-        },
-        "enable update for authenticated users": {
-          "name": "enable update for authenticated users",
-          "as": "PERMISSIVE",
-          "for": "UPDATE",
-          "to": [
-            "authenticated"
-          ],
-          "using": "true",
-          "withCheck": "true"
-        },
         "enable insert for authenticated users": {
           "name": "enable insert for authenticated users",
           "as": "PERMISSIVE",
@@ -961,6 +924,25 @@
             "authenticated"
           ],
           "withCheck": "true"
+        },
+        "enable read for authenticated users": {
+          "name": "enable read for authenticated users",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "authenticated"
+          ],
+          "using": "\"contacted_ads\".\"account_id\" = (select auth.uid())"
+        },
+        "enable update for authenticated users": {
+          "name": "enable update for authenticated users",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "authenticated"
+          ],
+          "using": "\"contacted_ads\".\"account_id\" = (select auth.uid())",
+          "withCheck": "\"contacted_ads\".\"account_id\" = (select auth.uid())"
         }
       },
       "checkConstraints": {},
@@ -1408,6 +1390,15 @@
         }
       },
       "policies": {
+        "enable insert for authenticated users": {
+          "name": "enable insert for authenticated users",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "authenticated"
+          ],
+          "using": "true"
+        },
         "enable read for credit walet owners": {
           "name": "enable read for credit walet owners",
           "as": "PERMISSIVE",
@@ -1416,6 +1407,16 @@
             "authenticated"
           ],
           "using": "\"credit_balances\".\"account_id\" = (select auth.uid())"
+        },
+        "enable update for credit walet owners": {
+          "name": "enable update for credit walet owners",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "authenticated"
+          ],
+          "using": "\"credit_balances\".\"account_id\" = (select auth.uid())",
+          "withCheck": "\"credit_balances\".\"account_id\" = (select auth.uid())"
         }
       },
       "checkConstraints": {},
@@ -1761,7 +1762,18 @@
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
+      "policies": {
+        "enable all for service role": {
+          "name": "enable all for service role",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "service_role"
+          ],
+          "using": "true",
+          "withCheck": "true"
+        }
+      },
       "checkConstraints": {},
       "isRLSEnabled": false
     },
@@ -2690,10 +2702,28 @@
         }
       },
       "policies": {
-        "enable all for owners of the associated account": {
-          "name": "enable all for owners of the associated account",
+        "enable insert for authenticated users": {
+          "name": "enable insert for authenticated users",
           "as": "PERMISSIVE",
-          "for": "ALL",
+          "for": "INSERT",
+          "to": [
+            "authenticated"
+          ],
+          "withCheck": "true"
+        },
+        "enable read for owners of the associated account": {
+          "name": "enable read for owners of the associated account",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "authenticated"
+          ],
+          "using": "\"leads\".\"account_id\" = (select auth.uid())"
+        },
+        "enable update for owners of the associated account": {
+          "name": "enable update for owners of the associated account",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
           "to": [
             "authenticated"
           ],
@@ -3029,15 +3059,23 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {
-        "enable all for account owners": {
-          "name": "enable all for account owners",
+        "enable read for account owners": {
+          "name": "enable read for account owners",
           "as": "PERMISSIVE",
-          "for": "ALL",
+          "for": "SELECT",
           "to": [
             "authenticated"
           ],
-          "using": "exists (\n        select 1 from leads l\n        where l.id = \"messages\".\"lead_id\"\n        and l.account_id = (select auth.uid())\n      )",
-          "withCheck": "exists (\n        select 1 from leads l\n        where l.id = \"messages\".\"lead_id\"\n        and l.account_id = (select auth.uid())\n      )"
+          "using": "exists (\n        select 1 from leads l\n        where l.id = \"messages\".\"lead_id\"\n        and l.account_id = (select auth.uid())\n      )"
+        },
+        "enable insert for authenticated users": {
+          "name": "enable insert for authenticated users",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "authenticated"
+          ],
+          "withCheck": "true"
         }
       },
       "checkConstraints": {},
@@ -3084,7 +3122,17 @@
           "nullsNotDistinct": false
         }
       },
-      "policies": {},
+      "policies": {
+        "enable read for authenticated users": {
+          "name": "enable read for authenticated users",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "authenticated"
+          ],
+          "using": "true"
+        }
+      },
       "checkConstraints": {},
       "isRLSEnabled": false
     },
@@ -3239,6 +3287,15 @@
         }
       },
       "policies": {
+        "enable insert for authenticated users": {
+          "name": "enable insert for authenticated users",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "authenticated"
+          ],
+          "withCheck": "true"
+        },
         "enable all for own session": {
           "name": "enable all for own session",
           "as": "PERMISSIVE",

@@ -12,7 +12,8 @@
     "db:drop": "drizzle-kit drop",
     "db:studio": "drizzle-kit studio",
     "db:dump": "docker exec -it supabase_db_auto-prospect pg_dump -U postgres -d postgres --data-only --schema=auth --schema=public > supabase/seed.sql",
-    "supabase:start": "npx dotenvx run --env-file=.env -- supabase start"
+    "supabase:start": "npx dotenvx run --env-file=.env -- supabase start",
+    "supabase:stop": "supabase stop"
   },
   "dependencies": {
     "@auto-prospect/shared": "workspace:*",
