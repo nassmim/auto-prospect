@@ -50,6 +50,13 @@
       "when": 1771270524198,
       "tag": "0006_flimsy_sentinel",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1771270758618,
+      "tag": "0007_early_roughhouse",
+      "breakpoints": true
     }
   ]
 }
