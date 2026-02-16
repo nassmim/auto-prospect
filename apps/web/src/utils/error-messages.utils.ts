@@ -1,6 +1,9 @@
 import {
+  EAccountErrorCode,
   EAuthErrorCode,
   EGeneralErrorCode,
+  ELeadErrorCode,
+  EMessageErrorCode,
   ESmsErrorCode,
   EWhatsAppErrorCode,
   EWorkerErrorCode,
@@ -14,9 +17,6 @@ import {
 const WHATSAPP_ERROR_MESSAGES: Record<EWhatsAppErrorCode, string> = {
   // Phone number validation errors
   [EWhatsAppErrorCode.PHONE_REQUIRED]: "Renseigne ton numéro de téléphone",
-  [EWhatsAppErrorCode.PHONE_INVALID_FORMAT]:
-    "Ton numéro n'est pas valide, vérifie le format",
-  [EWhatsAppErrorCode.PHONE_UPDATE_FAILED]: "Échec de mise à jour du numéro",
 
   // Connection errors
   [EWhatsAppErrorCode.CONNECTION_TIMEOUT]:
@@ -33,15 +33,6 @@ const WHATSAPP_ERROR_MESSAGES: Record<EWhatsAppErrorCode, string> = {
   [EWhatsAppErrorCode.SESSION_SAVE_FAILED]: "Échec de sauvegarde de la session",
   [EWhatsAppErrorCode.SESSION_DELETE_FAILED]:
     "Échec de suppression de la session",
-
-  // Account errors
-  [EWhatsAppErrorCode.ACCOUNT_NOT_FOUND]:
-    "Ton compte n'a pas été trouvé. Essaie de te connecter de nouveau. Si le problème persiste, contacte-nous",
-
-  // Message sending errors
-  [EWhatsAppErrorCode.MESSAGE_SEND_FAILED]: "Échec de l'envoi du message",
-  [EWhatsAppErrorCode.RECIPIENT_INVALID]:
-    "Le numéro du destinataire n'est pas valide",
 };
 
 /**
@@ -53,13 +44,38 @@ const GENERAL_ERROR_MESSAGES: Record<EGeneralErrorCode, string> = {
   [EGeneralErrorCode.DATABASE_ERROR]:
     "Erreur de base de données. Réessaie plus tard.",
   [EGeneralErrorCode.UNKNOWN_ERROR]: "Une erreur inattendue s'est produite",
-  [EGeneralErrorCode.NOT_FOUND]:
-    "La ressource demandée n'a pas été trouvée",
+  [EGeneralErrorCode.NOT_FOUND]: "La ressource demandée n'a pas été trouvée",
   [EGeneralErrorCode.FORBIDDEN]: "Vous n'avez pas accès à cette ressource",
   [EGeneralErrorCode.RATE_LIMITED]:
     "Trop de requêtes. Réessaie dans quelques instants.",
   [EGeneralErrorCode.SERVER_ERROR]:
     "Une erreur serveur est survenue. Réessaie plus tard.",
+};
+
+/**
+ * Error messages mapping for general errors
+ */
+const ACCOUNT_ERROR_MESSAGES: Record<EAccountErrorCode, string> = {
+  [EAccountErrorCode.ACCOUNT_NOT_FOUND]:
+    "Ton compte n'a pas été trouvé. Essaie de te connecter de nouveau. Si le problème persiste, contacte-nous",
+  [EAccountErrorCode.PHONE_INVALID]:
+    "Ton numéro de téléphone renseigné n'est pas valide",
+};
+
+/**
+ * Error messages mapping for general errors
+ */
+const MESSAGE_ERROR_MESSAGES: Record<EMessageErrorCode, string> = {
+  [EMessageErrorCode.MESSAGE_SEND_FAILED]: "Échec de l'envoi du message",
+};
+
+/**
+ * Error messages mapping for lead errors
+ */
+const Lead_ERROR_MESSAGES: Record<ELeadErrorCode, string> = {
+  [ELeadErrorCode.LEAD_NOT_FOUND]: "Cette annonce n'existe plus.",
+  [ELeadErrorCode.RECIPIENT_PHONE_INVALID]:
+    "Le numéro du destinataire n'est pas valide",
 };
 
 /**
@@ -99,6 +115,7 @@ const AUTH_ERROR_MESSAGES: Record<EAuthErrorCode, string> = {
     "Tu n'es pas encore inscrit. Réserve un appel avec notre équipe.",
   [EAuthErrorCode.AUTH_ERROR]:
     "Une erreur est survenue. Ré-essaie ou contacte-nous pour qu'on résolve le problème.",
+  [EAuthErrorCode.EMAIL_INVALID]: "L'email ne semble pas valide",
 };
 
 /**
@@ -138,6 +155,9 @@ const ERROR_MESSAGES: Record<TErrorCode, string> = {
   ...SMS_ERROR_MESSAGES,
   ...AUTH_ERROR_MESSAGES,
   ...WORKER_API_ERROR_MESSAGES,
+  ...Lead_ERROR_MESSAGES,
+  ...MESSAGE_ERROR_MESSAGES,
+  ...ACCOUNT_ERROR_MESSAGES,
 };
 
 /**

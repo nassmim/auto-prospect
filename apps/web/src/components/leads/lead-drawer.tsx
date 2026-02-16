@@ -9,10 +9,7 @@ import {
   fetchLeadTeamMembers,
   updateLeadStage,
 } from "@/actions/lead.actions";
-import {
-  getDefaultWhatsAppTemplate,
-  logWhatsAppMessage,
-} from "@/actions/message.actions";
+import { sendWhatsAppTextMessage } from "@/actions/whatsapp.actions";
 import { Dropdown } from "@/components/ui/dropdown";
 import {
   Form,
@@ -24,11 +21,6 @@ import {
 } from "@/components/ui/form";
 import { pages } from "@/config/routes";
 import { swrKeys } from "@/config/swr-keys";
-import { extractLeadVariables } from "@/utils/lead.utils";
-import {
-  generateWhatsAppLink,
-  renderMessageTemplate,
-} from "@/utils/message.utils";
 import {
   leadNoteSchema,
   leadReminderFormSchema,
@@ -173,29 +165,17 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
     setIsSendingWhatsApp(true);
 
     try {
-      // Get default WhatsApp template
-      const template = await getDefaultWhatsAppTemplate(lead.id);
+      // Send the WhatsApp message (handles everything server-side)
+      const result = await sendWhatsAppTextMessage(lead.id);
 
-      // Extract variables from lead data
-      const variables = extractLeadVariables(lead);
+      if (!result.success) {
+        throw new Error(result.errorCode || "Failed to send WhatsApp message");
+      }
 
-      // Render template or use default message
-      const defaultMessage = `Bonjour, je suis intéressé par votre annonce "${lead.ad.title}".`;
-      const renderedMessage = template
-        ? renderMessageTemplate(template.content || defaultMessage, variables)
-        : defaultMessage;
+      // Refresh lead data to show the new message
+      mutate();
 
-      // Generate WhatsApp link
-      const whatsappUrl = generateWhatsAppLink(
-        lead.ad.phoneNumber,
-        renderedMessage,
-      );
-
-      // Log the message attempt
-      await logWhatsAppMessage(lead.id, renderedMessage, template?.id);
-
-      // Open WhatsApp in new tab
-      window.open(whatsappUrl, "_blank");
+      alert("Message WhatsApp envoyé avec succès");
     } catch (err) {
       console.error("Failed to send WhatsApp message:", err);
       alert("Erreur lors de l'envoi du message WhatsApp");

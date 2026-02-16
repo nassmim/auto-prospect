@@ -12,7 +12,7 @@ export async function signInWithMagicLink(formData: { email: string }) {
   // Validate input
   const result = magicLinkSchema.safeParse(formData);
   if (!result.success) {
-    return { error: result.error.errors[0].message };
+    return { error: result.error.message };
   }
 
   const supabase = await createClient();

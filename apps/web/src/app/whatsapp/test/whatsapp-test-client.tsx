@@ -2,11 +2,11 @@
 
 import {
   initiateWhatsAppConnection,
-  sendWhatsAppTextMessage,
   updateWhatsAppPhoneNumber,
 } from "@/actions/whatsapp.actions";
 import { createClient } from "@/lib/supabase/client";
 import { getErrorMessage } from "@/utils/error-messages.utils";
+import { EGeneralErrorCode } from "@auto-prospect/shared";
 import Image from "next/image";
 import { useState } from "react";
 
@@ -142,29 +142,22 @@ export function WhatsAppTestClient({ initialData }: WhatsAppTestClientProps) {
   };
 
   // Send test message
+  // NOTE: This test functionality is temporarily disabled as sendWhatsAppTextMessage
+  // now requires a leadId instead of direct message parameters
   const handleSendMessage = async () => {
     if (!savedPhoneNumber || !recipientPhone || !messageText) return;
 
     setSendingMessage(true);
     setSendResult(null);
 
-    const result = await sendWhatsAppTextMessage({
-      senderPhone: savedPhoneNumber,
-      recipientPhone: recipientPhone.startsWith("+")
-        ? recipientPhone
-        : `+${recipientPhone}`,
-      adTitle: "Test",
-      message: messageText,
+    // TODO: Update this test to use the new API that requires a leadId
+    // For now, set a placeholder error
+    setSendResult({
+      success: false,
+      errorCode: EGeneralErrorCode.VALIDATION_FAILED,
     });
 
-    setSendResult(result);
     setSendingMessage(false);
-
-    // If session expired, update UI to show reconnection needed
-    if (result.needsReconnect) {
-      setConnected(false);
-      setQrCode(null);
-    }
   };
 
   return (

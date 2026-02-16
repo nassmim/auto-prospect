@@ -1,11 +1,10 @@
 "use server";
 
 import { pages } from "@/config/routes";
-import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
-import { accounts } from "@/schema/account.schema";
+import { createDrizzleSupabaseClient } from "@/lib/db";
 import { getUserAccount } from "@/services/account.service";
-import { TAccountSettings } from "@/types/account.types";
-import { eq } from "@auto-prospect/db";
+import { accounts, eq } from "@auto-prospect/db";
+import { TAccountSettings } from "@auto-prospect/shared";
 import { revalidatePath } from "next/cache";
 
 /**

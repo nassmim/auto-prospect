@@ -73,6 +73,8 @@
  */
 
 import {
+  EAccountErrorCode,
+  ELeadErrorCode,
   ESmsErrorCode,
   EVoiceErrorCode,
   EWhatsAppErrorCode,
@@ -92,8 +94,9 @@ export const NON_RETRYABLE_ERROR_CODES = [
   // WhatsApp - Session/account issues
   EWhatsAppErrorCode.SESSION_NOT_FOUND,
   EWhatsAppErrorCode.SESSION_EXPIRED,
-  EWhatsAppErrorCode.ACCOUNT_NOT_FOUND,
-  EWhatsAppErrorCode.RECIPIENT_INVALID,
+
+  EAccountErrorCode.ACCOUNT_NOT_FOUND,
+  ELeadErrorCode.RECIPIENT_PHONE_INVALID,
 
   // Voice - Configuration issues
   EVoiceErrorCode.API_KEY_MISSING,

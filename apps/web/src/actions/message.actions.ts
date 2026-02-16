@@ -4,11 +4,7 @@ import { CACHE_TAGS } from "@/lib/cache.config";
 import { createDrizzleSupabaseClient } from "@/lib/db";
 import { formatZodError } from "@/lib/validation";
 import { getUserAccount } from "@/services/account.service";
-import {
-  getDefaultWhatsAppTemplate as getDefaultWhatsAppTemplateService,
-  logWhatsAppMessage as logWhatsAppMessageService,
-  updateAccountTemplatesCache,
-} from "@/services/message.service";
+import { updateAccountTemplatesCache } from "@/services/message.service";
 import { encryptCredentials } from "@/utils/crypto.utils";
 import { textTemplateSchema, voiceTemplateSchema } from "@/validation-schemas";
 import {
@@ -243,25 +239,6 @@ export async function updateTemplate(
   }
 }
 
-/**
- * Get the default WhatsApp template for a lead's account
- * Server action wrapper for client-side calls
- */
-export async function getDefaultWhatsAppTemplate(leadId: string) {
-  return getDefaultWhatsAppTemplateService(leadId);
-}
-
-/**
- * Log a WhatsApp message attempt
- * Server action wrapper for client-side calls
- */
-export async function logWhatsAppMessage(
-  leadId: string,
-  renderedMessage: string,
-  templateId?: string,
-) {
-  return logWhatsAppMessageService(leadId, renderedMessage, templateId);
-}
 
 type SendSmsResult = {
   success: boolean;

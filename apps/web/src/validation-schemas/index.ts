@@ -68,9 +68,7 @@ export {
 } from "./settings.validation";
 
 export {
-  sendWhatsAppTextMessageSchema,
   whatsappPhoneNumberSchema,
-  type TSendWhatsAppTextMessageSchema,
   type TWhatsAppPhoneNumberSchema,
 } from "./whatsapp.validation";
 

@@ -10,7 +10,7 @@ import { pages } from "@/config/routes";
 import { swrKeys } from "@/config/swr-keys";
 import { SWR_POLLING } from "@/hooks/use-swr-action";
 import { getDashboardStats } from "@/services/dashboard.service";
-import { THuntSummary } from "@/types/hunt.types";
+import { THuntSummary } from "@auto-prospect/shared";
 import { formatDistance } from "date-fns";
 import { fr } from "date-fns/locale";
 import Link from "next/link";

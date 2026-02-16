@@ -3,15 +3,12 @@ import {
   isValidPhoneNumber,
   parsePhoneNumberWithError,
 } from "@auto-prospect/shared";
-import {
-  EWhatsAppErrorCode,
-  TWhatsAppErrorCode,
-} from "@auto-prospect/shared/src/config/error-codes";
+import { TWhatsAppErrorCode } from "@auto-prospect/shared/src/config/error-codes";
 
 export type TPhoneValidationResult = {
   isValid: boolean;
-  formatted: string | null; // E.164 format without + (e.g., "33612345678")
-  formattedWithPlus: string | null; // E.164 format with + (e.g., "+33612345678")
+  formatted?: string | null; // E.164 format without + (e.g., "33612345678")
+  formattedWithPlus?: string | null; // E.164 format with + (e.g., "+33612345678")
   errorCode?: TWhatsAppErrorCode;
 };
 
@@ -25,39 +22,22 @@ export const validateWhatsAppNumber = (
   phoneNumber: string,
   defaultCountry: CountryCode = "FR",
 ): TPhoneValidationResult => {
-  if (!phoneNumber || phoneNumber.trim() === "") {
+  if (!phoneNumber || phoneNumber.trim() === "")
     return {
       isValid: false,
-      formatted: null,
-      formattedWithPlus: null,
-      errorCode: EWhatsAppErrorCode.PHONE_REQUIRED,
     };
-  }
 
   const cleanedNumber = phoneNumber.trim();
 
   try {
     // Check if the number is valid
-    if (!isValidPhoneNumber(cleanedNumber, defaultCountry)) {
-      return {
-        isValid: false,
-        formatted: null,
-        formattedWithPlus: null,
-        errorCode: EWhatsAppErrorCode.PHONE_INVALID_FORMAT,
-      };
-    }
+    if (!isValidPhoneNumber(cleanedNumber, defaultCountry))
+      return { isValid: false };
 
     // Parse and format the number
     const parsed = parsePhoneNumberWithError(cleanedNumber, defaultCountry);
 
-    if (!parsed) {
-      return {
-        isValid: false,
-        formatted: null,
-        formattedWithPlus: null,
-        errorCode: EWhatsAppErrorCode.PHONE_INVALID_FORMAT,
-      };
-    }
+    if (!parsed) return { isValid: false };
 
     // E.164 format: +33612345678
     const e164 = parsed.format("E.164");
@@ -68,12 +48,7 @@ export const validateWhatsAppNumber = (
       formattedWithPlus: e164, // +33612345678 (for display)
     };
   } catch {
-    return {
-      isValid: false,
-      formatted: null,
-      formattedWithPlus: null,
-      errorCode: EWhatsAppErrorCode.PHONE_INVALID_FORMAT,
-    };
+    return { isValid: false };
   }
 };
 

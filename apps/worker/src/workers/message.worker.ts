@@ -1,4 +1,10 @@
-import { EContactChannel, EWhatsAppErrorCode } from "@auto-prospect/shared";
+import {
+  EAccountErrorCode,
+  EContactChannel,
+  ELeadErrorCode,
+  EMessageErrorCode,
+  EWhatsAppErrorCode,
+} from "@auto-prospect/shared";
 import {
   connectWithCredentials,
   getWhatsAppJID,
@@ -208,15 +214,15 @@ export async function whatsappWorker(job: Job<WhatsAppJob>) {
       // Baileys library returns error codes, not HTTP responses
       // Each error needs specific handling strategy
       const errorCode =
-        result.errorCode || EWhatsAppErrorCode.MESSAGE_SEND_FAILED;
+        result.errorCode || EMessageErrorCode.MESSAGE_SEND_FAILED;
 
       // PERMANENT FAILURES - Do not retry
       // These indicate configuration/data issues that won't resolve with retry
       if (
-        errorCode === EWhatsAppErrorCode.RECIPIENT_INVALID ||
+        errorCode === ELeadErrorCode.RECIPIENT_PHONE_INVALID ||
         errorCode === EWhatsAppErrorCode.SESSION_NOT_FOUND ||
         errorCode === EWhatsAppErrorCode.SESSION_EXPIRED ||
-        errorCode === EWhatsAppErrorCode.ACCOUNT_NOT_FOUND
+        errorCode === EAccountErrorCode.ACCOUNT_NOT_FOUND
       ) {
         // Mark session as disconnected for session-related errors
         if (

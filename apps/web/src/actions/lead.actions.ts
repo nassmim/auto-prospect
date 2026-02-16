@@ -2,6 +2,7 @@
 
 import { pages } from "@/config/routes";
 import { createDrizzleSupabaseClient } from "@/lib/db";
+import { createClient } from "@/lib/supabase/server";
 import { formatZodError } from "@/lib/validation";
 import {
   getLeadActivities,
@@ -21,7 +22,6 @@ import {
 } from "@auto-prospect/db";
 import { TLeadStage } from "@auto-prospect/shared/src/config/lead.config";
 import { revalidatePath } from "next/cache";
-import { createClient } from "../../../../packages/db/src/supabase/server";
 
 /**
  * Fetches complete lead details with all relations
@@ -68,15 +68,6 @@ export async function fetchPipelineLeads() {
  * Used when dragging leads between Kanban columns
  */
 export async function updateLeadStage(leadId: string, newStage: TLeadStage) {
-  const supabase = await createClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (!session) {
-    throw new Error("Unauthorized");
-  }
-
   const dbClient = await createDrizzleSupabaseClient();
 
   try {
@@ -102,8 +93,7 @@ export async function updateLeadStage(leadId: string, newStage: TLeadStage) {
     revalidatePath(pages.leads.list);
 
     return { success: true };
-  } catch (error) {
-    console.error("Error updating lead stage:", error);
+  } catch {
     throw new Error("Failed to update lead stage");
   }
 }
