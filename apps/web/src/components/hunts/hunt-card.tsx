@@ -39,10 +39,6 @@ type Hunt = {
       name: string;
     };
   }>;
-  channelCredits?: Array<{
-    creditsAllocated: number;
-    creditsConsumed: number;
-  }>;
 };
 
 type HuntCardProps = {
@@ -113,18 +109,6 @@ export function HuntCard({ hunt, onMutate }: HuntCardProps) {
 
   const isActive = currentStatus === "active";
 
-  // Calculate total credits
-  const totalAllocated =
-    hunt.channelCredits?.reduce(
-      (sum, credit) => sum + credit.creditsAllocated,
-      0,
-    ) || 0;
-  const totalConsumed =
-    hunt.channelCredits?.reduce(
-      (sum, credit) => sum + credit.creditsConsumed,
-      0,
-    ) || 0;
-
   return (
     <Card className="transition-colors hover:border-zinc-700">
       <CardHeader>
@@ -146,20 +130,6 @@ export function HuntCard({ hunt, onMutate }: HuntCardProps) {
                   className="bg-blue-500/10 text-blue-500 border-blue-500/20"
                 >
                   Auto-refresh
-                </Badge>
-              )}
-              {totalAllocated > 0 && (
-                <Badge
-                  variant="outline"
-                  className={
-                    totalConsumed >= totalAllocated
-                      ? "bg-red-500/10 text-red-500 border-red-500/20"
-                      : totalConsumed / totalAllocated >= 0.8
-                        ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
-                        : "bg-zinc-500/10 text-zinc-400 border-zinc-500/20"
-                  }
-                >
-                  {totalConsumed}/{totalAllocated} crédits
                 </Badge>
               )}
             </div>
