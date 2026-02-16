@@ -29,14 +29,6 @@ import useSWR from "swr";
 
 type CreditData = {
   balance: TCreditBalance | undefined;
-  huntAllocations: Array<{
-    huntId: string;
-    huntName: string;
-    channel: TContactChannel;
-    allocated: number;
-    consumed: number;
-    remaining: number;
-  }>;
   transactions: Array<{
     id: string;
     type: TransactionType;
@@ -185,61 +177,6 @@ export function CreditsView({ data: initialData }: CreditsViewProps) {
         </Card>
       </div>
 
-      {/* Hunt Allocations */}
-      {data.huntAllocations.length > 0 && (
-        <Card className="border-zinc-800 bg-zinc-900/50">
-          <CardHeader>
-            <CardTitle className="text-zinc-100">
-              Allocation par recherche
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow className="border-zinc-800 hover:bg-zinc-900/50">
-                  <TableHead className="text-zinc-400">Recherche</TableHead>
-                  <TableHead className="text-zinc-400">Canal</TableHead>
-                  <TableHead className="text-right text-zinc-400">
-                    Alloués
-                  </TableHead>
-                  <TableHead className="text-right text-zinc-400">
-                    Consommés
-                  </TableHead>
-                  <TableHead className="text-right text-zinc-400">
-                    Restants
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.huntAllocations.map((allocation) => (
-                  <TableRow
-                    key={`${allocation.huntId}-${allocation.channel}`}
-                    className="border-zinc-800 hover:bg-zinc-900/50"
-                  >
-                    <TableCell className="font-medium text-zinc-100">
-                      {allocation.huntName}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="border-zinc-700">
-                        {channelLabels[allocation.channel]}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right text-zinc-300">
-                      {allocation.allocated.toLocaleString("fr-FR")}
-                    </TableCell>
-                    <TableCell className="text-right text-zinc-300">
-                      {allocation.consumed.toLocaleString("fr-FR")}
-                    </TableCell>
-                    <TableCell className="text-right text-zinc-100">
-                      {allocation.remaining.toLocaleString("fr-FR")}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Transaction History */}
       <Card className="border-zinc-800 bg-zinc-900/50">
