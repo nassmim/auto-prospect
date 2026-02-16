@@ -6,36 +6,30 @@ import {
 } from "@auto-prospect/shared";
 
 /**
- * Gets hunt channel credits with remaining balance calculated
- * Returns Map of channel -> remaining credits
+ * Gets account credit balances as a Map of channel -> remaining credits
  *
  * Special handling for WhatsApp: Always returns WHATSAPP_DAILY_LIMIT (1000)
  * regardless of database values, since WhatsApp is unlimited for users
  */
-export async function getHuntChannelCreditsMap(
-  huntId: string,
+export async function getAccountChannelCreditsMap(
+  accountId: string,
   db?: TDBAdminClient,
 ): Promise<Map<string, number>> {
   const client = db || getDBAdminClient();
 
-  const channelCreditsRaw = await client.query.huntChannelCredits.findMany({
-    where: (table, { eq }) => eq(table.huntId, huntId),
+  const balance = await client.query.creditBalances.findFirst({
+    where: (table, { eq }) => eq(table.accountId, accountId),
   });
 
-  // Calculate remaining credits per channel
-  const creditsMap = new Map(
-    channelCreditsRaw.map((cc) => {
-      // WhatsApp: always use hard-coded limit (unlimited for users)
-      if (cc.channel === EContactChannel.WHATSAPP_TEXT) {
-        return [cc.channel as string, WHATSAPP_DAILY_LIMIT];
-      }
+  if (!balance) {
+    return new Map(); // No credits
+  }
 
-      // Other channels: use actual credits from database
-      return [cc.channel as string, cc.creditsAllocated - cc.creditsConsumed];
-    }),
-  );
-
-  return creditsMap;
+  return new Map([
+    [EContactChannel.SMS, balance.sms],
+    [EContactChannel.RINGLESS_VOICE, balance.ringlessVoice],
+    [EContactChannel.WHATSAPP_TEXT, WHATSAPP_DAILY_LIMIT], // Always unlimited
+  ]);
 }
 
 /**
@@ -53,6 +47,7 @@ type TChannelAllocation = {
 };
 
 type TAllocateAdsToChannelsParams = {
+  accountId: string;
   huntId: string;
   adIds: string[];
   dailyPacingLimit: number | null;
@@ -74,6 +69,7 @@ type TAllocateAdsToChannelsParams = {
  * 4. Return allocations as (adId, channel) pairs
  */
 export async function allocateAdsToChannels({
+  accountId,
   huntId,
   adIds,
   dailyPacingLimit,
@@ -95,8 +91,8 @@ export async function allocateAdsToChannels({
   // Get channel priorities (ordered by priority ascending)
   const priorities = await getChannelPriorities(db);
 
-  // Get hunt channel credits with remaining balance
-  const channelCreditsMap = await getHuntChannelCreditsMap(huntId, db);
+  // Get account channel credits with remaining balance
+  const channelCreditsMap = await getAccountChannelCreditsMap(accountId, db);
 
   const allocations: TChannelAllocation[] = [];
   const adsToAllocate = [...adIds]; // Copy to avoid mutation

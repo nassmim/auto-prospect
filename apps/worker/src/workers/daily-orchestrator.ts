@@ -298,6 +298,7 @@ async function processHunt(
   // Allocate ads to channels based on priority, credits, and daily limits
   // This will skip disabled channels entirely
   const allocations = await allocateAdsToChannels({
+    accountId,
     huntId,
     adIds: matchingAds.map((ad) => ad.id),
     dailyPacingLimit: hunt.dailyPacingLimit,
