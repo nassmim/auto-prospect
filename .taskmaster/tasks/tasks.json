@@ -2302,8 +2302,9 @@
         "dependencies": [
           "95"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-02-16T14:13:04.397Z"
       },
       {
         "id": "97",
@@ -2315,8 +2316,9 @@
         "dependencies": [
           "95"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "in-progress",
+        "subtasks": [],
+        "updatedAt": "2026-02-16T14:13:44.569Z"
       },
       {
         "id": "98",
@@ -2326,9 +2328,9 @@
         "testStrategy": "1. Unit test consumeCredit with mock database\n2. Test concurrent calls don't cause race conditions (row locking works)\n3. Verify WhatsApp consumption never fails due to balance\n4. Verify SMS/Ringless fails gracefully when balance is 0\n5. Verify creditTransactions records are created correctly",
         "priority": "high",
         "dependencies": [],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [],
-        "updatedAt": "2026-02-16T14:08:14.723Z"
+        "updatedAt": "2026-02-16T14:12:37.503Z"
       },
       {
         "id": "99",
@@ -2474,9 +2476,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-02-16T14:08:14.726Z",
+      "lastModified": "2026-02-16T14:13:44.570Z",
       "taskCount": 108,
-      "completedCount": 92,
+      "completedCount": 94,
       "tags": [
         "master"
       ]
