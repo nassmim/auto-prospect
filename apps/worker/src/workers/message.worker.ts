@@ -43,8 +43,9 @@ export async function smsWorker(job: Job<SmsJob>) {
   });
 
   // Consume credit after successful send
-  if (metadata?.huntId) {
+  if (metadata?.huntId && metadata?.accountId) {
     await consumeCredit({
+      accountId: metadata.accountId,
       huntId: metadata.huntId,
       channel: EContactChannel.SMS,
       messageId: result.message_id,
@@ -105,8 +106,9 @@ export async function voiceWorker(job: Job<VoiceJob>) {
   });
 
   // Consume credit after successful send
-  if (metadata?.huntId) {
+  if (metadata?.huntId && metadata?.accountId) {
     await consumeCredit({
+      accountId: metadata.accountId,
       huntId: metadata.huntId,
       channel: EContactChannel.RINGLESS_VOICE,
       recipient: recipientPhone,
@@ -245,6 +247,7 @@ export async function whatsappWorker(job: Job<WhatsAppJob>) {
     // Step 5: Consume credit after successful send
     if (metadata?.huntId) {
       await consumeCredit({
+        accountId,
         huntId: metadata.huntId,
         channel: EContactChannel.WHATSAPP_TEXT,
         recipient: recipientPhone,

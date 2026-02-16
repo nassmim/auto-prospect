@@ -34,6 +34,7 @@ type PurchaseMetadata = {
 type UsageMetadata = {
   messageId?: string;
   recipient?: string;
+  huntId?: string;
   duration?: number; // For voice calls, in seconds
 };
 

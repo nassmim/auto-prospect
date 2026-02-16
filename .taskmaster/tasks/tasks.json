@@ -2279,13 +2279,204 @@
         "priority": "medium",
         "subtasks": [],
         "updatedAt": "2026-02-12T01:47:45.387Z"
+      },
+      {
+        "id": "95",
+        "title": "Remove channelCredits from Hunt Form Schema and Validation",
+        "description": "Remove all channelCredits-related fields, validation rules, and refinements from hunt validation schemas to stop collecting per-hunt credit allocation.",
+        "details": "1. In `apps/web/src/validation-schemas/hunt.validation.ts`:\n   - Delete `channelCreditsSchema` (lines 24-42)\n   - Remove `channelCredits: channelCreditsSchema` from `huntFormSchema` (line 63)\n   - Remove the channel credits validation refinement from `huntFormSchema` (lines 78-102) that checks enabled channels have credits > 0\n   - Remove the duplicate channel credits validation refinement from `createHuntSchema` (lines 148-172)\n   - Keep `dailyPacingLimit` field intact (this is correct behavior)\n\n2. Update type exports:\n   - `THuntFormData` will automatically reflect the removal since it's inferred from the schema\n   - `TCreateHuntData` will also update automatically\n\nPseudo-code:\n```typescript\n// REMOVE this entire schema\nconst channelCreditsSchema = z.object({...}).optional();\n\n// REMOVE from huntFormSchema\nexport const huntFormSchema = z.object({\n  // ... keep other fields\n  // channelCredits: channelCreditsSchema, // DELETE THIS LINE\n}).refine(...) // KEEP first refine (at least one channel enabled)\n// .refine(...) // DELETE second refine (channel credits validation)\n```",
+        "testStrategy": "1. Verify TypeScript compiles without errors after removal\n2. Verify form submission works without channelCredits field\n3. Test that hunt creation form no longer requires credit allocation input",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-02-16T14:07:49.434Z"
+      },
+      {
+        "id": "96",
+        "title": "Remove channelCredits from Hunt Form Component",
+        "description": "Remove all channelCredits state management, watches, and form handling from the hunt form component and its child OutreachSettings component.",
+        "details": "1. In `apps/web/src/components/hunts/hunt-form.tsx`:\n   - Remove `channelCredits` from defaultValues (lines 99-103)\n   - Remove `channelCredits` watch hook (lines 137-141)\n   - Remove `channelCredits` prop from `<OutreachSettings>` (lines 344-345)\n   - Remove `onChannelCreditsChange` prop from `<OutreachSettings>` (line 349)\n\n2. In `apps/web/src/components/hunts/outreach-settings.tsx`:\n   - Remove `channelCredits` from props type (lines 21-25)\n   - Remove `onChannelCreditsChange` from props type (lines 30-32)\n   - Remove `handleCreditsChange` function (lines 63-73)\n   - Remove entire credit allocation input section from JSX (lines 273-341)\n   - Keep WhatsApp \"unlimited\" info badge for user awareness\n   - Keep `requiresCredits` in channelConfig but don't render input\n\nPseudo-code for OutreachSettings:\n```typescript\ntype OutreachSettingsProps = {\n  templates: ...;\n  outreachSettings: ...;\n  templateIds: ...;\n  // REMOVED: channelCredits\n  onOutreachChange: ...;\n  onTemplateChange: ...;\n  // REMOVED: onChannelCreditsChange\n};\n\n// In JSX, remove the credit allocation section:\n{/* REMOVE: config.requiresCredits && config.key !== \"leboncoin\" input section */}\n```",
+        "testStrategy": "1. Verify hunt form renders without credit allocation inputs\n2. Verify form submission still works with just channel toggles and template selection\n3. Verify WhatsApp still shows 'unlimited' indicator",
+        "priority": "high",
+        "dependencies": [
+          "95"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "97",
+        "title": "Remove huntChannelCredits Insertion from Hunt Actions",
+        "description": "Remove all huntChannelCredits table insertion logic from createHunt and updateHuntChannelCredits server actions.",
+        "details": "1. In `apps/web/src/actions/hunt.actions.ts`:\n   - Remove import of `huntChannelCredits` from `@auto-prospect/db` (line 18)\n   - Remove `WHATSAPP_DAILY_LIMIT` import (line 28) if no longer needed\n   - In `createHunt` function:\n     - Remove entire block that inserts channel credits (lines 114-153):\n       - Remove `channelCreditsToInsert` array construction\n       - Remove SMS credits insertion logic\n       - Remove WhatsApp credits insertion logic\n       - Remove RinglessVoice credits insertion logic\n       - Remove `tx.insert(huntChannelCredits).values(...)` call\n   - Delete entire `updateHuntChannelCredits` function (lines 214-318)\n\nPseudo-code:\n```typescript\nexport async function createHunt(data: unknown) {\n  // ... validation and setup code stays the same\n  \n  const hunt = await dbClient.rls(async (tx) => {\n    // Insert main hunt record - KEEP\n    const [newHunt] = await tx.insert(hunts).values({...}).returning();\n    \n    // Insert brand filters - KEEP\n    // Insert subType filters - KEEP\n    \n    // REMOVE: channelCreditsToInsert block\n    // REMOVE: tx.insert(huntChannelCredits).values(...)\n    \n    return newHunt;\n  });\n}\n\n// REMOVE: entire updateHuntChannelCredits function\n```",
+        "testStrategy": "1. Verify hunt creation succeeds without inserting huntChannelCredits\n2. Verify no database errors when creating hunts\n3. Verify updateHuntChannelCredits is no longer exported or callable",
+        "priority": "high",
+        "dependencies": [
+          "95"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "98",
+        "title": "Refactor Worker Credit Service to Use Global creditBalances",
+        "description": "Rewrite consumeCredit() and getRemainingCredits() in worker credit service to query and update the global creditBalances table instead of huntChannelCredits.",
+        "details": "1. In `apps/worker/src/services/credit.service.ts`:\n\n   a. Update `consumeCredit()` function:\n   - Accept `accountId` parameter instead of relying solely on huntId\n   - Remove query to `huntChannelCredits` table\n   - Query `creditBalances` table with row-level locking (SELECT FOR UPDATE)\n   - Check balance for specific channel:\n     - SMS: check `creditBalances.sms > 0`\n     - RinglessVoice: check `creditBalances.ringlessVoice > 0`\n     - WhatsApp: skip balance check (unlimited)\n   - Atomically decrement the appropriate column using SQL expression\n   - Create `creditTransactions` log with balanceAfter from updated creditBalances\n   - Return success/failure\n\n   b. Update `getRemainingCredits()` function:\n   - Change parameter from `huntId` to `accountId`\n   - Query `creditBalances` table for the account\n   - Return appropriate channel balance (WhatsApp returns WHATSAPP_DAILY_LIMIT)\n\nPseudo-code:\n```typescript\nexport type TConsumeCreditsParams = {\n  accountId: string; // CHANGED from huntId\n  huntId: string; // Keep for reference/logging\n  channel: TContactChannel;\n  messageId?: string;\n  recipient?: string;\n};\n\nexport async function consumeCredit({\n  accountId,\n  huntId,\n  channel,\n  messageId,\n  recipient,\n}: TConsumeCreditsParams): Promise<TConsumeCreditsResult> {\n  const db = getDBAdminClient();\n\n  try {\n    const result = await db.transaction(async (tx) => {\n      // Lock creditBalances row for this account\n      const [balance] = await tx\n        .select()\n        .from(creditBalances)\n        .where(eq(creditBalances.accountId, accountId))\n        .for('update');\n\n      if (!balance) {\n        throw new Error(`No credit balance found for account ${accountId}`);\n      }\n\n      // Get current balance for channel\n      const currentBalance = channel === EContactChannel.SMS \n        ? balance.sms \n        : channel === EContactChannel.RINGLESS_VOICE \n          ? balance.ringlessVoice \n          : balance.whatsappText;\n\n      // WhatsApp: never fail on balance\n      if (channel !== EContactChannel.WHATSAPP_TEXT && currentBalance <= 0) {\n        throw new Error(`Insufficient credits for channel ${channel}`);\n      }\n\n      // Decrement atomically\n      const columnName = channel === EContactChannel.SMS \n        ? 'sms' \n        : channel === EContactChannel.RINGLESS_VOICE \n          ? 'ringlessVoice' \n          : 'whatsappText';\n\n      const [updated] = await tx\n        .update(creditBalances)\n        .set({ \n          [columnName]: sql`${creditBalances[columnName]} - 1`,\n          updatedAt: new Date() \n        })\n        .where(eq(creditBalances.accountId, accountId))\n        .returning();\n\n      const newBalance = updated[columnName];\n\n      // Create transaction log\n      const [transaction] = await tx\n        .insert(creditTransactions)\n        .values({\n          accountId,\n          type: ETransactionType.USAGE,\n          channel,\n          amount: -1,\n          balanceAfter: newBalance,\n          referenceId: messageId,\n          metadata: { messageId, recipient, huntId },\n        })\n        .returning();\n\n      return transaction;\n    });\n\n    return { success: true, transaction: result };\n  } catch (error) {\n    return { success: false, error: error.message };\n  }\n}\n\nexport async function getRemainingCredits(\n  accountId: string,\n  channel: TContactChannel,\n): Promise<number> {\n  if (channel === EContactChannel.WHATSAPP_TEXT) {\n    return WHATSAPP_DAILY_LIMIT;\n  }\n\n  const db = getDBAdminClient();\n  const balance = await db.query.creditBalances.findFirst({\n    where: (table, { eq }) => eq(table.accountId, accountId),\n  });\n\n  if (!balance) return 0;\n\n  return channel === EContactChannel.SMS \n    ? balance.sms \n    : balance.ringlessVoice;\n}\n```",
+        "testStrategy": "1. Unit test consumeCredit with mock database\n2. Test concurrent calls don't cause race conditions (row locking works)\n3. Verify WhatsApp consumption never fails due to balance\n4. Verify SMS/Ringless fails gracefully when balance is 0\n5. Verify creditTransactions records are created correctly",
+        "priority": "high",
+        "dependencies": [],
+        "status": "in-progress",
+        "subtasks": [],
+        "updatedAt": "2026-02-16T14:08:14.723Z"
+      },
+      {
+        "id": "99",
+        "title": "Refactor Worker Channel Service to Use Global Credits",
+        "description": "Update getHuntChannelCreditsMap() and allocateAdsToChannels() in worker channel service to check global creditBalances instead of huntChannelCredits.",
+        "details": "1. In `apps/worker/src/services/channel.service.ts`:\n\n   a. Rename `getHuntChannelCreditsMap()` to `getAccountChannelCreditsMap()` and update:\n   - Accept `accountId` instead of `huntId`\n   - Query `creditBalances` table instead of `huntChannelCredits`\n   - Map column names to channel enum values\n\n   b. Update `allocateAdsToChannels()`:\n   - Add `accountId` parameter to function signature\n   - Call updated `getAccountChannelCreditsMap(accountId)` instead of hunt-based function\n   - Rest of allocation logic remains the same\n\nPseudo-code:\n```typescript\n/**\n * Gets account credit balances as a Map of channel -> remaining credits\n */\nexport async function getAccountChannelCreditsMap(\n  accountId: string,\n  db?: TDBAdminClient,\n): Promise<Map<string, number>> {\n  const client = db || getDBAdminClient();\n\n  const balance = await client.query.creditBalances.findFirst({\n    where: (table, { eq }) => eq(table.accountId, accountId),\n  });\n\n  if (!balance) {\n    return new Map(); // No credits\n  }\n\n  return new Map([\n    [EContactChannel.SMS, balance.sms],\n    [EContactChannel.RINGLESS_VOICE, balance.ringlessVoice],\n    [EContactChannel.WHATSAPP_TEXT, WHATSAPP_DAILY_LIMIT], // Always unlimited\n  ]);\n}\n\ntype TAllocateAdsToChannelsParams = {\n  accountId: string; // NEW: required for credit checks\n  huntId: string; // Keep for context\n  adIds: string[];\n  dailyPacingLimit: number | null;\n  dailyContactCount: number;\n  disabledChannels?: TContactChannel[];\n};\n\nexport async function allocateAdsToChannels({\n  accountId,\n  huntId,\n  adIds,\n  dailyPacingLimit,\n  dailyContactCount,\n  disabledChannels = [],\n  db,\n}: TAllocateAdsToChannelsParams & { db: TDBAdminClient }): Promise<TChannelAllocation[]> {\n  // ... existing daily limit check\n\n  const priorities = await getChannelPriorities(db);\n  \n  // CHANGED: Use account-level credits\n  const channelCreditsMap = await getAccountChannelCreditsMap(accountId, db);\n\n  // ... rest of allocation logic stays the same\n}\n```",
+        "testStrategy": "1. Verify channel allocation uses global account credits\n2. Test allocation stops when account has 0 credits for a channel\n3. Verify WhatsApp allocation is always available (unlimited)",
+        "priority": "high",
+        "dependencies": [
+          "98"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "100",
+        "title": "Update Hunt Service to Remove huntChannelCredits Queries",
+        "description": "Remove all huntChannelCredits table queries from web hunt service and update functions that returned hunt-specific credit data.",
+        "details": "1. In `apps/web/src/services/hunt.service.ts`:\n   - Delete `getHuntsChannelCredits()` function (lines 49-69)\n   - Update `getAccountHunts()` to not fetch or attach channelCredits:\n     - Remove call to `getHuntsChannelCredits()`\n     - Remove `channelCredits` from returned hunt objects\n   - Update `getHuntById()` to not fetch channelCredits:\n     - Remove query to `huntChannelCredits.findMany()`\n     - Remove `channelCredits` from returned object\n\nPseudo-code:\n```typescript\n// DELETE: getHuntsChannelCredits function entirely\n\nexport async function getAccountHunts() {\n  const huntsData = await getAccountHuntsConfig();\n  if (huntsData.length === 0) return [];\n\n  // REMOVED: credit fetching logic\n  // Just return hunts without channelCredits\n  return huntsData;\n}\n\nexport async function getHuntById(huntId: string) {\n  const hunt = await getHuntConfigById(huntId);\n  // REMOVED: channelCredits fetching\n  return hunt;\n}\n```",
+        "testStrategy": "1. Verify hunt list loads without errors\n2. Verify hunt detail page loads without errors\n3. Verify no references to channelCredits in returned data",
+        "priority": "medium",
+        "dependencies": [
+          "97"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "101",
+        "title": "Update Web Credit Service to Remove Hunt Allocations",
+        "description": "Update getAccountCredits() in web credit service to remove huntAllocations that referenced huntChannelCredits, and update getHuntChannelCredits() stub.",
+        "details": "1. In `apps/web/src/services/credit.service.ts`:\n   - Delete `getHuntChannelCredits()` function stub (lines 48-50)\n   - Update `getAccountCredits()` function:\n     - Remove `huntAllocations` from parallel query (lines 64-76)\n     - Remove `huntAllocations` from returned object\n     - Keep `balance` and `transactions` queries\n\nPseudo-code:\n```typescript\n// DELETE: getHuntChannelCredits function\n\nexport async function getAccountCredits() {\n  const dbClient = await createDrizzleSupabaseClient();\n\n  const [balance, transactions] = await Promise.all([\n    // Get account credit balance - KEEP\n    dbClient.rls((tx: TDBQuery) => tx.query.creditBalances.findFirst()),\n\n    // REMOVED: huntAllocations query\n\n    // Get recent credit transactions - KEEP\n    dbClient.rls((tx: TDBQuery) =>\n      tx.query.creditTransactions.findMany({\n        orderBy: (table) => [desc(table.createdAt)],\n        limit: 50,\n      }),\n    ),\n  ]);\n\n  return {\n    balance,\n    // REMOVED: huntAllocations\n    transactions: transactions.map((tx) => ({...})),\n  };\n}\n```",
+        "testStrategy": "1. Verify credits page loads account balance correctly\n2. Verify transaction history displays correctly\n3. Verify no errors when huntAllocations is removed",
+        "priority": "medium",
+        "dependencies": [
+          "100"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "102",
+        "title": "Update CreditUsageDisplay Component for Global Credits",
+        "description": "Refactor CreditUsageDisplay component to show global account credits and daily contact progress instead of hunt-specific credit allocation.",
+        "details": "1. In `apps/web/src/components/hunts/credit-usage-display.tsx`:\n   - Update props interface to accept global account balance:\n     - Change `channelCredits: THuntChannelCredit[]` to optional `accountBalance: { sms: number, ringlessVoice: number, whatsappText: number }`\n     - Keep `dailyPacingLimit` and `dailyContactsCount` props\n   - Update component logic:\n     - Show global account balance per channel (SMS, Ringless, WhatsApp)\n     - Show daily contact count vs limit progress (existing logic)\n     - Remove per-hunt credit consumption display\n\nPseudo-code:\n```typescript\ntype CreditUsageDisplayProps = {\n  accountBalance?: {\n    sms: number;\n    ringlessVoice: number;\n    whatsappText: number;\n  };\n  dailyPacingLimit?: number | null;\n  dailyContactsCount?: number;\n};\n\nexport function CreditUsageDisplay({\n  accountBalance,\n  dailyPacingLimit,\n  dailyContactsCount = 0,\n}: CreditUsageDisplayProps) {\n  // Show global balance if provided\n  // Show daily limit progress\n  return (\n    <div className=\"rounded-xl border border-zinc-800 bg-zinc-900/50 p-6\">\n      <h3 className=\"text-sm font-semibold text-zinc-300 mb-4\">\n        Utilisation des crédits\n      </h3>\n\n      {accountBalance && (\n        <div className=\"space-y-2 mb-4\">\n          <div className=\"flex justify-between text-sm\">\n            <span className=\"text-zinc-400\">SMS disponibles:</span>\n            <span className=\"text-zinc-200\">{accountBalance.sms}</span>\n          </div>\n          <div className=\"flex justify-between text-sm\">\n            <span className=\"text-zinc-400\">Ringless Voice:</span>\n            <span className=\"text-zinc-200\">{accountBalance.ringlessVoice}</span>\n          </div>\n          <div className=\"flex justify-between text-sm\">\n            <span className=\"text-zinc-400\">WhatsApp:</span>\n            <span className=\"text-green-400\">Illimité</span>\n          </div>\n        </div>\n      )}\n\n      {/* Daily limit progress - KEEP existing logic */}\n    </div>\n  );\n}\n```",
+        "testStrategy": "1. Verify component renders global account balance\n2. Verify daily limit progress still displays correctly\n3. Verify WhatsApp shows as unlimited",
+        "priority": "medium",
+        "dependencies": [
+          "101"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "103",
+        "title": "Update HuntCard Component to Remove Credit Badge",
+        "description": "Update HuntCard component to remove hunt-specific credit consumption display and optionally show daily limit info instead.",
+        "details": "1. In `apps/web/src/components/hunts/hunt-card.tsx`:\n   - Remove `channelCredits` from Hunt type (lines 42-45)\n   - Remove `totalAllocated` and `totalConsumed` calculations (lines 117-126)\n   - Remove credit badge JSX (lines 151-164)\n   - Keep daily pacing limit display (lines 236-255)\n\nPseudo-code:\n```typescript\ntype Hunt = {\n  id: string;\n  name: string;\n  status: string;\n  autoRefresh: boolean;\n  lastScanAt: Date | null;\n  createdAt: Date;\n  dailyPacingLimit?: number | null;\n  location: { name: string };\n  brands?: Array<{ brand: { name: string } }>;\n  // REMOVED: channelCredits\n};\n\nexport function HuntCard({ hunt, onMutate }: HuntCardProps) {\n  // REMOVED: totalAllocated and totalConsumed calculations\n\n  return (\n    <Card>\n      <CardHeader>\n        <div className=\"flex items-start justify-between\">\n          <div className=\"flex-1\">\n            <CardTitle>{hunt.name}</CardTitle>\n            <div className=\"mt-2 flex items-center gap-2 flex-wrap\">\n              {/* Status badge - KEEP */}\n              {/* Auto-refresh badge - KEEP */}\n              {/* REMOVED: Credit badge */}\n            </div>\n          </div>\n        </div>\n      </CardHeader>\n      {/* ... rest stays the same */}\n    </Card>\n  );\n}\n```",
+        "testStrategy": "1. Verify hunt cards render without credit badges\n2. Verify daily limit display still works\n3. Verify hunt list page loads without errors",
+        "priority": "medium",
+        "dependencies": [
+          "100"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "104",
+        "title": "Update CreditsView Component to Remove Hunt Allocations Section",
+        "description": "Update the CreditsView component to remove the hunt allocations table section and focus on global account balances and transaction history.",
+        "details": "1. In `apps/web/src/components/credits/credits-view.tsx`:\n   - Remove `huntAllocations` from CreditData type (lines 32-40)\n   - Remove entire \"Hunt Allocations\" Card section (lines 188-242)\n   - Keep balance cards and transaction history sections\n   - Update SWR fetcher if needed to match new response shape\n\nPseudo-code:\n```typescript\ntype CreditData = {\n  balance: TCreditBalance | undefined;\n  // REMOVED: huntAllocations\n  transactions: Array<{...}>;\n};\n\nexport function CreditsView({ data: initialData }: CreditsViewProps) {\n  // ... existing SWR and balance logic\n\n  return (\n    <div className=\"space-y-6 p-6\">\n      {/* Header - KEEP */}\n      {/* Credit Balance Summary cards - KEEP */}\n\n      {/* REMOVED: Hunt Allocations Card */}\n\n      {/* Transaction History - KEEP */}\n    </div>\n  );\n}\n```",
+        "testStrategy": "1. Verify credits page renders without hunt allocations section\n2. Verify global balance cards display correctly\n3. Verify transaction history still displays",
+        "priority": "medium",
+        "dependencies": [
+          "101"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "105",
+        "title": "Create Migration to Drop huntChannelCredits Table",
+        "description": "Create a Drizzle migration to remove the huntChannelCredits table and all related constraints from the database.",
+        "details": "1. Remove `huntChannelCredits` table definition from schema:\n   - In `packages/db/src/schema/credits.schema.ts`:\n     - Delete `huntChannelCredits` table definition (lines 181-221)\n     - Delete `THuntChannelCredit` type export (line 222)\n     - Delete `THuntChannelCreditInsert` type export (lines 223-225)\n     - Delete `huntChannelCreditsRelations` (lines 245-253)\n\n2. Remove exports from index:\n   - Check `packages/db/src/index.ts` and remove any huntChannelCredits exports\n\n3. Generate and review migration:\n   ```bash\n   pnpm db:generate\n   ```\n   - Review generated SQL to ensure it drops:\n     - Foreign key constraint `hunt_channel_credits_hunt_id_fk`\n     - Unique constraint `hunt_channel_unique`\n     - Index `hunt_channel_credits_hunt_id_idx`\n     - The `hunt_channel_credits` table itself\n     - RLS policies on the table\n\n4. Migration SQL should look like:\n```sql\nDROP TABLE IF EXISTS \"hunt_channel_credits\" CASCADE;\n```\n\n5. Apply migration:\n   ```bash\n   pnpm db:migrate\n   ```",
+        "testStrategy": "1. Verify migration runs without errors on local database\n2. Verify table is dropped: `SELECT * FROM hunt_channel_credits` should fail\n3. Verify hunts table foreign keys remain intact\n4. Test on staging environment before production",
+        "priority": "high",
+        "dependencies": [
+          "97",
+          "98",
+          "99",
+          "100",
+          "101"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "106",
+        "title": "Ensure creditBalances Row Exists for All Accounts",
+        "description": "Create migration or startup check to ensure every account has a creditBalances row with default 0 values.",
+        "details": "1. Create a custom migration to insert missing creditBalances rows:\n   ```bash\n   pnpm db:generate --custom\n   ```\n\n2. Add SQL to insert missing rows:\n```sql\n-- Insert creditBalances row for any account that doesn't have one\nINSERT INTO credit_balances (id, account_id, sms, ringless_voice, whatsapp_text, updated_at)\nSELECT \n  gen_random_uuid(),\n  a.id,\n  0,\n  0,\n  0,\n  now()\nFROM accounts a\nLEFT JOIN credit_balances cb ON cb.account_id = a.id\nWHERE cb.id IS NULL;\n```\n\n3. Optionally, add a database trigger for future accounts:\n```sql\nCREATE OR REPLACE FUNCTION create_credit_balance_for_new_account()\nRETURNS TRIGGER AS $$\nBEGIN\n  INSERT INTO credit_balances (account_id, sms, ringless_voice, whatsapp_text)\n  VALUES (NEW.id, 0, 0, 0);\n  RETURN NEW;\nEND;\n$$ LANGUAGE plpgsql;\n\nCREATE TRIGGER create_credit_balance_after_account_insert\nAFTER INSERT ON accounts\nFOR EACH ROW\nEXECUTE FUNCTION create_credit_balance_for_new_account();\n```\n\n4. Apply migration:\n   ```bash\n   pnpm db:migrate\n   ```",
+        "testStrategy": "1. Verify all existing accounts have creditBalances rows\n2. Create new account and verify creditBalances row is auto-created\n3. Query: `SELECT a.id FROM accounts a LEFT JOIN credit_balances cb ON a.id = cb.account_id WHERE cb.id IS NULL` should return 0 rows",
+        "priority": "high",
+        "dependencies": [
+          "105"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "107",
+        "title": "Update Background Job to Check Global Credits Before Processing",
+        "description": "Update the daily hunt orchestrator/background job to check global account credits before processing hunts and pass accountId to credit consumption functions.",
+        "details": "1. Find and update the daily hunt orchestrator job (likely in `apps/worker/src/jobs/` or similar):\n\n   a. Before processing each hunt:\n   - Get hunt's accountId\n   - Check global creditBalances for enabled channels\n   - Skip hunt if account has 0 credits for required channels (except WhatsApp)\n\n   b. When calling channel allocation or credit consumption:\n   - Pass accountId to `allocateAdsToChannels()`\n   - Pass accountId to `consumeCredit()`\n\n   c. Integrate with daily contact tracker:\n   - Use existing `createDailyContactTracker()` from task 42 if available\n   - Check `isAtLimit(huntId, hunt.dailyPacingLimit)` before sending\n   - Increment tracker after successful send\n\nPseudo-code:\n```typescript\nasync function processHunts() {\n  const activeHunts = await getActiveHuntsForProcessing();\n  \n  for (const hunt of activeHunts) {\n    const accountId = hunt.accountId;\n    \n    // Check global credits for enabled channels\n    const creditsMap = await getAccountChannelCreditsMap(accountId, db);\n    \n    const enabledChannels = getEnabledChannels(hunt.outreachSettings);\n    const hasCreditsForAnyChannel = enabledChannels.some(channel => \n      channel === EContactChannel.WHATSAPP_TEXT || // WhatsApp is unlimited\n      (creditsMap.get(channel) ?? 0) > 0\n    );\n    \n    if (!hasCreditsForAnyChannel) {\n      console.log(`Skipping hunt ${hunt.id}: no credits available`);\n      continue;\n    }\n    \n    // Process hunt with accountId context\n    await processHunt({\n      hunt,\n      accountId,\n      dailyPacingLimit: hunt.dailyPacingLimit,\n    });\n  }\n}\n\nasync function sendMessage({ accountId, huntId, channel, ... }) {\n  // Consume from global credits\n  const result = await consumeCredit({\n    accountId,\n    huntId,\n    channel,\n    messageId,\n    recipient,\n  });\n  \n  if (!result.success) {\n    throw new Error(result.error);\n  }\n}\n```",
+        "testStrategy": "1. Verify hunts are skipped when account has 0 SMS/Ringless credits\n2. Verify WhatsApp hunts still process (unlimited)\n3. Verify daily pacing limit is respected\n4. Verify credits are consumed from global creditBalances",
+        "priority": "high",
+        "dependencies": [
+          "98",
+          "99",
+          "106"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "108",
+        "title": "End-to-End Testing and Cleanup",
+        "description": "Perform comprehensive end-to-end testing of the refactored credits system and clean up any remaining references to huntChannelCredits.",
+        "details": "1. Search for remaining huntChannelCredits references:\n   ```bash\n   grep -r \"huntChannelCredits\" --include=\"*.ts\" --include=\"*.tsx\"\n   grep -r \"channelCredits\" --include=\"*.ts\" --include=\"*.tsx\"\n   ```\n\n2. Remove any remaining imports or usages:\n   - Check all files in `apps/web/src/`\n   - Check all files in `apps/worker/src/`\n   - Check `packages/db/src/`\n\n3. Update TypeScript types:\n   - Remove THuntChannelCredit from any shared type exports\n   - Update any function signatures that accepted channelCredits\n\n4. Test complete user flow:\n   a. Create new hunt without credit allocation\n   b. Verify hunt is created successfully\n   c. Check credits page shows global balance\n   d. Run background job processing\n   e. Verify credits are consumed from global balance\n   f. Verify creditTransactions are logged correctly\n\n5. Test edge cases:\n   a. Account with 0 SMS credits - should not send SMS\n   b. Account with 0 Ringless credits - should not send Ringless\n   c. Account with credits - should send successfully\n   d. WhatsApp always works regardless of balance\n   e. Daily pacing limit is enforced\n\n6. Clean up any TODO comments or deprecated code markers",
+        "testStrategy": "1. Full regression test of hunt creation flow\n2. Full regression test of message sending flow\n3. Verify no console errors or TypeScript errors\n4. Verify database integrity after migration\n5. Load test to verify concurrent credit consumption works correctly",
+        "priority": "medium",
+        "dependencies": [
+          "102",
+          "103",
+          "104",
+          "105",
+          "106",
+          "107"
+        ],
+        "status": "pending",
+        "subtasks": []
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-02-12T01:47:45.388Z",
-      "taskCount": 94,
-      "completedCount": 91,
+      "lastModified": "2026-02-16T14:08:14.726Z",
+      "taskCount": 108,
+      "completedCount": 92,
       "tags": [
         "master"
       ]
