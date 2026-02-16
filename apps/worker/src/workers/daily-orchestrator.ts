@@ -46,7 +46,10 @@ import { Job } from "bullmq";
 import { and, desc, eq, gte, inArray, lte, notInArray, sql } from "drizzle-orm";
 import { jobIds, RETRY_CONFIG } from "../config";
 import { smsQueue, voiceQueue, whatsappQueue } from "../queues";
-import { allocateAdsToChannels } from "../services/channel.service";
+import {
+  allocateAdsToChannels,
+  getAccountChannelCreditsMap,
+} from "../services/channel.service";
 import { personalizeMessage } from "../services/message.service";
 
 interface DailyOrchestratorJob {
@@ -218,6 +221,20 @@ async function processHunt(
 
   // Check if we haven't already contacted more ads than requested by the user
   if (dailyContactTracker.isAtLimit(huntId, hunt.dailyPacingLimit)) {
+    return 0;
+  }
+
+  // Check global credits before processing hunt
+  const creditsMap = await getAccountChannelCreditsMap(accountId, db);
+
+  // Determine which channels have credits (WhatsApp is always unlimited)
+  const hasCreditsForAnyChannel = Array.from(creditsMap.entries()).some(
+    ([channel, credits]) =>
+      channel === EContactChannel.WHATSAPP_TEXT || credits > 0,
+  );
+
+  if (!hasCreditsForAnyChannel) {
+    console.log(`Skipping hunt ${huntId}: no credits available for account ${accountId}`);
     return 0;
   }
 

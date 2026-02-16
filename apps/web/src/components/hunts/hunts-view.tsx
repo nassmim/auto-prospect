@@ -1,9 +1,9 @@
 "use client";
 
+import { fetchAccountHunts } from "@/actions/hunt.actions";
 import { HuntCard } from "@/components/hunts/hunt-card";
 import { pages } from "@/config/routes";
 import { swrKeys } from "@/config/swr-keys";
-import { fetchAccountHunts } from "@/actions/hunt.actions";
 import Link from "next/link";
 import useSWR from "swr";
 
@@ -34,7 +34,7 @@ export function HuntsView({ hunts: initialHunts }: HuntsViewProps) {
           <div>
             <h1 className="text-2xl font-bold text-zinc-100">Recherches</h1>
             <p className="mt-1 text-sm text-zinc-400">
-              Gérez vos recherches automatiques de véhicules
+              Gère tes recherches automatiques de véhicules
             </p>
           </div>
           <Link
@@ -80,7 +80,7 @@ export function HuntsView({ hunts: initialHunts }: HuntsViewProps) {
               Aucune recherche
             </h3>
             <p className="mb-6 text-sm text-zinc-400">
-              Créez votre première recherche pour commencer la prospection
+              Crées ta première recherche pour commencer la prospection
               automatique
             </p>
             <Link
