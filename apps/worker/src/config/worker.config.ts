@@ -81,6 +81,13 @@ export const RETRY_CONFIG = {
       delay: 2000,
     },
   },
+  WHATSAPP_SEND: {
+    attempts: 3,
+    backoff: {
+      type: 'exponential' as const,
+      delay: 5000,
+    },
+  },
   SCRAPING: {
     attempts: 2,
     backoff: {
