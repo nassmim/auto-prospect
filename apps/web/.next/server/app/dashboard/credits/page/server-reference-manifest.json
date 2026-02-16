@@ -1,19 +1,34 @@
 {
   "node": {
-    "004102d06d50d37387df4a46ba71866a9119bdb666": {
+    "0044030b0e17a97f37249a86a888b13e9bc81c7da9": {
       "workers": {
         "app/dashboard/credits/page": {
-          "moduleId": 89779,
+          "moduleId": 31851,
+          "async": false,
+          "exportedName": "signOut",
+          "filename": "Projets/auto-prospect-worktrees/fix/bulk-13022026/apps/web/src/actions/auth.actions.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/credits/page": "action-browser"
+      },
+      "exportedName": "signOut",
+      "filename": "Projets/auto-prospect-worktrees/fix/bulk-13022026/apps/web/src/actions/auth.actions.ts"
+    },
+    "001fa0b3b1cb59e6b8a24e2f7fc9423f3cc2a63247": {
+      "workers": {
+        "app/dashboard/credits/page": {
+          "moduleId": 31851,
           "async": false,
           "exportedName": "fetchAccountCredits",
-          "filename": "Projets/auto-prospect-worktrees/config/mono-repo/apps/web/src/actions/credit.actions.ts"
+          "filename": "Projets/auto-prospect-worktrees/fix/bulk-13022026/apps/web/src/actions/credit.actions.ts"
         }
       },
       "layer": {
         "app/dashboard/credits/page": "action-browser"
       },
       "exportedName": "fetchAccountCredits",
-      "filename": "Projets/auto-prospect-worktrees/config/mono-repo/apps/web/src/actions/credit.actions.ts"
+      "filename": "Projets/auto-prospect-worktrees/fix/bulk-13022026/apps/web/src/actions/credit.actions.ts"
     }
   },
   "edge": {}

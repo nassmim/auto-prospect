@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { pages } from "@/config/routes";
+import { getAccountTemplates } from "@/services/message.service";
 import { huntFormSchema, type THuntFormData } from "@/validation-schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
@@ -22,7 +23,6 @@ import { useForm, useWatch } from "react-hook-form";
 import { OutreachSettings } from "./outreach-settings";
 import { SearchBuilderTab } from "./search-builder-tab";
 import { UrlPasteTab } from "./url-paste-tab";
-import { getAccountTemplates } from "@/services/message.service";
 
 type HuntFormProps = {
   templates: Awaited<ReturnType<typeof getAccountTemplates>>;
@@ -96,11 +96,6 @@ export function HuntForm({ templates, hunt }: HuntFormProps) {
         sms: null,
         ringlessVoice: null,
       },
-      channelCredits: {
-        sms: 0,
-        whatsapp: 0,
-        ringlessVoice: 0,
-      },
     },
   });
 
@@ -115,20 +110,25 @@ export function HuntForm({ templates, hunt }: HuntFormProps) {
   const outreachSettings = useWatch({
     control,
     name: "outreachSettings",
-    defaultValue: { leboncoin: false, whatsapp: false, sms: false, ringlessVoice: false },
+    defaultValue: {
+      leboncoin: false,
+      whatsapp: false,
+      sms: false,
+      ringlessVoice: false,
+    },
   });
 
   const templateIds = useWatch({
     control,
     name: "templateIds",
-    defaultValue: { leboncoin: null, whatsapp: null, sms: null, ringlessVoice: null },
+    defaultValue: {
+      leboncoin: null,
+      whatsapp: null,
+      sms: null,
+      ringlessVoice: null,
+    },
   });
 
-  const channelCredits = useWatch({
-    control,
-    name: "channelCredits",
-    defaultValue: { sms: 0, whatsapp: 0, ringlessVoice: 0 },
-  });
 
   const onSubmit = async (data: THuntFormData) => {
     setError(null);
@@ -167,8 +167,17 @@ export function HuntForm({ templates, hunt }: HuntFormProps) {
 
       router.push(pages.hunts.list);
     } catch (err) {
-      console.error(hunt ? "Failed to update hunt:" : "Failed to create hunt:", err);
-      setError(err instanceof Error ? err.message : hunt ? "Failed to update hunt" : "Failed to create hunt");
+      console.error(
+        hunt ? "Failed to update hunt:" : "Failed to create hunt:",
+        err,
+      );
+      setError(
+        err instanceof Error
+          ? err.message
+          : hunt
+            ? "Failed to update hunt"
+            : "Failed to create hunt",
+      );
     }
   };
 
@@ -272,7 +281,7 @@ export function HuntForm({ templates, hunt }: HuntFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-sm font-medium text-zinc-300">
-                  Limite de contacts par jour (optionnel)
+                  Limite de contacts par jour
                 </FormLabel>
                 <FormControl>
                   <Input
@@ -282,15 +291,20 @@ export function HuntForm({ templates, hunt }: HuntFormProps) {
                     max="1000"
                     value={field.value ?? ""}
                     onChange={(e) =>
-                      field.onChange(e.target.value ? parseInt(e.target.value) : null)
+                      field.onChange(
+                        e.target.value ? parseInt(e.target.value) : null,
+                      )
                     }
-                    placeholder="Illimité"
+                    placeholder="50"
                     className="w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-2 text-zinc-200 placeholder-zinc-500 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
                   />
                 </FormControl>
                 <p className="text-xs text-zinc-500 mt-1">
-                  Maximum de contacts à effectuer par jour, tous canaux confondus.
-                  Laissez vide pour aucune limite.
+                  Maximum de contacts à effectuer par jour, tous canaux
+                  confondus. Laisse vide pour aucune limite (non recommandé car
+                  cela va consommer plus rapidement tes crédits alors que tu
+                  n&apos;auras sûrement pas le temps de gérer tous les prospects
+                  générés)
                 </p>
                 <FormMessage className="text-red-400" />
               </FormItem>
@@ -310,14 +324,15 @@ export function HuntForm({ templates, hunt }: HuntFormProps) {
             }
           }
           templateIds={
-            templateIds ?? { leboncoin: null, whatsapp: null, sms: null, ringlessVoice: null }
-          }
-          channelCredits={
-            channelCredits ?? { sms: 0, whatsapp: 0, ringlessVoice: 0 }
+            templateIds ?? {
+              leboncoin: null,
+              whatsapp: null,
+              sms: null,
+              ringlessVoice: null,
+            }
           }
           onOutreachChange={(value) => setValue("outreachSettings", value)}
           onTemplateChange={(value) => setValue("templateIds", value)}
-          onChannelCreditsChange={(value) => setValue("channelCredits", value)}
         />
 
         {/* Actions */}
@@ -326,14 +341,14 @@ export function HuntForm({ templates, hunt }: HuntFormProps) {
             type="button"
             onClick={() => router.back()}
             variant="outline"
-            className="flex-1 rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-2 font-medium text-zinc-300 transition-colors hover:bg-zinc-900"
+            className="flex-1 rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-2 font-medium text-zinc-300 transition-colors hover:bg-zinc-900 cursor-pointer"
           >
             Annuler
           </Button>
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="flex-1 rounded-lg bg-amber-500 px-4 py-2 font-medium text-black transition-colors hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex-1 rounded-lg bg-amber-500 px-4 py-2 font-medium text-black transition-colors hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
           >
             {isSubmitting
               ? "Création..."

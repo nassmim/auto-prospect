@@ -52,14 +52,14 @@ export default function Error({
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
           <Button
             onClick={reset}
-            className="bg-amber-500 text-zinc-950 hover:bg-amber-400"
+            className="bg-amber-500 text-zinc-950 hover:bg-amber-400 cursor-pointer"
           >
             Réessayer
           </Button>
           <Link href={pages.dashboard}>
             <Button
               variant="outline"
-              className="w-full border-zinc-800 sm:w-auto"
+              className="w-full border-zinc-800 sm:w-auto cursor-pointer"
             >
               Retour au dashboard
             </Button>

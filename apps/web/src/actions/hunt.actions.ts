@@ -111,45 +111,14 @@ export async function createHunt(data: unknown) {
       );
     }
 
-    // Insert channel credit allocations for enabled channels
-    const channelCreditsToInsert = [];
-
-    if (
-      validatedData.channelCredits?.sms &&
-      validatedData.channelCredits.sms > 0
-    ) {
-      channelCreditsToInsert.push({
-        huntId: newHunt.id,
-        channel: EContactChannel.SMS,
-        creditsAllocated: validatedData.channelCredits.sms,
-        creditsConsumed: 0,
-      });
-    }
-
     // WhatsApp: auto-allocate daily limit (unlimited for users, hard limit to prevent abuse)
     if (validatedData.outreachSettings?.whatsapp) {
-      channelCreditsToInsert.push({
+      await tx.insert(huntChannelCredits).values({
         huntId: newHunt.id,
         channel: EContactChannel.WHATSAPP_TEXT,
         creditsAllocated: WHATSAPP_DAILY_LIMIT,
         creditsConsumed: 0,
       });
-    }
-
-    if (
-      validatedData.channelCredits?.ringlessVoice &&
-      validatedData.channelCredits.ringlessVoice > 0
-    ) {
-      channelCreditsToInsert.push({
-        huntId: newHunt.id,
-        channel: EContactChannel.RINGLESS_VOICE,
-        creditsAllocated: validatedData.channelCredits.ringlessVoice,
-        creditsConsumed: 0,
-      });
-    }
-
-    if (channelCreditsToInsert.length > 0) {
-      await tx.insert(huntChannelCredits).values(channelCreditsToInsert);
     }
 
     return newHunt;

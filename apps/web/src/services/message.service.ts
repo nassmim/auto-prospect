@@ -6,7 +6,7 @@
 import { CACHE_TAGS } from "@/lib/cache.config";
 import { createDrizzleSupabaseClient } from "@/lib/db";
 import { getUserAccount } from "@/services/account.service";
-import { TDBWithTokenClient } from "@auto-prospect/db";
+import { getDBAdminClient, TDBWithTokenClient } from "@auto-prospect/db";
 import { updateTag } from "next/cache";
 
 export type TTemplateVariables = {
@@ -19,7 +19,6 @@ export type TTemplateVariables = {
   vendeur_nom?: string;
 };
 
-
 /**
  * Fetch all templates for the user's account
  */
@@ -28,16 +27,13 @@ export async function getAccountTemplates() {
   const account = await getUserAccount(dbClient, {
     columnsToKeep: { id: true },
   });
-  return getCachedAccountTemplates(account.id, dbClient);
+  return getTemplatesByAccountId(account.id);
 }
 
 /**
  * Internal cached function for account templates
  */
-async function getCachedAccountTemplates(
-  accountId: string,
-  dbClient: TDBWithTokenClient,
-) {
+async function getTemplatesByAccountId(accountId: string) {
   "use cache";
 
   const { cacheTag } = await import("next/cache");
@@ -45,23 +41,21 @@ async function getCachedAccountTemplates(
 
   cacheTag(CACHE_TAGS.templatesByAccount(accountId));
 
-  const client = dbClient || (await createDrizzleSupabaseClient());
+  const dbClient = getDBAdminClient();
 
   try {
     // Fetch all templates for this account
-    const templates = await client.rls(async (tx) => {
-      return tx.query.messageTemplates.findMany({
-        where: (table, { eq }) => eq(table.accountId, accountId),
-        with: {
-          account: {
-            columns: {
-              id: true,
-              name: true,
-            },
+    const templates = await dbClient.query.messageTemplates.findMany({
+      where: (table, { eq }) => eq(table.accountId, accountId),
+      with: {
+        account: {
+          columns: {
+            id: true,
+            name: true,
           },
         },
-        orderBy: (table, { desc }) => [desc(table.createdAt)],
-      });
+      },
+      orderBy: (table, { desc }) => [desc(table.createdAt)],
     });
 
     return templates;

@@ -1,3 +1,0 @@
-module.exports=[93695,(a,b,c)=>{b.exports=a.x("next/dist/shared/lib/no-fallback-error.external.js",()=>require("next/dist/shared/lib/no-fallback-error.external.js"))},81729,a=>{a.n(a.i(70201))},48252,a=>{a.n(a.i(18941))},61100,a=>{a.n(a.i(96217))},12462,a=>{a.n(a.i(88787))},63926,a=>{a.n(a.i(54157))},7535,a=>{a.n(a.i(91369))},25183,a=>{a.n(a.i(68180))},6662,a=>{a.n(a.i(83017))},99920,a=>{"use strict";a.i(54127);var b=a.i(17667),c=a.i(67304);function d(){(0,b.redirect)(c.pages.leads.list)}a.s(["default",()=>d])}];
-
-//# sourceMappingURL=%5Broot-of-the-server%5D__7eed60c7._.js.map

@@ -13,13 +13,13 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { pages } from "@/config/routes";
+import { createClient } from "@/lib/supabase/client";
 import { EContactChannel } from "@auto-prospect/shared/src/config/message.config";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { createClient } from "../../../../../packages/db/src/supabase/client";
 import { AudioRecorder } from "./audio-recorder";
 
 // Form schema without Blob (Blob can't be in react-hook-form)

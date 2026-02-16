@@ -1,4 +1,65 @@
 {
-  "node": {},
+  "node": {
+    "0044030b0e17a97f37249a86a888b13e9bc81c7da9": {
+      "workers": {
+        "app/dashboard/leads/[id]/page": {
+          "moduleId": 1460,
+          "async": false,
+          "exportedName": "signOut",
+          "filename": "Projets/auto-prospect-worktrees/fix/bulk-13022026/apps/web/src/actions/auth.actions.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/leads/[id]/page": "action-browser"
+      },
+      "exportedName": "signOut",
+      "filename": "Projets/auto-prospect-worktrees/fix/bulk-13022026/apps/web/src/actions/auth.actions.ts"
+    },
+    "f01d3f4afc3fb8071564c06a521066ccd927b05b86": {
+      "workers": {
+        "app/dashboard/leads/[id]/page": {
+          "moduleId": 1460,
+          "async": false,
+          "exportedName": "$$RSC_SERVER_CACHE_1",
+          "filename": "Projets/auto-prospect-worktrees/fix/bulk-13022026/apps/web/src/services/lead.service.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/leads/[id]/page": "rsc"
+      },
+      "exportedName": "$$RSC_SERVER_CACHE_1",
+      "filename": "Projets/auto-prospect-worktrees/fix/bulk-13022026/apps/web/src/services/lead.service.ts"
+    },
+    "f02c082d7d85ac2279741e7475029bc5f987c216b8": {
+      "workers": {
+        "app/dashboard/leads/[id]/page": {
+          "moduleId": 1460,
+          "async": false,
+          "exportedName": "$$RSC_SERVER_CACHE_2",
+          "filename": "Projets/auto-prospect-worktrees/fix/bulk-13022026/apps/web/src/services/lead.service.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/leads/[id]/page": "rsc"
+      },
+      "exportedName": "$$RSC_SERVER_CACHE_2",
+      "filename": "Projets/auto-prospect-worktrees/fix/bulk-13022026/apps/web/src/services/lead.service.ts"
+    },
+    "f0fd92fb910630e8a4e347926300fe3acd9ac68bad": {
+      "workers": {
+        "app/dashboard/leads/[id]/page": {
+          "moduleId": 1460,
+          "async": false,
+          "exportedName": "$$RSC_SERVER_CACHE_0",
+          "filename": "Projets/auto-prospect-worktrees/fix/bulk-13022026/apps/web/src/services/lead.service.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/leads/[id]/page": "rsc"
+      },
+      "exportedName": "$$RSC_SERVER_CACHE_0",
+      "filename": "Projets/auto-prospect-worktrees/fix/bulk-13022026/apps/web/src/services/lead.service.ts"
+    }
+  },
   "edge": {}
 }
