@@ -2,7 +2,7 @@ import { CACHE_TAGS } from "@/lib/cache.config";
 import { createDrizzleSupabaseClient } from "@/lib/db";
 import { getUserAccount } from "@/services/account.service";
 import { getContactedLeads, getTotalLeads } from "@/services/lead.service";
-import { TDBWithTokenClient } from "@auto-prospect/db";
+import { getDBAdminClient, TDBWithTokenClient } from "@auto-prospect/db";
 import { HUNT_WITH_RELATIONS, THuntSummary } from "@auto-prospect/shared";
 import { EHuntStatus } from "@auto-prospect/shared/src/config/hunt.config";
 import { cacheTag, updateTag } from "next/cache";
@@ -16,33 +16,26 @@ export async function getAccountHuntsConfig() {
   const account = await getUserAccount(dbClient, {
     columnsToKeep: { id: true },
   });
-  return getCachedAccountHuntsConfig(account.id, dbClient);
+  return getCachedAccountHuntsConfig(account.id);
 }
 
 /**
  * Internal cached function for hunt configurations
  */
-async function getCachedAccountHuntsConfig(
-  accountId: string,
-  dbClient?: TDBWithTokenClient,
-) {
+async function getCachedAccountHuntsConfig(accountId: string) {
   "use cache";
 
   cacheTag(CACHE_TAGS.huntsByAccount(accountId));
 
-  const client = dbClient || (await createDrizzleSupabaseClient());
+  const dbClient = getDBAdminClient();
 
-  // Use RLS wrapper to ensure user can only see their account's hunts
-  const huntsData = await client.rls(async (tx) => {
-    return tx.query.hunts.findMany({
-      orderBy: (table, { desc }) => [desc(table.createdAt)],
-      with: HUNT_WITH_RELATIONS,
-    });
+  const huntsData = await dbClient.query.hunts.findMany({
+    orderBy: (table, { desc }) => [desc(table.createdAt)],
+    with: HUNT_WITH_RELATIONS,
   });
 
   return huntsData;
 }
-
 
 /**
  * Fetches all hunts for the current user's account
