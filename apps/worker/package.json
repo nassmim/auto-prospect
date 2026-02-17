@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "dotenvx run -- tsx watch src/index.ts",
     "build": "echo 'no build needed - tsx runs ts directly'",
-    "start": "dotenvx run -- tsx src/index.ts"
+    "start": "dotenvx run -- tsx src/index.ts",
+    "test": "vitest run"
   },
   "dependencies": {
     "@auto-prospect/db": "workspace:*",
@@ -19,6 +20,7 @@
   },
   "devDependencies": {
     "@types/cors": "^2.8.0",
-    "@types/express": "^5.0.0"
+    "@types/express": "^5.0.0",
+    "vitest": "^4.0.18"
   }
 }
