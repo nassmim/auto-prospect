@@ -167,16 +167,29 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
     setIsSendingWhatsApp(true);
 
     try {
-      // Send the WhatsApp message (handles everything server-side)
       const result = await sendWhatsAppTextMessage(lead.id);
 
       if (!result.success) {
-        throw new Error(result.errorCode || "Failed to send WhatsApp message");
+        const errorMessages: Record<string, string> = {
+          NO_DEFAULT_TEMPLATE:
+            "Aucun template WhatsApp par défaut configuré. Allez dans Modèles pour en définir un.",
+          RECIPIENT_PHONE_INVALID:
+            "Numéro de téléphone du destinataire invalide.",
+          SESSION_NOT_FOUND:
+            "Session WhatsApp non connectée. Configurez WhatsApp dans les paramètres.",
+          SESSION_EXPIRED:
+            "Session WhatsApp expirée. Reconnectez-vous dans les paramètres.",
+          PHONE_INVALID:
+            "Numéro WhatsApp non configuré dans les paramètres.",
+        };
+        const message =
+          errorMessages[result.errorCode || ""] ||
+          "Erreur lors de l'envoi du message WhatsApp";
+        alert(message);
+        return;
       }
 
-      // Refresh lead data to show the new message
       mutate();
-
       alert("Message WhatsApp envoyé avec succès");
     } catch (err) {
       console.error("Failed to send WhatsApp message:", err);
