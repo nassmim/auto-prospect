@@ -27,6 +27,7 @@ export type TWhatsAppErrorCode = EWhatsAppErrorCode;
 
 export enum EMessageErrorCode {
   MESSAGE_SEND_FAILED = "MESSAGE_SEND_FAILED",
+  NO_DEFAULT_TEMPLATE = "NO_DEFAULT_TEMPLATE",
 }
 
 export type TMessageErrorCode = EMessageErrorCode;
