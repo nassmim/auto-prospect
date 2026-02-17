@@ -5,6 +5,17 @@ import {
   fetchAccountHunts,
   updateHuntStatus,
 } from "@/actions/hunt.actions";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -83,10 +94,6 @@ export function HuntCard({ hunt, onMutate }: HuntCardProps) {
   };
 
   const handleDelete = async () => {
-    if (!confirm("Es-tu sûr de vouloir supprimer cette recherche ?")) {
-      return;
-    }
-
     setIsDeleting(true);
 
     // Optimistic deletion - remove from list
@@ -239,14 +246,28 @@ export function HuntCard({ hunt, onMutate }: HuntCardProps) {
         >
           {isTogglingStatus ? "..." : isActive ? "Mettre en pause" : "Activer"}
         </Button>
-        <Button
-          variant="destructive"
-          size="sm"
-          onClick={handleDelete}
-          disabled={isDeleting}
-        >
-          {isDeleting ? "..." : "Supprimer"}
-        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="destructive" size="sm" disabled={isDeleting}>
+              {isDeleting ? "..." : "Supprimer"}
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Supprimer cette recherche ?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Cette action est irréversible. La recherche et toutes ses
+                données associées seront définitivement supprimées.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annuler</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete}>
+                Supprimer
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </CardFooter>
     </Card>
   );

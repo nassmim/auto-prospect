@@ -2,6 +2,16 @@
 
 import { updateAccountSettings } from "@/actions/account.actions";
 import { addTeamMember, removeTeamMember } from "@/actions/team.actions";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import type { TAccount } from "@/schema/account.schema";
 import type { TTeamMembersWithAccount } from "@/types/team.types";
 import {
@@ -69,6 +79,7 @@ export function TeamTab({ account, userRole, initialMembers }: TeamTabProps) {
 
   // Local state for members
   const [members, setMembers] = useState(initialMembers);
+  const [memberToRemove, setMemberToRemove] = useState<string | null>(null);
 
   const canEdit = userRole === "owner" || userRole === "admin";
   const isOwner = userRole === "owner";
@@ -133,17 +144,17 @@ export function TeamTab({ account, userRole, initialMembers }: TeamTabProps) {
     });
   };
 
-  const handleRemoveMember = (memberId: string) => {
-    if (!canEdit) return;
-
-    if (!confirm("Es-tu sûr de vouloir retirer ce membre ?")) return;
+  const handleRemoveMember = () => {
+    if (!canEdit || !memberToRemove) return;
 
     setError(null);
+    const id = memberToRemove;
+    setMemberToRemove(null);
 
     startTransition(async () => {
       try {
-        await removeTeamMember(memberId);
-        setMembers(members.filter((m) => m.id !== memberId));
+        await removeTeamMember(id);
+        setMembers(members.filter((m) => m.id !== id));
         setSuccess("Membre retiré");
         setTimeout(() => setSuccess(null), 3000);
       } catch (err) {
@@ -325,7 +336,7 @@ export function TeamTab({ account, userRole, initialMembers }: TeamTabProps) {
                   <td className="px-6 py-4 whitespace-nowrap text-right">
                     {canEdit && (
                       <button
-                        onClick={() => handleRemoveMember(member.id)}
+                        onClick={() => setMemberToRemove(member.id)}
                         disabled={isPending}
                         className="text-sm text-red-500 hover:text-red-400 disabled:opacity-50"
                       >
@@ -392,6 +403,27 @@ export function TeamTab({ account, userRole, initialMembers }: TeamTabProps) {
           </div>
         </div>
       )}
+
+      <AlertDialog
+        open={!!memberToRemove}
+        onOpenChange={(open) => !open && setMemberToRemove(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Retirer ce membre ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ce membre perdra l&apos;accès à l&apos;organisation. Vous pourrez
+              l&apos;inviter à nouveau ultérieurement.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={handleRemoveMember}>
+              Retirer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Status Messages */}
       {(success || error) && (

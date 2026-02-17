@@ -1,6 +1,17 @@
 "use client";
 
 import { deleteTemplate } from "@/actions/message.actions";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,10 +37,6 @@ export function TemplateCard({ template }: TemplateCardProps) {
   const router = useRouter();
 
   const handleDelete = async () => {
-    if (!confirm("Es-tu sûr de vouloir supprimer ce template ?")) {
-      return;
-    }
-
     setIsDeleting(true);
 
     try {
@@ -37,7 +44,6 @@ export function TemplateCard({ template }: TemplateCardProps) {
       router.refresh();
     } catch (error) {
       console.error("Failed to delete template:", error);
-      alert("Erreur lors de la suppression du template");
       setIsDeleting(false);
     }
   };
@@ -90,27 +96,45 @@ export function TemplateCard({ template }: TemplateCardProps) {
             )}
           </div>
 
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={handleDelete}
-            disabled={isDeleting}
-            className="opacity-0 transition-opacity group-hover:opacity-100"
-          >
-            <svg
-              className="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-              />
-            </svg>
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                disabled={isDeleting}
+                className="opacity-0 transition-opacity group-hover:opacity-100"
+              >
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
+                </svg>
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Supprimer ce template ?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Cette action est irréversible. Le template sera définitivement
+                  supprimé.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDelete}>
+                  Supprimer
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
 
         <h3 className="mt-3 font-semibold text-zinc-100">{template.name}</h3>

@@ -19,8 +19,8 @@ export async function generateMetadata({
       ? "Créer un template vocal"
       : "Créer un template texte",
     description: isVoiceChannel
-      ? "Enregistrez ou importez un message vocal pour vos appels automatisés"
-      : "Créez un message avec des variables personnalisables pour WhatsApp et SMS",
+      ? "Enregistre ou importe un message vocal pour tes appels automatisés"
+      : "Crée un message avec des variables personnalisables pour WhatsApp",
     canonical: `/templates/new${channel ? `?channel=${channel}` : ""}`,
   });
 }
