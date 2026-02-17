@@ -59,7 +59,7 @@ export function FiltersTab({ settings }: FiltersTabProps) {
           Filtres de recherche
         </h2>
         <p className="mt-1 text-sm text-zinc-500">
-          Configurez les filtres appliqués automatiquement à vos recherches
+          Configure les filtres appliqués automatiquement à tes recherches
         </p>
       </div>
 

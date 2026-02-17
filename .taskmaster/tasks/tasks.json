@@ -2482,13 +2482,349 @@
         "status": "done",
         "subtasks": [],
         "updatedAt": "2026-02-16T19:51:39.787Z"
+      },
+      {
+        "id": "109",
+        "title": "Remove isDefault column from database schema",
+        "description": "Remove the `isDefault` boolean column from the `messageTemplates` table in the Drizzle schema and generate a migration to apply this change to the database.",
+        "details": "1. Open `packages/db/src/schema/message.schema.ts`\n2. Remove line 67: `isDefault: boolean(\"is_default\").notNull().default(false),`\n3. Run `pnpm db:generate` to generate the migration SQL\n4. Review the generated migration in `supabase/migrations/` - it should contain an ALTER TABLE DROP COLUMN statement\n5. Run `pnpm db:migrate` to apply the migration\n\nIMPORTANT: The Drizzle migration system handles the column removal automatically. No manual SQL needed.",
+        "testStrategy": "1. Verify migration generates correctly without interactive prompts\n2. Run `pnpm db:migrate` and confirm no errors\n3. Query the database to confirm `is_default` column no longer exists: `SELECT column_name FROM information_schema.columns WHERE table_name = 'message_templates'`\n4. Verify the application still starts without schema errors",
+        "priority": "high",
+        "dependencies": [],
+        "status": "cancelled",
+        "subtasks": [],
+        "updatedAt": "2026-02-17T15:30:10.297Z"
+      },
+      {
+        "id": "110",
+        "title": "Remove isDefault from validation schemas",
+        "description": "Remove the `isDefault: z.boolean()` field from all template validation schemas in the template validation file.",
+        "details": "File: `apps/web/src/validation-schemas/template.validation.ts`\n\n1. Remove `isDefault: z.boolean(),` from `textTemplateSchema` (line 17)\n2. Remove `isDefault: z.boolean(),` from `voiceTemplateSchema` (line 36)\n3. Remove `isDefault: z.boolean(),` from `voiceTemplateClientSchema` (line 54)\n\nThe schemas will now only contain: name, channel, content (text) or audioUrl/audioDuration (voice).\n\nAlso update the TypeScript types that are inferred from these schemas - they will automatically update since they use `z.infer<>`.",
+        "testStrategy": "1. Run TypeScript compiler to verify no type errors: `pnpm tsc --noEmit`\n2. Verify that form components depending on these schemas show type errors (expected, will be fixed in task 112)\n3. Test that validation still works for remaining fields",
+        "priority": "high",
+        "dependencies": [
+          "109"
+        ],
+        "status": "cancelled",
+        "subtasks": [],
+        "updatedAt": "2026-02-17T15:30:13.024Z"
+      },
+      {
+        "id": "111",
+        "title": "Remove isDefault logic from server actions",
+        "description": "Remove all isDefault-related logic from the message.actions.ts file, including the logic that unsets other default templates and the isDefault field from insert/update payloads.",
+        "details": "File: `apps/web/src/actions/message.actions.ts`\n\n1. In `createTemplate` function:\n   - Remove lines 63-75: the conditional block that unsets other default templates when `isDefault: true`\n   - Remove `isDefault: validatedData.isDefault || false,` from line 81 in templateValues\n\n2. In `updateTemplate` function:\n   - Remove `isDefault?: boolean;` from the data parameter type (line 165)\n   - Remove `isDefault?: boolean;` from the updates type (line 174)\n   - Remove the entire conditional block for isDefault handling (lines 182-224)\n\nPseudo-code for createTemplate after changes:\n```typescript\nasync function createTemplate<T>(data: unknown, schema: T, channel: TContactChannel) {\n  // Validate with Zod\n  const parseResult = schema.safeParse(data);\n  // ... existing validation ...\n  \n  // Remove: isDefault unset logic\n  \n  let templateValues = {\n    accountId,\n    name: validatedData.name,\n    channel: validatedData.channel as TContactChannel,\n    // Remove: isDefault field\n    audioUrl: \"\",\n    audioDuration: 0,\n    content: \"\",\n  };\n  // ... rest of function\n}\n```",
+        "testStrategy": "1. Run TypeScript compiler to verify no type errors\n2. Test creating a text template - should work without isDefault field\n3. Test creating a voice template - should work without isDefault field\n4. Test updating a template - should work without isDefault field\n5. Verify no database errors when inserting (column no longer exists after task 109)",
+        "priority": "high",
+        "dependencies": [
+          "109",
+          "110"
+        ],
+        "status": "cancelled",
+        "subtasks": [],
+        "updatedAt": "2026-02-17T15:30:15.134Z"
+      },
+      {
+        "id": "112",
+        "title": "Remove isDefault UI from template forms",
+        "description": "Remove the isDefault checkbox and related form logic from both TextTemplateForm and VoiceTemplateForm components.",
+        "details": "**File 1: `apps/web/src/components/templates/text-template-form.tsx`**\n1. Remove `isDefault: false` from defaultValues (line 62)\n2. Remove the entire FormField for isDefault (lines 250-272) - the checkbox with label \"Définir comme template par défaut...\"\n3. Remove `isDefault: data.isDefault` from the createTextTemplate call (line 112)\n\n**File 2: `apps/web/src/components/templates/voice-template-form.tsx`**\n1. Remove `isDefault: z.boolean()` from voiceTemplateFormSchema (line 31)\n2. Remove `isDefault: false` from defaultValues (line 51)\n3. Remove the entire FormField for isDefault (lines 233-253)\n4. Remove `isDefault: data.isDefault` from the createVoiceTemplate call (line 136)\n\nBoth forms should still have: name field, channel select (text only), content textarea/audio recorder, variable toolbar (text only), preview, and action buttons.",
+        "testStrategy": "1. Load the /templates/new page and verify no isDefault checkbox appears\n2. Create a text template - should work without isDefault\n3. Create a voice template - should work without isDefault\n4. Verify form validation still works for remaining fields\n5. Visual regression check - forms should look clean without the checkbox",
+        "priority": "high",
+        "dependencies": [
+          "110",
+          "111"
+        ],
+        "status": "cancelled",
+        "subtasks": [],
+        "updatedAt": "2026-02-17T15:30:17.307Z"
+      },
+      {
+        "id": "113",
+        "title": "Remove isDefault badge from template card",
+        "description": "Remove the 'Défaut' badge display from the TemplateCard component that shows when a template is marked as default.",
+        "details": "File: `apps/web/src/components/templates/template-card.tsx`\n\n1. Remove the conditional badge rendering (lines 84-91):\n```tsx\n// Remove this entire block:\n{template.isDefault && (\n  <Badge\n    variant=\"outline\"\n    className=\"bg-amber-900/30 text-amber-500 border-amber-500/20\"\n  >\n    Défaut\n  </Badge>\n)}\n```\n\nThe card header will now only show the template type icon (voice mic or text document) without any badge. The channel badge in CardContent stays.\n\nNote: The `MessageTemplate` type from message.service.ts may still include `isDefault` - this is fine as it's a database return type that will be updated when the schema changes propagate.",
+        "testStrategy": "1. Load the /templates page with existing templates\n2. Verify no 'Défaut' badges appear on any template cards\n3. Verify other card elements still display correctly (name, channel badge, content preview)\n4. Test delete functionality still works\n5. Visual check that card layout looks balanced without the badge",
+        "priority": "medium",
+        "dependencies": [
+          "109"
+        ],
+        "status": "cancelled",
+        "subtasks": [],
+        "updatedAt": "2026-02-17T15:30:19.498Z"
+      },
+      {
+        "id": "114",
+        "title": "Update daily orchestrator to use per-hunt templates",
+        "description": "Modify the daily orchestrator worker to use the existing `templateIds` JSONB field on hunts instead of querying for `isDefault: true` templates globally.",
+        "details": "File: `apps/worker/src/workers/daily-orchestrator.ts`\n\nThe hunt schema already has `templateIds: jsonb('template_ids').$type<TMessageTemplateIds>()` where TMessageTemplateIds = { whatsapp?: string, sms?: string, ringlessVoice?: string }.\n\n**Changes to processHunt function:**\n\n1. Remove the isDefault template query (lines 329-340):\n```typescript\n// Remove this:\nconst templates = await db.query.messageTemplates.findMany({\n  where: and(\n    eq(messageTemplates.accountId, accountId),\n    eq(messageTemplates.isDefault, true),\n  ),\n});\nconst templatesByChannel = new Map(templates.map((t) => [t.channel as string, t]));\n```\n\n2. Replace with per-hunt template fetch using `hunt.templateIds`:\n```typescript\n// Fetch templates by IDs from hunt.templateIds\nconst templateIds = hunt.templateIds || {};\nconst templateIdList = Object.values(templateIds).filter((id): id is string => !!id);\n\nconst templates = templateIdList.length > 0\n  ? await db.query.messageTemplates.findMany({\n      where: inArray(messageTemplates.id, templateIdList),\n    })\n  : [];\n\nconst templatesById = new Map(templates.map((t) => [t.id, t]));\n\n// Create channel to template map from hunt.templateIds\nconst templatesByChannel = new Map<string, typeof templates[0]>();\nif (templateIds.whatsapp && templatesById.has(templateIds.whatsapp)) {\n  templatesByChannel.set(EContactChannel.WHATSAPP_TEXT, templatesById.get(templateIds.whatsapp)!);\n}\nif (templateIds.sms && templatesById.has(templateIds.sms)) {\n  templatesByChannel.set(EContactChannel.SMS, templatesById.get(templateIds.sms)!);\n}\nif (templateIds.ringlessVoice && templatesById.has(templateIds.ringlessVoice)) {\n  templatesByChannel.set(EContactChannel.RINGLESS_VOICE, templatesById.get(templateIds.ringlessVoice)!);\n}\n```\n\n3. In the allocation loop, if no template is configured for a channel, log a warning and skip:\n```typescript\nconst template = templatesByChannel.get(allocation.channel);\nif (!template) {\n  console.warn(`Hunt ${huntId}: No template configured for channel ${allocation.channel}, skipping`);\n  continue;\n}\n```",
+        "testStrategy": "1. Unit test: Mock a hunt with templateIds set, verify correct templates are fetched\n2. Unit test: Verify hunt without templateIds for a channel skips that channel\n3. Integration test: Create a hunt with specific templateIds, run orchestrator, verify correct messages sent\n4. Verify log warnings appear when template is missing for an enabled channel\n5. Test backward compatibility: hunts with null templateIds should gracefully skip all channels",
+        "priority": "high",
+        "dependencies": [
+          "109"
+        ],
+        "status": "cancelled",
+        "subtasks": [],
+        "updatedAt": "2026-02-17T15:30:21.849Z"
+      },
+      {
+        "id": "115",
+        "title": "Update WhatsApp action to accept message content parameter",
+        "description": "Modify the sendWhatsAppTextMessage action to accept a pre-rendered message content string instead of looking up the default template internally.",
+        "details": "File: `apps/web/src/actions/whatsapp.actions.ts`\n\n**Update function signature:**\n```typescript\nexport const sendWhatsAppTextMessage = async (\n  leadId: string,\n  messageContent: string, // New parameter\n): Promise<SendWhatsAppTextMessageResult> => {\n```\n\n**Remove template lookup (lines 338-356):**\n```typescript\n// Remove this entire block:\nconst template = await dbClient.rls((tx) =>\n  tx.query.messageTemplates.findFirst({\n    where: (table, { eq, and }) =>\n      and(\n        eq(table.accountId, lead.accountId),\n        eq(table.channel, EContactChannel.WHATSAPP_TEXT),\n        eq(table.isDefault, true),\n      ),\n  }),\n);\n\nconst variables = extractLeadVariables(lead);\nconst defaultMessage = `Bonjour...`;\nconst renderedMessage = template\n  ? renderMessageTemplate(template.content || defaultMessage, variables)\n  : defaultMessage;\n```\n\n**Replace with validation:**\n```typescript\n// Validate message content\nif (!messageContent || messageContent.trim().length === 0) {\n  return {\n    success: false,\n    errorCode: EMessageErrorCode.MESSAGE_CONTENT_REQUIRED,\n  };\n}\n\nconst renderedMessage = messageContent.trim();\n```\n\n**Update message logging to use null templateId:**\n```typescript\nawait tx.insert(messages).values({\n  leadId,\n  templateId: null, // No template reference for manual messages\n  channel: EContactChannel.WHATSAPP_TEXT,\n  content: renderedMessage,\n  // ... rest unchanged\n});\n```\n\nAdd new error code in shared package if needed: `MESSAGE_CONTENT_REQUIRED`",
+        "testStrategy": "1. TypeScript compile check - verify function signature updated\n2. Test calling with valid message content - should send successfully\n3. Test calling with empty string - should return error\n4. Test calling with whitespace only - should return error\n5. Verify message is logged to database with null templateId\n6. Ensure existing callers are updated (will fail until ManualMessageDialog is built)",
+        "priority": "high",
+        "dependencies": [
+          "109"
+        ],
+        "status": "cancelled",
+        "subtasks": [],
+        "updatedAt": "2026-02-17T15:30:24.720Z"
+      },
+      {
+        "id": "116",
+        "title": "Update SMS action to accept message content parameter",
+        "description": "Update the sendSmsAction to accept a pre-rendered message content string, similar to the WhatsApp action update. Currently the action already accepts a message parameter, so this is mainly a verification task.",
+        "details": "File: `apps/web/src/actions/message.actions.ts`\n\nReview the existing `sendSmsAction` function (starting line 253):\n\nThe function already accepts `TSendSmsSchema` which includes a `message: string` field. The validation schema (`sendSmsSchema`) already requires the message.\n\n**Verification checklist:**\n1. Confirm `sendSmsSchema` in `apps/web/src/validation-schemas/settings.validation.ts` includes message field\n2. Confirm the action does NOT do any default template lookup internally\n3. Confirm the message is passed directly to the worker\n\nIf any template lookup exists, remove it following the same pattern as task 115.\n\n**If no changes needed:**\nDocument that SMS action already works with the new pattern and no modifications required.\n\n**Potential enhancement:**\nConsider adding a `leadId` parameter and logging to the messages table similar to WhatsApp, for consistency in message history tracking.",
+        "testStrategy": "1. Review the code to confirm no isDefault template lookup exists\n2. Test SMS sending with a manual message string\n3. Verify the message reaches the worker API correctly\n4. If message logging is added, verify database records are created",
+        "priority": "medium",
+        "dependencies": [
+          "109"
+        ],
+        "status": "cancelled",
+        "subtasks": [],
+        "updatedAt": "2026-02-17T15:30:26.927Z"
+      },
+      {
+        "id": "117",
+        "title": "Build ManualMessageDialog component shell",
+        "description": "Create the main ManualMessageDialog component with mode toggle between template picker and custom message composer, following shadcn/ui patterns.",
+        "details": "Create new file: `apps/web/src/components/leads/manual-message-dialog.tsx`\n\n```typescript\n\"use client\";\n\nimport { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from \"@/components/ui/dialog\";\nimport { Tabs, TabsContent, TabsList, TabsTrigger } from \"@/components/ui/tabs\";\nimport { Button } from \"@/components/ui/button\";\nimport { useState } from \"react\";\nimport type { TContactChannel } from \"@auto-prospect/shared\";\n\ntype Lead = {\n  id: string;\n  ad: {\n    title: string;\n    price: number | null;\n    phoneNumber: string | null;\n    ownerName: string;\n    brand?: { name: string } | null;\n    model?: string | null;\n    modelYear?: number | null;\n    location?: { name: string } | null;\n  };\n};\n\ntype Template = {\n  id: string;\n  name: string;\n  channel: string;\n  content: string | null;\n};\n\ntype ManualMessageDialogProps = {\n  open: boolean;\n  onOpenChange: (open: boolean) => void;\n  lead: Lead;\n  channel: TContactChannel;\n  templates: Template[];\n  onSend: (messageContent: string, templateId?: string) => Promise<void>;\n};\n\nexport function ManualMessageDialog({\n  open,\n  onOpenChange,\n  lead,\n  channel,\n  templates,\n  onSend,\n}: ManualMessageDialogProps) {\n  const [mode, setMode] = useState<\"template\" | \"custom\">(\"template\");\n  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);\n  const [customContent, setCustomContent] = useState(\"\");\n  const [isSending, setIsSending] = useState(false);\n\n  // Build lead variables for template rendering\n  const leadVariables = {\n    titre_annonce: lead.ad.title,\n    prix: lead.ad.price ? `${lead.ad.price.toLocaleString(\"fr-FR\")} €` : \"\",\n    marque: lead.ad.brand?.name || \"\",\n    modele: lead.ad.model || \"\",\n    annee: lead.ad.modelYear?.toString() || \"\",\n    ville: lead.ad.location?.name || \"\",\n    vendeur_nom: lead.ad.ownerName,\n  };\n\n  const handleSend = async () => {\n    setIsSending(true);\n    try {\n      if (mode === \"template\" && selectedTemplateId) {\n        const template = templates.find(t => t.id === selectedTemplateId);\n        if (template?.content) {\n          await onSend(renderMessageTemplate(template.content, leadVariables), selectedTemplateId);\n        }\n      } else if (mode === \"custom\" && customContent.trim()) {\n        await onSend(renderMessageTemplate(customContent, leadVariables));\n      }\n      onOpenChange(false);\n    } finally {\n      setIsSending(false);\n    }\n  };\n\n  const canSend = mode === \"template\" \n    ? !!selectedTemplateId \n    : customContent.trim().length > 0;\n\n  return (\n    <Dialog open={open} onOpenChange={onOpenChange}>\n      <DialogContent className=\"max-w-2xl\">\n        <DialogHeader>\n          <DialogTitle>Envoyer un message</DialogTitle>\n          <DialogDescription>\n            À {lead.ad.ownerName} • {lead.ad.phoneNumber}\n          </DialogDescription>\n        </DialogHeader>\n\n        <Tabs value={mode} onValueChange={(v) => setMode(v as \"template\" | \"custom\")}>\n          <TabsList className=\"grid w-full grid-cols-2\">\n            <TabsTrigger value=\"template\">Utiliser un template</TabsTrigger>\n            <TabsTrigger value=\"custom\">Message personnalisé</TabsTrigger>\n          </TabsList>\n\n          <TabsContent value=\"template\">\n            {/* TemplatePickerList will be added in task 118 */}\n            <div className=\"py-4 text-zinc-500\">Template picker placeholder</div>\n          </TabsContent>\n\n          <TabsContent value=\"custom\">\n            {/* CustomMessageComposer will be added in task 119 */}\n            <div className=\"py-4 text-zinc-500\">Custom composer placeholder</div>\n          </TabsContent>\n        </Tabs>\n\n        <div className=\"flex justify-end gap-3 pt-4\">\n          <Button variant=\"outline\" onClick={() => onOpenChange(false)}>\n            Annuler\n          </Button>\n          <Button onClick={handleSend} disabled={!canSend || isSending}>\n            {isSending ? \"Envoi...\" : \"Envoyer\"}\n          </Button>\n        </div>\n      </DialogContent>\n    </Dialog>\n  );\n}\n```\n\nImport `renderMessageTemplate` from `@/utils/message.utils`.",
+        "testStrategy": "1. Render the dialog with mock data and verify it opens/closes\n2. Verify tab switching between template and custom modes works\n3. Verify lead info displays correctly in header\n4. Verify send button is disabled when no content selected\n5. Test send callback is called with correct parameters\n6. Verify loading state during send",
+        "priority": "high",
+        "dependencies": [
+          "115"
+        ],
+        "status": "cancelled",
+        "subtasks": [],
+        "updatedAt": "2026-02-17T15:30:30.310Z"
+      },
+      {
+        "id": "118",
+        "title": "Build TemplatePickerList component",
+        "description": "Create the TemplatePickerList component that displays available templates for selection with rendered preview.",
+        "details": "Create new file: `apps/web/src/components/leads/template-picker-list.tsx`\n\n```typescript\n\"use client\";\n\nimport { cn } from \"@/lib/utils\";\nimport { renderMessageTemplate } from \"@/utils/message.utils\";\n\ntype Template = {\n  id: string;\n  name: string;\n  channel: string;\n  content: string | null;\n};\n\ntype LeadVariables = {\n  titre_annonce: string;\n  prix: string;\n  marque: string;\n  modele: string;\n  annee: string;\n  ville: string;\n  vendeur_nom: string;\n};\n\ntype TemplatePickerListProps = {\n  templates: Template[];\n  selectedId: string | null;\n  onSelect: (templateId: string) => void;\n  leadVariables: LeadVariables;\n};\n\nexport function TemplatePickerList({\n  templates,\n  selectedId,\n  onSelect,\n  leadVariables,\n}: TemplatePickerListProps) {\n  if (templates.length === 0) {\n    return (\n      <div className=\"rounded-lg border border-zinc-800 bg-zinc-900/50 p-8 text-center\">\n        <p className=\"text-zinc-500\">Aucun template disponible pour ce canal</p>\n        <p className=\"mt-2 text-sm text-zinc-600\">\n          Créez un template dans la section Templates\n        </p>\n      </div>\n    );\n  }\n\n  const selectedTemplate = templates.find(t => t.id === selectedId);\n\n  return (\n    <div className=\"space-y-4\">\n      {/* Template list */}\n      <div className=\"grid gap-2\">\n        {templates.map((template) => (\n          <button\n            key={template.id}\n            type=\"button\"\n            onClick={() => onSelect(template.id)}\n            className={cn(\n              \"w-full rounded-lg border p-4 text-left transition-colors\",\n              selectedId === template.id\n                ? \"border-amber-500 bg-amber-500/10\"\n                : \"border-zinc-800 bg-zinc-900/50 hover:border-zinc-700\"\n            )}\n          >\n            <p className=\"font-medium text-zinc-200\">{template.name}</p>\n            <p className=\"mt-1 line-clamp-2 text-sm text-zinc-500\">\n              {template.content}\n            </p>\n          </button>\n        ))}\n      </div>\n\n      {/* Preview of selected template */}\n      {selectedTemplate?.content && (\n        <div className=\"space-y-2\">\n          <h4 className=\"text-sm font-medium text-zinc-300\">Aperçu du message</h4>\n          <div className=\"rounded-lg border border-zinc-800 bg-zinc-950 p-4\">\n            <p className=\"whitespace-pre-wrap text-sm text-zinc-300\">\n              {renderMessageTemplate(selectedTemplate.content, leadVariables)}\n            </p>\n          </div>\n        </div>\n      )}\n    </div>\n  );\n}\n```\n\nIntegrate into ManualMessageDialog by replacing the placeholder in the template TabsContent.",
+        "testStrategy": "1. Render with empty templates array - verify empty state message\n2. Render with templates - verify all templates display\n3. Click a template - verify it becomes selected (visual highlight)\n4. Verify preview shows rendered message with variables replaced\n5. Switch selection - verify preview updates\n6. Verify truncation works for long template content",
+        "priority": "high",
+        "dependencies": [
+          "117"
+        ],
+        "status": "cancelled",
+        "subtasks": [],
+        "updatedAt": "2026-02-17T15:30:32.542Z"
+      },
+      {
+        "id": "119",
+        "title": "Build CustomMessageComposer component",
+        "description": "Create the CustomMessageComposer component with variable toolbar, textarea, and live preview, reusing patterns from TextTemplateForm.",
+        "details": "Create new file: `apps/web/src/components/leads/custom-message-composer.tsx`\n\n```typescript\n\"use client\";\n\nimport { useRef } from \"react\";\nimport { VariableToolbar } from \"@/components/templates/variable-toolbar\";\nimport { renderMessageTemplate } from \"@/utils/message.utils\";\n\ntype LeadVariables = {\n  titre_annonce: string;\n  prix: string;\n  marque: string;\n  modele: string;\n  annee: string;\n  ville: string;\n  vendeur_nom: string;\n};\n\ntype CustomMessageComposerProps = {\n  value: string;\n  onChange: (value: string) => void;\n  leadVariables: LeadVariables;\n};\n\nexport function CustomMessageComposer({\n  value,\n  onChange,\n  leadVariables,\n}: CustomMessageComposerProps) {\n  const textareaRef = useRef<HTMLTextAreaElement>(null);\n\n  const handleInsertVariable = (variable: string) => {\n    if (!textareaRef.current) return;\n\n    const textarea = textareaRef.current;\n    const start = textarea.selectionStart;\n    const end = textarea.selectionEnd;\n    const newContent = value.substring(0, start) + variable + value.substring(end);\n\n    onChange(newContent);\n\n    // Set cursor position after inserted variable\n    setTimeout(() => {\n      textarea.focus();\n      textarea.setSelectionRange(start + variable.length, start + variable.length);\n    }, 0);\n  };\n\n  const previewContent = renderMessageTemplate(value, leadVariables);\n\n  return (\n    <div className=\"space-y-4\">\n      {/* Variable toolbar */}\n      <VariableToolbar onInsertVariable={handleInsertVariable} />\n\n      {/* Message textarea */}\n      <div>\n        <label className=\"mb-2 block text-sm font-medium text-zinc-300\">\n          Votre message\n        </label>\n        <textarea\n          ref={textareaRef}\n          value={value}\n          onChange={(e) => onChange(e.target.value)}\n          placeholder=\"Bonjour, je suis intéressé par votre {titre_annonce}...\"\n          rows={5}\n          className=\"w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-2 font-mono text-sm text-zinc-200 placeholder-zinc-500 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500\"\n        />\n      </div>\n\n      {/* Live preview */}\n      <div>\n        <h4 className=\"mb-2 text-sm font-medium text-zinc-300\">\n          Aperçu avec données du lead\n        </h4>\n        <div className=\"rounded-lg border border-zinc-800 bg-zinc-950 p-4\">\n          <p className=\"whitespace-pre-wrap text-sm text-zinc-300\">\n            {previewContent || \"Votre message apparaîtra ici...\"}\n          </p>\n        </div>\n      </div>\n    </div>\n  );\n}\n```\n\nIntegrate into ManualMessageDialog by replacing the placeholder in the custom TabsContent. Wire up the `customContent` state.",
+        "testStrategy": "1. Render component and verify all elements display\n2. Type in textarea - verify value updates and preview shows text\n3. Click variable button - verify variable is inserted at cursor position\n4. Verify preview shows actual lead data for variables\n5. Test with empty input - verify placeholder shows in preview\n6. Test cursor positioning after variable insertion",
+        "priority": "high",
+        "dependencies": [
+          "117"
+        ],
+        "status": "cancelled",
+        "subtasks": [],
+        "updatedAt": "2026-02-17T15:30:34.540Z"
+      },
+      {
+        "id": "120",
+        "title": "Wire ManualMessageDialog into lead views",
+        "description": "Integrate the ManualMessageDialog into lead views, replacing direct send buttons with dialog triggers that allow users to compose messages before sending.",
+        "details": "**1. Create a hook for fetching templates by channel:**\n\nCreate `apps/web/src/hooks/use-templates.ts` or add to existing hooks:\n```typescript\nimport useSWR from \"swr\";\nimport { SWR_KEYS } from \"@/config/swr-keys\";\nimport type { TContactChannel } from \"@auto-prospect/shared\";\n\nexport function useTemplatesByChannel(channel: TContactChannel) {\n  return useSWR(SWR_KEYS.templatesByChannel(channel), async () => {\n    // Fetch templates filtered by channel\n    const response = await fetch(`/api/templates?channel=${channel}`);\n    return response.json();\n  });\n}\n```\n\n**2. Update LeadDrawer or LeadCard to include dialog trigger:**\n\nAdd to the component that has the send buttons:\n```typescript\nimport { ManualMessageDialog } from \"./manual-message-dialog\";\nimport { sendWhatsAppTextMessage } from \"@/actions/whatsapp.actions\";\nimport { sendSmsAction } from \"@/actions/message.actions\";\n\n// In component:\nconst [messageDialogOpen, setMessageDialogOpen] = useState(false);\nconst [selectedChannel, setSelectedChannel] = useState<TContactChannel | null>(null);\n\nconst handleOpenMessageDialog = (channel: TContactChannel) => {\n  setSelectedChannel(channel);\n  setMessageDialogOpen(true);\n};\n\nconst handleSendMessage = async (content: string, templateId?: string) => {\n  if (selectedChannel === EContactChannel.WHATSAPP_TEXT) {\n    await sendWhatsAppTextMessage(lead.id, content);\n  } else if (selectedChannel === EContactChannel.SMS) {\n    await sendSmsAction({ to: lead.ad.phoneNumber, message: content });\n  }\n};\n\n// Replace direct send button with:\n<Button onClick={() => handleOpenMessageDialog(EContactChannel.WHATSAPP_TEXT)}>\n  WhatsApp\n</Button>\n\n<ManualMessageDialog\n  open={messageDialogOpen}\n  onOpenChange={setMessageDialogOpen}\n  lead={lead}\n  channel={selectedChannel!}\n  templates={templates}\n  onSend={handleSendMessage}\n/>\n```\n\n**3. Add API route for templates by channel if not exists:**\n\nCreate `apps/web/src/app/api/templates/route.ts` if needed to fetch templates filtered by channel.",
+        "testStrategy": "1. Open lead drawer/card and click WhatsApp button - dialog should open\n2. Select a template, verify send works and dialog closes\n3. Switch to custom mode, compose message, verify send works\n4. Verify templates are filtered by selected channel\n5. Test SMS button triggers dialog with SMS channel\n6. Test error handling if send fails\n7. Verify toast/notification on successful send",
+        "priority": "high",
+        "dependencies": [
+          "115",
+          "116",
+          "117",
+          "118",
+          "119"
+        ],
+        "status": "cancelled",
+        "subtasks": [],
+        "updatedAt": "2026-02-17T15:30:36.759Z"
+      },
+      {
+        "id": "121",
+        "title": "End-to-end testing and cleanup verification",
+        "description": "Perform comprehensive end-to-end testing of all removed isDefault functionality and new manual message UI, ensuring no regressions.",
+        "details": "**Test Cases:**\n\n**1. Template Management (isDefault removed):**\n- Create text template - no isDefault checkbox, saves correctly\n- Create voice template - no isDefault checkbox, saves correctly\n- Edit template - no isDefault option available\n- View templates list - no 'Défaut' badges appear\n- Delete template - still works correctly\n\n**2. Hunt Configuration (per-hunt templates):**\n- Create hunt with templateIds configured\n- Edit hunt to change templateIds\n- Verify hunt form allows selecting templates per channel\n\n**3. Daily Orchestrator (per-hunt templates):**\n- Run orchestrator with hunt that has templateIds set\n- Verify messages use correct templates per channel\n- Run orchestrator with hunt missing template for a channel\n- Verify that channel is skipped with warning log\n\n**4. Manual Messaging UI:**\n- Open dialog from lead view (WhatsApp)\n- Select template mode, pick template, verify preview, send\n- Switch to custom mode, compose with variables, verify preview, send\n- Verify message appears in lead's message history\n- Open dialog from lead view (SMS), repeat above\n\n**5. Database Verification:**\n- Confirm `is_default` column does not exist in message_templates\n- Verify existing templates are preserved (minus isDefault)\n- Verify messages table records have correct null templateId for manual sends\n\n**6. Code Cleanup Verification:**\n- Grep codebase for 'isDefault' - should only exist in hunt-related code (templateIds)\n- Verify no TypeScript errors in full build\n- Verify no console errors in browser",
+        "testStrategy": "1. Create test checklist document based on above\n2. Execute each test case manually in development environment\n3. Document any issues found with screenshots\n4. Run `pnpm build` to verify no build errors\n5. Run `pnpm lint` to verify no linting errors\n6. Run existing test suite if available\n7. Create automated tests for critical paths if time permits",
+        "priority": "medium",
+        "dependencies": [
+          "109",
+          "110",
+          "111",
+          "112",
+          "113",
+          "114",
+          "115",
+          "116",
+          "117",
+          "118",
+          "119",
+          "120"
+        ],
+        "status": "cancelled",
+        "subtasks": [],
+        "updatedAt": "2026-02-17T15:30:38.844Z"
+      },
+      {
+        "id": "122",
+        "title": "Update Daily Orchestrator to Use Per-Hunt Templates",
+        "description": "Modify the daily orchestrator worker to fetch templates from the hunt's templateIds JSONB field instead of querying for isDefault templates.",
+        "details": "**Location:** `apps/worker/src/workers/daily-orchestrator.ts`\n\n**Current Problem (lines 329-340):**\n```typescript\n// Current code fetches isDefault templates\nconst templates = await db.query.messageTemplates.findMany({\n  where: and(\n    eq(messageTemplates.accountId, accountId),\n    eq(messageTemplates.isDefault, true),\n  ),\n});\n```\n\n**Solution:**\n1. The hunt object already contains `templateIds` JSONB field with structure: `{ whatsapp?: string, sms?: string, ringlessVoice?: string }`\n2. Remove the `isDefault` template query (lines 329-340)\n3. Build templatesByChannel map directly from `hunt.templateIds`:\n```typescript\n// Fetch templates by IDs from hunt.templateIds\nconst templateIdValues = Object.values(hunt.templateIds || {}).filter(Boolean) as string[];\nconst templates = templateIdValues.length > 0 \n  ? await db.query.messageTemplates.findMany({\n      where: inArray(messageTemplates.id, templateIdValues),\n    })\n  : [];\n\n// Create a map of channel -> template\nconst templatesByChannel = new Map<string, typeof templates[0]>();\nif (hunt.templateIds?.whatsapp) {\n  const t = templates.find(t => t.id === hunt.templateIds.whatsapp);\n  if (t) templatesByChannel.set(EContactChannel.WHATSAPP_TEXT, t);\n}\n// Similar for sms and ringlessVoice\n```\n4. Skip channels that have no template configured in the hunt (log warning)\n5. Import `inArray` from drizzle-orm if not already imported",
+        "testStrategy": "1. Unit test: Create mock hunt with templateIds, verify correct templates are fetched\n2. Unit test: Verify channels without templateIds are skipped\n3. Integration test: Run orchestrator with hunt that has templateIds set, verify messages use correct templates\n4. Integration test: Run orchestrator with hunt missing templateIds for a channel, verify that channel is skipped with warning logged",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-02-17T16:54:11.749Z"
+      },
+      {
+        "id": "123",
+        "title": "Add NO_DEFAULT_TEMPLATE Error Code",
+        "description": "Add a new error code for when a lead's manual send action fails because no default template is configured for that channel.",
+        "details": "**Location:** `packages/shared/src/config/error-codes.ts`\n\n**Implementation:**\n1. Add new error code to `EMessageErrorCode` enum:\n```typescript\nexport enum EMessageErrorCode {\n  MESSAGE_SEND_FAILED = \"MESSAGE_SEND_FAILED\",\n  NO_DEFAULT_TEMPLATE = \"NO_DEFAULT_TEMPLATE\", // Add this\n}\n```\n\n**Note:** The error code will be used by the manual send actions (WhatsApp and Voice) when they look up the `isDefault` template for the channel and find none.",
+        "testStrategy": "1. Verify the error code exports correctly from @auto-prospect/shared\n2. Type check passes after adding the new enum value\n3. Manual test: Trigger the error in a send action and verify the correct code is returned",
+        "priority": "medium",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-02-17T16:54:58.452Z"
+      },
+      {
+        "id": "124",
+        "title": "Create sendRinglessVoiceToLead Server Action",
+        "description": "Create a new server action similar to sendWhatsAppTextMessage that sends a ringless voice message to a lead using the account's default voice template.",
+        "details": "**Location:** Create new action in `apps/web/src/actions/voice.actions.ts` or add to `apps/web/src/actions/message.actions.ts`\n\n**Implementation Pattern (mirror sendWhatsAppTextMessage):**\n```typescript\nexport async function sendRinglessVoiceToLead(\n  leadId: string,\n): Promise<{ success: boolean; errorCode?: TErrorCode }> {\n  const dbClient = await createDrizzleSupabaseClient();\n  \n  // 1. Fetch lead with ad (phone number), account (fixedPhoneNumber)\n  const lead = await dbClient.rls((tx) =>\n    tx.query.leads.findFirst({\n      where: eq(leads.id, leadId),\n      with: {\n        ad: { columns: { phoneNumber: true } },\n        account: { columns: { id: true, fixedPhoneNumber: true } },\n      },\n    }),\n  );\n  \n  // 2. Validate lead exists, has phone, account has fixedPhoneNumber\n  if (!lead) return { success: false, errorCode: ELeadErrorCode.LEAD_NOT_FOUND };\n  if (!lead.ad.phoneNumber) return { success: false, errorCode: ELeadErrorCode.RECIPIENT_PHONE_INVALID };\n  if (!lead.account.fixedPhoneNumber) return { success: false, errorCode: EAccountErrorCode.PHONE_INVALID };\n  \n  // 3. Fetch default RINGLESS_VOICE template for this account\n  const template = await dbClient.rls((tx) =>\n    tx.query.messageTemplates.findFirst({\n      where: and(\n        eq(messageTemplates.accountId, lead.accountId),\n        eq(messageTemplates.channel, EContactChannel.RINGLESS_VOICE),\n        eq(messageTemplates.isDefault, true),\n      ),\n    }),\n  );\n  \n  if (!template || !template.audioUrl) {\n    return { success: false, errorCode: EMessageErrorCode.NO_DEFAULT_TEMPLATE };\n  }\n  \n  // 4. Verify Voice API credentials\n  const apiKey = process.env.VOICE_PARTNER_API_KEY;\n  const apiSecret = process.env.VOICE_PARTNER_API_SECRET;\n  if (!apiKey || !apiSecret) {\n    return { success: false, errorCode: EVoiceErrorCode.API_KEY_MISSING };\n  }\n  \n  // 5. Call worker API\n  const response = await fetch(\n    `${process.env.WORKER_API_URL}${WORKER_ROUTES.PHONE_RINGLESS_VOICE}`,\n    {\n      method: \"POST\",\n      headers: {\n        \"Content-Type\": \"application/json\",\n        Authorization: `Bearer ${process.env.WORKER_API_SECRET}`,\n      },\n      body: JSON.stringify({\n        recipientPhone: lead.ad.phoneNumber,\n        tokenAudio: template.audioUrl,\n        sender: lead.account.fixedPhoneNumber,\n        apiKey,\n        apiSecret,\n        metadata: { leadId, accountId: lead.accountId },\n      }),\n    },\n  );\n  \n  // 6. Handle response, log message to messages table\n  // ... (similar to sendWhatsAppTextMessage)\n}\n```",
+        "testStrategy": "1. Unit test: Mock DB responses, verify correct template lookup\n2. Unit test: Verify NO_DEFAULT_TEMPLATE error when no template found\n3. Unit test: Verify API_KEY_MISSING error when credentials missing\n4. Integration test: Call action with valid lead, verify worker API called with correct params\n5. Integration test: Verify message logged to messages table on success",
+        "priority": "high",
+        "dependencies": [
+          "123"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-02-17T16:58:00.069Z"
+      },
+      {
+        "id": "125",
+        "title": "Update sendWhatsAppTextMessage to Return NO_DEFAULT_TEMPLATE Error",
+        "description": "Update the existing WhatsApp send action to return the new NO_DEFAULT_TEMPLATE error code when no default template is configured.",
+        "details": "**Location:** `apps/web/src/actions/whatsapp.actions.ts`\n\n**Current Behavior (lines 338-355):**\nThe action fetches the default template and falls back to a hardcoded message if none found:\n```typescript\nconst template = await dbClient.rls((tx) =>\n  tx.query.messageTemplates.findFirst({\n    where: (table, { eq, and }) =>\n      and(\n        eq(table.accountId, lead.accountId),\n        eq(table.channel, EContactChannel.WHATSAPP_TEXT),\n        eq(table.isDefault, true),\n      ),\n  }),\n);\n\nconst defaultMessage = `Bonjour, je suis intéressé par votre annonce \"${lead.ad.title}\".`;\nconst renderedMessage = template\n  ? renderMessageTemplate(template.content || defaultMessage, variables)\n  : defaultMessage;\n```\n\n**Change:**\nInstead of falling back to a default message, return an error if no template is found:\n```typescript\nif (!template || !template.content) {\n  return {\n    success: false,\n    errorCode: EMessageErrorCode.NO_DEFAULT_TEMPLATE,\n  };\n}\n\nconst renderedMessage = renderMessageTemplate(template.content, variables);\n```\n\n**Import:**\nAdd `EMessageErrorCode` to imports from `@auto-prospect/shared`",
+        "testStrategy": "1. Unit test: Call action without default template, verify NO_DEFAULT_TEMPLATE error returned\n2. Unit test: Call action with default template, verify message sent successfully\n3. Regression test: Ensure existing functionality works when template exists",
+        "priority": "high",
+        "dependencies": [
+          "123"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-02-17T16:58:57.934Z"
+      },
+      {
+        "id": "126",
+        "title": "Enable Voice Button in Lead Drawer",
+        "description": "Update the lead drawer component to enable the Voice button and wire it to call the new sendRinglessVoiceToLead action.",
+        "details": "**Location:** `apps/web/src/components/leads/lead-drawer.tsx`\n\n**Current State (lines 510-531):**\nThe Voice button is disabled with static placeholder styling.\n\n**Implementation:**\n1. Add import for the new action:\n```typescript\nimport { sendRinglessVoiceToLead } from \"@/actions/voice.actions\";\n```\n\n2. Add state for voice button loading:\n```typescript\nconst [isSendingVoice, setIsSendingVoice] = useState(false);\n```\n\n3. Add handler function (similar to handleWhatsAppClick):\n```typescript\nconst handleVoiceClick = async () => {\n  if (!lead || !lead.ad.phoneNumber || isSendingVoice) return;\n  \n  setIsSendingVoice(true);\n  try {\n    const result = await sendRinglessVoiceToLead(lead.id);\n    \n    if (!result.success) {\n      // Map error codes to user-friendly French messages\n      const errorMessages: Record<string, string> = {\n        NO_DEFAULT_TEMPLATE: \"Aucun template vocal par défaut configuré. Allez dans Modèles pour en définir un.\",\n        RECIPIENT_PHONE_INVALID: \"Numéro de téléphone du destinataire invalide.\",\n        PHONE_INVALID: \"Numéro de téléphone fixe non configuré dans les paramètres.\",\n        API_KEY_MISSING: \"Configuration des API vocales manquante.\",\n      };\n      const message = errorMessages[result.errorCode || \"\"] || \"Erreur lors de l'envoi du message vocal\";\n      alert(message);\n      return;\n    }\n    \n    mutate();\n    alert(\"Message vocal envoyé avec succès\");\n  } catch (err) {\n    alert(\"Erreur lors de l'envoi du message vocal\");\n  } finally {\n    setIsSendingVoice(false);\n  }\n};\n```\n\n4. Update the Voice button JSX:\n```typescript\n<button\n  type=\"button\"\n  onClick={handleVoiceClick}\n  disabled={!lead.ad.phoneNumber || isSendingVoice}\n  className={`group flex items-center justify-center gap-2 rounded-lg border px-4 py-3 font-medium transition-all ${\n    !lead.ad.phoneNumber\n      ? \"cursor-not-allowed border-zinc-800 bg-zinc-900/50 text-zinc-600\"\n      : \"border-purple-900/50 bg-purple-950/30 text-purple-400 hover:border-purple-800 hover:bg-purple-900/40\"\n  }`}\n  title={!lead.ad.phoneNumber ? \"Numéro de téléphone non disponible\" : \"\"}\n>\n  {isSendingVoice ? (\n    <div className=\"h-5 w-5 animate-spin rounded-full border-2 border-purple-400 border-t-transparent\" />\n  ) : (\n    // Existing microphone SVG icon\n  )}\n  <span>Voice</span>\n</button>\n```",
+        "testStrategy": "1. Visual test: Verify Voice button is styled correctly (purple theme matching Voice channel)\n2. Interaction test: Click Voice button, verify loading state shows spinner\n3. Success test: Mock successful action, verify success toast and data refresh\n4. Error test: Mock NO_DEFAULT_TEMPLATE error, verify correct French error message\n5. Disabled test: Lead without phone number should show disabled button",
+        "priority": "high",
+        "dependencies": [
+          "124"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-02-17T17:01:01.628Z"
+      },
+      {
+        "id": "127",
+        "title": "Update WhatsApp Button Error Handling in Lead Drawer",
+        "description": "Update the WhatsApp button in lead drawer to show proper error messages for the NO_DEFAULT_TEMPLATE error code.",
+        "details": "**Location:** `apps/web/src/components/leads/lead-drawer.tsx`\n\n**Current Behavior (lines 162-185):**\n```typescript\nconst handleWhatsAppClick = async () => {\n  // ...\n  try {\n    const result = await sendWhatsAppTextMessage(lead.id);\n    if (!result.success) {\n      throw new Error(result.errorCode || \"Failed to send WhatsApp message\");\n    }\n    mutate();\n    alert(\"Message WhatsApp envoyé avec succès\");\n  } catch (err) {\n    console.error(\"Failed to send WhatsApp message:\", err);\n    alert(\"Erreur lors de l'envoi du message WhatsApp\");\n  }\n};\n```\n\n**Updated Implementation:**\n```typescript\nconst handleWhatsAppClick = async () => {\n  if (!lead || !lead.ad.phoneNumber || isSendingWhatsApp) return;\n  \n  setIsSendingWhatsApp(true);\n  try {\n    const result = await sendWhatsAppTextMessage(lead.id);\n    \n    if (!result.success) {\n      // Map error codes to user-friendly French messages\n      const errorMessages: Record<string, string> = {\n        NO_DEFAULT_TEMPLATE: \"Aucun template WhatsApp par défaut configuré. Allez dans Modèles pour en définir un.\",\n        RECIPIENT_PHONE_INVALID: \"Numéro de téléphone du destinataire invalide.\",\n        SESSION_NOT_FOUND: \"Session WhatsApp non connectée. Configurez WhatsApp dans les paramètres.\",\n        SESSION_EXPIRED: \"Session WhatsApp expirée. Reconnectez-vous dans les paramètres.\",\n        PHONE_INVALID: \"Numéro WhatsApp non configuré dans les paramètres.\",\n      };\n      const message = errorMessages[result.errorCode || \"\"] || \"Erreur lors de l'envoi du message WhatsApp\";\n      alert(message);\n      return;\n    }\n    \n    mutate();\n    alert(\"Message WhatsApp envoyé avec succès\");\n  } catch (err) {\n    console.error(\"Failed to send WhatsApp message:\", err);\n    alert(\"Erreur lors de l'envoi du message WhatsApp\");\n  } finally {\n    setIsSendingWhatsApp(false);\n  }\n};\n```\n\n**Optional Enhancement:**\nReplace `alert()` with toast notifications using shadcn/ui toast component for better UX.",
+        "testStrategy": "1. Test NO_DEFAULT_TEMPLATE error shows correct French message\n2. Test SESSION_NOT_FOUND error shows correct message\n3. Test successful send shows success message\n4. Test generic errors fallback to generic message",
+        "priority": "medium",
+        "dependencies": [
+          "125"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-02-17T17:03:32.186Z"
+      },
+      {
+        "id": "128",
+        "title": "Verify Hunt Form Saves templateIds Correctly",
+        "description": "Verify that the hunt creation/edit form properly saves the templateIds to the database and that the OutreachSettings component works correctly.",
+        "details": "**Location:** \n- `apps/web/src/components/hunts/hunt-form.tsx`\n- `apps/web/src/components/hunts/edit-hunt-view.tsx`\n- `apps/web/src/actions/hunt.actions.ts`\n\n**Verification Checklist:**\n1. Hunt form includes `templateIds` in form state\n2. Hunt form passes templateIds to OutreachSettings component\n3. OutreachSettings callbacks update templateIds in form state\n4. Hunt create/update action saves templateIds to database\n5. Hunt edit view loads existing templateIds from database\n\n**Potential Issues to Check:**\n- templateIds might be passed but not saved in the action\n- Mapping between OutreachSettings keys (whatsapp, ringlessVoice) and the JSONB structure\n\n**Files to Read:**\n```typescript\n// In hunt.actions.ts, verify templateIds is included in the insert/update\nawait db.insert(hunts).values({\n  // ...\n  templateIds: formData.templateIds, // Verify this exists\n});\n```",
+        "testStrategy": "1. Create a new hunt, select templates for WhatsApp and Voice channels\n2. Save the hunt\n3. Query database directly to verify templateIds JSONB contains correct template IDs\n4. Edit the hunt, verify selected templates appear in the dropdowns\n5. Change template selection, save, verify database updated\n6. Test with channels disabled - verify templateIds cleared for disabled channels",
+        "priority": "medium",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-02-17T17:02:41.597Z"
+      },
+      {
+        "id": "129",
+        "title": "Add Integration Tests for Per-Hunt Template Flow",
+        "description": "Create integration tests that verify the complete flow: hunt with templateIds -> daily orchestrator -> correct template used for message.",
+        "details": "**Test Location:** Create test file `apps/worker/src/workers/__tests__/daily-orchestrator.test.ts` or add to existing test file\n\n**Test Scenarios:**\n\n1. **Hunt with WhatsApp template:**\n```typescript\ntest('uses hunt templateIds.whatsapp instead of isDefault template', async () => {\n  // Setup: Create account, hunt with templateIds.whatsapp set\n  // Setup: Create two WhatsApp templates - one isDefault=true, one with the ID in templateIds\n  // Run: Process hunt\n  // Assert: Message dispatched uses template from templateIds, not isDefault\n});\n```\n\n2. **Hunt without template for a channel:**\n```typescript\ntest('skips channel when templateIds does not include it', async () => {\n  // Setup: Create hunt with outreachSettings.whatsapp=true but templateIds.whatsapp=null\n  // Run: Process hunt\n  // Assert: No WhatsApp messages dispatched, warning logged\n});\n```\n\n3. **Template deleted after hunt created:**\n```typescript\ntest('handles deleted template gracefully', async () => {\n  // Setup: Create hunt with templateIds pointing to a template\n  // Delete the template\n  // Run: Process hunt\n  // Assert: Channel skipped, no crash, warning logged\n});\n```\n\n**Mock Requirements:**\n- Database client (or use test database)\n- Message queues (WhatsApp, SMS, Voice)\n- Job progress updates",
+        "testStrategy": "Run the test suite with `pnpm test` and verify all new tests pass. Use coverage reports to ensure the new code paths in daily-orchestrator.ts are covered.",
+        "priority": "medium",
+        "dependencies": [
+          "122"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-02-17T17:06:42.363Z"
+      },
+      {
+        "id": "130",
+        "title": "Add E2E Test for Manual Send Buttons",
+        "description": "Create end-to-end tests for the manual send buttons (WhatsApp and Voice) in the lead drawer.",
+        "details": "**Test Location:** Create or update E2E test file (likely Playwright or Cypress based on project setup)\n\n**Test Scenarios:**\n\n1. **WhatsApp button success:**\n```typescript\ntest('WhatsApp button sends message with default template', async ({ page }) => {\n  // Setup: User logged in, has WhatsApp configured, has default WhatsApp template\n  // Navigate to leads, open drawer for a lead with phone number\n  // Click WhatsApp button\n  // Assert: Loading state shown, success toast appears, drawer refreshes\n});\n```\n\n2. **WhatsApp button - no default template:**\n```typescript\ntest('WhatsApp button shows error when no default template', async ({ page }) => {\n  // Setup: User has no default WhatsApp template\n  // Click WhatsApp button\n  // Assert: Error message mentions missing template, links to templates page\n});\n```\n\n3. **Voice button success:**\n```typescript\ntest('Voice button sends message with default template', async ({ page }) => {\n  // Setup: User has Voice configured, has default Voice template\n  // Click Voice button\n  // Assert: Loading state shown, success toast appears\n});\n```\n\n4. **Voice button - no default template:**\n```typescript\ntest('Voice button shows error when no default template', async ({ page }) => {\n  // Setup: User has no default Voice template\n  // Click Voice button  \n  // Assert: Error message mentions missing template\n});\n```\n\n5. **Buttons disabled when no phone:**\n```typescript\ntest('Send buttons disabled when lead has no phone number', async ({ page }) => {\n  // Navigate to lead without phone number\n  // Assert: WhatsApp and Voice buttons are disabled with title tooltip\n});\n```",
+        "testStrategy": "Run E2E test suite. Verify tests pass in CI environment. Test both success and error paths for each button.",
+        "priority": "low",
+        "dependencies": [
+          "126",
+          "127"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-02-17T17:08:36.339Z"
+      },
+      {
+        "id": "131",
+        "title": "Documentation and Cleanup",
+        "description": "Update documentation to reflect the per-hunt template behavior and clean up any unused isDefault queries in the orchestrator.",
+        "details": "**Documentation Updates:**\n\n1. **Update hunt creation docs** (if any exist in README or docs folder):\n   - Explain that each hunt can have its own templates per channel\n   - Templates are selected during hunt creation/edit\n   - Channels without templates are skipped during hunt runs\n\n2. **Update worker docs** (`apps/worker/README.md`):\n   - Document that daily orchestrator uses hunt-specific templates\n   - isDefault templates are only used for manual messaging from lead view\n\n**Code Cleanup:**\n\n1. Remove any dead code related to old isDefault template fetching in orchestrator\n2. Add inline comments explaining the two different template resolution strategies:\n   - Hunt orchestrator: uses `hunt.templateIds`\n   - Manual send: uses `isDefault=true` template for channel\n\n3. Consider adding a comment to hunt.schema.ts explaining templateIds:\n```typescript\n// Per-hunt template configuration. Maps channel keys to template UUIDs.\n// Used by daily orchestrator. Manual sends use isDefault templates instead.\ntemplateIds: jsonb(\"template_ids\")\n  .$type<TMessageTemplateIds>()\n  .default(sql`'{}'::jsonb`),\n```",
+        "testStrategy": "1. Review documentation for accuracy\n2. Verify no TypeScript errors after cleanup\n3. Run full test suite to catch any regressions from cleanup\n4. Manual review of comments for clarity",
+        "priority": "low",
+        "dependencies": [
+          "122",
+          "126",
+          "127",
+          "129",
+          "130"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-02-17T17:10:06.248Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-02-16T19:51:39.787Z",
-      "taskCount": 108,
-      "completedCount": 105,
+      "lastModified": "2026-02-17T17:10:06.249Z",
+      "taskCount": 131,
+      "completedCount": 115,
       "tags": [
         "master"
       ]

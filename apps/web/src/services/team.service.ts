@@ -1,6 +1,6 @@
 import { createDrizzleSupabaseClient } from "@/lib/db";
 import { getUserAccount } from "@/services/account.service";
-import { TDBWithTokenClient } from "@auto-prospect/db";
+import { getDBAdminClient, TDBWithTokenClient } from "@auto-prospect/db";
 
 /**
  * Gets all members of the current account - CACHED
@@ -14,16 +14,13 @@ export async function getTeamMembers(dbClient?: TDBWithTokenClient) {
   const account = await getUserAccount(client, {
     columnsToKeep: { id: true },
   });
-  return getCachedTeamMembers(account.id, client);
+  return getTeamMembersByAccountId(account.id);
 }
 
 /**
  * Internal cached function for team members
  */
-async function getCachedTeamMembers(
-  accountId: string,
-  dbClient: TDBWithTokenClient,
-) {
+async function getTeamMembersByAccountId(accountId: string) {
   "use cache";
 
   const { cacheTag } = await import("next/cache");
@@ -31,18 +28,17 @@ async function getCachedTeamMembers(
 
   cacheTag(CACHE_TAGS.teamMembersByAccount(accountId));
 
-  const members = await dbClient.rls(async (tx) => {
-    return tx.query.teamMembers.findMany({
-      with: {
-        account: {
-          columns: {
-            id: true,
-            email: true,
-            name: true,
-          },
+  const dbClient = getDBAdminClient();
+  const members = await dbClient.query.teamMembers.findMany({
+    with: {
+      account: {
+        columns: {
+          id: true,
+          email: true,
+          name: true,
         },
       },
-    });
+    },
   });
 
   return members;

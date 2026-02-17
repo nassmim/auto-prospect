@@ -14,12 +14,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { MessageTemplate } from "@/services/message.service";
 import {
   EContactChannel,
@@ -170,10 +165,10 @@ export function TemplateCard({ template }: TemplateCardProps) {
           </div>
         ) : null}
       </CardContent>
-
+      {/* 
       <CardFooter className="border-t pt-3 text-xs text-zinc-500">
         Créé par {template.account.name}
-      </CardFooter>
+      </CardFooter> */}
     </Card>
   );
 }

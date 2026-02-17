@@ -33,7 +33,7 @@ export function VariableToolbar({ onInsertVariable }: VariableToolbarProps) {
         ))}
       </div>
       <p className="mt-3 text-xs text-zinc-500">
-        Clique sur une variable pour l&aposinsérer dans ton message
+        Clique sur une variable pour l&apos;insérer dans ton message
       </p>
     </div>
   );

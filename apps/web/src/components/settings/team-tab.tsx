@@ -296,7 +296,7 @@ export function TeamTab({ account, userRole, initialMembers }: TeamTabProps) {
             Membres de l&apos;équipe
           </h2>
           <p className="mt-1 text-sm text-zinc-500">
-            Gérez les membres et leurs rôles
+            Gère les membres et leurs rôles
           </p>
         </div>
 

@@ -29,7 +29,7 @@ export function ConnectedAccountsTab({
           Comptes connectés
         </h2>
         <p className="mt-1 text-sm text-zinc-500">
-          Gérez vos connexions aux plateformes d&apos;envoi de messages
+          Gère tes connexions aux plateformes d&apos;envoi de messages
         </p>
       </div>
 

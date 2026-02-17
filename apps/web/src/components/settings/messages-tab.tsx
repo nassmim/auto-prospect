@@ -195,13 +195,13 @@ export function MessagesTab({ settings }: MessagesTabProps) {
               <li className="flex items-start gap-2">
                 <span className="mt-1.5 h-1 w-1 flex-shrink-0 rounded-full bg-zinc-600" />
                 <span>
-                  Personnalisez vos templates de messages pour de meilleurs
+                  Personnalise tes templates de messages pour de meilleurs
                   résultats
                 </span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="mt-1.5 h-1 w-1 flex-shrink-0 rounded-full bg-zinc-600" />
-                <span>Vérifiez régulièrement vos paramètres de connexion</span>
+                <span>Vérifie régulièrement tes paramètres de connexion</span>
               </li>
             </ul>
           </div>

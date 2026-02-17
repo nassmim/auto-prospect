@@ -200,7 +200,7 @@ export function TextTemplateForm({ defaultChannel }: TextTemplateFormProps) {
             <FormItem>
               <div className="mb-2 flex items-center justify-between">
                 <FormLabel>Contenu du message</FormLabel>
-                <button
+                {/* <button
                   type="button"
                   onClick={handleSuggestWithAI}
                   className="flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-1.5 text-xs font-medium text-zinc-400 transition-colors hover:border-zinc-600 hover:text-zinc-300"
@@ -219,7 +219,7 @@ export function TextTemplateForm({ defaultChannel }: TextTemplateFormProps) {
                     />
                   </svg>
                   Suggérer par IA
-                </button>
+                </button> */}
               </div>
               <FormControl>
                 <textarea
@@ -238,7 +238,7 @@ export function TextTemplateForm({ defaultChannel }: TextTemplateFormProps) {
         {/* Live preview */}
         <div>
           <h3 className="mb-2 text-sm font-medium text-zinc-300">
-            Aperçu (avec données d&aposexemple)
+            Aperçu (avec données d&apos;exemple)
           </h3>
           <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-4">
             <p className="whitespace-pre-wrap text-sm text-zinc-300">

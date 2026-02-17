@@ -5,7 +5,7 @@ import { getAccountCredits } from "@/services/credit.service";
 
 export const metadata = getSEOTags({
   title: "Credits",
-  description: "Gérez vos crédits de contact pour SMS, WhatsApp et appels",
+  description: "Gère tes crédits de contact pour WhatsApp et appels",
   canonical: pages.credits,
 });
 

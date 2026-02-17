@@ -107,7 +107,7 @@ export function CreditsView({ data: initialData }: CreditsViewProps) {
         <div>
           <h1 className="text-3xl font-bold text-zinc-100">Crédits</h1>
           <p className="text-zinc-400">
-            Gérez vos crédits de contact pour SMS, WhatsApp et appels
+            Gère tes crédits de contact pour WhatsApp et appels
           </p>
         </div>
         {isValidating && (
@@ -119,7 +119,7 @@ export function CreditsView({ data: initialData }: CreditsViewProps) {
       </div>
 
       {/* Credit Balance Summary */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-3">
         <Card className="border-zinc-800 bg-zinc-900/50">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-zinc-400">
@@ -137,7 +137,7 @@ export function CreditsView({ data: initialData }: CreditsViewProps) {
           </CardContent>
         </Card>
 
-        <Card className="border-zinc-800 bg-zinc-900/50">
+        {/* <Card className="border-zinc-800 bg-zinc-900/50">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-zinc-400">
               SMS
@@ -148,12 +148,12 @@ export function CreditsView({ data: initialData }: CreditsViewProps) {
               {data.balance.sms.toLocaleString("fr-FR")}
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
 
         <Card className="border-zinc-800 bg-zinc-900/50">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-zinc-400">
-              Ringless Voice
+              Message Vocal
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -176,7 +176,6 @@ export function CreditsView({ data: initialData }: CreditsViewProps) {
           </CardContent>
         </Card>
       </div>
-
 
       {/* Transaction History */}
       <Card className="border-zinc-800 bg-zinc-900/50">
