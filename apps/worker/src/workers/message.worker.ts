@@ -204,35 +204,37 @@ export async function whatsappWorker(job: Job<WhatsAppJob>) {
     const result = await sendWhatsAppMessage(connection.socket, jid, message);
 
     if (!result.success) {
-      // ===== WHATSAPP ERROR HANDLING =====
-      // Baileys library returns error codes, not HTTP responses
-      // Each error needs specific handling strategy
       const errorCode =
         result.errorCode || EWhatsAppErrorCode.MESSAGE_SEND_FAILED;
 
-      // PERMANENT FAILURES - Do not retry
-      // These indicate configuration/data issues that won't resolve with retry
-      if (
-        errorCode === EWhatsAppErrorCode.RECIPIENT_INVALID ||
-        errorCode === EWhatsAppErrorCode.SESSION_NOT_FOUND ||
-        errorCode === EWhatsAppErrorCode.SESSION_EXPIRED ||
-        errorCode === EWhatsAppErrorCode.ACCOUNT_NOT_FOUND
-      ) {
-        // Mark session as disconnected for session-related errors
-        if (
-          errorCode === EWhatsAppErrorCode.SESSION_EXPIRED ||
-          errorCode === EWhatsAppErrorCode.SESSION_NOT_FOUND
-        ) {
+      const PERMANENT_ERRORS = [
+        EWhatsAppErrorCode.RECIPIENT_INVALID,
+        EWhatsAppErrorCode.SESSION_NOT_FOUND,
+        EWhatsAppErrorCode.SESSION_EXPIRED,
+        EWhatsAppErrorCode.ACCOUNT_NOT_FOUND,
+        EWhatsAppErrorCode.LOGGED_OUT,
+        EWhatsAppErrorCode.BAD_SESSION,
+        EWhatsAppErrorCode.MULTIDEVICE_MISMATCH,
+        EWhatsAppErrorCode.CONNECTION_REPLACED,
+      ];
+
+      const SESSION_ERRORS = [
+        EWhatsAppErrorCode.SESSION_EXPIRED,
+        EWhatsAppErrorCode.SESSION_NOT_FOUND,
+        EWhatsAppErrorCode.LOGGED_OUT,
+        EWhatsAppErrorCode.BAD_SESSION,
+        EWhatsAppErrorCode.MULTIDEVICE_MISMATCH,
+        EWhatsAppErrorCode.CONNECTION_REPLACED,
+      ];
+
+      if (PERMANENT_ERRORS.includes(errorCode as EWhatsAppErrorCode)) {
+        if (SESSION_ERRORS.includes(errorCode as EWhatsAppErrorCode)) {
           await markWhatsAppAsDisconnected(accountId);
         }
         throw new UnrecoverableError(errorCode);
       }
 
-      // TEMPORARY FAILURES - Let BullMQ retry
-      // Connection issues, rate limits, etc.
-      // TODO: Some errors might need custom retry strategies:
-      // - CONNECTION_TIMEOUT: Maybe longer delay between retries?
-      // - RATE_LIMITED: Custom backoff based on WhatsApp's rate limit window?
+      // Temporary failures — let BullMQ retry
       throw new Error(errorCode);
     }
 
