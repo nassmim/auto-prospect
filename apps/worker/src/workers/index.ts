@@ -59,7 +59,7 @@ export async function startAllWorkers() {
   const workers = [
     new Worker(QUEUE_NAMES.WHATSAPP, whatsappWorker, {
       connection,
-      ...RETRY_CONFIG.MESSAGE_SEND,
+      ...RETRY_CONFIG.WHATSAPP_SEND,
     }),
     new Worker(QUEUE_NAMES.SMS, smsWorker, {
       connection,
