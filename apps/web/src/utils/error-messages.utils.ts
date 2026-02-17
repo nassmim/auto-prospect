@@ -27,9 +27,9 @@ const WHATSAPP_ERROR_MESSAGES: Record<EWhatsAppErrorCode, string> = {
 
   // Session errors
   [EWhatsAppErrorCode.SESSION_NOT_FOUND]:
-    "Session WhatsApp non trouvée. Veuillez vous reconnecter.",
+    "Session WhatsApp non trouvée. Essaie de te reconnecter ou contacte-nous si le problème persiste.",
   [EWhatsAppErrorCode.SESSION_EXPIRED]:
-    "Session WhatsApp expirée. Veuillez vous reconnecter.",
+    "Session WhatsApp expirée. Essaie de te reconnecter ou contacte-nous si le problème persiste.",
   [EWhatsAppErrorCode.SESSION_SAVE_FAILED]: "Échec de sauvegarde de la session",
   [EWhatsAppErrorCode.SESSION_DELETE_FAILED]:
     "Échec de suppression de la session",
@@ -45,7 +45,7 @@ const GENERAL_ERROR_MESSAGES: Record<EGeneralErrorCode, string> = {
     "Erreur de base de données. Réessaie plus tard.",
   [EGeneralErrorCode.UNKNOWN_ERROR]: "Une erreur inattendue s'est produite",
   [EGeneralErrorCode.NOT_FOUND]: "La ressource demandée n'a pas été trouvée",
-  [EGeneralErrorCode.FORBIDDEN]: "Vous n'avez pas accès à cette ressource",
+  [EGeneralErrorCode.FORBIDDEN]: "Tu n'as pas accès à cette ressource",
   [EGeneralErrorCode.RATE_LIMITED]:
     "Trop de requêtes. Réessaie dans quelques instants.",
   [EGeneralErrorCode.SERVER_ERROR]:

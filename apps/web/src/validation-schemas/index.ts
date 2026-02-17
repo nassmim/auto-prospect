@@ -46,9 +46,13 @@ export {
 
 // Lead schemas
 export {
+  bulkUpdateLeadsSchema,
+  leadFiltersSchema,
   leadNoteSchema,
   leadReminderFormSchema,
   leadReminderSchema,
+  type TBulkUpdateLeads,
+  type TLeadFilters,
   type TLeadNoteFormData,
   type TLeadReminderFormData,
 } from "./lead.validation";

@@ -1,10 +1,20 @@
 "use client";
 
 import { bulkUpdateLeads } from "@/actions/lead.actions";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { bulkUpdateLeadsSchema } from "@/validation-schemas";
 import {
   getLeadStageConfig,
   LEAD_STAGE_VALUES,
-  TLeadStage,
+  type TLeadStage,
 } from "@auto-prospect/shared/src/config/lead.config";
 import { useState, useTransition } from "react";
 
@@ -74,9 +84,20 @@ export function ListView({ initialLeads, onLeadClick }: ListViewProps) {
   const handleBulkStageUpdate = async (newStage: TLeadStage) => {
     if (selectedIds.size === 0) return;
 
+    const leadIds = Array.from(selectedIds);
+    const validationResult = bulkUpdateLeadsSchema.safeParse({
+      leadIds,
+      updates: { stage: newStage },
+    });
+
+    if (!validationResult.success) {
+      console.error("Validation failed:", validationResult.error);
+      return;
+    }
+
     startTransition(async () => {
       try {
-        await bulkUpdateLeads(Array.from(selectedIds), { stage: newStage });
+        await bulkUpdateLeads(leadIds, { stage: newStage });
         setSelectedIds(new Set());
       } catch (error) {
         console.error("Failed to bulk update leads:", error);
@@ -128,29 +149,26 @@ export function ListView({ initialLeads, onLeadClick }: ListViewProps) {
             {selectedIds.size > 1 ? "s" : ""}
           </span>
 
-          <select
-            className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1 text-sm text-zinc-100"
-            onChange={(e) =>
-              handleBulkStageUpdate(e.target.value as TLeadStage)
-            }
-            defaultValue=""
-          >
-            <option value="" disabled>
-              Changer le stage...
-            </option>
-            {LEAD_STAGE_VALUES.map((stage) => (
-              <option key={stage} value={stage}>
-                {getLeadStageConfig(stage).label}
-              </option>
-            ))}
-          </select>
+          <Select onValueChange={(value) => handleBulkStageUpdate(value as TLeadStage)}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Changer le stage..." />
+            </SelectTrigger>
+            <SelectContent>
+              {LEAD_STAGE_VALUES.map((stage) => (
+                <SelectItem key={stage} value={stage}>
+                  {getLeadStageConfig(stage).label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-          <button
+          <Button
+            variant="ghost"
             onClick={() => setSelectedIds(new Set())}
-            className="ml-auto text-sm text-zinc-400 hover:text-zinc-100"
+            className="ml-auto"
           >
             Annuler
-          </button>
+          </Button>
         </div>
       )}
 
@@ -160,14 +178,9 @@ export function ListView({ initialLeads, onLeadClick }: ListViewProps) {
           <thead className="border-b border-zinc-800 bg-zinc-900">
             <tr>
               <th className="w-12 p-3">
-                <input
-                  type="checkbox"
-                  checked={allSelected}
-                  ref={(el) => {
-                    if (el) el.indeterminate = someSelected;
-                  }}
-                  onChange={toggleSelectAll}
-                  className="h-4 w-4 rounded border-zinc-700 bg-zinc-800 text-amber-500 focus:ring-amber-500"
+                <Checkbox
+                  checked={allSelected ? true : someSelected ? "indeterminate" : false}
+                  onCheckedChange={toggleSelectAll}
                 />
               </th>
               <SortableHeader
@@ -217,11 +230,9 @@ export function ListView({ initialLeads, onLeadClick }: ListViewProps) {
                 className="border-b border-zinc-800/50 hover:bg-zinc-900/50"
               >
                 <td className="p-3">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={selectedIds.has(lead.id)}
-                    onChange={() => toggleSelect(lead.id)}
-                    className="h-4 w-4 rounded border-zinc-700 bg-zinc-800 text-amber-500 focus:ring-amber-500"
+                    onCheckedChange={() => toggleSelect(lead.id)}
                   />
                 </td>
                 <td

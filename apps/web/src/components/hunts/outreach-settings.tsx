@@ -1,8 +1,31 @@
 "use client";
 
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { pages } from "@/config/routes";
 import { getAccountTemplates } from "@/services/message.service";
 import { EContactChannel } from "@auto-prospect/shared/src/config/message.config";
+import { z } from "zod";
+
+const outreachSettingsSchema = z.object({
+  leboncoin: z.boolean().optional(),
+  whatsapp: z.boolean().optional(),
+  sms: z.boolean().optional(),
+  ringlessVoice: z.boolean().optional(),
+});
+
+const templateIdsSchema = z.object({
+  leboncoin: z.string().uuid().nullable().optional(),
+  whatsapp: z.string().uuid().nullable().optional(),
+  sms: z.string().uuid().nullable().optional(),
+  ringlessVoice: z.string().uuid().nullable().optional(),
+});
 
 type OutreachSettingsProps = {
   templates: Awaited<ReturnType<typeof getAccountTemplates>>;
@@ -34,20 +57,36 @@ export function OutreachSettings({
   const handleToggle = (
     channel: "leboncoin" | "whatsapp" | "sms" | "ringlessVoice",
   ) => {
-    onOutreachChange({
+    const newSettings = {
       ...outreachSettings,
       [channel]: !outreachSettings[channel],
-    });
+    };
+
+    const validationResult = outreachSettingsSchema.safeParse(newSettings);
+    if (!validationResult.success) {
+      console.error("Outreach settings validation failed:", validationResult.error);
+      return;
+    }
+
+    onOutreachChange(validationResult.data);
   };
 
   const handleTemplateChange = (
     channel: "leboncoin" | "whatsapp" | "sms" | "ringlessVoice",
     templateId: string,
   ) => {
-    onTemplateChange({
+    const newTemplateIds = {
       ...templateIds,
       [channel]: templateId || null,
-    });
+    };
+
+    const validationResult = templateIdsSchema.safeParse(newTemplateIds);
+    if (!validationResult.success) {
+      console.error("Template IDs validation failed:", validationResult.error);
+      return;
+    }
+
+    onTemplateChange(validationResult.data);
   };
 
   // Filter templates by channel and type
@@ -187,12 +226,11 @@ export function OutreachSettings({
             >
               {/* Channel toggle */}
               <div className="mb-3 flex items-start gap-3">
-                <input
-                  type="checkbox"
+                <Checkbox
                   id={`channel-${config.key}`}
                   checked={isEnabled}
-                  onChange={() => handleToggle(config.key)}
-                  className="mt-1 h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-amber-500 focus:ring-2 focus:ring-amber-500 focus:ring-offset-0"
+                  onCheckedChange={() => handleToggle(config.key)}
+                  className="mt-1"
                 />
                 <div className="flex-1">
                   <label
@@ -229,22 +267,24 @@ export function OutreachSettings({
                         </a>
                       </div>
                     ) : (
-                      <select
-                        id={`template-${config.key}`}
-                        value={templateIds[config.key] || ""}
-                        onChange={(e) =>
-                          handleTemplateChange(config.key, e.target.value)
+                      <Select
+                        value={templateIds[config.key] || undefined}
+                        onValueChange={(value) =>
+                          handleTemplateChange(config.key, value)
                         }
-                        className="w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-200 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
                       >
-                        <option value="">Sélectionner un template...</option>
-                        {availableTemplates.map((template) => (
-                          <option key={template.id} value={template.id}>
-                            {template.name} (
-                            {template.audioUrl ? "Vocal" : "Texte"})
-                          </option>
-                        ))}
-                      </select>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Sélectionner un template..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableTemplates.map((template) => (
+                            <SelectItem key={template.id} value={template.id}>
+                              {template.name} (
+                              {template.audioUrl ? "Vocal" : "Texte"})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     )}
                   </div>
 

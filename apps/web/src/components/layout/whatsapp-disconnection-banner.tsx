@@ -44,7 +44,7 @@ export function WhatsAppDisconnectionBanner({
               WhatsApp déconnecté
             </p>
             <p className="mt-0.5 text-xs text-amber-300/90">
-              Votre session WhatsApp a été déconnectée. Reconnectez-vous pour
+              Ta session WhatsApp a été déconnectée. Reconnecte-toi pour
               continuer à envoyer des messages.
             </p>
           </div>

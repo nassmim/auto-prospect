@@ -111,7 +111,7 @@ export function SettingsPageClient({
           Paramètres
         </h1>
         <p className="mt-1 text-sm text-zinc-500">
-          Gérez vos paramètres et votre équipe
+          Gère tes paramètres et ton équipe
         </p>
       </div>
 

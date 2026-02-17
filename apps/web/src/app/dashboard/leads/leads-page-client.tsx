@@ -20,7 +20,7 @@ export function LeadsPageClient({ leads }: LeadsPageClientProps) {
       <div className="border-b border-zinc-800 bg-zinc-950 p-4">
         <div className="mb-4 flex items-center justify-between">
           <h1 className="text-2xl font-semibold text-zinc-100">
-            Pipeline de leads
+            Tes leads
           </h1>
 
           {/* View Toggle */}

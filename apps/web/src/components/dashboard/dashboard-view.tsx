@@ -62,7 +62,7 @@ export function DashboardView({
             Dashboard
           </h1>
           <div className="mt-1 flex items-center gap-2 text-sm text-zinc-500">
-            <span>Vue d&apos;ensemble de votre activité</span>
+            <span>Vue d&apos;ensemble de ton activité</span>
             {lastUpdated && (
               <>
                 <span>•</span>

@@ -136,7 +136,7 @@ export function TeamTab({ account, userRole, initialMembers }: TeamTabProps) {
   const handleRemoveMember = (memberId: string) => {
     if (!canEdit) return;
 
-    if (!confirm("Êtes-vous sûr de vouloir retirer ce membre ?")) return;
+    if (!confirm("Es-tu sûr de vouloir retirer ce membre ?")) return;
 
     setError(null);
 
@@ -159,9 +159,9 @@ export function TeamTab({ account, userRole, initialMembers }: TeamTabProps) {
       {/* account Name */}
       <div className="space-y-4">
         <div>
-          <h2 className="text-lg font-semibold text-zinc-100">Organisation</h2>
+          <h2 className="text-lg font-semibold text-zinc-100">Entreprise</h2>
           <p className="mt-1 text-sm text-zinc-500">
-            Informations générales de votre organisation
+            Informations générales sur ton entreprise
           </p>
         </div>
 
@@ -171,7 +171,7 @@ export function TeamTab({ account, userRole, initialMembers }: TeamTabProps) {
               htmlFor="org-name"
               className="block text-sm font-medium text-zinc-300"
             >
-              Nom de l&apos;organisation
+              Nom de l&apos;entreprise
             </label>
             <div className="mt-2 flex gap-3">
               <div className="flex-1">

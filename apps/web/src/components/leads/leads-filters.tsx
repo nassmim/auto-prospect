@@ -1,6 +1,16 @@
 "use client";
 
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { leadFiltersSchema } from "@/validation-schemas";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback } from "react";
 
 export function LeadsFilters() {
@@ -21,7 +31,14 @@ export function LeadsFilters() {
     [searchParams],
   );
 
-  const updateFilter = (name: string, value: string) => {
+  const updateFilter = (name: keyof typeof leadFiltersSchema.shape, value: string) => {
+    const validated = leadFiltersSchema.partial().safeParse({ [name]: value });
+
+    if (!validated.success) {
+      console.error("Filter validation failed:", validated.error);
+      return;
+    }
+
     const queryString = createQueryString(name, value);
     router.push(`${pathname}?${queryString}`, { scroll: false });
   };
@@ -29,32 +46,38 @@ export function LeadsFilters() {
   return (
     <div className="flex flex-wrap gap-3">
       {/* Hunt Filter */}
-      <select
-        className="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-        value={searchParams.get("hunt") || ""}
-        onChange={(e) => updateFilter("hunt", e.target.value)}
+      <Select
+        value={searchParams.get("hunt") || undefined}
+        onValueChange={(value) => updateFilter("hunt", value)}
       >
-        <option value="">Toutes les recherches</option>
-        {/* TODO: Populate from hunts data */}
-      </select>
+        <SelectTrigger className="w-[200px]">
+          <SelectValue placeholder="Toutes les recherches" />
+        </SelectTrigger>
+        <SelectContent>
+          {/* TODO: Populate from hunts data */}
+        </SelectContent>
+      </Select>
 
       {/* Assigned User Filter */}
-      <select
-        className="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-        value={searchParams.get("assigned") || ""}
-        onChange={(e) => updateFilter("assigned", e.target.value)}
+      <Select
+        value={searchParams.get("assigned") || undefined}
+        onValueChange={(value) => updateFilter("assigned", value)}
       >
-        <option value="">Tous les utilisateurs</option>
-        <option value="me">Mes leads</option>
-        <option value="unassigned">Non assignés</option>
-        {/* TODO: Populate from org members data */}
-      </select>
+        <SelectTrigger className="w-[200px]">
+          <SelectValue placeholder="Tous les utilisateurs" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="me">Mes leads</SelectItem>
+          <SelectItem value="unassigned">Non assignés</SelectItem>
+          {/* TODO: Populate from org members data */}
+        </SelectContent>
+      </Select>
 
       {/* Search Input */}
-      <input
+      <Input
         type="search"
         placeholder="Rechercher..."
-        className="min-w-[200px] rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+        className="min-w-[200px]"
         value={searchParams.get("q") || ""}
         onChange={(e) => updateFilter("q", e.target.value)}
       />
@@ -63,12 +86,12 @@ export function LeadsFilters() {
       {(searchParams.get("hunt") ||
         searchParams.get("assigned") ||
         searchParams.get("q")) && (
-        <button
+        <Button
+          variant="outline"
           onClick={() => router.push(pathname)}
-          className="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
         >
           Réinitialiser
-        </button>
+        </Button>
       )}
     </div>
   );

@@ -12,7 +12,11 @@ import {
   getPipelineLeads,
   updateLeadCache,
 } from "@/services/lead.service";
-import { leadNoteSchema, leadReminderSchema } from "@/validation-schemas";
+import {
+  bulkUpdateLeadsSchema,
+  leadNoteSchema,
+  leadReminderSchema,
+} from "@/validation-schemas";
 import {
   eq,
   inArray,
@@ -165,7 +169,16 @@ export async function bulkUpdateLeads(
     throw new Error("Unauthorized");
   }
 
-  if (leadIds.length === 0) {
+  const validationResult = bulkUpdateLeadsSchema.safeParse({ leadIds, updates });
+
+  if (!validationResult.success) {
+    throw new Error(formatZodError(validationResult.error));
+  }
+
+  const { leadIds: validatedLeadIds, updates: validatedUpdates } =
+    validationResult.data;
+
+  if (validatedLeadIds.length === 0) {
     return { success: true, count: 0 };
   }
 
@@ -181,25 +194,31 @@ export async function bulkUpdateLeads(
       updatedAt: new Date(),
     };
 
-    if (updates.stage !== undefined) {
-      updateData.stage = updates.stage;
+    if (validatedUpdates.stage !== undefined) {
+      updateData.stage = validatedUpdates.stage;
     }
-    if (updates.assignedToId !== undefined) {
-      updateData.assignedToId = updates.assignedToId;
+    if (validatedUpdates.assignedToId !== undefined) {
+      updateData.assignedToId = validatedUpdates.assignedToId;
     }
 
     await dbClient.rls(async (tx) => {
-      await tx.update(leads).set(updateData).where(inArray(leads.id, leadIds));
+      await tx
+        .update(leads)
+        .set(updateData)
+        .where(inArray(leads.id, validatedLeadIds));
 
       // Log bulk action as notes for each lead
       const noteContent: string[] = [];
-      if (updates.stage) noteContent.push(`Stage: ${updates.stage}`);
-      if (updates.assignedToId !== undefined)
-        noteContent.push(`Assigné à: ${updates.assignedToId || "Non assigné"}`);
+      if (validatedUpdates.stage)
+        noteContent.push(`Stage: ${validatedUpdates.stage}`);
+      if (validatedUpdates.assignedToId !== undefined)
+        noteContent.push(
+          `Assigné à: ${validatedUpdates.assignedToId || "Non assigné"}`,
+        );
 
       if (noteContent.length > 0) {
         await tx.insert(leadNotes).values(
-          leadIds.map((leadId) => ({
+          validatedLeadIds.map((leadId) => ({
             leadId,
             content: `Action groupée - ${noteContent.join(", ")}`,
           })),

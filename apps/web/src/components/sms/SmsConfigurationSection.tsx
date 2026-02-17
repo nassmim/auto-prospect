@@ -1,7 +1,7 @@
 "use client";
 
-import SmsApiKeyForm from "./SmsApiKeyForm";
 import { Button } from "@/components/ui/button";
+import SmsApiKeyForm from "./SmsApiKeyForm";
 
 type SmsConfigurationSectionProps = {
   hasApiKey: boolean;
@@ -33,8 +33,8 @@ export default function SmsConfigurationSection({
       {!isApiAllowed ? (
         <div className="space-y-6">
           <p className="text-black">
-            Pour accéder à la configuration SMS, contactez-nous pour activer
-            cette fonctionnalité sur votre compte.
+            Pour accéder à la configuration SMS, contacte-nous pour activer
+            cette fonctionnalité sur ton compte.
           </p>
           <Button onClick={handleContactClick} className="w-full sm:w-auto">
             Nous contacter

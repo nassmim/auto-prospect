@@ -80,7 +80,7 @@ export function HuntsView({ hunts: initialHunts }: HuntsViewProps) {
               Aucune recherche
             </h3>
             <p className="mb-6 text-sm text-zinc-400">
-              Crées ta première recherche pour commencer la prospection
+              Crée ta première recherche pour commencer la prospection
               automatique
             </p>
             <Link

@@ -83,7 +83,7 @@ export function HuntCard({ hunt, onMutate }: HuntCardProps) {
   };
 
   const handleDelete = async () => {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer cette recherche ?")) {
+    if (!confirm("Es-tu sûr de vouloir supprimer cette recherche ?")) {
       return;
     }
 

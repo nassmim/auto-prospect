@@ -26,7 +26,7 @@ export function TemplateCard({ template }: TemplateCardProps) {
   const router = useRouter();
 
   const handleDelete = async () => {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer ce template ?")) {
+    if (!confirm("Es-tu sûr de vouloir supprimer ce template ?")) {
       return;
     }
 
