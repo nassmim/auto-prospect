@@ -30,6 +30,13 @@ export enum EWhatsAppErrorCode {
   // Message sending errors
   MESSAGE_SEND_FAILED = "MESSAGE_SEND_FAILED",
   RECIPIENT_INVALID = "RECIPIENT_INVALID",
+  RATE_LIMITED = "RATE_LIMITED",
+
+  // Baileys disconnect errors (permanent)
+  LOGGED_OUT = "LOGGED_OUT",
+  BAD_SESSION = "BAD_SESSION",
+  MULTIDEVICE_MISMATCH = "MULTIDEVICE_MISMATCH",
+  CONNECTION_REPLACED = "CONNECTION_REPLACED",
 }
 
 export type TWhatsAppErrorCode = EWhatsAppErrorCode;
