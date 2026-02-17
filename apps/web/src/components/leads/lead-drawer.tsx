@@ -9,6 +9,7 @@ import {
   fetchLeadTeamMembers,
   updateLeadStage,
 } from "@/actions/lead.actions";
+import { sendRinglessVoiceToLead } from "@/actions/message.actions";
 import { sendWhatsAppTextMessage } from "@/actions/whatsapp.actions";
 import { Dropdown } from "@/components/ui/dropdown";
 import {
@@ -73,6 +74,7 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
 
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isSendingWhatsApp, setIsSendingWhatsApp] = useState(false);
+  const [isSendingVoice, setIsSendingVoice] = useState(false);
 
   // Notes form
   const noteForm = useForm<TLeadNoteFormData>({
@@ -181,6 +183,40 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
       alert("Erreur lors de l'envoi du message WhatsApp");
     } finally {
       setIsSendingWhatsApp(false);
+    }
+  };
+
+  const handleVoiceClick = async () => {
+    if (!lead || !lead.ad.phoneNumber || isSendingVoice) return;
+
+    setIsSendingVoice(true);
+
+    try {
+      const result = await sendRinglessVoiceToLead(lead.id);
+
+      if (!result.success) {
+        const errorMessages: Record<string, string> = {
+          NO_DEFAULT_TEMPLATE:
+            "Aucun template vocal par défaut configuré. Allez dans Modèles pour en définir un.",
+          RECIPIENT_PHONE_INVALID:
+            "Numéro de téléphone du destinataire invalide.",
+          PHONE_INVALID:
+            "Numéro de téléphone fixe non configuré dans les paramètres.",
+          API_KEY_MISSING: "Configuration des API vocales manquante.",
+        };
+        const message =
+          errorMessages[result.errorCode || ""] ||
+          "Erreur lors de l'envoi du message vocal";
+        alert(message);
+        return;
+      }
+
+      mutate();
+      alert("Message vocal envoyé avec succès");
+    } catch {
+      alert("Erreur lors de l'envoi du message vocal");
+    } finally {
+      setIsSendingVoice(false);
     }
   };
 
@@ -507,26 +543,39 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
                   <span>SMS</span>
                 </button>
 
-                {/* Voice Button (Placeholder) */}
+                {/* Voice Button */}
                 <button
                   type="button"
-                  disabled
-                  className="group flex cursor-not-allowed items-center justify-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-3 font-medium text-zinc-600 transition-all"
-                  title="Nécessite des crédits Voice"
+                  onClick={handleVoiceClick}
+                  disabled={!lead.ad.phoneNumber || isSendingVoice}
+                  className={`group flex items-center justify-center gap-2 rounded-lg border px-4 py-3 font-medium transition-all ${
+                    !lead.ad.phoneNumber
+                      ? "cursor-not-allowed border-zinc-800 bg-zinc-900/50 text-zinc-600"
+                      : "border-purple-900/50 bg-purple-950/30 text-purple-400 hover:border-purple-800 hover:bg-purple-900/40"
+                  }`}
+                  title={
+                    !lead.ad.phoneNumber
+                      ? "Numéro de téléphone non disponible"
+                      : ""
+                  }
                 >
-                  <svg
-                    className="h-5 w-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
-                    />
-                  </svg>
+                  {isSendingVoice ? (
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-purple-400 border-t-transparent" />
+                  ) : (
+                    <svg
+                      className="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
+                      />
+                    </svg>
+                  )}
                   <span>Voice</span>
                 </button>
 
