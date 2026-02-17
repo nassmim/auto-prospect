@@ -94,6 +94,10 @@ export const NON_RETRYABLE_ERROR_CODES = [
   EWhatsAppErrorCode.SESSION_EXPIRED,
   EWhatsAppErrorCode.ACCOUNT_NOT_FOUND,
   EWhatsAppErrorCode.RECIPIENT_INVALID,
+  EWhatsAppErrorCode.LOGGED_OUT,
+  EWhatsAppErrorCode.BAD_SESSION,
+  EWhatsAppErrorCode.MULTIDEVICE_MISMATCH,
+  EWhatsAppErrorCode.CONNECTION_REPLACED,
 
   // Voice - Configuration issues
   EVoiceErrorCode.API_KEY_MISSING,
