@@ -347,12 +347,16 @@ export const sendWhatsAppTextMessage = async (
       }),
     );
 
+    if (!template || !template.content) {
+      return {
+        success: false,
+        errorCode: EMessageErrorCode.NO_DEFAULT_TEMPLATE,
+      };
+    }
+
     // Render message with template variables
     const variables = extractLeadVariables(lead);
-    const defaultMessage = `Bonjour, je suis intéressé par votre annonce "${lead.ad.title}".`;
-    const renderedMessage = template
-      ? renderMessageTemplate(template.content || defaultMessage, variables)
-      : defaultMessage;
+    const renderedMessage = renderMessageTemplate(template.content, variables);
 
     // ===== EXECUTION PHASE =====
     // Send WhatsApp message via worker API
