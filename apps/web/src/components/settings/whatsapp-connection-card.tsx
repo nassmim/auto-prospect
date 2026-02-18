@@ -290,7 +290,7 @@ export function WhatsAppConnectionCard({
                 <button
                   onClick={handleConnectWhatsApp}
                   disabled={connectionLoading}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 py-2.5 text-sm font-medium text-white transition-colors hover:bg-green-700 disabled:opacity-50"
+                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 py-2.5 text-sm font-medium text-white transition-colors hover:bg-green-700 disabled:opacity-50 cursor-pointer"
                 >
                   {connectionLoading ? (
                     <>

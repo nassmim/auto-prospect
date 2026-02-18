@@ -6,6 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -261,11 +262,17 @@ export function TextTemplateForm({ defaultChannel }: TextTemplateFormProps) {
                     className="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-amber-500 focus:ring-2 focus:ring-amber-500 focus:ring-offset-0"
                   />
                 </FormControl>
-                <FormLabel className="text-sm text-zinc-300 cursor-pointer">
-                  Définir comme template par défaut pour{" "}
-                  {textChannels.find((ch) => ch.value === channelValue)
-                    ?.label || channelValue}
-                </FormLabel>
+                <div className="flex flex-col ">
+                  <FormLabel className="text-sm text-zinc-300 cursor-pointer">
+                    Définir comme template par défaut pour{" "}
+                    {textChannels.find((ch) => ch.value === channelValue)
+                      ?.label || channelValue}
+                  </FormLabel>
+                  <FormDescription>
+                    (Lorsque tu enverras toi-même un message individuel,
+                    c&apos;est ce template qui sera utilisé.)
+                  </FormDescription>
+                </div>
               </div>
             </FormItem>
           )}

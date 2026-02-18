@@ -79,6 +79,8 @@ export const updateWhatsAppPhoneNumber = async (
   // Validate and format the phone number
   const validation = validateWhatsAppNumber(phoneNumber);
   if (!validation.isValid) {
+    console.log("dans if");
+    console.log(validation.errorCode);
     return { success: false, errorCode: validation.errorCode };
   }
 
