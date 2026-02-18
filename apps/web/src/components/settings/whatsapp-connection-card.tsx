@@ -215,7 +215,7 @@ export function WhatsAppConnectionCard({
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-zinc-950 transition-colors hover:bg-amber-400 disabled:opacity-50"
+                className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-zinc-950 transition-colors hover:bg-amber-400 disabled:opacity-50 cursor-pointer"
               >
                 {isSubmitting
                   ? "..."

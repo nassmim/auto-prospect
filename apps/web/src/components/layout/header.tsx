@@ -17,7 +17,7 @@ export function Header({ onMenuClick }: HeaderProps) {
           <button
             type="button"
             onClick={onMenuClick}
-            className="md:hidden rounded p-2 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+            className="md:hidden cursor-pointer rounded p-2 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
           >
             <Bars3Icon className="h-6 w-6" />
           </button>
@@ -34,7 +34,7 @@ export function Header({ onMenuClick }: HeaderProps) {
           {/* account switcher placeholder */}
           <button
             type="button"
-            className="flex items-center gap-2 rounded border border-zinc-800 bg-zinc-900/50 px-3 py-1.5 font-mono text-sm text-zinc-300 transition-all hover:border-zinc-700 hover:bg-zinc-900"
+            className="flex cursor-pointer items-center gap-2 rounded border border-zinc-800 bg-zinc-900/50 px-3 py-1.5 font-mono text-sm text-zinc-300 transition-all hover:border-zinc-700 hover:bg-zinc-900"
           >
             <svg
               className="h-4 w-4"

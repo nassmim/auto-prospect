@@ -27,7 +27,7 @@ export function LeadsPageClient({ leads }: LeadsPageClientProps) {
           <div className="inline-flex rounded-lg border border-zinc-800 bg-zinc-900 p-1">
             <button
               onClick={() => setViewMode("kanban")}
-              className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+              className={`cursor-pointer rounded-md px-4 py-2 text-sm font-medium transition-colors ${
                 viewMode === "kanban"
                   ? "bg-amber-500 text-zinc-950"
                   : "text-zinc-400 hover:text-zinc-100"
@@ -37,7 +37,7 @@ export function LeadsPageClient({ leads }: LeadsPageClientProps) {
             </button>
             <button
               onClick={() => setViewMode("list")}
-              className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+              className={`cursor-pointer rounded-md px-4 py-2 text-sm font-medium transition-colors ${
                 viewMode === "list"
                   ? "bg-amber-500 text-zinc-950"
                   : "text-zinc-400 hover:text-zinc-100"

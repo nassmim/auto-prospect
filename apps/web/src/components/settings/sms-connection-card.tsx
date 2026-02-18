@@ -117,7 +117,7 @@ export function SmsConnectionCard({
           </p>
           <button
             onClick={handleContactClick}
-            className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-zinc-950 transition-colors hover:bg-amber-400"
+            className="cursor-pointer rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-zinc-950 transition-colors hover:bg-amber-400"
           >
             Nous contacter
           </button>
@@ -192,7 +192,7 @@ export function SmsConnectionCard({
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-zinc-950 transition-colors hover:bg-amber-400 disabled:opacity-50"
+                    className="cursor-pointer rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-zinc-950 transition-colors hover:bg-amber-400 disabled:opacity-50"
                   >
                     {isSubmitting
                       ? "..."

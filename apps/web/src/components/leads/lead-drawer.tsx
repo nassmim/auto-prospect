@@ -325,7 +325,7 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
           </h2>
           <button
             onClick={onClose}
-            className="group rounded-lg p-2 transition-colors hover:bg-zinc-900"
+            className="group cursor-pointer rounded-lg p-2 transition-colors hover:bg-zinc-900"
             aria-label="Fermer"
           >
             <svg
@@ -389,7 +389,7 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
                         <button
                           key={idx}
                           onClick={() => setSelectedImageIndex(idx)}
-                          className={`relative h-16 w-24 flex-shrink-0 overflow-hidden rounded-lg border-2 transition-all ${
+                          className={`relative h-16 w-24 flex-shrink-0 cursor-pointer overflow-hidden rounded-lg border-2 transition-all ${
                             idx === selectedImageIndex
                               ? "border-amber-500 ring-2 ring-amber-500/20"
                               : "border-zinc-800 hover:border-zinc-700"
@@ -511,7 +511,7 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
                   className={`group flex items-center justify-center gap-2 rounded-lg border px-4 py-3 font-medium transition-all ${
                     !lead.ad.phoneNumber
                       ? "cursor-not-allowed border-zinc-800 bg-zinc-900/50 text-zinc-600"
-                      : "border-green-900/50 bg-green-950/30 text-green-400 hover:border-green-800 hover:bg-green-900/40"
+                      : "cursor-pointer border-green-900/50 bg-green-950/30 text-green-400 hover:border-green-800 hover:bg-green-900/40"
                   }`}
                   title={
                     !lead.ad.phoneNumber
@@ -564,7 +564,7 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
                   className={`group flex items-center justify-center gap-2 rounded-lg border px-4 py-3 font-medium transition-all ${
                     !lead.ad.phoneNumber
                       ? "cursor-not-allowed border-zinc-800 bg-zinc-900/50 text-zinc-600"
-                      : "border-purple-900/50 bg-purple-950/30 text-purple-400 hover:border-purple-800 hover:bg-purple-900/40"
+                      : "cursor-pointer border-purple-900/50 bg-purple-950/30 text-purple-400 hover:border-purple-800 hover:bg-purple-900/40"
                   }`}
                   title={
                     !lead.ad.phoneNumber
@@ -747,7 +747,7 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
                     <button
                       type="submit"
                       disabled={isSubmittingNote}
-                      className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="cursor-pointer rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {isSubmittingNote ? "Enregistrement..." : "Sauvegarder"}
                     </button>
@@ -844,7 +844,7 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
                     <button
                       type="submit"
                       disabled={isSubmittingReminder}
-                      className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="cursor-pointer rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {isSubmittingReminder ? "Ajout..." : "Ajouter"}
                     </button>
@@ -898,7 +898,7 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
                         <button
                           type="button"
                           onClick={() => handleDeleteReminder(reminder.id)}
-                          className="ml-2 rounded p-1 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-red-400"
+                          className="ml-2 cursor-pointer rounded p-1 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-red-400"
                           aria-label="Supprimer le rappel"
                         >
                           <svg

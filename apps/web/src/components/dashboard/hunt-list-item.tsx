@@ -82,7 +82,7 @@ export function HuntListItem({ hunt, onPauseToggle }: THuntListItemProps) {
               onClick={() =>
                 onPauseToggle(hunt.id, isPaused ? "active" : "paused")
               }
-              className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-100"
+              className="cursor-pointer rounded-lg p-2 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-100"
               title={isPaused ? "Reprendre" : "Mettre en pause"}
             >
               {isPaused ? (

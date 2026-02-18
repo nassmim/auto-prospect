@@ -122,7 +122,7 @@ export function SettingsPageClient({
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 border-b-2 px-1 py-4 text-sm font-medium transition-colors ${
+              className={`flex cursor-pointer items-center gap-2 border-b-2 px-1 py-4 text-sm font-medium transition-colors ${
                 activeTab === tab.id
                   ? "border-amber-500 text-amber-500"
                   : "border-transparent text-zinc-500 hover:border-zinc-700 hover:text-zinc-300"

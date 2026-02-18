@@ -75,7 +75,7 @@ export function Dropdown({
         className={`flex w-full items-center justify-between gap-2 rounded-lg border px-4 py-2.5 text-left transition-colors ${
           disabled
             ? "cursor-not-allowed border-zinc-800 bg-zinc-900/50 text-zinc-600"
-            : "border-zinc-800 bg-zinc-900/50 text-zinc-200 hover:border-zinc-700 hover:bg-zinc-900"
+            : "cursor-pointer border-zinc-800 bg-zinc-900/50 text-zinc-200 hover:border-zinc-700 hover:bg-zinc-900"
         } ${isOpen ? "border-amber-500/50 ring-2 ring-amber-500/20" : ""}`}
       >
         <div className="flex items-center gap-2">
@@ -118,7 +118,7 @@ export function Dropdown({
               <button
                 type="button"
                 onClick={() => handleSelect(null)}
-                className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm transition-colors hover:bg-zinc-800"
+                className="flex w-full cursor-pointer items-center gap-2 px-4 py-2.5 text-left text-sm transition-colors hover:bg-zinc-800"
               >
                 <span className="text-zinc-400">{nullLabel}</span>
               </button>
@@ -129,7 +129,7 @@ export function Dropdown({
                 key={option.value}
                 type="button"
                 onClick={() => handleSelect(option.value)}
-                className={`flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm transition-colors hover:bg-zinc-800 ${
+                className={`flex w-full cursor-pointer items-center gap-2 px-4 py-2.5 text-left text-sm transition-colors hover:bg-zinc-800 ${
                   value === option.value ? "bg-zinc-800/50" : ""
                 }`}
               >
