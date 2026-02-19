@@ -29,6 +29,20 @@
       "when": 1771508685391,
       "tag": "0003_chief_magdalene",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1771517335257,
+      "tag": "0004_clammy_bulldozer",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1771517714090,
+      "tag": "0005_famous_mentor",
+      "breakpoints": true
     }
   ]
 }

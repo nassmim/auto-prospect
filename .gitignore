@@ -71,7 +71,7 @@ node_modules/
 .claude/.auto-work-enabled
 
 seed.sql
-_seed.sql
+
 # Ignore Supabase auto-migrations (we use Drizzle)
 supabase/migrations/*.sql
 
