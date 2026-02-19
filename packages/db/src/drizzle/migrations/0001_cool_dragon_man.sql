@@ -3,7 +3,7 @@ CREATE TYPE "public"."transaction_type" AS ENUM('purchase', 'usage', 'refund', '
 CREATE TYPE "public"."hunt_status" AS ENUM('active', 'paused');--> statement-breakpoint
 CREATE TYPE "public"."lead_activity_type" AS ENUM('stage_change', 'message_sent', 'assignment_change', 'note_added', 'reminder_set', 'created');--> statement-breakpoint
 CREATE TYPE "public"."lead_stage" AS ENUM('new', 'contacted', 'chased', 'won', 'lost');--> statement-breakpoint
-CREATE TYPE "public"."channel" AS ENUM('whatsapp_text', 'sms', 'ringless_voice');--> statement-breakpoint
+CREATE TYPE "public"."channel" AS ENUM('whatsapp_text', 'ringless_voice');--> statement-breakpoint
 CREATE TYPE "public"."message_status" AS ENUM('pending', 'sent', 'delivered', 'failed', 'read', 'replied');--> statement-breakpoint
 CREATE TYPE "public"."role" AS ENUM('owner', 'admin', 'member');--> statement-breakpoint
 CREATE TABLE "accounts" (
@@ -192,18 +192,6 @@ CREATE TABLE "credit_transactions" (
 );
 --> statement-breakpoint
 ALTER TABLE "credit_transactions" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
-CREATE TABLE "hunt_channel_credits" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"hunt_id" uuid NOT NULL,
-	"channel" "channel" NOT NULL,
-	"credits_allocated" integer DEFAULT 0 NOT NULL,
-	"credits_consumed" integer DEFAULT 0 NOT NULL,
-	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "hunt_channel_unique" UNIQUE("hunt_id","channel")
-);
---> statement-breakpoint
-ALTER TABLE "hunt_channel_credits" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 CREATE TABLE "app_settings" (
 	"id" "smallserial" PRIMARY KEY NOT NULL,
 	"sms_alerts" boolean DEFAULT false,
@@ -376,7 +364,6 @@ ALTER TABLE "contacted_ads" ADD CONSTRAINT "contacted_ads_ad_id_ads_id_fk" FOREI
 ALTER TABLE "contacted_ads" ADD CONSTRAINT "contacted_ads_account_id_accounts_id_fk" FOREIGN KEY ("account_id") REFERENCES "public"."accounts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "credit_balances" ADD CONSTRAINT "credit_balances_account_id_accounts_id_fk" FOREIGN KEY ("account_id") REFERENCES "public"."accounts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "credit_transactions" ADD CONSTRAINT "credit_transactions_account_id_accounts_id_fk" FOREIGN KEY ("account_id") REFERENCES "public"."accounts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "hunt_channel_credits" ADD CONSTRAINT "hunt_channel_credits_hunt_id_fk" FOREIGN KEY ("hunt_id") REFERENCES "public"."hunts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "brands_hunts" ADD CONSTRAINT "hunt_id_fk" FOREIGN KEY ("hunt_id") REFERENCES "public"."hunts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "brands_hunts" ADD CONSTRAINT "brands_id_fk" FOREIGN KEY ("brand_id") REFERENCES "public"."brands"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "hunts" ADD CONSTRAINT "hunts_type_id_ad_types_id_fk" FOREIGN KEY ("type_id") REFERENCES "public"."ad_types"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -404,7 +391,6 @@ CREATE INDEX "credit_balances_account_id_idx" ON "credit_balances" USING btree (
 CREATE INDEX "credit_packs_credit_type_idx" ON "credit_packs" USING btree ("channel");--> statement-breakpoint
 CREATE INDEX "credit_transactions_org_created_idx" ON "credit_transactions" USING btree ("account_id","created_at");--> statement-breakpoint
 CREATE INDEX "credit_transactions_reference_id_idx" ON "credit_transactions" USING btree ("reference_id");--> statement-breakpoint
-CREATE INDEX "hunt_channel_credits_hunt_id_idx" ON "hunt_channel_credits" USING btree ("hunt_id");--> statement-breakpoint
 CREATE INDEX "hunt_account_id_status_idx" ON "hunts" USING btree ("account_id","status");--> statement-breakpoint
 CREATE INDEX "hunt_account_id_idx" ON "hunts" USING btree ("account_id");--> statement-breakpoint
 CREATE INDEX "lead_activities_lead_id_created_at_idx" ON "lead_activities" USING btree ("lead_id","created_at");--> statement-breakpoint
@@ -440,15 +426,6 @@ CREATE POLICY "enable read for credit walet owners" ON "credit_balances" AS PERM
 CREATE POLICY "enable update for credit walet owners" ON "credit_balances" AS PERMISSIVE FOR UPDATE TO "authenticated" USING ("credit_balances"."account_id" = (select auth.uid())) WITH CHECK ("credit_balances"."account_id" = (select auth.uid()));--> statement-breakpoint
 CREATE POLICY "enable read for authenticated users" ON "credit_packs" AS PERMISSIVE FOR SELECT TO "authenticated" USING (true);--> statement-breakpoint
 CREATE POLICY "enable read for transaction owners" ON "credit_transactions" AS PERMISSIVE FOR SELECT TO "authenticated" USING ("credit_transactions"."account_id" = (select auth.uid()));--> statement-breakpoint
-CREATE POLICY "enable all for hunt owners" ON "hunt_channel_credits" AS PERMISSIVE FOR ALL TO "authenticated" USING (exists (
-        select 1 from hunts h
-        where h.id = "hunt_channel_credits"."hunt_id"
-        and h.account_id = (select auth.uid())
-      )) WITH CHECK (exists (
-        select 1 from hunts h
-        where h.id = "hunt_channel_credits"."hunt_id"
-        and h.account_id = (select auth.uid())
-      ));--> statement-breakpoint
 CREATE POLICY "enable all for service role" ON "app_settings" AS PERMISSIVE FOR ALL TO "service_role" USING (true) WITH CHECK (true);--> statement-breakpoint
 CREATE POLICY "enable all crud for the hunt owners" ON "brands_hunts" AS PERMISSIVE FOR ALL TO "authenticated" USING (exists (
         select 1 from hunts h

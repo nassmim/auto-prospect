@@ -64,7 +64,7 @@ grant select, insert, update, delete on table public.app_settings to service_rol
 
 -- Channel and hunt credits
 grant select, insert, update, delete on table public.channel_priorities to service_role;
-grant select, insert, update, delete on table public.hunt_channel_credits to authenticated, service_role;
 
 -- WhatsApp sessions
 grant select, insert, update, delete on table public.whatsapp_sessions to authenticated, service_role;
+

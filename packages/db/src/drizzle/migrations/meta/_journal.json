@@ -12,50 +12,22 @@
     {
       "idx": 1,
       "version": "7",
-      "when": 1771158685115,
-      "tag": "0001_spotty_rhino",
+      "when": 1771508587371,
+      "tag": "0001_cool_dragon_man",
       "breakpoints": true
     },
     {
       "idx": 2,
       "version": "7",
-      "when": 1771158702711,
-      "tag": "0002_dear_the_twelve",
+      "when": 1771508674195,
+      "tag": "0002_even_ted_forrester",
       "breakpoints": true
     },
     {
       "idx": 3,
       "version": "7",
-      "when": 1771158712382,
-      "tag": "0003_serious_nehzno",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1771163449275,
-      "tag": "0004_chilly_pixie",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1771163489261,
-      "tag": "0005_overrated_jimmy_woo",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1771270524198,
-      "tag": "0006_flimsy_sentinel",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1771270758618,
-      "tag": "0007_early_roughhouse",
+      "when": 1771508685391,
+      "tag": "0003_chief_magdalene",
       "breakpoints": true
     }
   ]

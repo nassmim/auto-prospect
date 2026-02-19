@@ -12,6 +12,7 @@
     "lint": "turbo run lint",
     "format": "prettier --write .",
     "db:generate": "pnpm --filter @auto-prospect/db db:generate",
+    "db:migrate-only": "pnpm --filter @auto-prospect/db db:migrate-only",
     "db:migrate": "pnpm --filter @auto-prospect/db db:migrate",
     "db:drop": "pnpm --filter @auto-prospect/db db:drop",
     "db:studio": "pnpm --filter @auto-prospect/db db:studio",
