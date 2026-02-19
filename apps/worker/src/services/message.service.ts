@@ -4,9 +4,14 @@
  * Reusable message utilities for workers
  */
 
-import { EContactChannel, TContactChannel } from "@auto-prospect/shared";
+import {
+  CountryCode,
+  E164Number,
+  EContactChannel,
+  parsePhoneNumberWithError,
+  TContactChannel,
+} from "@auto-prospect/shared";
 import { UnrecoverableError } from "bullmq";
-import parsePhoneNumber, { CountryCode, E164Number } from "libphonenumber-js";
 
 /**
  * Normalizes phone number to E.164 format (+33612345678)
@@ -18,7 +23,7 @@ export function formatPhoneNumber(
 ): E164Number | undefined | null {
   if (!phone) return null;
 
-  const parsed = parsePhoneNumber(phone, country);
+  const parsed = parsePhoneNumberWithError(phone, country);
   return parsed?.number;
 }
 

@@ -4,11 +4,8 @@ import { CACHE_TAGS } from "@/lib/cache.config";
 import { createDrizzleSupabaseClient } from "@/lib/db";
 import { formatZodError } from "@/lib/validation";
 import { getUserAccount } from "@/services/account.service";
-import {
-  getDefaultWhatsAppTemplate as getDefaultWhatsAppTemplateService,
-  logWhatsAppMessage as logWhatsAppMessageService,
-  updateAccountTemplatesCache,
-} from "@/services/message.service";
+import { updateAccountTemplatesCache } from "@/services/message.service";
+import { updateLeadMessagesCache } from "@/services/lead.service";
 import { encryptCredentials } from "@/utils/crypto.utils";
 import { textTemplateSchema, voiceTemplateSchema } from "@/validation-schemas";
 import {
@@ -18,16 +15,20 @@ import {
   TSendSmsSchema,
 } from "@/validation-schemas/settings.validation";
 import type { BinaryOperator, TANDperator } from "@auto-prospect/db";
-import { accounts, and, eq, messageTemplates } from "@auto-prospect/db";
+import { accounts, and, eq, leadNotes, messageTemplates, messages } from "@auto-prospect/db";
 import {
+  EAccountErrorCode,
+  EContactChannel,
   EGeneralErrorCode,
+  ELeadErrorCode,
+  EMessageErrorCode,
+  EMessageStatus,
   ESmsErrorCode,
   EVoiceErrorCode,
   TErrorCode,
   WORKER_ROUTES,
 } from "@auto-prospect/shared";
 import {
-  EContactChannel,
   TContactChannel,
 } from "@auto-prospect/shared/src/config/message.config";
 import { updateTag } from "next/cache";
@@ -243,25 +244,6 @@ export async function updateTemplate(
   }
 }
 
-/**
- * Get the default WhatsApp template for a lead's account
- * Server action wrapper for client-side calls
- */
-export async function getDefaultWhatsAppTemplate(leadId: string) {
-  return getDefaultWhatsAppTemplateService(leadId);
-}
-
-/**
- * Log a WhatsApp message attempt
- * Server action wrapper for client-side calls
- */
-export async function logWhatsAppMessage(
-  leadId: string,
-  renderedMessage: string,
-  templateId?: string,
-) {
-  return logWhatsAppMessageService(leadId, renderedMessage, templateId);
-}
 
 type SendSmsResult = {
   success: boolean;
@@ -514,6 +496,148 @@ export async function sendVoiceMessage(
     }
 
     return { success: true, data: { jobId: result.jobId } };
+  } catch {
+    return {
+      success: false,
+      errorCode: EVoiceErrorCode.MESSAGE_SEND_FAILED,
+    };
+  }
+}
+
+// =============================================================================
+// SEND RINGLESS VOICE TO LEAD
+// =============================================================================
+
+export type SendRinglessVoiceToLeadResult = {
+  success: boolean;
+  errorCode?: TErrorCode;
+};
+
+/**
+ * Sends a ringless voice message to a lead using the account's default voice template
+ * Main entry point for sending voice messages from the lead detail page
+ */
+export async function sendRinglessVoiceToLead(
+  leadId: string,
+): Promise<SendRinglessVoiceToLeadResult> {
+  try {
+    const dbClient = await createDrizzleSupabaseClient();
+
+    // Get lead data with necessary relations
+    const lead = await dbClient.rls((tx) =>
+      tx.query.leads.findFirst({
+        where: (table, { eq }) => eq(table.id, leadId),
+        columns: {
+          id: true,
+          accountId: true,
+          assignedToId: true,
+        },
+        with: {
+          ad: {
+            columns: { phoneNumber: true },
+          },
+          account: {
+            columns: { id: true, fixedPhoneNumber: true },
+          },
+        },
+      }),
+    );
+
+    if (!lead) {
+      return { success: false, errorCode: ELeadErrorCode.LEAD_NOT_FOUND };
+    }
+
+    if (!lead.ad.phoneNumber) {
+      return {
+        success: false,
+        errorCode: ELeadErrorCode.RECIPIENT_PHONE_INVALID,
+      };
+    }
+
+    if (!lead.account.fixedPhoneNumber) {
+      return { success: false, errorCode: EAccountErrorCode.PHONE_INVALID };
+    }
+
+    // Fetch default RINGLESS_VOICE template for this account
+    const template = await dbClient.rls((tx) =>
+      tx.query.messageTemplates.findFirst({
+        where: (table, { eq, and }) =>
+          and(
+            eq(table.accountId, lead.accountId),
+            eq(table.channel, EContactChannel.RINGLESS_VOICE),
+            eq(table.isDefault, true),
+          ),
+      }),
+    );
+
+    if (!template || !template.audioUrl) {
+      return {
+        success: false,
+        errorCode: EMessageErrorCode.NO_DEFAULT_TEMPLATE,
+      };
+    }
+
+    // Verify Voice API credentials are configured
+    const apiKey = process.env.VOICE_PARTNER_API_KEY;
+    const apiSecret = process.env.VOICE_PARTNER_API_SECRET;
+
+    if (!apiKey || !apiSecret) {
+      return { success: false, errorCode: EVoiceErrorCode.API_KEY_MISSING };
+    }
+
+    // ===== EXECUTION PHASE =====
+    const response = await fetch(
+      `${process.env.WORKER_API_URL}${WORKER_ROUTES.PHONE_RINGLESS_VOICE}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.WORKER_API_SECRET}`,
+        },
+        body: JSON.stringify({
+          recipientPhone: lead.ad.phoneNumber,
+          tokenAudio: template.audioUrl,
+          sender: lead.account.fixedPhoneNumber,
+          apiKey,
+          apiSecret,
+          metadata: {
+            leadId,
+            accountId: lead.accountId,
+          },
+        }),
+      },
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      return {
+        success: false,
+        errorCode: result.error || EVoiceErrorCode.MESSAGE_SEND_FAILED,
+      };
+    }
+
+    // ===== LOGGING PHASE =====
+    await dbClient.rls(async (tx) => {
+      await tx.insert(messages).values({
+        leadId,
+        templateId: template.id,
+        channel: EContactChannel.RINGLESS_VOICE,
+        content: template.audioUrl || "",
+        status: EMessageStatus.SENT,
+        sentAt: new Date(),
+        sentById: lead.assignedToId || lead.accountId,
+      });
+
+      await tx.insert(leadNotes).values({
+        leadId,
+        content: `Message vocal envoyé`,
+      });
+    });
+
+    await updateLeadMessagesCache(leadId);
+
+    return { success: true };
   } catch {
     return {
       success: false,

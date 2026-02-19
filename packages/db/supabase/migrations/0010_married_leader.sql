@@ -1,1 +1,0 @@
-ALTER TABLE "accounts" ADD COLUMN "confirmed_by_admin" boolean DEFAULT false NOT NULL;

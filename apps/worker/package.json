@@ -5,25 +5,22 @@
   "scripts": {
     "dev": "dotenvx run -- tsx watch src/index.ts",
     "build": "echo 'no build needed - tsx runs ts directly'",
-    "start": "dotenvx run -- tsx src/index.ts"
+    "start": "dotenvx run -- tsx src/index.ts",
+    "test": "vitest run"
   },
   "dependencies": {
     "@auto-prospect/db": "workspace:*",
     "@auto-prospect/shared": "workspace:*",
     "@auto-prospect/whatsapp": "workspace:*",
-    "@hapi/boom": "^10.0.1",
     "bullmq": "^5.0.0",
     "cors": "^2.8.0",
-    "drizzle-orm": "^0.45.1",
     "express": "^5.1.0",
     "ioredis": "^5.4.0",
-    "libphonenumber-js": "^1.12.34",
     "node-cron": "^3.0.0"
   },
   "devDependencies": {
-    "@dotenvx/dotenvx": "^1.51.4",
     "@types/cors": "^2.8.0",
     "@types/express": "^5.0.0",
-    "tsx": "^4.21.0"
+    "vitest": "^4.0.18"
   }
 }

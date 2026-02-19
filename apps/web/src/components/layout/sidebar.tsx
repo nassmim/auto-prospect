@@ -74,7 +74,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
           <button
             type="button"
             onClick={onClose}
-            className="md:hidden rounded p-1 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+            className="md:hidden cursor-pointer rounded p-1 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
           >
             <XMarkIcon className="h-6 w-6" />
           </button>

@@ -1,24 +1,30 @@
 "use server";
 
 import { createDrizzleSupabaseClient } from "@/lib/db";
+import { updateLeadMessagesCache } from "@/services/lead.service";
 import {
   getWhatsAppSession,
   saveWhatsAppSession,
   updateWhatsAppConnectionStatus,
 } from "@/services/whatsapp.service";
+import { extractLeadVariables } from "@/utils/lead.utils";
+import { renderMessageTemplate } from "@/utils/message.utils";
 import { validateWhatsAppNumber } from "@/utils/validation.utils";
-import {
-  sendWhatsAppTextMessageSchema,
-  TSendWhatsAppTextMessageSchema,
-} from "@/validation-schemas/whatsapp.validation";
 import {
   accounts,
   eq,
+  leadNotes,
+  messages,
   TDBWithTokenClient,
   whatsappSessions,
 } from "@auto-prospect/db";
 import {
+  EAccountErrorCode,
+  EContactChannel,
   EGeneralErrorCode,
+  ELeadErrorCode,
+  EMessageErrorCode,
+  EMessageStatus,
   EWhatsAppErrorCode,
   TErrorCode,
   WORKER_ROUTES,
@@ -73,6 +79,8 @@ export const updateWhatsAppPhoneNumber = async (
   // Validate and format the phone number
   const validation = validateWhatsAppNumber(phoneNumber);
   if (!validation.isValid) {
+    console.log("dans if");
+    console.log(validation.errorCode);
     return { success: false, errorCode: validation.errorCode };
   }
 
@@ -101,7 +109,7 @@ export const updateWhatsAppPhoneNumber = async (
     if (result.length === 0) {
       return {
         success: false,
-        errorCode: EWhatsAppErrorCode.ACCOUNT_NOT_FOUND,
+        errorCode: EAccountErrorCode.ACCOUNT_NOT_FOUND,
       };
     }
 
@@ -118,7 +126,7 @@ export const updateWhatsAppPhoneNumber = async (
   } catch {
     return {
       success: false,
-      errorCode: EWhatsAppErrorCode.PHONE_UPDATE_FAILED,
+      errorCode: EGeneralErrorCode.SERVER_ERROR,
     };
   }
 };
@@ -226,55 +234,91 @@ export type SendWhatsAppTextMessageResult = {
 };
 
 /**
- * Sends a WhatsApp text message via worker API
- * Web app does ALL validation
+ * Sends a WhatsApp text message to a lead
+ * Main entry point for sending WhatsApp messages from the client
+ * Handles: template fetching, message rendering, API call, and logging
  */
 export const sendWhatsAppTextMessage = async (
-  data: TSendWhatsAppTextMessageSchema,
+  leadId: string,
 ): Promise<SendWhatsAppTextMessageResult> => {
-  // ===== VALIDATION PHASE =====
-  // All validation happens HERE in the web app
-
-  // Validate input schema
-  const validation = sendWhatsAppTextMessageSchema.safeParse(data);
-  if (!validation.success) {
-    return { success: false, errorCode: EGeneralErrorCode.VALIDATION_FAILED };
-  }
-
-  const { recipientPhone, message } = validation.data;
-
-  // Validate recipient phone number format
-  const recipientValidation = validateWhatsAppNumber(recipientPhone);
-  if (!recipientValidation.isValid) {
-    return {
-      success: false,
-      errorCode: EWhatsAppErrorCode.RECIPIENT_INVALID,
-    };
-  }
-
   try {
-    // Get account and WhatsApp session
     const dbClient = await createDrizzleSupabaseClient();
-    const account = await dbClient.rls((tx) =>
-      tx.query.accounts.findFirst({
-        columns: { id: true },
+
+    // Get lead data with necessary relations
+    const lead = await dbClient.rls((tx) =>
+      tx.query.leads.findFirst({
+        where: (table, { eq }) => eq(table.id, leadId),
+        columns: {
+          id: true,
+          huntId: true,
+          assignedToId: true,
+          accountId: true,
+        },
         with: {
-          whatsappSession: {
-            columns: { credentials: true },
+          ad: {
+            columns: {
+              phoneNumber: true,
+              title: true,
+              price: true,
+              model: true,
+              modelYear: true,
+              ownerName: true,
+            },
+            with: {
+              brand: {
+                columns: { name: true },
+              },
+              location: {
+                columns: { name: true },
+              },
+            },
+          },
+          account: {
+            columns: { id: true, whatsappPhoneNumber: true },
+            with: {
+              whatsappSession: {
+                columns: { credentials: true },
+              },
+            },
           },
         },
       }),
     );
 
-    if (!account) {
+    if (!lead) {
       return {
         success: false,
-        errorCode: EWhatsAppErrorCode.ACCOUNT_NOT_FOUND,
+        errorCode: ELeadErrorCode.LEAD_NOT_FOUND,
+      };
+    }
+
+    // Validate lead has phone number
+    if (!lead.ad.phoneNumber) {
+      return {
+        success: false,
+        errorCode: ELeadErrorCode.RECIPIENT_PHONE_INVALID,
+      };
+    }
+
+    // Validate account WhatsApp phone number is configured
+    if (!lead.account.whatsappPhoneNumber) {
+      return {
+        success: false,
+        errorCode: EAccountErrorCode.PHONE_INVALID,
+      };
+    }
+
+    // Validate recipient phone number format
+    const recipientValidation = validateWhatsAppNumber(lead.ad.phoneNumber);
+    if (!recipientValidation.isValid) {
+      return {
+        success: false,
+        errorCode: ELeadErrorCode.RECIPIENT_PHONE_INVALID,
       };
     }
 
     // Verify WhatsApp session exists
-    const session = account.whatsappSession;
+    const session = lead.account.whatsappSession;
     if (!session || !session.credentials) {
       return {
         success: false,
@@ -293,8 +337,31 @@ export const sendWhatsAppTextMessage = async (
       };
     }
 
+    // Fetch default WhatsApp template for this account
+    const template = await dbClient.rls((tx) =>
+      tx.query.messageTemplates.findFirst({
+        where: (table, { eq, and }) =>
+          and(
+            eq(table.accountId, lead.accountId),
+            eq(table.channel, EContactChannel.WHATSAPP_TEXT),
+            eq(table.isDefault, true),
+          ),
+      }),
+    );
+
+    if (!template || !template.content) {
+      return {
+        success: false,
+        errorCode: EMessageErrorCode.NO_DEFAULT_TEMPLATE,
+      };
+    }
+
+    // Render message with template variables
+    const variables = extractLeadVariables(lead);
+    const renderedMessage = renderMessageTemplate(template.content, variables);
+
     // ===== EXECUTION PHASE =====
-    // Validation passed, call endpoint with ALL validated data
+    // Send WhatsApp message via worker API
     const response = await fetch(
       `${process.env.WORKER_API_URL}${WORKER_ROUTES.WHATSAPP_TEXT}`,
       {
@@ -305,9 +372,9 @@ export const sendWhatsAppTextMessage = async (
         },
         body: JSON.stringify({
           recipientPhone: recipientValidation.formatted!,
-          message,
-          accountId: account.id,
-          credentials, // Pass validated credentials
+          message: renderedMessage,
+          accountId: lead.account.id,
+          credentials,
         }),
       },
     );
@@ -317,15 +384,39 @@ export const sendWhatsAppTextMessage = async (
     if (!response.ok || !result.success) {
       return {
         success: false,
-        errorCode: result.error || EWhatsAppErrorCode.MESSAGE_SEND_FAILED,
+        errorCode: result.error || EMessageErrorCode.MESSAGE_SEND_FAILED,
       };
     }
+
+    // ===== LOGGING PHASE =====
+    // Message sent successfully - log it to database
+    await dbClient.rls(async (tx) => {
+      // Log message in messages table
+      await tx.insert(messages).values({
+        leadId,
+        templateId: template?.id || null,
+        channel: EContactChannel.WHATSAPP_TEXT,
+        content: renderedMessage,
+        status: EMessageStatus.SENT,
+        sentAt: new Date(),
+        sentById: lead.assignedToId || lead.accountId,
+      });
+
+      // Log activity note
+      await tx.insert(leadNotes).values({
+        leadId,
+        content: `Message WhatsApp envoyé`,
+      });
+    });
+
+    // Update cache
+    await updateLeadMessagesCache(leadId);
 
     return { success: true };
   } catch {
     return {
       success: false,
-      errorCode: EWhatsAppErrorCode.MESSAGE_SEND_FAILED,
+      errorCode: EMessageErrorCode.MESSAGE_SEND_FAILED,
     };
   }
 };

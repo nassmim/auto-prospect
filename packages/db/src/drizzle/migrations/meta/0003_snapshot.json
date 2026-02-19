@@ -1,6 +1,6 @@
 {
-  "id": "d6bcc356-70ed-4d98-88ed-b8a8a26362b6",
-  "prevId": "6979b8a3-fdd1-4112-80a4-8deef1242c36",
+  "id": "83aaad30-442a-4be4-8c94-021506232047",
+  "prevId": "cf5ba4f6-71d8-4979-9fa5-be6aece17eff",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -32,9 +32,34 @@
           "primaryKey": false,
           "notNull": false
         },
+        "fixed_phone_number": {
+          "name": "fixed_phone_number",
+          "type": "varchar(14)",
+          "primaryKey": false,
+          "notNull": false
+        },
         "phone_number": {
           "name": "phone_number",
           "type": "varchar(14)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "whatsapp_phone_number": {
+          "name": "whatsapp_phone_number",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sms_mobile_api_allowed": {
+          "name": "sms_mobile_api_allowed",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "sms_api_key": {
+          "name": "sms_api_key",
+          "type": "varchar(500)",
           "primaryKey": false,
           "notNull": false
         },
@@ -58,6 +83,13 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "confirmed_by_admin": {
+          "name": "confirmed_by_admin",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         }
       },
       "indexes": {},
@@ -65,33 +97,15 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {
-        "enable update for account owners": {
-          "name": "enable update for account owners",
+        "enable all for account owners": {
+          "name": "enable all for account owners",
           "as": "PERMISSIVE",
-          "for": "UPDATE",
+          "for": "ALL",
           "to": [
             "authenticated"
           ],
-          "using": "\n        (select auth.uid()) = \"accounts\".\"id\"",
+          "using": "\n        (select auth.uid()) = \"accounts\".\"id\" ",
           "withCheck": "\n        (select auth.uid()) = \"accounts\".\"id\""
-        },
-        "enable delete for account owners": {
-          "name": "enable delete for account owners",
-          "as": "PERMISSIVE",
-          "for": "DELETE",
-          "to": [
-            "authenticated"
-          ],
-          "using": "\n        (select auth.uid()) = \"accounts\".\"id\" \n      "
-        },
-        "enable read for account owners": {
-          "name": "enable read for account owners",
-          "as": "PERMISSIVE",
-          "for": "SELECT",
-          "to": [
-            "authenticated"
-          ],
-          "using": "\n        (select auth.uid()) = \"accounts\".\"id\" "
         }
       },
       "checkConstraints": {},
@@ -858,8 +872,7 @@
         },
         "channel": {
           "name": "channel",
-          "type": "message_channel",
-          "typeSchema": "public",
+          "type": "channel",
           "primaryKey": false,
           "notNull": true
         },
@@ -903,25 +916,6 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {
-        "enable read for authenticated users": {
-          "name": "enable read for authenticated users",
-          "as": "PERMISSIVE",
-          "for": "SELECT",
-          "to": [
-            "authenticated"
-          ],
-          "using": "true"
-        },
-        "enable update for authenticated users": {
-          "name": "enable update for authenticated users",
-          "as": "PERMISSIVE",
-          "for": "UPDATE",
-          "to": [
-            "authenticated"
-          ],
-          "using": "true",
-          "withCheck": "true"
-        },
         "enable insert for authenticated users": {
           "name": "enable insert for authenticated users",
           "as": "PERMISSIVE",
@@ -930,6 +924,25 @@
             "authenticated"
           ],
           "withCheck": "true"
+        },
+        "enable read for authenticated users": {
+          "name": "enable read for authenticated users",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "authenticated"
+          ],
+          "using": "\"contacted_ads\".\"account_id\" = (select auth.uid())"
+        },
+        "enable update for authenticated users": {
+          "name": "enable update for authenticated users",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "authenticated"
+          ],
+          "using": "\"contacted_ads\".\"account_id\" = (select auth.uid())",
+          "withCheck": "\"contacted_ads\".\"account_id\" = (select auth.uid())"
         }
       },
       "checkConstraints": {},
@@ -1377,6 +1390,15 @@
         }
       },
       "policies": {
+        "enable insert for authenticated users": {
+          "name": "enable insert for authenticated users",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "authenticated"
+          ],
+          "withCheck": "true"
+        },
         "enable read for credit walet owners": {
           "name": "enable read for credit walet owners",
           "as": "PERMISSIVE",
@@ -1385,6 +1407,16 @@
             "authenticated"
           ],
           "using": "\"credit_balances\".\"account_id\" = (select auth.uid())"
+        },
+        "enable update for credit walet owners": {
+          "name": "enable update for credit walet owners",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "authenticated"
+          ],
+          "using": "\"credit_balances\".\"account_id\" = (select auth.uid())",
+          "withCheck": "\"credit_balances\".\"account_id\" = (select auth.uid())"
         }
       },
       "checkConstraints": {},
@@ -1403,7 +1435,6 @@
         "channel": {
           "name": "channel",
           "type": "channel",
-          "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
@@ -1488,7 +1519,6 @@
         "channel": {
           "name": "channel",
           "type": "channel",
-          "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
@@ -1613,7 +1643,6 @@
         "channel": {
           "name": "channel",
           "type": "channel",
-          "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
@@ -1733,7 +1762,18 @@
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
+      "policies": {
+        "enable all for service role": {
+          "name": "enable all for service role",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "service_role"
+          ],
+          "using": "true",
+          "withCheck": "true"
+        }
+      },
       "checkConstraints": {},
       "isRLSEnabled": false
     },
@@ -1855,7 +1895,7 @@
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true,
-          "default": "'paused'"
+          "default": "'active'"
         },
         "auto_refresh": {
           "name": "auto_refresh",
@@ -1970,13 +2010,6 @@
           "type": "real",
           "primaryKey": false,
           "notNull": false
-        },
-        "is_active": {
-          "name": "is_active",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": true
         }
       },
       "indexes": {
@@ -2669,10 +2702,28 @@
         }
       },
       "policies": {
-        "enable all for owners of the associated account": {
-          "name": "enable all for owners of the associated account",
+        "enable insert for authenticated users": {
+          "name": "enable insert for authenticated users",
           "as": "PERMISSIVE",
-          "for": "ALL",
+          "for": "INSERT",
+          "to": [
+            "authenticated"
+          ],
+          "withCheck": "true"
+        },
+        "enable read for owners of the associated account": {
+          "name": "enable read for owners of the associated account",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "authenticated"
+          ],
+          "using": "\"leads\".\"account_id\" = (select auth.uid())"
+        },
+        "enable update for owners of the associated account": {
+          "name": "enable update for owners of the associated account",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
           "to": [
             "authenticated"
           ],
@@ -2696,7 +2747,6 @@
         "channel": {
           "name": "channel",
           "type": "channel",
-          "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
@@ -2767,7 +2817,6 @@
         "channel": {
           "name": "channel",
           "type": "channel",
-          "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
@@ -2869,8 +2918,7 @@
         },
         "channel": {
           "name": "channel",
-          "type": "message_channel",
-          "typeSchema": "public",
+          "type": "channel",
           "primaryKey": false,
           "notNull": true
         },
@@ -3011,15 +3059,23 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {
-        "enable all for account owners": {
-          "name": "enable all for account owners",
+        "enable read for account owners": {
+          "name": "enable read for account owners",
           "as": "PERMISSIVE",
-          "for": "ALL",
+          "for": "SELECT",
           "to": [
             "authenticated"
           ],
-          "using": "exists (\n        select 1 from leads l\n        where l.id = \"messages\".\"lead_id\"\n        and l.account_id = (select auth.uid())\n      )",
-          "withCheck": "exists (\n        select 1 from leads l\n        where l.id = \"messages\".\"lead_id\"\n        and l.account_id = (select auth.uid())\n      )"
+          "using": "exists (\n        select 1 from leads l\n        where l.id = \"messages\".\"lead_id\"\n        and l.account_id = (select auth.uid())\n      )"
+        },
+        "enable insert for authenticated users": {
+          "name": "enable insert for authenticated users",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "authenticated"
+          ],
+          "withCheck": "true"
         }
       },
       "checkConstraints": {},
@@ -3066,7 +3122,17 @@
           "nullsNotDistinct": false
         }
       },
-      "policies": {},
+      "policies": {
+        "enable read for authenticated users": {
+          "name": "enable read for authenticated users",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "authenticated"
+          ],
+          "using": "true"
+        }
+      },
       "checkConstraints": {},
       "isRLSEnabled": false
     },
@@ -3135,6 +3201,114 @@
       },
       "checkConstraints": {},
       "isRLSEnabled": false
+    },
+    "public.whatsapp_sessions": {
+      "name": "whatsapp_sessions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "account_id": {
+          "name": "account_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "credentials": {
+          "name": "credentials",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_connected": {
+          "name": "is_connected",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "is_disconnected": {
+          "name": "is_disconnected",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "last_connected_at": {
+          "name": "last_connected_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "whatsapp_sessions_account_id_accounts_id_fk": {
+          "name": "whatsapp_sessions_account_id_accounts_id_fk",
+          "tableFrom": "whatsapp_sessions",
+          "columnsFrom": [
+            "account_id"
+          ],
+          "tableTo": "accounts",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "whatsapp_sessions_account_id_unique": {
+          "name": "whatsapp_sessions_account_id_unique",
+          "columns": [
+            "account_id"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {
+        "enable insert for authenticated users": {
+          "name": "enable insert for authenticated users",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "authenticated"
+          ],
+          "withCheck": "true"
+        },
+        "enable all for own session": {
+          "name": "enable all for own session",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "authenticated"
+          ],
+          "using": "(select auth.uid()) = \"whatsapp_sessions\".\"account_id\"",
+          "withCheck": "(select auth.uid()) = \"whatsapp_sessions\".\"account_id\""
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
     }
   },
   "enums": {
@@ -3189,15 +3363,6 @@
     },
     "public.channel": {
       "name": "channel",
-      "schema": "public",
-      "values": [
-        "whatsapp_text",
-        "sms",
-        "ringless_voice"
-      ]
-    },
-    "public.message_channel": {
-      "name": "message_channel",
       "schema": "public",
       "values": [
         "whatsapp_text",

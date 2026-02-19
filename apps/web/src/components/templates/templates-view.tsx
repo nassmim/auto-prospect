@@ -29,7 +29,7 @@ export function TemplatesView({ templates }: TemplatesViewProps) {
               Templates de messages
             </h1>
             <p className="mt-1 text-sm text-zinc-400">
-              Créez et gérez vos templates pour WhatsApp, SMS et appels vocaux
+              Crée et gère tes templates pour WhatsApp et appels vocaux
             </p>
           </div>
 
@@ -67,7 +67,7 @@ export function TemplatesView({ templates }: TemplatesViewProps) {
                   href={pages.templates.new(EContactChannel.WHATSAPP_TEXT)}
                   className="mt-4 inline-block rounded-lg border border-amber-500 px-4 py-2 text-sm font-medium text-amber-500 transition-colors hover:bg-amber-500/10"
                 >
-                  Créer votre premier template
+                  Crée ton premier template texte
                 </Link>
               </div>
             ) : (
@@ -102,7 +102,7 @@ export function TemplatesView({ templates }: TemplatesViewProps) {
                   href={pages.templates.new(EContactChannel.RINGLESS_VOICE)}
                   className="mt-4 inline-block rounded-lg border border-amber-500 px-4 py-2 text-sm font-medium text-amber-500 transition-colors hover:bg-amber-500/10"
                 >
-                  Créer votre premier template vocal
+                  Crée ton premier template vocal
                 </Link>
               </div>
             ) : (

@@ -46,7 +46,10 @@ import { Job } from "bullmq";
 import { and, desc, eq, gte, inArray, lte, notInArray, sql } from "drizzle-orm";
 import { jobIds, RETRY_CONFIG } from "../config";
 import { smsQueue, voiceQueue, whatsappQueue } from "../queues";
-import { allocateAdsToChannels } from "../services/channel.service";
+import {
+  allocateAdsToChannels,
+  getAccountChannelCreditsMap,
+} from "../services/channel.service";
 import { personalizeMessage } from "../services/message.service";
 
 interface DailyOrchestratorJob {
@@ -221,6 +224,20 @@ async function processHunt(
     return 0;
   }
 
+  // Check global credits before processing hunt
+  const creditsMap = await getAccountChannelCreditsMap(accountId, db);
+
+  // Determine which channels have credits (WhatsApp is always unlimited)
+  const hasCreditsForAnyChannel = Array.from(creditsMap.entries()).some(
+    ([channel, credits]) =>
+      channel === EContactChannel.WHATSAPP_TEXT || credits > 0,
+  );
+
+  if (!hasCreditsForAnyChannel) {
+    console.log(`Skipping hunt ${huntId}: no credits available for account ${accountId}`);
+    return 0;
+  }
+
   // Get ads already contacted by this account
   const fetchedContactedAds = await db.query.contactedAds.findMany({
     where: eq(contactedAds.accountId, accountId),
@@ -298,6 +315,7 @@ async function processHunt(
   // Allocate ads to channels based on priority, credits, and daily limits
   // This will skip disabled channels entirely
   const allocations = await allocateAdsToChannels({
+    accountId,
     huntId,
     adIds: matchingAds.map((ad) => ad.id),
     dailyPacingLimit: hunt.dailyPacingLimit,
@@ -308,18 +326,46 @@ async function processHunt(
 
   if (allocations.length === 0) return 0; // No allocations possible (no credits or at daily limit)
 
-  // Fetch all default templates for this account (grouped by channel)
-  const templates = await db.query.messageTemplates.findMany({
-    where: and(
-      eq(messageTemplates.accountId, accountId),
-      eq(messageTemplates.isDefault, true),
-    ),
-  });
+  // Fetch templates specified in hunt.templateIds (per-hunt configuration)
+  const templateIdValues = [
+    hunt.templateIds?.whatsapp,
+    hunt.templateIds?.sms,
+    hunt.templateIds?.ringlessVoice,
+  ].filter(Boolean) as string[];
 
-  // Create a map of channel -> template for quick lookup
-  const templatesByChannel = new Map(
-    templates.map((t) => [t.channel as string, t]),
-  );
+  const templates =
+    templateIdValues.length > 0
+      ? await db.query.messageTemplates.findMany({
+          where: inArray(messageTemplates.id, templateIdValues),
+        })
+      : [];
+
+  // Create a map of channel -> template using hunt's per-channel template assignments
+  const templatesByChannel = new Map<string, (typeof templates)[number]>();
+  if (hunt.templateIds?.whatsapp) {
+    const t = templates.find((t) => t.id === hunt.templateIds!.whatsapp);
+    if (t) templatesByChannel.set(EContactChannel.WHATSAPP_TEXT, t);
+    else
+      console.warn(
+        `[Hunt ${huntId}] No template found for whatsapp templateId: ${hunt.templateIds.whatsapp}`,
+      );
+  }
+  if (hunt.templateIds?.sms) {
+    const t = templates.find((t) => t.id === hunt.templateIds!.sms);
+    if (t) templatesByChannel.set(EContactChannel.SMS, t);
+    else
+      console.warn(
+        `[Hunt ${huntId}] No template found for sms templateId: ${hunt.templateIds.sms}`,
+      );
+  }
+  if (hunt.templateIds?.ringlessVoice) {
+    const t = templates.find((t) => t.id === hunt.templateIds!.ringlessVoice);
+    if (t) templatesByChannel.set(EContactChannel.RINGLESS_VOICE, t);
+    else
+      console.warn(
+        `[Hunt ${huntId}] No template found for ringlessVoice templateId: ${hunt.templateIds.ringlessVoice}`,
+      );
+  }
 
   let messagesDispatched = 0;
 

@@ -1,6 +1,6 @@
 {
-  "id": "35422a31-bfce-41f1-ad44-4cb74b19342b",
-  "prevId": "cb7c3037-f475-4684-8140-b9ebb64e607c",
+  "id": "56e2d144-7664-4c05-a2e6-0273d603340e",
+  "prevId": "9953a60e-58c4-4e78-8e75-3ed099dcb163",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -32,6 +32,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "fixed_phone_number": {
+          "name": "fixed_phone_number",
+          "type": "varchar(14)",
+          "primaryKey": false,
+          "notNull": false
+        },
         "phone_number": {
           "name": "phone_number",
           "type": "varchar(14)",
@@ -48,7 +54,7 @@
           "name": "sms_mobile_api_allowed",
           "type": "boolean",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": false
         },
         "sms_api_key": {
@@ -77,6 +83,13 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "confirmed_by_admin": {
+          "name": "confirmed_by_admin",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         }
       },
       "indexes": {},
@@ -84,33 +97,15 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {
-        "enable update for account owners": {
-          "name": "enable update for account owners",
+        "enable all for account owners": {
+          "name": "enable all for account owners",
           "as": "PERMISSIVE",
-          "for": "UPDATE",
+          "for": "ALL",
           "to": [
             "authenticated"
           ],
-          "using": "\n        (select auth.uid()) = \"accounts\".\"id\"",
+          "using": "\n        (select auth.uid()) = \"accounts\".\"id\" ",
           "withCheck": "\n        (select auth.uid()) = \"accounts\".\"id\""
-        },
-        "enable delete for account owners": {
-          "name": "enable delete for account owners",
-          "as": "PERMISSIVE",
-          "for": "DELETE",
-          "to": [
-            "authenticated"
-          ],
-          "using": "\n        (select auth.uid()) = \"accounts\".\"id\" \n      "
-        },
-        "enable read for account owners": {
-          "name": "enable read for account owners",
-          "as": "PERMISSIVE",
-          "for": "SELECT",
-          "to": [
-            "authenticated"
-          ],
-          "using": "\n        (select auth.uid()) = \"accounts\".\"id\" "
         }
       },
       "checkConstraints": {},
@@ -877,8 +872,7 @@
         },
         "channel": {
           "name": "channel",
-          "type": "message_channel",
-          "typeSchema": "public",
+          "type": "channel",
           "primaryKey": false,
           "notNull": true
         },
@@ -922,25 +916,6 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {
-        "enable read for authenticated users": {
-          "name": "enable read for authenticated users",
-          "as": "PERMISSIVE",
-          "for": "SELECT",
-          "to": [
-            "authenticated"
-          ],
-          "using": "true"
-        },
-        "enable update for authenticated users": {
-          "name": "enable update for authenticated users",
-          "as": "PERMISSIVE",
-          "for": "UPDATE",
-          "to": [
-            "authenticated"
-          ],
-          "using": "true",
-          "withCheck": "true"
-        },
         "enable insert for authenticated users": {
           "name": "enable insert for authenticated users",
           "as": "PERMISSIVE",
@@ -949,6 +924,25 @@
             "authenticated"
           ],
           "withCheck": "true"
+        },
+        "enable read for authenticated users": {
+          "name": "enable read for authenticated users",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "authenticated"
+          ],
+          "using": "\"contacted_ads\".\"account_id\" = (select auth.uid())"
+        },
+        "enable update for authenticated users": {
+          "name": "enable update for authenticated users",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "authenticated"
+          ],
+          "using": "\"contacted_ads\".\"account_id\" = (select auth.uid())",
+          "withCheck": "\"contacted_ads\".\"account_id\" = (select auth.uid())"
         }
       },
       "checkConstraints": {},
@@ -1396,6 +1390,15 @@
         }
       },
       "policies": {
+        "enable insert for authenticated users": {
+          "name": "enable insert for authenticated users",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "authenticated"
+          ],
+          "withCheck": "true"
+        },
         "enable read for credit walet owners": {
           "name": "enable read for credit walet owners",
           "as": "PERMISSIVE",
@@ -1404,6 +1407,16 @@
             "authenticated"
           ],
           "using": "\"credit_balances\".\"account_id\" = (select auth.uid())"
+        },
+        "enable update for credit walet owners": {
+          "name": "enable update for credit walet owners",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "authenticated"
+          ],
+          "using": "\"credit_balances\".\"account_id\" = (select auth.uid())",
+          "withCheck": "\"credit_balances\".\"account_id\" = (select auth.uid())"
         }
       },
       "checkConstraints": {},
@@ -1422,7 +1435,6 @@
         "channel": {
           "name": "channel",
           "type": "channel",
-          "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
@@ -1507,7 +1519,6 @@
         "channel": {
           "name": "channel",
           "type": "channel",
-          "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
@@ -1612,117 +1623,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.hunt_channel_credits": {
-      "name": "hunt_channel_credits",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "hunt_id": {
-          "name": "hunt_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "channel": {
-          "name": "channel",
-          "type": "channel",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "credits_allocated": {
-          "name": "credits_allocated",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "credits_consumed": {
-          "name": "credits_consumed",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "hunt_channel_credits_hunt_id_idx": {
-          "name": "hunt_channel_credits_hunt_id_idx",
-          "columns": [
-            {
-              "expression": "hunt_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "hunt_channel_credits_hunt_id_fk": {
-          "name": "hunt_channel_credits_hunt_id_fk",
-          "tableFrom": "hunt_channel_credits",
-          "tableTo": "hunts",
-          "columnsFrom": [
-            "hunt_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "hunt_channel_unique": {
-          "name": "hunt_channel_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "hunt_id",
-            "channel"
-          ]
-        }
-      },
-      "policies": {
-        "enable all for hunt owners": {
-          "name": "enable all for hunt owners",
-          "as": "PERMISSIVE",
-          "for": "ALL",
-          "to": [
-            "authenticated"
-          ],
-          "using": "exists (\n        select 1 from hunts h\n        where h.id = \"hunt_channel_credits\".\"hunt_id\"\n        and h.account_id = (select auth.uid())\n      )",
-          "withCheck": "exists (\n        select 1 from hunts h\n        where h.id = \"hunt_channel_credits\".\"hunt_id\"\n        and h.account_id = (select auth.uid())\n      )"
-        }
-      },
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.app_settings": {
       "name": "app_settings",
       "schema": "",
@@ -1752,7 +1652,18 @@
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
+      "policies": {
+        "enable all for service role": {
+          "name": "enable all for service role",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "service_role"
+          ],
+          "using": "true",
+          "withCheck": "true"
+        }
+      },
       "checkConstraints": {},
       "isRLSEnabled": false
     },
@@ -1874,7 +1785,7 @@
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true,
-          "default": "'paused'"
+          "default": "'active'"
         },
         "auto_refresh": {
           "name": "auto_refresh",
@@ -1989,13 +1900,6 @@
           "type": "real",
           "primaryKey": false,
           "notNull": false
-        },
-        "is_active": {
-          "name": "is_active",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": true
         }
       },
       "indexes": {
@@ -2688,10 +2592,28 @@
         }
       },
       "policies": {
-        "enable all for owners of the associated account": {
-          "name": "enable all for owners of the associated account",
+        "enable insert for authenticated users": {
+          "name": "enable insert for authenticated users",
           "as": "PERMISSIVE",
-          "for": "ALL",
+          "for": "INSERT",
+          "to": [
+            "authenticated"
+          ],
+          "withCheck": "true"
+        },
+        "enable read for owners of the associated account": {
+          "name": "enable read for owners of the associated account",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "authenticated"
+          ],
+          "using": "\"leads\".\"account_id\" = (select auth.uid())"
+        },
+        "enable update for owners of the associated account": {
+          "name": "enable update for owners of the associated account",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
           "to": [
             "authenticated"
           ],
@@ -2715,7 +2637,6 @@
         "channel": {
           "name": "channel",
           "type": "channel",
-          "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
@@ -2786,7 +2707,6 @@
         "channel": {
           "name": "channel",
           "type": "channel",
-          "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
@@ -2888,8 +2808,7 @@
         },
         "channel": {
           "name": "channel",
-          "type": "message_channel",
-          "typeSchema": "public",
+          "type": "channel",
           "primaryKey": false,
           "notNull": true
         },
@@ -3030,15 +2949,23 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {
-        "enable all for account owners": {
-          "name": "enable all for account owners",
+        "enable read for account owners": {
+          "name": "enable read for account owners",
           "as": "PERMISSIVE",
-          "for": "ALL",
+          "for": "SELECT",
           "to": [
             "authenticated"
           ],
-          "using": "exists (\n        select 1 from leads l\n        where l.id = \"messages\".\"lead_id\"\n        and l.account_id = (select auth.uid())\n      )",
-          "withCheck": "exists (\n        select 1 from leads l\n        where l.id = \"messages\".\"lead_id\"\n        and l.account_id = (select auth.uid())\n      )"
+          "using": "exists (\n        select 1 from leads l\n        where l.id = \"messages\".\"lead_id\"\n        and l.account_id = (select auth.uid())\n      )"
+        },
+        "enable insert for authenticated users": {
+          "name": "enable insert for authenticated users",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "authenticated"
+          ],
+          "withCheck": "true"
         }
       },
       "checkConstraints": {},
@@ -3085,7 +3012,17 @@
           ]
         }
       },
-      "policies": {},
+      "policies": {
+        "enable read for authenticated users": {
+          "name": "enable read for authenticated users",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "authenticated"
+          ],
+          "using": "true"
+        }
+      },
       "checkConstraints": {},
       "isRLSEnabled": false
     },
@@ -3185,6 +3122,13 @@
           "notNull": true,
           "default": false
         },
+        "is_disconnected": {
+          "name": "is_disconnected",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
         "last_connected_at": {
           "name": "last_connected_at",
           "type": "timestamp with time zone",
@@ -3233,6 +3177,15 @@
         }
       },
       "policies": {
+        "enable insert for authenticated users": {
+          "name": "enable insert for authenticated users",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "authenticated"
+          ],
+          "withCheck": "true"
+        },
         "enable all for own session": {
           "name": "enable all for own session",
           "as": "PERMISSIVE",
@@ -3300,15 +3253,6 @@
     },
     "public.channel": {
       "name": "channel",
-      "schema": "public",
-      "values": [
-        "whatsapp_text",
-        "sms",
-        "ringless_voice"
-      ]
-    },
-    "public.message_channel": {
-      "name": "message_channel",
       "schema": "public",
       "values": [
         "whatsapp_text",

@@ -1,5 +1,7 @@
 import { ConnectedAccountsTab } from "@/components/settings/connected-accounts-tab";
-import { createDrizzleSupabaseClient } from "@/lib/drizzle/dbClient";
+import { pages } from "@/config/routes";
+import { createDrizzleSupabaseClient } from "@/lib/db";
+import { getSEOTags } from "@/lib/seo";
 import { getUserAccount } from "@/services/account.service";
 import { getTeamMembers } from "@/services/team.service";
 import {
@@ -7,6 +9,13 @@ import {
   isWhatsAppDisconnected,
 } from "@/services/whatsapp.service";
 import { SettingsPageClient } from "./settings-page-client";
+
+export const metadata = getSEOTags({
+  title: "Paramètres",
+  description:
+    "Configure ton compte, gère les intégrations et les paramètres de ton équipe",
+  canonical: pages.settings,
+});
 
 export default async function SettingsPage() {
   const dbClient = await createDrizzleSupabaseClient();

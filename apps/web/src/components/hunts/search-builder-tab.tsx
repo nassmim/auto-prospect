@@ -16,31 +16,6 @@ export function SearchBuilderTab({ value, onChange }: SearchBuilderTabProps) {
   return (
     <div className="space-y-6">
       {/* Phase 2 Placeholder */}
-      <div className="rounded-lg border border-amber-900/50 bg-amber-950/20 p-6 text-center">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/10">
-          <svg
-            className="h-6 w-6 text-amber-500"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-            />
-          </svg>
-        </div>
-        <h3 className="mb-2 text-sm font-semibold text-amber-500">
-          Fonctionnalité à venir
-        </h3>
-        <p className="text-xs text-zinc-400">
-          Le constructeur de recherche visuel sera disponible dans une prochaine
-          version. En attendant, utilisez l&apos;onglet &quot;Coller une
-          URL&quot; pour créer vos recherches.
-        </p>
-      </div>
 
       {/* Preview of what will be available */}
       <div className="space-y-4 opacity-50 pointer-events-none">

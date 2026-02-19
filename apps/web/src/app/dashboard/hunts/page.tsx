@@ -6,7 +6,7 @@ import { getAccountHunts } from "@/services/hunt.service";
 export const metadata = getSEOTags({
   title: "Recherches",
   description:
-    "Gérez vos recherches automatiques de véhicules et suivez la prospection en temps réel",
+    "Gère tes recherches automatiques de véhicules et suis la prospection en temps réel",
   canonical: pages.hunts.list,
 });
 

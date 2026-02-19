@@ -44,7 +44,7 @@ export function WhatsAppDisconnectionBanner({
               WhatsApp déconnecté
             </p>
             <p className="mt-0.5 text-xs text-amber-300/90">
-              Votre session WhatsApp a été déconnectée. Reconnectez-vous pour
+              Ta session WhatsApp a été déconnectée. Reconnecte-toi pour
               continuer à envoyer des messages.
             </p>
           </div>
@@ -58,7 +58,7 @@ export function WhatsAppDisconnectionBanner({
           </Link>
           <button
             onClick={() => setIsDismissed(true)}
-            className="rounded-lg p-1.5 text-amber-400 transition-colors hover:bg-amber-500/20"
+            className="cursor-pointer rounded-lg p-1.5 text-amber-400 transition-colors hover:bg-amber-500/20"
             aria-label="Fermer"
           >
             <svg

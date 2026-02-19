@@ -5,8 +5,7 @@ import { getAccountTemplates } from "@/services/message.service";
 
 export const metadata = getSEOTags({
   title: "Templates de messages",
-  description:
-    "Créez et gérez vos templates pour WhatsApp, SMS et appels vocaux",
+  description: "Crée et gère tes templates pour WhatsApp et appels vocaux",
   canonical: pages.templates.list,
 });
 

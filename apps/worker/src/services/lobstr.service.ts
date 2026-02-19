@@ -1,14 +1,14 @@
 import {
   ads as adsTable,
   getDBAdminClient,
+  sql,
   TAdInsert,
   TAdReferenceData,
 } from "@auto-prospect/db";
-import { sql } from "drizzle-orm";
-import parsePhoneNumber from "libphonenumber-js";
+import { parsePhoneNumberWithError } from "@auto-prospect/shared";
+import { customParseInt } from "../utils/general.utils";
 import { fetchAllReferenceData } from "./ad.service";
 import { sendAlertToAdmin } from "./general.service";
-import { customParseInt } from "../utils/general.utils";
 
 // Platform value field name for Lobstr
 const LOBSTR_PLATFORM_FIELD = "lobstrValue" as const;
@@ -270,7 +270,8 @@ const getAdData = async (
     price: ad.price,
     url: ad.url,
     hasPhone: ad.phone ? true : false,
-    phoneNumber: parsePhoneNumber(ad.phone || "", "FR")?.number || null,
+    phoneNumber:
+      parsePhoneNumberWithError(ad.phone || "", "FR")?.number || null,
     picture: ad.picture,
     initialPublicationDate: new Date(ad.first_publication_date).toDateString(),
     lastPublicationDate: new Date(ad.last_publication_date).toDateString(),

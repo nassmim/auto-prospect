@@ -27,16 +27,20 @@ export async function generateMetadata({
     return getSEOTags({
       title: lead.ad.title,
       description: lead.ad.description || `Détails du lead pour ${vehicleInfo}`,
-      canonical: `/${pages.leads}/${id}`,
+      canonical: pages.leads.detail(id),
       openGraph: {
         type: "article",
         images: lead.ad.picture ? [lead.ad.picture] : undefined,
       },
+      noIndex: true,
+      noFollow: true,
     });
   } catch {
     return getSEOTags({
       title: "Lead introuvable",
       description: "Le lead demandé n'existe pas ou n'est plus disponible",
+      noIndex: true,
+      noFollow: true,
     });
   }
 }

@@ -10,8 +10,6 @@
 export enum EWhatsAppErrorCode {
   // Phone number validation errors
   PHONE_REQUIRED = "PHONE_REQUIRED",
-  PHONE_INVALID_FORMAT = "PHONE_INVALID_FORMAT",
-  PHONE_UPDATE_FAILED = "PHONE_UPDATE_FAILED",
 
   // Connection errors
   CONNECTION_TIMEOUT = "CONNECTION_TIMEOUT",
@@ -23,16 +21,27 @@ export enum EWhatsAppErrorCode {
   SESSION_EXPIRED = "SESSION_EXPIRED",
   SESSION_SAVE_FAILED = "SESSION_SAVE_FAILED",
   SESSION_DELETE_FAILED = "SESSION_DELETE_FAILED",
-
-  // Account errors
-  ACCOUNT_NOT_FOUND = "ACCOUNT_NOT_FOUND",
-
-  // Message sending errors
-  MESSAGE_SEND_FAILED = "MESSAGE_SEND_FAILED",
-  RECIPIENT_INVALID = "RECIPIENT_INVALID",
 }
 
 export type TWhatsAppErrorCode = EWhatsAppErrorCode;
+
+export enum EMessageErrorCode {
+  MESSAGE_SEND_FAILED = "MESSAGE_SEND_FAILED",
+  NO_DEFAULT_TEMPLATE = "NO_DEFAULT_TEMPLATE",
+}
+
+export type TMessageErrorCode = EMessageErrorCode;
+
+// =============================================================================
+// ACCOUNT ERROR CODES
+// =============================================================================
+
+export enum EAccountErrorCode {
+  ACCOUNT_NOT_FOUND = "ACCOUNT_NOT_FOUND",
+  PHONE_INVALID = "PHONE_INVALID",
+}
+
+export type TAccountErrorCode = EAccountErrorCode;
 
 // =============================================================================
 // GENERAL ERROR CODES
@@ -50,6 +59,17 @@ export enum EGeneralErrorCode {
 }
 
 export type TGeneralErrorCode = EGeneralErrorCode;
+
+// =============================================================================
+// LEAD ERROR CODES
+// =============================================================================
+
+export enum ELeadErrorCode {
+  LEAD_NOT_FOUND = "LEAD_NOT_FOUND",
+  RECIPIENT_PHONE_INVALID = "RECIPIENT_PHONE_INVALID",
+}
+
+export type TLeadErrorCode = ELeadErrorCode;
 
 // =============================================================================
 // SMS ERROR CODES
@@ -103,6 +123,19 @@ export enum EVoiceErrorCode {
 export type TVoiceErrorCode = EVoiceErrorCode;
 
 // =============================================================================
+// AUTH ERROR CODES
+// =============================================================================
+
+export enum EAuthErrorCode {
+  // Authentication errors
+  SIGNUP_NOT_ALLOWED = "SIGNUP_NOT_ALLOWED",
+  AUTH_ERROR = "AUTH_ERROR",
+  EMAIL_INVALID = "EMAIL_INVALID",
+}
+
+export type TAuthErrorCode = EAuthErrorCode;
+
+// =============================================================================
 // WORKER ERROR CODES (for API routes)
 // =============================================================================
 
@@ -134,4 +167,8 @@ export type TErrorCode =
   | TGeneralErrorCode
   | TSmsErrorCode
   | TVoiceErrorCode
+  | TAuthErrorCode
+  | TLeadErrorCode
+  | TAccountErrorCode
+  | TMessageErrorCode
   | TWorkerErrorCode;

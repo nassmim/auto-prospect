@@ -16,7 +16,7 @@ import type { Metadata } from "next";
 // Example 1: Simple static page metadata
 export const dashboardMetadata: Metadata = getSEOTags({
   title: "Tableau de bord",
-  description: "Gérez vos campagnes de prospection et suivez vos résultats",
+  description: "Gère tes campagnes de prospection et suis tes résultats",
   canonical: pages.dashboard,
 });
 

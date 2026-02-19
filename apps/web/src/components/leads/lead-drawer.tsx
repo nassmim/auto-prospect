@@ -9,10 +9,8 @@ import {
   fetchLeadTeamMembers,
   updateLeadStage,
 } from "@/actions/lead.actions";
-import {
-  getDefaultWhatsAppTemplate,
-  logWhatsAppMessage,
-} from "@/actions/message.actions";
+import { sendRinglessVoiceToLead } from "@/actions/message.actions";
+import { sendWhatsAppTextMessage } from "@/actions/whatsapp.actions";
 import { Dropdown } from "@/components/ui/dropdown";
 import {
   Form,
@@ -24,11 +22,6 @@ import {
 } from "@/components/ui/form";
 import { pages } from "@/config/routes";
 import { swrKeys } from "@/config/swr-keys";
-import { extractLeadVariables } from "@/utils/lead.utils";
-import {
-  generateWhatsAppLink,
-  renderMessageTemplate,
-} from "@/utils/message.utils";
 import {
   leadNoteSchema,
   leadReminderFormSchema,
@@ -81,6 +74,7 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
 
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isSendingWhatsApp, setIsSendingWhatsApp] = useState(false);
+  const [isSendingVoice, setIsSendingVoice] = useState(false);
 
   // Notes form
   const noteForm = useForm<TLeadNoteFormData>({
@@ -173,34 +167,69 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
     setIsSendingWhatsApp(true);
 
     try {
-      // Get default WhatsApp template
-      const template = await getDefaultWhatsAppTemplate(lead.id);
+      const result = await sendWhatsAppTextMessage(lead.id);
 
-      // Extract variables from lead data
-      const variables = extractLeadVariables(lead);
+      if (!result.success) {
+        const errorMessages: Record<string, string> = {
+          NO_DEFAULT_TEMPLATE:
+            "Aucun template WhatsApp par défaut configuré. Allez dans Modèles pour en définir un.",
+          RECIPIENT_PHONE_INVALID:
+            "Numéro de téléphone du destinataire invalide.",
+          SESSION_NOT_FOUND:
+            "Session WhatsApp non connectée. Configurez WhatsApp dans les paramètres.",
+          SESSION_EXPIRED:
+            "Session WhatsApp expirée. Reconnectez-vous dans les paramètres.",
+          PHONE_INVALID:
+            "Numéro WhatsApp non configuré dans les paramètres.",
+        };
+        const message =
+          errorMessages[result.errorCode || ""] ||
+          "Erreur lors de l'envoi du message WhatsApp";
+        alert(message);
+        return;
+      }
 
-      // Render template or use default message
-      const defaultMessage = `Bonjour, je suis intéressé par votre annonce "${lead.ad.title}".`;
-      const renderedMessage = template
-        ? renderMessageTemplate(template.content || defaultMessage, variables)
-        : defaultMessage;
-
-      // Generate WhatsApp link
-      const whatsappUrl = generateWhatsAppLink(
-        lead.ad.phoneNumber,
-        renderedMessage,
-      );
-
-      // Log the message attempt
-      await logWhatsAppMessage(lead.id, renderedMessage, template?.id);
-
-      // Open WhatsApp in new tab
-      window.open(whatsappUrl, "_blank");
+      mutate();
+      alert("Message WhatsApp envoyé avec succès");
     } catch (err) {
       console.error("Failed to send WhatsApp message:", err);
       alert("Erreur lors de l'envoi du message WhatsApp");
     } finally {
       setIsSendingWhatsApp(false);
+    }
+  };
+
+  const handleVoiceClick = async () => {
+    if (!lead || !lead.ad.phoneNumber || isSendingVoice) return;
+
+    setIsSendingVoice(true);
+
+    try {
+      const result = await sendRinglessVoiceToLead(lead.id);
+
+      if (!result.success) {
+        const errorMessages: Record<string, string> = {
+          NO_DEFAULT_TEMPLATE:
+            "Aucun template vocal par défaut configuré. Allez dans Modèles pour en définir un.",
+          RECIPIENT_PHONE_INVALID:
+            "Numéro de téléphone du destinataire invalide.",
+          PHONE_INVALID:
+            "Numéro de téléphone fixe non configuré dans les paramètres.",
+          API_KEY_MISSING: "Configuration des API vocales manquante.",
+        };
+        const message =
+          errorMessages[result.errorCode || ""] ||
+          "Erreur lors de l'envoi du message vocal";
+        alert(message);
+        return;
+      }
+
+      mutate();
+      alert("Message vocal envoyé avec succès");
+    } catch {
+      alert("Erreur lors de l'envoi du message vocal");
+    } finally {
+      setIsSendingVoice(false);
     }
   };
 
@@ -296,7 +325,7 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
           </h2>
           <button
             onClick={onClose}
-            className="group rounded-lg p-2 transition-colors hover:bg-zinc-900"
+            className="group cursor-pointer rounded-lg p-2 transition-colors hover:bg-zinc-900"
             aria-label="Fermer"
           >
             <svg
@@ -360,7 +389,7 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
                         <button
                           key={idx}
                           onClick={() => setSelectedImageIndex(idx)}
-                          className={`relative h-16 w-24 flex-shrink-0 overflow-hidden rounded-lg border-2 transition-all ${
+                          className={`relative h-16 w-24 flex-shrink-0 cursor-pointer overflow-hidden rounded-lg border-2 transition-all ${
                             idx === selectedImageIndex
                               ? "border-amber-500 ring-2 ring-amber-500/20"
                               : "border-zinc-800 hover:border-zinc-700"
@@ -482,7 +511,7 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
                   className={`group flex items-center justify-center gap-2 rounded-lg border px-4 py-3 font-medium transition-all ${
                     !lead.ad.phoneNumber
                       ? "cursor-not-allowed border-zinc-800 bg-zinc-900/50 text-zinc-600"
-                      : "border-green-900/50 bg-green-950/30 text-green-400 hover:border-green-800 hover:bg-green-900/40"
+                      : "cursor-pointer border-green-900/50 bg-green-950/30 text-green-400 hover:border-green-800 hover:bg-green-900/40"
                   }`}
                   title={
                     !lead.ad.phoneNumber
@@ -527,26 +556,39 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
                   <span>SMS</span>
                 </button>
 
-                {/* Voice Button (Placeholder) */}
+                {/* Voice Button */}
                 <button
                   type="button"
-                  disabled
-                  className="group flex cursor-not-allowed items-center justify-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-3 font-medium text-zinc-600 transition-all"
-                  title="Nécessite des crédits Voice"
+                  onClick={handleVoiceClick}
+                  disabled={!lead.ad.phoneNumber || isSendingVoice}
+                  className={`group flex items-center justify-center gap-2 rounded-lg border px-4 py-3 font-medium transition-all ${
+                    !lead.ad.phoneNumber
+                      ? "cursor-not-allowed border-zinc-800 bg-zinc-900/50 text-zinc-600"
+                      : "cursor-pointer border-purple-900/50 bg-purple-950/30 text-purple-400 hover:border-purple-800 hover:bg-purple-900/40"
+                  }`}
+                  title={
+                    !lead.ad.phoneNumber
+                      ? "Numéro de téléphone non disponible"
+                      : ""
+                  }
                 >
-                  <svg
-                    className="h-5 w-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
-                    />
-                  </svg>
+                  {isSendingVoice ? (
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-purple-400 border-t-transparent" />
+                  ) : (
+                    <svg
+                      className="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
+                      />
+                    </svg>
+                  )}
                   <span>Voice</span>
                 </button>
 
@@ -705,7 +747,7 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
                     <button
                       type="submit"
                       disabled={isSubmittingNote}
-                      className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="cursor-pointer rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {isSubmittingNote ? "Enregistrement..." : "Sauvegarder"}
                     </button>
@@ -802,7 +844,7 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
                     <button
                       type="submit"
                       disabled={isSubmittingReminder}
-                      className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="cursor-pointer rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {isSubmittingReminder ? "Ajout..." : "Ajouter"}
                     </button>
@@ -856,7 +898,7 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
                         <button
                           type="button"
                           onClick={() => handleDeleteReminder(reminder.id)}
-                          className="ml-2 rounded p-1 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-red-400"
+                          className="ml-2 cursor-pointer rounded p-1 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-red-400"
                           aria-label="Supprimer le rappel"
                         >
                           <svg

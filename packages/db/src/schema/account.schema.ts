@@ -45,31 +45,14 @@ export const accounts = pgTable(
     confirmedByAdmin: boolean("confirmed_by_admin").default(false).notNull(),
   },
   (table) => [
-    pgPolicy("enable update for account owners", {
+    pgPolicy("enable all for account owners", {
       as: "permissive",
-      for: "update",
-      to: authenticatedRole,
-      using: sql`
-        ${authUid} = ${table.id}`,
-      withCheck: sql`
-        ${authUid} = ${table.id}`,
-    }),
-    // Users can delete their own org
-    pgPolicy("enable delete for account owners", {
-      as: "permissive",
-      for: "delete",
-      to: authenticatedRole,
-      using: sql`
-        ${authUid} = ${table.id} 
-      `,
-    }),
-    // Members can read data for orgs they belong to
-    pgPolicy("enable read for account owners", {
-      as: "permissive",
-      for: "select",
+      for: "all",
       to: authenticatedRole,
       using: sql`
         ${authUid} = ${table.id} `,
+      withCheck: sql`
+        ${authUid} = ${table.id}`,
     }),
   ],
 );

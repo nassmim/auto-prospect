@@ -1,7 +1,10 @@
 "use client";
 
 import { updateAccountSettings } from "@/actions/account.actions";
-import { TAccountSettings } from "@/types/account.types";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import type { TAccountSettings } from "@/types/account.types";
+import { accountSettingsSchema } from "@/validation-schemas";
 import { useState, useTransition } from "react";
 
 type MessagesTabProps = {
@@ -27,12 +30,19 @@ export function MessagesTab({ settings }: MessagesTabProps) {
     setError(null);
     setSuccess(false);
 
+    const validationResult = accountSettingsSchema.safeParse({
+      dailyReset,
+      ignorePhonesVisible,
+    });
+
+    if (!validationResult.success) {
+      setError("Validation des paramètres a échoué");
+      return;
+    }
+
     startTransition(async () => {
       try {
-        await updateAccountSettings({
-          dailyReset,
-          ignorePhonesVisible,
-        });
+        await updateAccountSettings(validationResult.data);
         setSuccess(true);
         setTimeout(() => setSuccess(false), 3000);
       } catch (err) {
@@ -75,22 +85,20 @@ export function MessagesTab({ settings }: MessagesTabProps) {
                 </svg>
               </div>
               <div className="flex-1">
-                <h3 className="text-sm font-medium text-zinc-100">
-                  Réinitialisation quotidienne
-                </h3>
-                <p className="mt-1 text-sm text-zinc-500">
-                  Réinitialise les compteurs de messages à minuit chaque jour
-                </p>
+                <label htmlFor="daily-reset" className="cursor-pointer">
+                  <h3 className="text-sm font-medium text-zinc-100">
+                    Réinitialisation quotidienne
+                  </h3>
+                  <p className="mt-1 text-sm text-zinc-500">
+                    Réinitialise les compteurs de messages à minuit chaque jour
+                  </p>
+                </label>
               </div>
-              <label className="relative inline-flex cursor-pointer items-center">
-                <input
-                  type="checkbox"
-                  checked={dailyReset}
-                  onChange={(e) => setDailyReset(e.target.checked)}
-                  className="peer sr-only"
-                />
-                <div className="peer h-6 w-11 rounded-full bg-zinc-800 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-zinc-400 after:transition-all after:content-[''] peer-checked:bg-amber-500 peer-checked:after:translate-x-full peer-checked:after:bg-zinc-950 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-amber-500 peer-focus:ring-offset-2 peer-focus:ring-offset-zinc-950"></div>
-              </label>
+              <Checkbox
+                id="daily-reset"
+                checked={dailyReset}
+                onCheckedChange={(checked) => setDailyReset(checked === true)}
+              />
             </div>
             <div className="mt-4 rounded-lg bg-zinc-800/50 p-3">
               <p className="text-xs text-zinc-400">
@@ -124,29 +132,32 @@ export function MessagesTab({ settings }: MessagesTabProps) {
                 </svg>
               </div>
               <div className="flex-1">
-                <h3 className="text-sm font-medium text-zinc-100">
-                  Ignorer les annonces avec téléphone visible
-                </h3>
-                <p className="mt-1 text-sm text-zinc-500">
-                  Ne pas envoyer de messages automatiques aux annonces qui
-                  affichent déjà un numéro de téléphone
-                </p>
+                <label
+                  htmlFor="ignore-phones-visible"
+                  className="cursor-pointer"
+                >
+                  <h3 className="text-sm font-medium text-zinc-100">
+                    Ignorer les annonces avec téléphone visible
+                  </h3>
+                  <p className="mt-1 text-sm text-zinc-500">
+                    Ne pas envoyer de messages automatiques aux annonces qui
+                    affichent déjà un numéro de téléphone
+                  </p>
+                </label>
               </div>
-              <label className="relative inline-flex cursor-pointer items-center">
-                <input
-                  type="checkbox"
-                  checked={ignorePhonesVisible}
-                  onChange={(e) => setIgnorePhonesVisible(e.target.checked)}
-                  className="peer sr-only"
-                />
-                <div className="peer h-6 w-11 rounded-full bg-zinc-800 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-zinc-400 after:transition-all after:content-[''] peer-checked:bg-amber-500 peer-checked:after:translate-x-full peer-checked:after:bg-zinc-950 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-amber-500 peer-focus:ring-offset-2 peer-focus:ring-offset-zinc-950"></div>
-              </label>
+              <Checkbox
+                id="ignore-phones-visible"
+                checked={ignorePhonesVisible}
+                onCheckedChange={(checked) =>
+                  setIgnorePhonesVisible(checked === true)
+                }
+              />
             </div>
             <div className="mt-4 rounded-lg bg-zinc-800/50 p-3">
               <p className="text-xs text-zinc-400">
                 Recommandé pour éviter les messages redondants. Si le vendeur
-                affiche déjà son numéro, vous pouvez le contacter directement
-                sans passer par la messagerie automatique.
+                affiche déjà son numéro, tu peux le contacter directement sans
+                passer par la messagerie automatique.
               </p>
             </div>
           </div>
@@ -184,13 +195,13 @@ export function MessagesTab({ settings }: MessagesTabProps) {
               <li className="flex items-start gap-2">
                 <span className="mt-1.5 h-1 w-1 flex-shrink-0 rounded-full bg-zinc-600" />
                 <span>
-                  Personnalisez vos templates de messages pour de meilleurs
+                  Personnalise tes templates de messages pour de meilleurs
                   résultats
                 </span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="mt-1.5 h-1 w-1 flex-shrink-0 rounded-full bg-zinc-600" />
-                <span>Vérifiez régulièrement vos paramètres de connexion</span>
+                <span>Vérifie régulièrement tes paramètres de connexion</span>
               </li>
             </ul>
           </div>
@@ -199,13 +210,9 @@ export function MessagesTab({ settings }: MessagesTabProps) {
 
       {/* Save Button */}
       <div className="flex items-center gap-4">
-        <button
-          onClick={handleSave}
-          disabled={isPending}
-          className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-zinc-950 transition-colors hover:bg-amber-400 disabled:opacity-50"
-        >
+        <Button onClick={handleSave} disabled={isPending}>
           {isPending ? "Enregistrement..." : "Enregistrer"}
-        </button>
+        </Button>
 
         {success && (
           <div className="flex items-center gap-2 text-sm text-green-500">

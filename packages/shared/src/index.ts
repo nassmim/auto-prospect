@@ -1,3 +1,4 @@
+export * from "libphonenumber-js";
 export * from "./config";
 export * from "./constants";
 export * from "./types";

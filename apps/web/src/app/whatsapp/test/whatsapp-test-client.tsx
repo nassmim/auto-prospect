@@ -2,11 +2,11 @@
 
 import {
   initiateWhatsAppConnection,
-  sendWhatsAppTextMessage,
   updateWhatsAppPhoneNumber,
 } from "@/actions/whatsapp.actions";
 import { createClient } from "@/lib/supabase/client";
 import { getErrorMessage } from "@/utils/error-messages.utils";
+import { EGeneralErrorCode } from "@auto-prospect/shared";
 import Image from "next/image";
 import { useState } from "react";
 
@@ -88,7 +88,7 @@ export function WhatsAppTestClient({ initialData }: WhatsAppTestClientProps) {
     if (error) {
       setError(error.message);
     } else {
-      setError("Vérifiez votre email pour confirmer l'inscription");
+      setError("Vérifie ton email pour confirmer l'inscription");
     }
     setAuthLoading(false);
   };
@@ -142,29 +142,22 @@ export function WhatsAppTestClient({ initialData }: WhatsAppTestClientProps) {
   };
 
   // Send test message
+  // NOTE: This test functionality is temporarily disabled as sendWhatsAppTextMessage
+  // now requires a leadId instead of direct message parameters
   const handleSendMessage = async () => {
     if (!savedPhoneNumber || !recipientPhone || !messageText) return;
 
     setSendingMessage(true);
     setSendResult(null);
 
-    const result = await sendWhatsAppTextMessage({
-      senderPhone: savedPhoneNumber,
-      recipientPhone: recipientPhone.startsWith("+")
-        ? recipientPhone
-        : `+${recipientPhone}`,
-      adTitle: "Test",
-      message: messageText,
+    // TODO: Update this test to use the new API that requires a leadId
+    // For now, set a placeholder error
+    setSendResult({
+      success: false,
+      errorCode: EGeneralErrorCode.VALIDATION_FAILED,
     });
 
-    setSendResult(result);
     setSendingMessage(false);
-
-    // If session expired, update UI to show reconnection needed
-    if (result.needsReconnect) {
-      setConnected(false);
-      setQrCode(null);
-    }
   };
 
   return (
@@ -199,7 +192,7 @@ export function WhatsAppTestClient({ initialData }: WhatsAppTestClientProps) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
-                  placeholder="votre@email.com"
+                  placeholder="ton@email.com"
                   required
                 />
               </div>
@@ -316,7 +309,7 @@ export function WhatsAppTestClient({ initialData }: WhatsAppTestClientProps) {
                   {qrCode ? (
                     <div className="text-center">
                       <p className="mb-4 text-sm text-gray-600">
-                        Scannez ce code avec WhatsApp sur votre téléphone
+                        Scanne ce code avec WhatsApp sur ton téléphone
                       </p>
                       <div className="inline-block rounded-xl border-2 border-green-500 p-3">
                         <Image
@@ -377,7 +370,7 @@ export function WhatsAppTestClient({ initialData }: WhatsAppTestClientProps) {
                 </>
               ) : (
                 <p className="text-sm text-gray-500">
-                  Enregistrez d&apos;abord votre numéro WhatsApp
+                  Enregistre d&apos;abord ton numéro WhatsApp
                 </p>
               )}
             </div>
@@ -455,7 +448,7 @@ export function WhatsAppTestClient({ initialData }: WhatsAppTestClientProps) {
                 </div>
               ) : (
                 <p className="text-sm text-gray-500">
-                  Connectez d&apos;abord votre WhatsApp
+                  Connecte d&apos;abord ton WhatsApp
                 </p>
               )}
             </div>

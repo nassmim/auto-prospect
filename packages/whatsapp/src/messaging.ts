@@ -3,7 +3,11 @@
  * Handles sending messages and checking phone numbers
  */
 
-import { EWhatsAppErrorCode, TErrorCode } from "@auto-prospect/shared";
+import {
+  ELeadErrorCode,
+  EMessageErrorCode,
+  TErrorCode,
+} from "@auto-prospect/shared";
 import { WASocket } from "@whiskeysockets/baileys";
 
 /**
@@ -25,14 +29,14 @@ export const sendWhatsAppMessage = async (
     if (!results || results.length === 0) {
       return {
         success: false,
-        errorCode: EWhatsAppErrorCode.RECIPIENT_INVALID,
+        errorCode: ELeadErrorCode.RECIPIENT_PHONE_INVALID,
       };
     }
     const result = results[0];
     if (!result?.exists) {
       return {
         success: false,
-        errorCode: EWhatsAppErrorCode.RECIPIENT_INVALID,
+        errorCode: ELeadErrorCode.RECIPIENT_PHONE_INVALID,
       };
     }
 
@@ -43,7 +47,7 @@ export const sendWhatsAppMessage = async (
   } catch {
     return {
       success: false,
-      errorCode: EWhatsAppErrorCode.MESSAGE_SEND_FAILED,
+      errorCode: EMessageErrorCode.MESSAGE_SEND_FAILED,
     };
   }
 };

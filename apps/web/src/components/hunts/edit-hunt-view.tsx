@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { HuntForm } from "@/components/hunts/hunt-form";
 import { pages } from "@/config/routes";
 import { getHuntById } from "@/services/hunt.service";
 import { getAccountTemplates } from "@/services/message.service";
+import Link from "next/link";
 
 type EditHuntViewProps = {
   hunt: Awaited<ReturnType<typeof getHuntById>>;
@@ -34,7 +34,9 @@ export function EditHuntView({ hunt, templates }: EditHuntViewProps) {
               d="M9 5l7 7-7 7"
             />
           </svg>
-          <span className="text-zinc-400 truncate max-w-[200px]">{hunt.name}</span>
+          <span className="text-zinc-400 truncate max-w-[200px]">
+            {hunt.name}
+          </span>
           <svg
             className="h-4 w-4 text-zinc-600"
             fill="none"
@@ -57,7 +59,7 @@ export function EditHuntView({ hunt, templates }: EditHuntViewProps) {
             Modifier la recherche
           </h1>
           <p className="text-sm text-zinc-400">
-            Modifiez les paramètres de votre recherche
+            Modifie les paramètres de ta recherche
           </p>
         </div>
 

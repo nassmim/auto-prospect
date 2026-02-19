@@ -42,38 +42,18 @@ export type TSubscription =
     }
   | undefined;
 
-/**
- * Gets all channel credits for a hunt
- */
-export async function getHuntChannelCredits(huntId: string) {
-  // call the endpoint
-}
 
 /**
  * Gets complete credit data for the authenticated user's account
- * Used by the credits page to display balances, allocations, and transaction history
+ * Used by the credits page to display balances and transaction history
  */
 export async function getAccountCredits() {
   const dbClient = await createDrizzleSupabaseClient();
 
-  // Fetch credit balance, hunt allocations, and transaction history in parallel
-  const [balance, huntAllocations, transactions] = await Promise.all([
+  // Fetch credit balance and transaction history in parallel
+  const [balance, transactions] = await Promise.all([
     // Get account credit balance
     dbClient.rls((tx: TDBQuery) => tx.query.creditBalances.findFirst()),
-
-    // Get hunt channel credit allocations with hunt names
-    dbClient.rls((tx: TDBQuery) =>
-      tx.query.huntChannelCredits.findMany({
-        with: {
-          hunt: {
-            columns: {
-              id: true,
-              name: true,
-            },
-          },
-        },
-      }),
-    ),
 
     // Get recent credit transactions (last 50)
     dbClient.rls((tx: TDBQuery) =>
@@ -86,14 +66,6 @@ export async function getAccountCredits() {
 
   return {
     balance,
-    huntAllocations: huntAllocations.map((allocation) => ({
-      huntId: allocation.huntId,
-      huntName: allocation.hunt.name,
-      channel: allocation.channel as TContactChannel,
-      allocated: allocation.creditsAllocated,
-      consumed: allocation.creditsConsumed,
-      remaining: allocation.creditsAllocated - allocation.creditsConsumed,
-    })),
     transactions: transactions.map((tx) => ({
       id: tx.id,
       type: tx.type as TransactionType,

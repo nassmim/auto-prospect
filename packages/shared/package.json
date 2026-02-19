@@ -8,6 +8,6 @@
     "build": "echo 'no build needed'"
   },
   "dependencies": {
-    "zod": "^4.3.5"
+    "libphonenumber-js": "^1.12.34"
   }
 }

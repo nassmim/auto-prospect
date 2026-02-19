@@ -1,4 +1,5 @@
 import { NewTemplateView } from "@/components/templates/new-template-view";
+import { pages } from "@/config/routes";
 import { getSEOTags } from "@/lib/seo";
 import { EContactChannel } from "@auto-prospect/shared/src/config/message.config";
 import type { Metadata } from "next";
@@ -19,9 +20,9 @@ export async function generateMetadata({
       ? "Créer un template vocal"
       : "Créer un template texte",
     description: isVoiceChannel
-      ? "Enregistrez ou importez un message vocal pour vos appels automatisés"
-      : "Créez un message avec des variables personnalisables pour WhatsApp et SMS",
-    canonical: `/templates/new${channel ? `?channel=${channel}` : ""}`,
+      ? "Enregistre ou importe un message vocal pour tes appels automatisés"
+      : "Crée un message avec des variables personnalisables pour WhatsApp",
+    canonical: pages.templates.new(channel),
   });
 }
 

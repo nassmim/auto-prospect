@@ -32,6 +32,12 @@ export const whatsappSessions = pgTable(
   },
   (table) => [
     // Users can only read their own session
+    pgPolicy("enable insert for authenticated users", {
+      as: "permissive",
+      for: "insert",
+      to: authenticatedRole,
+      withCheck: sql`true`,
+    }),
     pgPolicy("enable all for own session", {
       as: "permissive",
       for: "all",

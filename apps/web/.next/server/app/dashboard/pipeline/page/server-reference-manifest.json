@@ -1,4 +1,20 @@
 {
-  "node": {},
+  "node": {
+    "0044030b0e17a97f37249a86a888b13e9bc81c7da9": {
+      "workers": {
+        "app/dashboard/pipeline/page": {
+          "moduleId": 7400,
+          "async": false,
+          "exportedName": "signOut",
+          "filename": "Projets/auto-prospect-worktrees/fix/bulk-13022026/apps/web/src/actions/auth.actions.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/pipeline/page": "action-browser"
+      },
+      "exportedName": "signOut",
+      "filename": "Projets/auto-prospect-worktrees/fix/bulk-13022026/apps/web/src/actions/auth.actions.ts"
+    }
+  },
   "edge": {}
 }

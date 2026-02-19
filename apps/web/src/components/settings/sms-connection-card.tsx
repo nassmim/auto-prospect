@@ -1,11 +1,11 @@
 "use client";
 
 import { saveSmsApiKeyAction } from "@/actions/message.actions";
+import { getErrorMessage } from "@/utils/error-messages.utils";
 import {
   saveSmsApiKeySchema,
   type TSaveSmsApiKeySchema,
 } from "@/validation-schemas";
-import { getErrorMessage } from "@/utils/error-messages.utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -112,12 +112,12 @@ export function SmsConnectionCard({
       {!smsApiAllowed && (
         <div className="space-y-4">
           <p className="text-sm text-zinc-400">
-            Pour accéder à la configuration SMS, contactez-nous pour activer
-            cette fonctionnalité sur votre compte.
+            Pour accéder à la configuration SMS, contacte-nous pour activer
+            cette fonctionnalité sur ton compte.
           </p>
           <button
             onClick={handleContactClick}
-            className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-zinc-950 transition-colors hover:bg-amber-400"
+            className="cursor-pointer rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-zinc-950 transition-colors hover:bg-amber-400"
           >
             Nous contacter
           </button>
@@ -192,7 +192,7 @@ export function SmsConnectionCard({
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-zinc-950 transition-colors hover:bg-amber-400 disabled:opacity-50"
+                    className="cursor-pointer rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-zinc-950 transition-colors hover:bg-amber-400 disabled:opacity-50"
                   >
                     {isSubmitting
                       ? "..."

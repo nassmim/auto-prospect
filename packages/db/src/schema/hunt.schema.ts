@@ -70,6 +70,9 @@ export const hunts = pgTable(
     outreachSettings: jsonb("outreach_settings")
       .$type<TOutreachSettings>()
       .default(sql`'{}'::jsonb`),
+    // Per-hunt template configuration. Maps channel keys to template UUIDs.
+    // Used by daily orchestrator for automated sends.
+    // Manual sends from lead view use isDefault=true templates instead.
     templateIds: jsonb("template_ids")
       .$type<TMessageTemplateIds>()
       .default(sql`'{}'::jsonb`),

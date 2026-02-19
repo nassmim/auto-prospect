@@ -25,12 +25,15 @@ export type TOrganizationNameFormData = z.infer<
   typeof organizationNameSchema
 >;
 
-// account settings schema (for future use)
+// account settings schema
 export const accountSettingsSchema = z.object({
   name: z
     .string()
     .min(1, "Le nom de l'organisation est requis")
-    .max(100, "Le nom ne peut pas dépasser 100 caractères"),
+    .max(100, "Le nom ne peut pas dépasser 100 caractères")
+    .optional(),
+  dailyReset: z.boolean().optional(),
+  ignorePhonesVisible: z.boolean().optional(),
 });
 
 export type TAccountSettingsFormData = z.infer<typeof accountSettingsSchema>;

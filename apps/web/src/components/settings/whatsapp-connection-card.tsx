@@ -4,11 +4,11 @@ import {
   initiateWhatsAppConnection,
   updateWhatsAppPhoneNumber,
 } from "@/actions/whatsapp.actions";
+import { getErrorMessage } from "@/utils/error-messages.utils";
 import {
   whatsappPhoneNumberSchema,
   type TWhatsAppPhoneNumberSchema,
 } from "@/validation-schemas";
-import { getErrorMessage } from "@/utils/error-messages.utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Image from "next/image";
 import { useState } from "react";
@@ -60,10 +60,7 @@ export function WhatsAppConnectionCard({
   const onSubmitPhone = async (data: TWhatsAppPhoneNumberSchema) => {
     setError(null);
 
-    const result = await updateWhatsAppPhoneNumber(
-      accountId,
-      data.phoneNumber,
-    );
+    const result = await updateWhatsAppPhoneNumber(accountId, data.phoneNumber);
 
     if (result.success) {
       setSavedPhoneNumber(result.formattedNumber!);
@@ -168,9 +165,9 @@ export function WhatsAppConnectionCard({
                 WhatsApp déconnecté
               </h4>
               <p className="mt-1 text-xs text-amber-300/90">
-                Votre session WhatsApp a été déconnectée. Vous devez vous
-                reconnecter pour continuer à envoyer des messages. Cliquez sur
-                le bouton ci-dessous pour générer un nouveau QR code.
+                Ta session WhatsApp a été déconnectée. Tu dois te reconnecter
+                pour continuer à envoyer des messages. Clique sur le bouton
+                ci-dessous pour générer un nouveau QR code.
               </p>
             </div>
           </div>
@@ -218,7 +215,7 @@ export function WhatsAppConnectionCard({
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-zinc-950 transition-colors hover:bg-amber-400 disabled:opacity-50"
+                className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-zinc-950 transition-colors hover:bg-amber-400 disabled:opacity-50 cursor-pointer"
               >
                 {isSubmitting
                   ? "..."
@@ -274,7 +271,7 @@ export function WhatsAppConnectionCard({
               {qrCode ? (
                 <div className="text-center">
                   <p className="mb-4 text-xs text-zinc-400">
-                    Scannez ce code avec WhatsApp sur votre téléphone
+                    Scanne ce code avec WhatsApp sur ton téléphone
                   </p>
                   <div className="inline-block rounded-lg border-2 border-green-500 p-3">
                     <Image
@@ -293,7 +290,7 @@ export function WhatsAppConnectionCard({
                 <button
                   onClick={handleConnectWhatsApp}
                   disabled={connectionLoading}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 py-2.5 text-sm font-medium text-white transition-colors hover:bg-green-700 disabled:opacity-50"
+                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 py-2.5 text-sm font-medium text-white transition-colors hover:bg-green-700 disabled:opacity-50 cursor-pointer"
                 >
                   {connectionLoading ? (
                     <>
@@ -335,7 +332,7 @@ export function WhatsAppConnectionCard({
             </>
           ) : (
             <p className="text-xs text-zinc-500">
-              Enregistrez d&apos;abord votre numéro WhatsApp
+              Enregistre d&apos;abord ton numéro WhatsApp
             </p>
           )}
         </div>
@@ -344,10 +341,10 @@ export function WhatsAppConnectionCard({
       {/* Info */}
       <div className="rounded-lg bg-zinc-800/50 p-4">
         <p className="text-xs text-zinc-400">
-          <strong className="text-zinc-300">Configuration:</strong> Enregistrez
-          votre numéro WhatsApp, puis connectez-vous en scannant le QR code avec
-          votre téléphone. La connexion reste active pour l&apos;envoi de
-          messages automatiques.
+          <strong className="text-zinc-300">Configuration:</strong> Enregistre
+          ton numéro WhatsApp, puis connecte-toi en scannant le QR code avec ton
+          téléphone. La connexion reste active pour l&apos;envoi de messages
+          automatiques.
         </p>
       </div>
     </div>

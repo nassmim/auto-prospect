@@ -12,7 +12,7 @@ export async function signInWithMagicLink(formData: { email: string }) {
   // Validate input
   const result = magicLinkSchema.safeParse(formData);
   if (!result.success) {
-    return { error: result.error.errors[0].message };
+    return { error: result.error.message };
   }
 
   const supabase = await createClient();
@@ -39,7 +39,7 @@ export async function signInWithGoogle() {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/api/auth/callback`,
     },
   });
 

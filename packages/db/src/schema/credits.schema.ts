@@ -21,7 +21,6 @@ import {
 } from "drizzle-orm/pg-core";
 import { authenticatedRole, authUid } from "drizzle-orm/supabase";
 import { accounts } from "./account.schema";
-import { hunts } from "./hunt.schema";
 import { channel } from "./message.schema";
 
 type PurchaseMetadata = {
@@ -34,6 +33,7 @@ type PurchaseMetadata = {
 type UsageMetadata = {
   messageId?: string;
   recipient?: string;
+  huntId?: string;
   duration?: number; // For voice calls, in seconds
 };
 
@@ -67,15 +67,28 @@ export const creditBalances = pgTable(
     whatsappText: integer("whatsapp_text").notNull().default(0),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
-      .default(sql`now()`),
+      .defaultNow(),
   },
   (table) => [
     index("credit_balances_account_id_idx").on(table.accountId),
+    pgPolicy("enable insert for authenticated users", {
+      as: "permissive",
+      for: "insert",
+      to: authenticatedRole,
+      withCheck: sql`true`,
+    }),
     pgPolicy("enable read for credit walet owners", {
       as: "permissive",
       for: "select",
       to: authenticatedRole,
       using: sql`${table.accountId} = ${authUid}`,
+    }),
+    pgPolicy("enable update for credit walet owners", {
+      as: "permissive",
+      for: "update",
+      to: authenticatedRole,
+      using: sql`${table.accountId} = ${authUid}`,
+      withCheck: sql`${table.accountId} = ${authUid}`,
     }),
     // // account members can read their balance
     // pgPolicy("enable read for account members", {
@@ -165,52 +178,6 @@ export const creditPacks = pgTable(
 );
 export type TCreditPack = InferSelectModel<typeof creditPacks>;
 
-// Hunt channel credits table - per-hunt, per-channel credit allocation
-export const huntChannelCredits = pgTable(
-  "hunt_channel_credits",
-  {
-    id: uuid().defaultRandom().primaryKey(),
-    huntId: uuid("hunt_id").notNull(),
-    channel: channel().notNull(),
-    creditsAllocated: integer("credits_allocated").notNull().default(0),
-    creditsConsumed: integer("credits_consumed").notNull().default(0),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .notNull()
-      .default(sql`now()`),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .notNull()
-      .default(sql`now()`),
-  },
-  (table) => [
-    foreignKey({
-      columns: [table.huntId],
-      foreignColumns: [hunts.id],
-      name: "hunt_channel_credits_hunt_id_fk",
-    }).onDelete("cascade"),
-    unique("hunt_channel_unique").on(table.huntId, table.channel),
-    index("hunt_channel_credits_hunt_id_idx").on(table.huntId),
-    pgPolicy("enable all for hunt owners", {
-      as: "permissive",
-      for: "all",
-      to: authenticatedRole,
-      using: sql`exists (
-        select 1 from hunts h
-        where h.id = ${table.huntId}
-        and h.account_id = ${authUid}
-      )`,
-      withCheck: sql`exists (
-        select 1 from hunts h
-        where h.id = ${table.huntId}
-        and h.account_id = ${authUid}
-      )`,
-    }),
-  ],
-);
-export type THuntChannelCredit = InferSelectModel<typeof huntChannelCredits>;
-export type THuntChannelCreditInsert = InferInsertModel<
-  typeof huntChannelCredits
->;
-
 // Relations
 export const creditBalancesRelations = relations(creditBalances, ({ one }) => ({
   account: one(accounts, {
@@ -225,16 +192,6 @@ export const creditTransactionsRelations = relations(
     account: one(accounts, {
       fields: [creditTransactions.accountId],
       references: [accounts.id],
-    }),
-  }),
-);
-
-export const huntChannelCreditsRelations = relations(
-  huntChannelCredits,
-  ({ one }) => ({
-    hunt: one(hunts, {
-      fields: [huntChannelCredits.huntId],
-      references: [hunts.id],
     }),
   }),
 );

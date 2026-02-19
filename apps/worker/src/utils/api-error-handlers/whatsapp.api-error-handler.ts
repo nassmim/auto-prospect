@@ -1,4 +1,8 @@
-import { EWhatsAppErrorCode } from "@auto-prospect/shared";
+import {
+  EAccountErrorCode,
+  EMessageErrorCode,
+  EWhatsAppErrorCode,
+} from "@auto-prospect/shared";
 import { UnrecoverableError } from "bullmq";
 import { isRetryableHttpCode } from "../../config/worker.config";
 
@@ -32,7 +36,7 @@ export function handleWhatsAppApiResponse(
 
     if (response.status === 404) {
       throw new UnrecoverableError(
-        `WhatsApp account not found (${EWhatsAppErrorCode.ACCOUNT_NOT_FOUND})`,
+        `WhatsApp account not found (${EAccountErrorCode.ACCOUNT_NOT_FOUND})`,
       );
     }
 
@@ -41,7 +45,7 @@ export function handleWhatsAppApiResponse(
     }
 
     throw new UnrecoverableError(
-      `WhatsApp API error: ${response.status} (${EWhatsAppErrorCode.MESSAGE_SEND_FAILED})`,
+      `WhatsApp API error: ${response.status} (${EMessageErrorCode.MESSAGE_SEND_FAILED})`,
     );
   }
 

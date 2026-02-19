@@ -10,7 +10,7 @@ import { pages } from "@/config/routes";
 import { swrKeys } from "@/config/swr-keys";
 import { SWR_POLLING } from "@/hooks/use-swr-action";
 import { getDashboardStats } from "@/services/dashboard.service";
-import { THuntSummary } from "@/types/hunt.types";
+import { THuntSummary } from "@auto-prospect/shared";
 import { formatDistance } from "date-fns";
 import { fr } from "date-fns/locale";
 import Link from "next/link";
@@ -62,7 +62,7 @@ export function DashboardView({
             Dashboard
           </h1>
           <div className="mt-1 flex items-center gap-2 text-sm text-zinc-500">
-            <span>Vue d&apos;ensemble de votre activité</span>
+            <span>Vue d&apos;ensemble de ton activité</span>
             {lastUpdated && (
               <>
                 <span>•</span>
@@ -213,7 +213,7 @@ export function DashboardView({
               Aucune recherche active
             </h3>
             <p className="mt-2 text-sm text-zinc-500">
-              Créez votre première recherche pour commencer à trouver des leads
+              Crée ta première recherche pour commencer à trouver des leads
             </p>
             <Link
               href={pages.hunts.new}

@@ -5,9 +5,9 @@
  */
 
 import {
+  creditBalances,
   creditTransactions,
   getDBAdminClient,
-  huntChannelCredits,
 } from "@auto-prospect/db";
 import {
   EContactChannel,
@@ -18,6 +18,7 @@ import { ETransactionType } from "@auto-prospect/shared/src/config/payment.confi
 import { eq, sql } from "drizzle-orm";
 
 export type TConsumeCreditsParams = {
+  accountId: string;
   huntId: string;
   channel: TContactChannel;
   messageId?: string;
@@ -37,6 +38,7 @@ export type TConsumeCreditsResult =
  * insufficient balance (WhatsApp is unlimited for users with 1000/day hard limit)
  */
 export async function consumeCredit({
+  accountId,
   huntId,
   channel,
   messageId,
@@ -46,62 +48,69 @@ export async function consumeCredit({
 
   try {
     const result = await db.transaction(async (tx) => {
-      // Lock the hunt channel credits row
-      const channelCredit = await tx.query.huntChannelCredits.findFirst({
-        where: (table, { and, eq }) =>
-          and(eq(table.huntId, huntId), eq(table.channel, channel)),
-      });
+      // Lock creditBalances row for this account
+      const [balance] = await tx
+        .select()
+        .from(creditBalances)
+        .where(eq(creditBalances.accountId, accountId))
+        .for("update");
 
-      if (!channelCredit) {
-        throw new Error(
-          `No credits configured for channel ${channel} on hunt ${huntId}`,
-        );
+      if (!balance) {
+        throw new Error(`No credit balance found for account ${accountId}`);
       }
 
-      // Calculate remaining credits
-      const remainingCredits =
-        channelCredit.creditsAllocated - channelCredit.creditsConsumed;
+      // Get current balance for channel
+      const currentBalance =
+        channel === EContactChannel.SMS
+          ? balance.sms
+          : channel === EContactChannel.RINGLESS_VOICE
+            ? balance.ringlessVoice
+            : balance.whatsappText;
 
-      // WhatsApp: track consumption but never fail (unlimited for users)
+      // WhatsApp: never fail on balance (unlimited for users)
       // Other channels: fail if insufficient credits
-      if (channel !== EContactChannel.WHATSAPP_TEXT && remainingCredits <= 0) {
-        throw new Error(
-          `Insufficient credits for channel ${channel}. Allocated: ${channelCredit.creditsAllocated}, Consumed: ${channelCredit.creditsConsumed}`,
-        );
+      if (channel !== EContactChannel.WHATSAPP_TEXT && currentBalance <= 0) {
+        throw new Error(`Insufficient credits for channel ${channel}`);
       }
 
-      // Increment consumed credits atomically (tracking for all channels including WhatsApp)
-      await tx
-        .update(huntChannelCredits)
+      // Decrement atomically
+      const columnName =
+        channel === EContactChannel.SMS
+          ? "sms"
+          : channel === EContactChannel.RINGLESS_VOICE
+            ? "ringlessVoice"
+            : "whatsappText";
+
+      const [updated] = await tx
+        .update(creditBalances)
         .set({
-          creditsConsumed: sql`${huntChannelCredits.creditsConsumed} + 1`,
+          [columnName]: sql`${creditBalances[columnName]} - 1`,
           updatedAt: new Date(),
         })
-        .where(eq(huntChannelCredits.id, channelCredit.id));
+        .where(eq(creditBalances.accountId, accountId))
+        .returning();
 
-      // Get hunt account ID
-      const hunt = await tx.query.hunts.findFirst({
-        where: (table, { eq }) => eq(table.id, huntId),
-        columns: { accountId: true },
-      });
-
-      if (!hunt) {
-        throw new Error(`Hunt not found: ${huntId}`);
-      }
+      const newBalance =
+        channel === EContactChannel.SMS
+          ? updated.sms
+          : channel === EContactChannel.RINGLESS_VOICE
+            ? updated.ringlessVoice
+            : updated.whatsappText;
 
       // Create transaction log
       const [transaction] = await tx
         .insert(creditTransactions)
         .values({
-          accountId: hunt.accountId,
+          accountId,
           type: ETransactionType.USAGE,
           channel,
           amount: -1,
-          balanceAfter: remainingCredits - 1,
+          balanceAfter: newBalance,
           referenceId: messageId ? messageId : undefined,
           metadata: {
             messageId,
             recipient,
+            huntId,
           },
         })
         .returning();
@@ -125,24 +134,25 @@ export async function consumeCredit({
  * regardless of database values, since WhatsApp is unlimited for users
  */
 export async function getRemainingCredits(
-  huntId: string,
+  accountId: string,
   channel: TContactChannel,
 ): Promise<number> {
-  const db = getDBAdminClient();
-
-  const channelCredit = await db.query.huntChannelCredits.findFirst({
-    where: (table, { and, eq }) =>
-      and(eq(table.huntId, huntId), eq(table.channel, channel)),
-  });
-
-  if (!channelCredit) {
-    return 0;
-  }
-
   // WhatsApp: always return hard-coded limit (unlimited for users)
   if (channel === EContactChannel.WHATSAPP_TEXT) {
     return WHATSAPP_DAILY_LIMIT;
   }
 
-  return channelCredit.creditsAllocated - channelCredit.creditsConsumed;
+  const db = getDBAdminClient();
+
+  const balance = await db.query.creditBalances.findFirst({
+    where: (table, { eq }) => eq(table.accountId, accountId),
+  });
+
+  if (!balance) {
+    return 0;
+  }
+
+  return channel === EContactChannel.SMS
+    ? balance.sms
+    : balance.ringlessVoice;
 }

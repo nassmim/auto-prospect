@@ -29,7 +29,7 @@ export function ConnectedAccountsTab({
           Comptes connectés
         </h2>
         <p className="mt-1 text-sm text-zinc-500">
-          Gérez vos connexions aux plateformes d&apos;envoi de messages
+          Gère tes connexions aux plateformes d&apos;envoi de messages
         </p>
       </div>
 
@@ -70,8 +70,8 @@ export function ConnectedAccountsTab({
         </div>
         <div className="mt-4 rounded-lg bg-zinc-800/50 p-4">
           <p className="text-xs text-zinc-400">
-            <strong className="text-zinc-300">Note:</strong> Installez
-            l&apos;extension Chrome pour connecter votre compte Leboncoin et
+            <strong className="text-zinc-300">Note:</strong> Installe
+            l&apos;extension Chrome pour connecter ton compte Leboncoin et
             envoyer des messages automatiquement.
           </p>
         </div>

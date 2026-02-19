@@ -2,7 +2,7 @@ import { CACHE_TAGS } from "@/lib/cache.config";
 import { createDrizzleSupabaseClient } from "@/lib/db";
 import { getUserAccount } from "@/services/account.service";
 import { getContactedLeads, getTotalLeads } from "@/services/lead.service";
-import { TDBWithTokenClient } from "@auto-prospect/db";
+import { getDBAdminClient, TDBWithTokenClient } from "@auto-prospect/db";
 import { HUNT_WITH_RELATIONS, THuntSummary } from "@auto-prospect/shared";
 import { EHuntStatus } from "@auto-prospect/shared/src/config/hunt.config";
 import { cacheTag, updateTag } from "next/cache";
@@ -16,79 +16,33 @@ export async function getAccountHuntsConfig() {
   const account = await getUserAccount(dbClient, {
     columnsToKeep: { id: true },
   });
-  return getCachedAccountHuntsConfig(account.id, dbClient);
+  return getCachedAccountHuntsConfig(account.id);
 }
 
 /**
  * Internal cached function for hunt configurations
  */
-async function getCachedAccountHuntsConfig(
-  accountId: string,
-  dbClient?: TDBWithTokenClient,
-) {
+async function getCachedAccountHuntsConfig(accountId: string) {
   "use cache";
 
   cacheTag(CACHE_TAGS.huntsByAccount(accountId));
 
-  const client = dbClient || (await createDrizzleSupabaseClient());
+  const dbClient = getDBAdminClient();
 
-  // Use RLS wrapper to ensure user can only see their account's hunts
-  const huntsData = await client.rls(async (tx) => {
-    return tx.query.hunts.findMany({
-      orderBy: (table, { desc }) => [desc(table.createdAt)],
-      with: HUNT_WITH_RELATIONS,
-    });
+  const huntsData = await dbClient.query.hunts.findMany({
+    orderBy: (table, { desc }) => [desc(table.createdAt)],
+    with: HUNT_WITH_RELATIONS,
   });
 
   return huntsData;
 }
 
 /**
- * Fetches channel credits for multiple hunts - NOT CACHED
- * Called separately when credit display is needed
- */
-export async function getHuntsChannelCredits(huntIds: string[]) {
-  const dbClient = await createDrizzleSupabaseClient();
-
-  const allChannelCredits = await dbClient.rls(async (tx) => {
-    return tx.query.huntChannelCredits.findMany({
-      where: (table, { inArray }) => inArray(table.huntId, huntIds),
-    });
-  });
-
-  // Group credits by hunt ID
-  const creditsByHuntId = new Map<string, typeof allChannelCredits>();
-  for (const credit of allChannelCredits) {
-    if (!creditsByHuntId.has(credit.huntId)) {
-      creditsByHuntId.set(credit.huntId, []);
-    }
-    creditsByHuntId.get(credit.huntId)!.push(credit);
-  }
-
-  return creditsByHuntId;
-}
-
-/**
- * Fetches all hunts for the current user's account with channel credits
- * Combines cached config with fresh credits
+ * Fetches all hunts for the current user's account
+ * Returns cached hunt configs without channel credits
  */
 export async function getAccountHunts() {
-  // Get cached hunt configs
-  const huntsData = await getAccountHuntsConfig();
-
-  if (huntsData.length === 0) {
-    return [];
-  }
-
-  // Fetch fresh channel credits
-  const huntIds = huntsData.map(({ id }) => id);
-  const creditsByHuntId = await getHuntsChannelCredits(huntIds);
-
-  // Attach credits to each hunt
-  return huntsData.map((hunt) => ({
-    ...hunt,
-    channelCredits: creditsByHuntId.get(hunt.id) || [],
-  }));
+  return getAccountHuntsConfig();
 }
 
 /**
@@ -131,25 +85,11 @@ async function getCachedHuntConfigById(
 }
 
 /**
- * Fetches a single hunt by ID with channel credits
- * Combines cached config with fresh credits
+ * Fetches a single hunt by ID
+ * Returns cached hunt config without channel credits
  */
 export async function getHuntById(huntId: string) {
-  // Get cached hunt config
-  const hunt = await getHuntConfigById(huntId);
-
-  // Fetch fresh channel credits
-  const dbClient = await createDrizzleSupabaseClient();
-  const channelCreditsData = await dbClient.rls(async (tx) => {
-    return tx.query.huntChannelCredits.findMany({
-      where: (table, { eq }) => eq(table.huntId, huntId),
-    });
-  });
-
-  return {
-    ...hunt,
-    channelCredits: channelCreditsData,
-  };
+  return getHuntConfigById(huntId);
 }
 
 /**

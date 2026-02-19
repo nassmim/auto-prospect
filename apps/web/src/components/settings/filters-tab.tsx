@@ -1,7 +1,10 @@
 "use client";
 
 import { updateAccountSettings } from "@/actions/account.actions";
-import { TAccountSettings } from "@/types/account.types";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import type { TAccountSettings } from "@/types/account.types";
+import { accountSettingsSchema } from "@/validation-schemas";
 import { useState, useTransition } from "react";
 
 type FiltersTabProps = {
@@ -25,6 +28,15 @@ export function FiltersTab({ settings }: FiltersTabProps) {
     setError(null);
     setSuccess(false);
 
+    const validationResult = accountSettingsSchema.partial().safeParse({
+      // Future: add rejectProfessionals field when schema is updated
+    });
+
+    if (!validationResult.success) {
+      setError("Validation des paramètres a échoué");
+      return;
+    }
+
     startTransition(async () => {
       try {
         await updateAccountSettings({
@@ -47,7 +59,7 @@ export function FiltersTab({ settings }: FiltersTabProps) {
           Filtres de recherche
         </h2>
         <p className="mt-1 text-sm text-zinc-500">
-          Configurez les filtres appliqués automatiquement à vos recherches
+          Configure les filtres appliqués automatiquement à tes recherches
         </p>
       </div>
 
@@ -56,17 +68,18 @@ export function FiltersTab({ settings }: FiltersTabProps) {
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-3">
-              <h3 className="text-sm font-medium text-zinc-100">
+              <Checkbox
+                id="reject-professionals"
+                checked={rejectProfessionals}
+                onCheckedChange={(checked) =>
+                  setRejectProfessionals(checked === true)
+                }
+              />
+              <label
+                htmlFor="reject-professionals"
+                className="cursor-pointer text-sm font-medium text-zinc-100"
+              >
                 Refus des professionnels
-              </h3>
-              <label className="relative inline-flex cursor-pointer items-center">
-                <input
-                  type="checkbox"
-                  checked={rejectProfessionals}
-                  onChange={(e) => setRejectProfessionals(e.target.checked)}
-                  className="peer sr-only"
-                />
-                <div className="peer h-6 w-11 rounded-full bg-zinc-800 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-zinc-400 after:transition-all after:content-[''] peer-checked:bg-amber-500 peer-checked:after:translate-x-full peer-checked:after:bg-zinc-950 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-amber-500 peer-focus:ring-offset-2 peer-focus:ring-offset-zinc-950"></div>
               </label>
             </div>
             <p className="mt-2 text-sm text-zinc-500">
@@ -131,13 +144,9 @@ export function FiltersTab({ settings }: FiltersTabProps) {
 
       {/* Save Button */}
       <div className="flex items-center gap-4">
-        <button
-          onClick={handleSave}
-          disabled={isPending}
-          className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-zinc-950 transition-colors hover:bg-amber-400 disabled:opacity-50"
-        >
+        <Button onClick={handleSave} disabled={isPending}>
           {isPending ? "Enregistrement..." : "Enregistrer"}
-        </button>
+        </Button>
 
         {success && (
           <div className="flex items-center gap-2 text-sm text-green-500">

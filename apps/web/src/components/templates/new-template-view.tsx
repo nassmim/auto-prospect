@@ -57,8 +57,8 @@ export function NewTemplateView({ channel }: NewTemplateViewProps) {
           </h1>
           <p className="text-sm text-zinc-400">
             {showVoiceForm
-              ? "Enregistrez ou importez un message vocal pour vos appels"
-              : "Créez un message avec des variables personnalisables pour WhatsApp ou SMS"}
+              ? "Enregistre ou importe un message vocal pour tes appels"
+              : "Crée un message avec des variables personnalisables pour WhatsApp"}
           </p>
 
           {/* Type tabs */}

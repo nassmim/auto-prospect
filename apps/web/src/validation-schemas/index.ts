@@ -46,9 +46,13 @@ export {
 
 // Lead schemas
 export {
+  bulkUpdateLeadsSchema,
+  leadFiltersSchema,
   leadNoteSchema,
   leadReminderFormSchema,
   leadReminderSchema,
+  type TBulkUpdateLeads,
+  type TLeadFilters,
   type TLeadNoteFormData,
   type TLeadReminderFormData,
 } from "./lead.validation";
@@ -68,9 +72,7 @@ export {
 } from "./settings.validation";
 
 export {
-  sendWhatsAppTextMessageSchema,
   whatsappPhoneNumberSchema,
-  type TSendWhatsAppTextMessageSchema,
   type TWhatsAppPhoneNumberSchema,
 } from "./whatsapp.validation";
 

@@ -117,9 +117,9 @@ file_size_limit = "50MiB"
 enabled = true
 # The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
 # in emails.
-site_url = "env(NEXT_PUBLIC_SITE_URL)"
+site_url = "env(SITE_URL)"
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["env(NEXT_PUBLIC_SITE_URL_WILDCARD)"]
+additional_redirect_urls = ["env(SITE_URL_WILDCARD)"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # If disabled, the refresh token will never expire.
@@ -134,7 +134,7 @@ enable_anonymous_sign_ins = false
 # Allow/disallow testing manual linking of accounts
 enable_manual_linking = false
 # Passwords shorter than this value will be rejected as weak. Minimum 6, recommended 8 or more.
-minimum_password_length = "env(NEXT_PUBLIC_MINIMUM_PASSWORD_LENGTH)"
+minimum_password_length = "env(MINIMUM_PASSWORD_LENGTH)"
 # Passwords that do not meet the following requirements will be rejected as weak. Supported values
 # are: `letters_digits`, `lower_upper_letters_digits`, `lower_upper_letters_digits_symbols`
 password_requirements = ""
@@ -180,21 +180,21 @@ otp_length = 6
 otp_expiry = 3600
 
 # Use a production-ready SMTP server
-# Disabled for local dev (uses Mailpit at http://localhost:54324)
-# Enable for production with valid RESEND_API_KEY
+# Set enabled = true to use Resend for emails (requires RESEND_API_KEY in .env)
+# Set enabled = false to use Inbucket/Mailpit at http://localhost:54324
 [auth.email.smtp]
-enabled = false
+enabled = true
 host = "smtp.resend.com"
 port = 465
 user = "resend"
 pass = "env(RESEND_API_KEY)"
-admin_email = "env(NEXT_PUBLIC_EMAIL_SENDER)"
-sender_name = "env(NEXT_PUBLIC_SENDER_NAME)"
+admin_email = "env(EMAIL_SENDER)"
+sender_name = "env(SENDER_NAME)"
 
-# Uncomment to customize email template
-# [auth.email.template.invite]
-# subject = "You have been invited"
-# content_path = "./supabase/templates/invite.html"
+# Customize email template for invitations
+[auth.email.template.invite]
+subject = "Vous avez été invité à rejoindre Auto-Prospect"
+content_path = "./supabase/templates/invite.html"
 
 [auth.sms]
 # Allow/disallow new user signups via SMS to your project.
@@ -263,7 +263,7 @@ max_frequency = "5s"
 # `twitter`, `slack`, `spotify`, `workos`, `zoom`.
 [auth.external.google]
 enabled = true
-client_id = "env(NEXT_PUBLIC_SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
+client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
 # DO NOT commit your OAuth provider secret to git. Use environment variable substitution instead:
 secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
 # Overrides the default auth redirectUrl.

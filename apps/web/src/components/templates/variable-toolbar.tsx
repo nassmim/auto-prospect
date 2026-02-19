@@ -26,14 +26,14 @@ export function VariableToolbar({ onInsertVariable }: VariableToolbarProps) {
             key={variable.key}
             type="button"
             onClick={() => onInsertVariable(variable.key)}
-            className="rounded border border-zinc-700 bg-zinc-800/50 px-3 py-1.5 text-xs font-medium text-zinc-300 transition-colors hover:border-amber-500 hover:bg-zinc-800 hover:text-amber-500"
+            className="cursor-pointer rounded border border-zinc-700 bg-zinc-800/50 px-3 py-1.5 text-xs font-medium text-zinc-300 transition-colors hover:border-amber-500 hover:bg-zinc-800 hover:text-amber-500"
           >
             {variable.label}
           </button>
         ))}
       </div>
       <p className="mt-3 text-xs text-zinc-500">
-        Cliquez sur une variable pour l&aposinsérer dans votre message
+        Clique sur une variable pour l&apos;insérer dans ton message
       </p>
     </div>
   );

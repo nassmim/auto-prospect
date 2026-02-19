@@ -1,0 +1,8 @@
+<h2>TU as été invité</h2>
+
+<p>Tu as été invité à rejoindre Auto-Prospect. Suis ce lien pour accepter l'invitation et configurer ton compte :</p>
+
+<p><a href="{{ .SiteURL }}/api/auth/callback?token_hash={{ .TokenHash }}&type=invite&next=/dashboard">Accepter l'invitation</a></p>
+
+<p>Si le bouton ne fonctionne pas, copie et colle ce lien dans ton navigateur:</p>
+<p>{{ .SiteURL }}/api/auth/callback?token_hash={{ .TokenHash }}&type=invite&next=/dashboard</p>

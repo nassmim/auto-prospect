@@ -129,7 +129,7 @@ export function AudioRecorder({ onRecordingComplete }: AudioRecorderProps) {
             <button
               type="button"
               onClick={startRecording}
-              className="flex h-20 w-20 items-center justify-center rounded-full border-4 border-red-500 bg-red-500/20 text-red-500 transition-all hover:bg-red-500/30"
+              className="flex h-20 w-20 cursor-pointer items-center justify-center rounded-full border-4 border-red-500 bg-red-500/20 text-red-500 transition-all hover:bg-red-500/30"
             >
               <svg
                 className="h-10 w-10"
@@ -149,7 +149,7 @@ export function AudioRecorder({ onRecordingComplete }: AudioRecorderProps) {
             <button
               type="button"
               onClick={stopRecording}
-              className="flex h-20 w-20 items-center justify-center rounded-full border-4 border-red-500 bg-red-500 text-white transition-all hover:bg-red-600"
+              className="flex h-20 w-20 cursor-pointer items-center justify-center rounded-full border-4 border-red-500 bg-red-500 text-white transition-all hover:bg-red-600"
             >
               <div className="h-6 w-6 rounded bg-white" />
             </button>

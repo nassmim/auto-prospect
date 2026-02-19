@@ -1,8 +1,31 @@
 "use client";
 
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { pages } from "@/config/routes";
 import { getAccountTemplates } from "@/services/message.service";
 import { EContactChannel } from "@auto-prospect/shared/src/config/message.config";
+import { z } from "zod";
+
+const outreachSettingsSchema = z.object({
+  leboncoin: z.boolean().optional(),
+  whatsapp: z.boolean().optional(),
+  sms: z.boolean().optional(),
+  ringlessVoice: z.boolean().optional(),
+});
+
+const templateIdsSchema = z.object({
+  leboncoin: z.string().uuid().nullable().optional(),
+  whatsapp: z.string().uuid().nullable().optional(),
+  sms: z.string().uuid().nullable().optional(),
+  ringlessVoice: z.string().uuid().nullable().optional(),
+});
 
 type OutreachSettingsProps = {
   templates: Awaited<ReturnType<typeof getAccountTemplates>>;
@@ -18,58 +41,52 @@ type OutreachSettingsProps = {
     sms?: string | null;
     ringlessVoice?: string | null;
   };
-  channelCredits?: {
-    sms?: number;
-    whatsapp?: number;
-    ringlessVoice?: number;
-  };
   onOutreachChange: (
     settings: OutreachSettingsProps["outreachSettings"],
   ) => void;
   onTemplateChange: (templateIds: OutreachSettingsProps["templateIds"]) => void;
-  onChannelCreditsChange?: (
-    credits: OutreachSettingsProps["channelCredits"],
-  ) => void;
 };
 
 export function OutreachSettings({
   templates,
   outreachSettings,
   templateIds,
-  channelCredits,
   onOutreachChange,
   onTemplateChange,
-  onChannelCreditsChange,
 }: OutreachSettingsProps) {
   const handleToggle = (
     channel: "leboncoin" | "whatsapp" | "sms" | "ringlessVoice",
   ) => {
-    onOutreachChange({
+    const newSettings = {
       ...outreachSettings,
       [channel]: !outreachSettings[channel],
-    });
+    };
+
+    const validationResult = outreachSettingsSchema.safeParse(newSettings);
+    if (!validationResult.success) {
+      console.error("Outreach settings validation failed:", validationResult.error);
+      return;
+    }
+
+    onOutreachChange(validationResult.data);
   };
 
   const handleTemplateChange = (
     channel: "leboncoin" | "whatsapp" | "sms" | "ringlessVoice",
     templateId: string,
   ) => {
-    onTemplateChange({
+    const newTemplateIds = {
       ...templateIds,
       [channel]: templateId || null,
-    });
-  };
+    };
 
-  const handleCreditsChange = (
-    channel: "sms" | "whatsapp" | "ringlessVoice",
-    credits: number,
-  ) => {
-    if (onChannelCreditsChange) {
-      onChannelCreditsChange({
-        ...channelCredits,
-        [channel]: credits,
-      });
+    const validationResult = templateIdsSchema.safeParse(newTemplateIds);
+    if (!validationResult.success) {
+      console.error("Template IDs validation failed:", validationResult.error);
+      return;
     }
+
+    onTemplateChange(validationResult.data);
   };
 
   // Filter templates by channel and type
@@ -86,11 +103,13 @@ export function OutreachSettings({
       );
     } else if (channel === "sms") {
       // SMS text templates (channel === "sms" and no audioUrl)
-      return templates.filter((t) => t.channel === "sms" && !t.audioUrl);
+      return templates.filter(
+        (t) => t.channel === EContactChannel.SMS && !t.audioUrl,
+      );
     } else if (channel === "ringlessVoice") {
       // Ringless voice templates (channel === "ringlessVoice" and has audioUrl)
       return templates.filter(
-        (t) => t.channel === "ringlessVoice" && t.audioUrl,
+        (t) => t.channel === EContactChannel.RINGLESS_VOICE && t.audioUrl,
       );
     }
     return [];
@@ -137,7 +156,8 @@ export function OutreachSettings({
           />
         </svg>
       ),
-      description: "Envoie un message WhatsApp au vendeur (nécessite numéro)",
+      description:
+        "Envoie un message WhatsApp au vendeur (nécessite ton numéro whatsapp)",
     },
     {
       key: "sms" as const,
@@ -158,11 +178,11 @@ export function OutreachSettings({
           />
         </svg>
       ),
-      description: "Envoie un SMS au vendeur (nécessite numéro)",
+      description: "Envoie un SMS au vendeur (nécessite ton numéro)",
     },
     {
       key: "ringlessVoice" as const,
-      label: "Message Vocal (Ringless)",
+      label: "Message Vocal",
       requiresCredits: true,
       icon: (
         <svg
@@ -180,7 +200,7 @@ export function OutreachSettings({
         </svg>
       ),
       description:
-        "Dépose un message vocal dans la boîte vocale (nécessite numéro)",
+        "Dépose un message vocal dans la boîte vocale du vendeur (nécessite ton numéro)",
     },
   ];
 
@@ -206,12 +226,11 @@ export function OutreachSettings({
             >
               {/* Channel toggle */}
               <div className="mb-3 flex items-start gap-3">
-                <input
-                  type="checkbox"
+                <Checkbox
                   id={`channel-${config.key}`}
                   checked={isEnabled}
-                  onChange={() => handleToggle(config.key)}
-                  className="mt-1 h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-amber-500 focus:ring-2 focus:ring-amber-500 focus:ring-offset-0"
+                  onCheckedChange={() => handleToggle(config.key)}
+                  className="mt-1"
                 />
                 <div className="flex-1">
                   <label
@@ -248,89 +267,27 @@ export function OutreachSettings({
                         </a>
                       </div>
                     ) : (
-                      <select
-                        id={`template-${config.key}`}
-                        value={templateIds[config.key] || ""}
-                        onChange={(e) =>
-                          handleTemplateChange(config.key, e.target.value)
+                      <Select
+                        value={templateIds[config.key] || undefined}
+                        onValueChange={(value) =>
+                          handleTemplateChange(config.key, value)
                         }
-                        className="w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-200 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
                       >
-                        <option value="">Sélectionner un template...</option>
-                        {availableTemplates.map((template) => (
-                          <option key={template.id} value={template.id}>
-                            {template.name} (
-                            {template.audioUrl ? "Vocal" : "Texte"})
-                          </option>
-                        ))}
-                      </select>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Sélectionner un template..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableTemplates.map((template) => (
+                            <SelectItem key={template.id} value={template.id}>
+                              {template.name} (
+                              {template.audioUrl ? "Vocal" : "Texte"})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     )}
                   </div>
 
-                  {/* Credit allocation input (only for channels that require credits) */}
-                  {config.requiresCredits && config.key !== "leboncoin" && (
-                    <div>
-                      {config.key === "whatsapp" ? (
-                        // WhatsApp: unlimited with daily hard limit
-                        <div className="rounded-lg border border-green-900/30 bg-green-950/20 p-3">
-                          <div className="flex items-center gap-2">
-                            <svg
-                              className="h-4 w-4 text-green-400"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M5 13l4 4L19 7"
-                              />
-                            </svg>
-                            <p className="text-xs font-medium text-green-400">
-                              Messages WhatsApp illimités
-                            </p>
-                          </div>
-                          <p className="mt-1 text-xs text-zinc-500">
-                            Envoyez jusqu&apos;à 1000 messages WhatsApp par jour gratuitement
-                          </p>
-                        </div>
-                      ) : (
-                        // SMS and Ringless Voice: require credit allocation
-                        <>
-                          <label
-                            htmlFor={`credits-${config.key}`}
-                            className="mb-2 block text-xs font-medium text-zinc-400"
-                          >
-                            Crédits à allouer
-                          </label>
-                          <input
-                            type="number"
-                            id={`credits-${config.key}`}
-                            min="0"
-                            step="1"
-                            value={
-                              channelCredits?.[
-                                config.key as "sms" | "whatsapp" | "ringlessVoice"
-                              ] || 0
-                            }
-                            onChange={(e) =>
-                              handleCreditsChange(
-                                config.key as "sms" | "whatsapp" | "ringlessVoice",
-                                parseInt(e.target.value) || 0,
-                              )
-                            }
-                            className="w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-200 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                            placeholder="0"
-                          />
-                          <p className="mt-1 text-xs text-zinc-500">
-                            1 crédit = 1 contact. Ces crédits seront déduits de
-                            votre solde d&apos;organisation.
-                          </p>
-                        </>
-                      )}
-                    </div>
-                  )}
                 </div>
               )}
             </div>
