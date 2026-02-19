@@ -1,6 +1,6 @@
 {
-  "id": "cf5ba4f6-71d8-4979-9fa5-be6aece17eff",
-  "prevId": "fd3cf199-b7b4-4529-a5d1-d7f4ee524c2d",
+  "id": "2fa41d58-1a9e-4030-b840-8f4e803b0c91",
+  "prevId": "da112012-ce47-487a-a7d2-2a97f1650eb6",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1618,116 +1618,6 @@
             "authenticated"
           ],
           "using": "\"credit_transactions\".\"account_id\" = (select auth.uid())"
-        }
-      },
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.hunt_channel_credits": {
-      "name": "hunt_channel_credits",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "hunt_id": {
-          "name": "hunt_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "channel": {
-          "name": "channel",
-          "type": "channel",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "credits_allocated": {
-          "name": "credits_allocated",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "credits_consumed": {
-          "name": "credits_consumed",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "hunt_channel_credits_hunt_id_idx": {
-          "name": "hunt_channel_credits_hunt_id_idx",
-          "columns": [
-            {
-              "expression": "hunt_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "with": {},
-          "method": "btree",
-          "concurrently": false
-        }
-      },
-      "foreignKeys": {
-        "hunt_channel_credits_hunt_id_fk": {
-          "name": "hunt_channel_credits_hunt_id_fk",
-          "tableFrom": "hunt_channel_credits",
-          "columnsFrom": [
-            "hunt_id"
-          ],
-          "tableTo": "hunts",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "hunt_channel_unique": {
-          "name": "hunt_channel_unique",
-          "columns": [
-            "hunt_id",
-            "channel"
-          ],
-          "nullsNotDistinct": false
-        }
-      },
-      "policies": {
-        "enable all for hunt owners": {
-          "name": "enable all for hunt owners",
-          "as": "PERMISSIVE",
-          "for": "ALL",
-          "to": [
-            "authenticated"
-          ],
-          "using": "exists (\n        select 1 from hunts h\n        where h.id = \"hunt_channel_credits\".\"hunt_id\"\n        and h.account_id = (select auth.uid())\n      )",
-          "withCheck": "exists (\n        select 1 from hunts h\n        where h.id = \"hunt_channel_credits\".\"hunt_id\"\n        and h.account_id = (select auth.uid())\n      )"
         }
       },
       "checkConstraints": {},
@@ -3366,7 +3256,6 @@
       "schema": "public",
       "values": [
         "whatsapp_text",
-        "sms",
         "ringless_voice"
       ]
     },

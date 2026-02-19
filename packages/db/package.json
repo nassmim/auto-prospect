@@ -7,8 +7,8 @@
   "scripts": {
     "build": "echo 'no build needed'",
     "db:generate": "drizzle-kit generate",
-    "db:migrate-only": "dotenvx run --env-file=../../apps/web/.env.development.local -- tsx scripts/migrate.ts",
-    "db:migrate": "drizzle-kit generate && dotenvx run --env-file=../../apps/web/.env.development.local -- tsx scripts/migrate.ts",
+    "db:migrate-only": "dotenvx run --env-file=.env -- tsx scripts/migrate.ts",
+    "db:migrate": "drizzle-kit generate && dotenvx run --env-file=.env -- tsx scripts/migrate.ts",
     "db:drop": "drizzle-kit drop",
     "db:studio": "drizzle-kit studio",
     "db:dump": "docker exec -it supabase_db_auto-prospect pg_dump -U postgres -d postgres --data-only --schema=auth --schema=public > supabase/seed.sql",
