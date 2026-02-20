@@ -19,6 +19,8 @@
     "node-cron": "^3.0.0"
   },
   "devDependencies": {
+    "@bull-board/api": "^6.19.0",
+    "@bull-board/express": "^6.19.0",
     "@types/cors": "^2.8.0",
     "@types/express": "^5.0.0",
     "vitest": "^4.0.18"

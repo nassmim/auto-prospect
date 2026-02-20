@@ -98,6 +98,8 @@ Production (remote):
 
 **FORBIDDEN:** `drizzle-kit push`, `supabase db push`, `supabase db reset`, Supabase UI changes, manual SQL outside migrations
 
+**NEVER create, modify, or delete migration files manually.** This includes the migration SQL files and the Drizzle journal (`_journal.json`). Manual edits always cause inconsistencies. The only allowed way to produce migrations is via `pnpm db:generate` (and `pnpm db:generate --custom`). No exceptions.
+
 **Interactive prompts**: If `pnpm db:generate` prompts for input (create vs rename), STOP and tell user to run manually
 
 **Available commands**:

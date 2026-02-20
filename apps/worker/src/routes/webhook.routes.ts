@@ -4,7 +4,7 @@
  * Handles incoming webhooks from external services (Lobstr, etc.)
  */
 
-import { Router, Request, Response } from "express";
+import { Request, Response, Router } from "express";
 import { scrapingQueue } from "../queues";
 
 const router = Router();
@@ -17,7 +17,7 @@ const router = Router();
  */
 router.post("/lobstr", async (req: Request, res: Response) => {
   try {
-    const { runId } = req.body;
+    const { id: runId } = req.body;
 
     if (!runId) {
       return res.status(400).json({
@@ -34,9 +34,7 @@ router.post("/lobstr", async (req: Request, res: Response) => {
       {
         // Prevent duplicate processing of same run
         jobId: `lobstr-${runId}`,
-        removeOnComplete: 100,
-        removeOnFail: 1000,
-      }
+      },
     );
 
     res.json({

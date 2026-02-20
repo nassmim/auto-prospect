@@ -43,6 +43,20 @@
       "when": 1771517714090,
       "tag": "0005_famous_mentor",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1771529967350,
+      "tag": "0006_windy_professor_monster",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1771530591447,
+      "tag": "0007_nostalgic_raza",
+      "breakpoints": true
     }
   ]
 }

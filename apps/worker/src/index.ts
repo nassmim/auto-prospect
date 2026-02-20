@@ -2,6 +2,7 @@ import { Worker } from "bullmq";
 import cors from "cors";
 import express, { NextFunction, Request, Response } from "express";
 import { Server } from "http";
+import { queues } from "./queues";
 import { connection } from "./redis";
 import routes from "./routes";
 import { startAllWorkers } from "./workers";
@@ -29,7 +30,6 @@ const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
   }
 
   const token = authHeader.substring(7);
-
   if (token !== API_SECRET) {
     return res.status(401).json({ error: "Unauthorized: Invalid token" });
   }
@@ -48,6 +48,23 @@ app.use("/api", authMiddleware, routes);
 // Start workers and server
 (async () => {
   try {
+    if (process.env.NODE_ENV !== "production") {
+      const { createBullBoard } = await import("@bull-board/api");
+      const { BullMQAdapter } = await import("@bull-board/api/bullMQAdapter");
+      const { ExpressAdapter } = await import("@bull-board/express");
+
+      const serverAdapter = new ExpressAdapter();
+      serverAdapter.setBasePath("/ui");
+
+      createBullBoard({
+        queues: Object.values(queues).map((q) => new BullMQAdapter(q)),
+        serverAdapter,
+      });
+
+      app.use("/ui", serverAdapter.getRouter());
+      console.log(`Bull Board available at http://localhost:${PORT}/ui`);
+    }
+
     workers = await startAllWorkers();
 
     server = app.listen(PORT, () => {

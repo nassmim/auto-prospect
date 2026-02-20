@@ -55,6 +55,7 @@ export { and, eq };
 export {
   asc,
   desc,
+  getTableColumns,
   gt,
   gte,
   ilike,
