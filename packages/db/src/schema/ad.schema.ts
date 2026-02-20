@@ -53,11 +53,13 @@ export const ads = pgTable(
     title: text().notNull(),
     description: text(),
     picture: text(),
+    pictures: text().array(),
     price: doublePrecision().notNull(),
     hasBeenReposted: boolean("has_been_reposted").default(false).notNull(),
     hasBeenBoosted: boolean("has_been_boosted").default(false).notNull(),
     isUrgent: boolean("is_urgent").default(false).notNull(),
     modelYear: smallint("model_year"),
+    model: text(),
     initialPublicationDate: date("initial_publication_date").notNull(),
     lastPublicationDate: date("last_publication_date").notNull(),
     mileage: real(),
@@ -75,7 +77,6 @@ export const ads = pgTable(
     equipments: text(),
     otherSpecifications: text("other_specifications"),
     technicalInspectionYear: smallint("technical_inspection_year"),
-    model: text(),
     acceptSalesmen: boolean("accept_salesmen").default(true).notNull(),
   },
   (table) => [
@@ -135,17 +136,18 @@ export const adTypes = pgTable(
 export type TAdType = InferSelectModel<typeof adTypes>;
 
 export const adSubTypes = pgTable(
-  "sub_types",
+  "ad_sub_types",
   {
     id: smallserial().primaryKey(),
     adTypeId: smallint("ad_type_id")
       .references(() => adTypes.id)
       .notNull(),
-    name: text().notNull().unique("ad_sub_type_name_unique"),
+    name: text().notNull(),
     lbcValue: text("lbc_value"),
     lobstrValue: text("lobstr_value"),
   },
-  () => [
+  (table) => [
+    unique("unique_subtype").on(table.adTypeId, table.name),
     pgPolicy("enable read for authenticated users", {
       as: "permissive",
       for: "select",

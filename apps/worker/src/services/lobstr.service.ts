@@ -1,6 +1,7 @@
 import {
   ads as adsTable,
   getDBAdminClient,
+  getTableColumns,
   sql,
   TAdInsert,
   TAdReferenceData,
@@ -13,25 +14,17 @@ import { sendAlertToAdmin } from "./general.service";
 // Platform value field name for Lobstr
 const LOBSTR_PLATFORM_FIELD = "lobstrValue" as const;
 
-// Columns to update on conflict
-const DB_COLUMNS_TO_UPDATE = [
-  "title",
-  "description",
-  "price",
-  "hasPhone",
-  "phoneNumber",
-  "picture",
-  "lastPublicationDate",
-  "hasBeenBoosted",
-  "isUrgent",
-  "hasBeenReposted",
-  "priceHasDropped",
-  "isLowPrice",
-  "updatedAt",
-];
+// Get all columns except the ones we don't want to update on conflict
+const allColumns = getTableColumns(adsTable);
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const { id, createdAt, originalAdId, ...columnsToUpdate } = allColumns;
 
+// Use the actual database column names (snake_case) from the table schema
 const setAdUpdateOnConflict = Object.fromEntries(
-  DB_COLUMNS_TO_UPDATE.map((col) => [col, sql.raw(`excluded.${col}`)]),
+  Object.entries(columnsToUpdate).map(([key, column]) => [
+    key,
+    sql`excluded.${sql.identifier(column.name)}`,
+  ]),
 );
 
 type TAdFromLobstr = {
@@ -204,8 +197,8 @@ const saveAdsFromLobstr = async (runId: string): Promise<void> => {
 
   // for each ad, we map the platform values with the appropriate values that our db accepts
   const getAdsData = ads.map((ad) => getAdData(ad, referenceData));
-  const adsToPersistPromise = await Promise.allSettled(getAdsData);
 
+  const adsToPersistPromise = await Promise.allSettled(getAdsData);
   // This step to ensure we insert only valid objects to the db query
   const adsToPersist = adsToPersistPromise.reduce<TAdInsert[]>(
     (listOfAds, adPromise) => {
@@ -219,11 +212,12 @@ const saveAdsFromLobstr = async (runId: string): Promise<void> => {
 
   // Insertion with update - if the id of the ad and the url
   // (we use the url as well as a provider could have same id for different categories)
+
   await db
     .insert(adsTable)
     .values(adsToPersist)
     .onConflictDoUpdate({
-      target: [adsTable.originalAdId, adsTable.url],
+      target: [adsTable.originalAdId],
       set: setAdUpdateOnConflict,
     })
     .returning();
@@ -270,15 +264,18 @@ const getAdData = async (
     price: ad.price,
     url: ad.url,
     hasPhone: ad.phone ? true : false,
-    phoneNumber:
-      parsePhoneNumberWithError(ad.phone || "", "FR")?.number || null,
+    phoneNumber: ad.phone
+      ? parsePhoneNumberWithError(ad.phone, "FR")?.number
+      : null,
     picture: ad.picture,
+    pictures: ad.pictures.split(","),
     initialPublicationDate: new Date(ad.first_publication_date).toDateString(),
     lastPublicationDate: new Date(ad.last_publication_date).toDateString(),
     ownerName: ad.owner_name,
     hasBeenBoosted: ad.is_boosted,
     isUrgent: ad.urgent,
     modelYear: customParseInt(adDetails["Année modèle"]),
+    model: adMoreDetails.model,
     entryYear: customParseInt(
       adDetails["Date de première mise en circulation"].slice(-4),
     ),
@@ -306,21 +303,15 @@ const getAdData = async (
   adData.locationId = referenceData.zipcodes.get(ad.postal_code) || 1;
   adData.gearBoxId =
     referenceData.gearBoxes.get(adDetails["Boîte de vitesse"]) || null;
-  adData.drivingLicenceId = adDetails["Permis"]
-    ? referenceData.drivingLicences.get(adDetails["Permis"]) || 1
-    : 1;
-  adData.fuelId = adDetails["Carburant"]
-    ? referenceData.fuels.get(adDetails["Carburant"]) || null
-    : null;
-  adData.vehicleSeatsId = adDetails["Nombre de place(s)"]
-    ? referenceData.vehicleSeats.get(adDetails["Nombre de place(s)"]) || null
-    : null;
-  adData.vehicleStateId = adDetails["État du véhicule"]
-    ? referenceData.vehicleStates.get(adDetails["État du véhicule"]) || 2
-    : 2;
-  adData.subtypeId = adDetails["Type de véhicule"]
-    ? referenceData.adSubTypes.get(adDetails["Type de véhicule"]) || null
-    : null;
+  adData.drivingLicenceId =
+    referenceData.drivingLicences.get(adDetails["Permis"]) || 1;
+  adData.fuelId = referenceData.fuels.get(adMoreDetails.fuel) || null;
+  adData.vehicleSeatsId =
+    referenceData.vehicleSeats.get(adDetails["Nombre de place(s)"]) || null;
+  adData.vehicleStateId =
+    referenceData.vehicleStates.get(adDetails["État du véhicule"]) || 2;
+  adData.subtypeId =
+    referenceData.adSubTypes.get(adDetails["Type de véhicule"]) || null;
 
   return adData as TAdInsert;
 };
